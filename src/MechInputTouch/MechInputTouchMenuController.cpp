@@ -119,8 +119,8 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
 
     const NuVec2 down = holder.down_position;
     const NuVec2 touch = holder.touch_position;
-    const f32 dx = touch.x - down.x;
     const f32 dy = touch.y - down.y;
+    const f32 dx = touch.x - down.x;
     LastTouchTime = GlobalTimer.time_elapsed;
     LastTouchPos = touch;
     AnyTouchesThisFrame = 3;
@@ -184,8 +184,8 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
     }
 
     if (GameMenuLevel <= 0) {
-        field_70 = NULL;
         field_74 = NULL;
+        field_70 = NULL;
         return false;
     }
     bool same_menu = field_74 == &menu;
@@ -259,7 +259,11 @@ void MechInputTouchMenuController::Update(NuInputTouchData const *input) {
         i32 *counter = &AnyTouchesThisFrame;
         i32 zero = 0;
         i32 remaining = *counter - 1;
-        *counter = remaining < 0 ? zero : remaining;
+        if (remaining < 0) {
+            *counter = zero;
+        } else {
+            *counter = remaining;
+        }
     }
 }
 

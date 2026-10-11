@@ -71,38 +71,38 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
     switch (inFormat) {
         case NUTEX_DXT1:                                         // 1
             outInternalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; // 0x83F0
-            outIsCompressed = true;
-            outFormat = GL_RGB;         // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outType = GL_UNSIGNED_BYTE;
+            outIsCompressed = true; // 0x1907
+            outFormat = GL_RGB;     // 0x1401
             break;
 
         case NUTEX_DX1A:                                          // 2
             outInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; // 0x83F1
-            outIsCompressed = true;
-            outFormat = GL_RGBA;        // 0x1908
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outFormat = GL_RGBA;
+            outType = GL_UNSIGNED_BYTE; // 0x1908
+            outIsCompressed = true;     // 0x1401
             break;
 
         case NUTEX_DXT5:                 // 6
             outInternalFormat = GL_RGBA; // 0x1908
-            outIsCompressed = true;
-            outFormat = GL_RGBA;        // 0x1908
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_RGBA;    // 0x1908
+            outIsCompressed = true; // 0x1401
             break;
 
         case 0x10:
             outInternalFormat = GL_LUMINANCE; // 0x1909
-            outBpp = 8;
-            outFormat = GL_LUMINANCE;   // 0x1909
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_LUMINANCE; // 0x1909
+            outBpp = 8;               // 0x1401
             outFormatEnum = inFormat;
             return;
 
         case NUTEX_ETC1:                          // 0x11
             outInternalFormat = GL_ETC1_RGB8_OES; // 0x8D64
-            outIsCompressed = true;
-            outFormat = GL_RGB;         // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outFormat = GL_RGB;
+            outType = GL_UNSIGNED_BYTE; // 0x1907
+            outIsCompressed = true;     // 0x1401
             break;
 
         case NUTEX_PVRTC2:                                          // 0x14
@@ -114,15 +114,15 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
 
         case NUTEX_PVRTC2A:                                          // 0x15
             outInternalFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG; // 0x8C03
-            outIsCompressed = true;
-            outFormat = GL_RGBA;        // 0x1908
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outType = GL_UNSIGNED_BYTE;
+            outIsCompressed = true; // 0x1908
+            outFormat = GL_RGBA;    // 0x1401
             break;
 
         case NUTEX_PVRTC4:                                          // 0x16
             outInternalFormat = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG; // 0x8C00
-            outIsCompressed = true;
-            outFormat = GL_RGB;         // 0x1907
+            outFormat = GL_RGB;
+            outIsCompressed = true;     // 0x1907
             outType = GL_UNSIGNED_BYTE; // 0x1401
             break;
 
@@ -135,23 +135,23 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
 
         case NUTEX_ATCA:                                            // 0x18
             outInternalFormat = GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD; // 0x87EE
-            outIsCompressed = true;
-            outFormat = GL_RGBA;        // 0x1908
+            outFormat = GL_RGBA;
+            outIsCompressed = true;     // 0x1908
             outType = GL_UNSIGNED_BYTE; // 0x1401
             break;
 
         case NUTEX_ATC:                         // 0x19
             outInternalFormat = GL_ATC_RGB_AMD; // 0x8C92
-            outIsCompressed = true;
-            outFormat = GL_RGB;         // 0x1907
+            outFormat = GL_RGB;
+            outIsCompressed = true;     // 0x1907
             outType = GL_UNSIGNED_BYTE; // 0x1401
             break;
 
         case 0x66:
             outInternalFormat = GL_RGB; // 0x1907
-            outBpp = 24;                // 0x18
-            outFormat = GL_RGB;         // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
+            outFormat = GL_RGB;         // 0x18
+            outType = GL_UNSIGNED_BYTE; // 0x1907
+            outBpp = 24;                // 0x1401
             outFormatEnum = inFormat;
             return;
 
@@ -162,10 +162,10 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
 
         default:
             outInternalFormat = GL_RGBA;
-            outBpp = 32;
-            outFormat = GL_RGBA;
             outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_RGBA;
             outFormatEnum = inFormat;
+            outBpp = 32;
             return;
     }
 
@@ -273,8 +273,8 @@ i32 GetMipOffset(NuHardwareTexture *tex, i32 targetMip, i32 targetSlice, NUTEXFO
         currentSliceLimit = (tex->flags & 1) ? 5 : tex->depth;
     }
 
-    i32 totalOffset = 0;
     i32 currentSlice = 0;
+    i32 totalOffset = 0;
 
     while (true) {
         i32 innerMipLimit = currentMipLimit;
@@ -342,9 +342,9 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
         squishFlags = CSWTCH_249[format - 4];
     }
 
-    tex.format = format;
     tex.width = width;
     tex.height = height;
+    tex.format = format;
     tex.depth = depth;
 
     tex.flags = (tex.flags & 0x80) | (isCubemap & 1);
@@ -407,16 +407,7 @@ GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum text
     for (i32 i = 0; i < pixel_count; i += 2) {
         i32 row = i / size;
 
-        if (row & 1) {
-            p1[-8] = 0x52;
-            p1[-7] = 0x52;
-            p1[-6] = 0x99;
-            p1[-5] = 0xFF;
-            p2[3] = 0xFF;
-            p2[0] = 0x7A;
-            p2[1] = 0x7A;
-            p2[2] = 0x7A;
-        } else {
+        if (!(row & 1)) {
             p1[-8] = 0x7A;
             p1[-7] = 0x7A;
             p1[-6] = 0x7A;
@@ -425,6 +416,15 @@ GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum text
             p2[0] = 0x52;
             p2[1] = 0x52;
             p2[2] = 0x99;
+        } else {
+            p1[-8] = 0x52;
+            p1[-7] = 0x52;
+            p1[-6] = 0x99;
+            p1[-5] = 0xFF;
+            p2[3] = 0xFF;
+            p2[0] = 0x7A;
+            p2[1] = 0x7A;
+            p2[2] = 0x7A;
         }
         p1 += 8;
         p2 += 8;
@@ -531,8 +531,8 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out
     unsigned char *pixelData = nullptr;
 
     NUTEXFORMAT format;
-    i32 depth = 0;
     i32 mipCount = 0;
+    i32 depth = 0;
     bool isCubemap = false;
     bool hasFourCC = false;
 
@@ -717,8 +717,8 @@ GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
     GLuint texture = 0;
     const char *extension;
 
-    g_textureHash = hash;
     comeFromHash = 1;
+    g_textureHash = hash;
     if (hash == 0x280145f0) {
         g_logoTexture = 1;
     }
@@ -784,9 +784,9 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
     }
 
     bool isCompressed;
-    i32 minBlocks;
     i32 bytesPerBlockOrPixel;
     i32 blockWidth;
+    i32 minBlocks;
 
     if (format > 0 && format < 119) {
         const i32 formatIndex = format - 1;

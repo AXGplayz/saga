@@ -22,21 +22,23 @@ void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, 
     LEVELSPLINECOUNT = 0;
 
     for (; tab->kind != 0xff; ++tab, ++LEVELOBJECTCOUNT) {
-        if (tab->reflection == 1) {
+        if (tab->reflection != 1) {
+            if (tab->reflection == 2) {
+                if (LEVOBJREF_FIRSTREFOBJ == -1) {
+                    LEVOBJREF_FIRSTREFOBJ = LEVELOBJECTCOUNT;
+                }
+                LEVOBJREF_LASTREFOBJ = LEVELOBJECTCOUNT;
+            }
+        } else {
             if (LEVOBJREF_FIRSTOBJ == -1) {
                 LEVOBJREF_FIRSTOBJ = LEVELOBJECTCOUNT;
             }
             LEVOBJREF_LASTOBJ = LEVELOBJECTCOUNT;
-        } else if (tab->reflection == 2) {
-            if (LEVOBJREF_FIRSTREFOBJ == -1) {
-                LEVOBJREF_FIRSTREFOBJ = LEVELOBJECTCOUNT;
-            }
-            LEVOBJREF_LASTREFOBJ = LEVELOBJECTCOUNT;
         }
     }
 
-    const i32 reflection_range = LEVOBJREF_LASTREFOBJ - LEVOBJREF_FIRSTREFOBJ;
     const i32 object_range = LEVOBJREF_LASTOBJ - LEVOBJREF_FIRSTOBJ;
+    const i32 reflection_range = LEVOBJREF_LASTREFOBJ - LEVOBJREF_FIRSTREFOBJ;
     if (object_range > reflection_range) {
         LEVOBJREF_LASTOBJ = LEVOBJREF_FIRSTOBJ + reflection_range;
     } else if (object_range < reflection_range) {

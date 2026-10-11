@@ -118,7 +118,6 @@ i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i3
     }
 
     u32 mipmap_count = header->dw_mip_map_count;
-    const u32 caps2 = header->dw_caps2;
     if (mipmap_count == 0) {
         mipmap_count = (header->dw_flags & 0x20000) == 0;
     }
@@ -126,19 +125,19 @@ i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i3
 
     if ((header->dw_caps & 8) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_POSITIVEY) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEY) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_POSITIVEX) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEX) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_NEGATIVEX) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEX) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_POSITIVEZ) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEZ) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_NEGATIVEZ) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEZ) == 0)
         return 1;
-    if ((caps2 & DDSCAPS2_CUBEMAP_NEGATIVEY) == 0)
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEY) == 0)
         return 1;
 
     out_is_cube_map = true;
@@ -272,8 +271,8 @@ void NuDDSGetMipLevel(i32 width, i32 height, i32 depth, NUTEXFORMAT format, i32 
             height = height >= minimum_height ? height : minimum_height;
             level_width = width;
             level_height = height;
-            width >>= 1;
             height >>= 1;
+            width >>= 1;
         }
 
         previous_size = bpp * level_width * level_height * mip_depth / 8;

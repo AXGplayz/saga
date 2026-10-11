@@ -124,7 +124,7 @@ i32 NuCameraClipHGobj(nugscn_s *scene, numtx_s *world_matrix, numtx_s *root_matr
 
 // NuIOS_SetCullMode is transcribed in android/nuiosdl_gl.cpp (original 0x29c110).
 
-static inline u16 NuLgtArcHalf(f32 value) {
+static u16 NuLgtArcHalf(f32 value) {
     union {
         f32 value;
         u32 bits;
@@ -200,8 +200,8 @@ void NuLgtArcLaserDraw(i32 paused) {
         f32 dz = vertices[6].z - laser->end.z;
         sqrt((double)(dx * dx + dy * dy + dz * dz));
         if (vertices[5].w < 0.5f) {
-            f32 numerator = vertices[4].w - 0.5f;
             f32 denominator = vertices[4].w - vertices[5].w;
+            f32 numerator = vertices[4].w - 0.5f;
             vertices[7].x = (laser->end.x - laser->start.x) * numerator / denominator + laser->start.x;
             vertices[7].y = (laser->end.y - laser->start.y) * numerator / denominator + laser->start.y;
             vertices[7].z = (laser->end.z - laser->start.z) * numerator / denominator + laser->start.z;
@@ -252,18 +252,19 @@ void NuLgtArcLaserDraw(i32 paused) {
         vertices[1].y = vertices[3].y = vertices[4].y;
         vertices[1].z = vertices[3].z = vertices[4].z;
         f32 progress = 0.0f;
+        auto laser_wobble = laser->wobble;
         do {
             f32 next = progress + step;
-            if (next >= 1.0f) {
-                vertices[5].x = vertices[6].x + vertices[7].x;
-                vertices[5].y = vertices[6].y + vertices[7].y;
-                vertices[5].z = vertices[6].z + vertices[7].z;
-                u = NuLgtArcMtl[0].u1 + (1.0f - progress) * (NuLgtArcMtl[0].u0 - NuLgtArcMtl[0].u1) / step;
-            } else {
+            if (!(next >= 1.0f)) {
                 i32 angle = ((i32)(32768.0f * next) >> 1) & 0x7fff;
                 vertices[5].x = next * vertices[7].x + vertices[6].x + vertices[10].x * NuTrigTable[angle];
                 vertices[5].y = next * vertices[7].y + vertices[6].y + vertices[10].y * NuTrigTable[angle];
                 vertices[5].z = next * vertices[7].z + vertices[6].z + vertices[10].z * NuTrigTable[angle];
+            } else {
+                vertices[5].x = vertices[6].x + vertices[7].x;
+                vertices[5].y = vertices[6].y + vertices[7].y;
+                vertices[5].z = vertices[6].z + vertices[7].z;
+                u = NuLgtArcMtl[0].u1 + (1.0f - progress) * (NuLgtArcMtl[0].u0 - NuLgtArcMtl[0].u1) / step;
             }
             vertices[5].w = 1.0f;
             NuVec4MtxTransformVU0(&vertices[5], &vertices[5], clip);
@@ -272,8 +273,8 @@ void NuLgtArcLaserDraw(i32 paused) {
             f32 jitter_x = 0.0f, jitter_y = 0.0f;
             if (1.0f - 1.5f * step > progress && NuLgtSeed != 0) {
                 f32 random = (f32)((NuLgtRand() & 0xff) - 128);
-                jitter_x = perpendicular.x * random * laser->wobble * reciprocal;
-                jitter_y = perpendicular.y * random * laser->wobble * reciprocal;
+                jitter_x = perpendicular.x * random * laser_wobble * reciprocal;
+                jitter_y = perpendicular.y * random * laser_wobble * reciprocal;
             }
             vertices[0].x = vertices[5].x - perpendicular.x * reciprocal + jitter_x;
             vertices[0].y = vertices[5].y - perpendicular.y * reciprocal + jitter_y;
@@ -396,13 +397,13 @@ void NuGCutRigidCalcMtx_3(NUGCUTRIGID_s *rigid, float frame, numtx_s *mtx) {
     NUVEC translation;
     NUANGVEC angles;
     NUVEC scale;
-    if ((flags & 1) == 0) {
-        NuMtxSetIdentity(mtx);
-    } else {
+    if ((flags & 1) != 0) {
         angles.x = static_cast<NUANG>(values[3] * 10430.378f);
         angles.y = static_cast<NUANG>(values[4] * 10430.378f);
         angles.z = static_cast<NUANG>(values[5] * 10430.378f);
         NuMtxSetRotateXYZ(mtx, &angles);
+    } else {
+        NuMtxSetIdentity(mtx);
     }
     if ((flags & 8) != 0) {
         scale.x = values[6];
@@ -475,50 +476,49 @@ void NuGCutCharAnimProcess_3(NUGCUTCHAR_s *character, f32 frame, NUMTX *matrix, 
             }
         }
     }
-    if (*visible == 0) {
-        return;
-    }
-    if (layer_mask != NULL) {
-        if (curve_count > 11) {
-            *layer_mask = GetIntCurveVal(animation, values, 11);
-        } else {
-            *layer_mask = -1;
+    if (*visible != 0) {
+        if (layer_mask != NULL) {
+            if (curve_count > 11) {
+                *layer_mask = GetIntCurveVal(animation, values, 11);
+            } else {
+                *layer_mask = -1;
+            }
         }
-    }
 
-    if ((node_flags & NUANIM_NODE_HAS_ROTATION) != 0) {
-        NUANGVEC rotation = {
-            static_cast<NUANG>(values[3] * 10430.378f),
-            static_cast<NUANG>(values[4] * 10430.378f),
-            static_cast<NUANG>(values[5] * 10430.378f),
-        };
-        NuMtxSetRotateXYZ(matrix, &rotation);
-    } else {
-        NuMtxSetIdentity(matrix);
-    }
-    NuMtxTranslate(matrix, reinterpret_cast<NUVEC *>(values));
-    matrix->m02 = -matrix->m02;
-    matrix->m12 = -matrix->m12;
-    matrix->m20 = -matrix->m20;
-    matrix->m21 = -matrix->m21;
-    matrix->m23 = -matrix->m23;
-    matrix->m32 = -matrix->m32;
-
-    NUVEC scale;
-    scale = NuMtxGetScale(&character->base_matrix);
-    NuMtxPreScale(matrix, &scale);
-    if (animation_rate != NULL) {
-        if (animation->curve_count > 9) {
-            *animation_rate = values[9];
+        if ((node_flags & NUANIM_NODE_HAS_ROTATION) != 0) {
+            NUANGVEC rotation = {
+                static_cast<NUANG>(values[3] * 10430.378f),
+                static_cast<NUANG>(values[4] * 10430.378f),
+                static_cast<NUANG>(values[5] * 10430.378f),
+            };
+            NuMtxSetRotateXYZ(matrix, &rotation);
         } else {
-            *animation_rate = character->animation_rate;
+            NuMtxSetIdentity(matrix);
         }
-    }
-    if (blend_time != NULL) {
-        if (animation->curve_count > 8) {
-            *blend_time = values[8];
-        } else {
-            *blend_time = static_cast<f32>(character->blend_time);
+        NuMtxTranslate(matrix, reinterpret_cast<NUVEC *>(values));
+        matrix->m02 = -matrix->m02;
+        matrix->m12 = -matrix->m12;
+        matrix->m20 = -matrix->m20;
+        matrix->m21 = -matrix->m21;
+        matrix->m23 = -matrix->m23;
+        matrix->m32 = -matrix->m32;
+
+        NUVEC scale;
+        scale = NuMtxGetScale(&character->base_matrix);
+        NuMtxPreScale(matrix, &scale);
+        if (animation_rate != NULL) {
+            if (animation->curve_count > 9) {
+                *animation_rate = values[9];
+            } else {
+                *animation_rate = character->animation_rate;
+            }
+        }
+        if (blend_time != NULL) {
+            if (animation->curve_count > 8) {
+                *blend_time = values[8];
+            } else {
+                *blend_time = static_cast<f32>(character->blend_time);
+            }
         }
     }
 }
@@ -631,8 +631,8 @@ void NuCameraTransformScissorClip(nuvec_s *screen, nuvec_s *world, i32 count, nu
 // NuDebrisRendererFlushBuffers is transcribed in android/nuptl_android.c (original 0x296f35).
 
 void NuIOS_CopyBackbufferToTexture(nunativetex_s *texture, bool) {
-    texture->width = g_backingWidth;
     texture->height = g_backingHeight;
+    texture->width = g_backingWidth;
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nurenderthread.cpp", 0x128);
     glActiveTexture(GL_TEXTURE0);
     g_currentTexUnit = 0;
@@ -687,8 +687,8 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
     *reinterpret_cast<u8 *>(&comeFromHash) = 0;
 
     u8 *header = (u8 *)data;
-    u8 *pixels = header + 0x34 + *(u32 *)(header + 0x30);
     const u32 pixel_format = *(u32 *)(header + 0x08);
+    u8 *pixels = header + 0x34 + *(u32 *)(header + 0x30);
     const u32 channel_bits = *(u32 *)(header + 0x0c);
     const i32 &height = *(i32 *)(header + 0x18);
     const i32 &width = *(i32 *)(header + 0x1c);
@@ -841,8 +841,8 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
                         break;
                 }
             }
-            metadata += record.data_size;
             remaining -= record.data_size;
+            metadata += record.data_size;
         }
     }
 
@@ -864,8 +864,8 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
         if (pixel_format >= 6) {
             return 0;
         }
-        internal_format = compressed_formats[pixel_format];
         bits_per_pixel = pixel_format < 2 ? 2 : 4;
+        internal_format = compressed_formats[pixel_format];
         compressed = true;
     } else if (pixel_format == 0x61626772 && channel_bits == 0x08080808) { // "rgba", 8 bits each
         internal_format = GL_RGBA;
@@ -918,8 +918,8 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
 
     usize offset = 0;
     for (u32 mip = 0; mip < mip_count; ++mip) {
-        const i32 mip_width = width >> mip;
         const i32 mip_height = height >> mip;
+        const i32 mip_width = width >> mip;
         usize mip_size = (usize)mip_width * (usize)mip_height * (usize)bits_per_pixel / 8;
         if (mip_size < 0x20) {
             mip_size = 0x20;

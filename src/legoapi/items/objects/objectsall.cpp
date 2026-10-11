@@ -41,8 +41,8 @@ void Buck_Start(GameObject_s *object, GameObject_s *rider) {
         return;
     if (rider != NULL)
         NewRumble(rider->pad_gamepad->pad, 0.6f, 0);
-    object->context_animation = LEGOACT_BUCK;
     object->character_context = LEGOCONTEXT_BUCK;
+    object->context_animation = LEGOACT_BUCK;
     object->context_animation_timer = AnimDuration(object->id, LEGOACT_BUCK, 0.0f, 0.0f, 1);
     if (BuckStartExtraFn != NULL)
         BuckStartExtraFn(object);
@@ -53,6 +53,7 @@ f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
 
 i32 DoBuckStart(GameObject_s *object) {
+    NUVEC delta;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
     if (world->current_level != HOTHESCAPEB_LDATA || object->id != id_SNOWMOB)
         return 0;
@@ -63,7 +64,7 @@ i32 DoBuckStart(GameObject_s *object) {
         if (player == NULL || (player->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player->apiobj.field_0x287 != 0 ||
             player->field_0xcc0 != NULL)
             continue;
-        NUVEC delta;
+
         NuVecSub(&delta, &player->apiobj.lower_position, reinterpret_cast<NUVEC *>(&object->joint_matrices[1].m30));
         if (delta.y > -0.01f && delta.y < 0.1f && delta.x * delta.x + delta.z * delta.z < 0.04000000283122063f) {
             NUVEC destination;
@@ -94,12 +95,12 @@ pushblock_s *BlockInBlock(WORLDINFO_s *world, pushblock_s *block, i32 excluded, 
             continue;
         f32 x = position->x - other->position->x, y = position->y - other->position->y,
             z = position->z - other->position->z;
-        f32 ymax = other->bounds_max.y - block->bounds_min.y;
         bool overlapx = x > (other->bounds_min.x - block->bounds_max.x) + 0.01f &&
                         x < (other->bounds_max.x - block->bounds_min.x) - 0.01f;
-        bool overlapy = y > other->bounds_min.y - block->bounds_max.y && y < ymax;
+        f32 ymax = other->bounds_max.y - block->bounds_min.y;
         bool overlapz = z > (other->bounds_min.z - block->bounds_max.z) + 0.01f &&
                         z < (other->bounds_max.z - block->bounds_min.z) - 0.01f;
+        bool overlapy = y > other->bounds_min.y - block->bounds_max.y && y < ymax;
         if (support && overlapz && overlapx && y - ymax > 0.0f) {
             if (!*support)
                 *support = other;
@@ -244,20 +245,22 @@ i32 FindNearestBreak(unsigned char *text, i32 index) {
         --index;
 
     u8 ch = text[index];
-    if (ch == ' ') {
+    if (ch != ' ') {
+        if (ch == '.') {
+            if (text[index + 1] != '.')
+                return index;
+        } else if (static_cast<u8>(ch - ',') <= 1) {
+            return index;
+        }
+    } else {
         u8 next = text[index + 1];
         if (next != '?' && next != '!' && next != ';' && next != ':')
             return index;
-    } else if (ch == '.') {
-        if (text[index + 1] != '.')
-            return index;
-    } else if (static_cast<u8>(ch - ',') <= 1) {
-        return index;
     }
 
     i32 length = NuStrLen(reinterpret_cast<char *>(text)) - 1;
-    i32 forward = index;
     i32 backward = index;
+    i32 forward = index;
     i32 count = 20;
     do {
         forward += forward < length;
@@ -268,27 +271,31 @@ i32 FindNearestBreak(unsigned char *text, i32 index) {
             --backward;
 
         ch = text[forward];
-        if (ch == ' ') {
+        if (ch != ' ') {
+            if (ch == '.') {
+                if (text[forward + 1] != '.')
+                    return forward;
+            } else if (static_cast<u8>(ch - ',') <= 1) {
+                return forward;
+            }
+        } else {
             u8 next = text[forward + 1];
             if (next != '?' && next != '!' && next != ';' && next != ':')
                 return forward;
-        } else if (ch == '.') {
-            if (text[forward + 1] != '.')
-                return forward;
-        } else if (static_cast<u8>(ch - ',') <= 1) {
-            return forward;
         }
 
         ch = text[backward];
-        if (ch == ' ') {
+        if (ch != ' ') {
+            if (ch == '.') {
+                if (text[backward + 1] != '.')
+                    return backward;
+            } else if (static_cast<u8>(ch - ',') <= 1) {
+                return backward;
+            }
+        } else {
             u8 next = text[backward + 1];
             if (next != '?' && next != '!' && next != ';' && next != ':')
                 return backward;
-        } else if (ch == '.') {
-            if (text[backward + 1] != '.')
-                return backward;
-        } else if (static_cast<u8>(ch - ',') <= 1) {
-            return backward;
         }
     } while (--count != 0);
 
@@ -311,10 +318,10 @@ void Buck_StartRiderJump(GameObject_s *rider, GameObject_s *mount) {
     rider->apiobj.velocity.x = NuTrigTable[angle >> 1] * speed;
     rider->apiobj.velocity.z = speed * NuTrigTable[((i32)angle + 0x4000) >> 1 & 0x7fff];
     StartJump(rider, 0);
-    rider->tag_flags |= 1;
     rider->airborne_collision_target = mount;
-    rider->apiobj.velocity.x = 0.0f;
+    rider->tag_flags |= 1;
     rider->apiobj.velocity.z = 0.0f;
+    rider->apiobj.velocity.x = 0.0f;
     rider->pad_gamepad->buttons_held = 0;
     rider->pad_gamepad->buttons_pressed = 0;
     f32 clearance = mount->apiobj.upper_position.y;
@@ -439,22 +446,22 @@ void EquivalentObjects_Configure(WORLDINFO_s *world, char *config) {
     u8 *cursor = reinterpret_cast<u8 *>(world->giz_buffer.addr);
     world->equivalent_groups = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(cursor);
     while (NuFParGetLine(parser) != 0) {
-        if (NuFParGetWord(parser) == 0 || NuStrICmp(parser->word_buf, const_cast<char *>("equivalentobjects")) != 0)
-            continue;
+        if (NuFParGetWord(parser) != 0 && NuStrICmp(parser->word_buf, const_cast<char *>("equivalentobjects")) == 0) {
 
-        EQUIVALENTOBJECTGROUP_s *group = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(cursor);
-        group->object_count = 0;
-        group->byte_size = 4;
-        while (NuFParGetWord(parser) != 0) {
-            nuhspecial_s *handle = &group->objects[group->object_count];
-            if (NuSpecialFind(world->current_gscn, handle, parser->word_buf, 1) == 0)
-                break;
-            ++group->object_count;
-            group->byte_size += sizeof(nuhspecial_s);
-        }
-        if (group->object_count > 0) {
-            ++world->equivalent_group_count;
-            cursor += group->byte_size;
+            EQUIVALENTOBJECTGROUP_s *group = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(cursor);
+            group->object_count = 0;
+            group->byte_size = 4;
+            while (NuFParGetWord(parser) != 0) {
+                nuhspecial_s *handle = &group->objects[group->object_count];
+                if (NuSpecialFind(world->current_gscn, handle, parser->word_buf, 1) == 0)
+                    break;
+                ++group->object_count;
+                group->byte_size += sizeof(nuhspecial_s);
+            }
+            if (group->object_count > 0) {
+                ++world->equivalent_group_count;
+                cursor += group->byte_size;
+            }
         }
     }
     NuFParDestroy(parser);

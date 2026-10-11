@@ -28,8 +28,8 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         return NULL;
     NuVertexFormatPoolEntryPS *record = &g_vertexFormatPool[count];
     NuVertexFormatPS *format = &record->format;
-    NUVERTEXDESCRIPTOR descriptor_copy = vtx_desc;
     const u8 texture_coordinates = vtx_desc.tex_coord_mode;
+    NUVERTEXDESCRIPTOR descriptor_copy = vtx_desc;
     descriptor_copy.tex_coord_mode = texture_coordinates;
     const u32 descriptor = descriptor_copy.flags;
     // Each optional stream is decoded first: 0 = absent, 1 = float, 2 = packed bytes.
@@ -39,12 +39,12 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
     const bool diffuse = vtx_desc.has_diffuse;
     const bool specular = (descriptor & 0x600) != 0;
     i32 texture_mode, half_texture_mode;
-    if (vtx_desc.has_half_uvs) {
-        half_texture_mode = vtx_desc.tex_coord_mode;
-        texture_mode = 0;
-    } else {
+    if (!vtx_desc.has_half_uvs) {
         texture_mode = vtx_desc.tex_coord_mode;
         half_texture_mode = 0;
+    } else {
+        half_texture_mode = vtx_desc.tex_coord_mode;
+        texture_mode = 0;
     }
     const i32 weights = (descriptor & 0x8000) ? 2 : (descriptor >> 14) & 1;
     const i32 colour2 = (descriptor & 0x20000) ? 2 : (descriptor >> 16) & 1;
@@ -52,11 +52,11 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
     const bool instanced = (descriptor >> 22) & 1;
     i16 offset = 0;
 #define VERTEX_ATTRIBUTE(slot, gl_type, components, normalize, bytes)                                                  \
+    format->attribs[slot].unknown_0c = 0;                                                                              \
+    format->attribs[slot].offset = offset;                                                                             \
     format->attribs[slot].type = gl_type;                                                                              \
     format->attribs[slot].size = components;                                                                           \
     format->attribs[slot].normalized = normalize;                                                                      \
-    format->attribs[slot].unknown_0c = 0;                                                                              \
-    format->attribs[slot].offset = offset;                                                                             \
     format->attrib_mask |= 1u << slot;                                                                                 \
     offset += bytes
     VERTEX_ATTRIBUTE(0, 0x1406, 3, 0, 12);
@@ -148,11 +148,11 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
     }
     i32 extra_stride = 0;
     if (instanced) {
-        format->attribs[12].type = 0x1406;
-        format->attribs[12].size = 3;
         format->attribs[12].normalized = 0;
         format->attribs[12].unknown_0c = 1;
         format->attribs[12].offset = 0;
+        format->attribs[12].type = 0x1406;
+        format->attribs[12].size = 3;
         format->attrib_mask |= 0x1000;
         extra_stride = 12;
     }

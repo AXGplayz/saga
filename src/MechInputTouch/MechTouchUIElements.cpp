@@ -178,22 +178,20 @@ MechTouchUIElement *MechTouchUI::PickElement(NuVec2 &point) {
             continue;
         }
 
+        bool inside;
         if (element->rectangular == 0) {
-            const float x = point.x - element->position.x;
             const float y = point.y - element->position.y;
-            if (1.0f <
-                x * x / (element->radius_x * element->radius_x) + y * y / (element->radius_y * element->radius_y)) {
-                continue;
-            }
+            const float x = point.x - element->position.x;
+            inside =
+                x * x / (element->radius_x * element->radius_x) + y * y / (element->radius_y * element->radius_y) <=
+                1.0f;
         } else {
             const float half_x = element->radius_x * 0.5f;
             const float half_y = element->radius_y * 0.5f;
-            if (point.x < element->position.x - half_x || point.x > element->position.x + half_x ||
-                point.y < element->position.y - half_y || point.y > element->position.y + half_y) {
-                continue;
-            }
+            inside = element->position.x - half_x <= point.x && point.x <= element->position.x + half_x &&
+                     element->position.y - half_y <= point.y && point.y <= element->position.y + half_y;
         }
-        if (element->position.z > picked_depth) {
+        if (inside && element->position.z > picked_depth) {
             picked = element;
             picked_depth = element->position.z;
         }
@@ -292,9 +290,9 @@ void MechTouchUICharIcon::Process(float) {
     if (field_0x45 == 0 && was_disabled != disabled) {
         const f32 destination = disabled != 0 ? 0.3f : 1.0f;
         if (alpha_duration < 0.0f || alpha_elapsed >= alpha_duration + alpha_delay) {
-            alpha_start = *alpha_target;
             alpha_elapsed = 0.0f;
             alpha_duration = 0.4f;
+            alpha_start = *alpha_target;
             alpha_delay = 0.0f;
         }
         alpha_end = destination;
@@ -359,11 +357,11 @@ MechTouchUITagButton::MechTouchUITagButton(GameObject_s &object, TouchHolder &ho
                          TagButtonSize),
       target_object(object.GetMechObjectInterface()), touch_holder(&holder) {
     position.z = 0.0f;
-    rectangular = 0;
     tag_state = 2;
     fading_out = 0;
     touched = 0;
     enabled = 1;
+    rectangular = 0;
 
     first_fade.target = &first_fade.value;
     first_fade.from = 0.0f;
@@ -383,15 +381,15 @@ MechTouchUITagButton::MechTouchUITagButton(GameObject_s &object, TouchHolder &ho
     size_animation.target = &size_animation.value;
     size_animation.to = 1.0f;
     size_animation.elapsed = -1.0f;
+    size_animation.value = 1.0f;
     size_animation.duration = -1.0f;
     size_animation.delay = 0.0f;
-    size_animation.value = 1.0f;
 
     second_fade.target = &second_fade.value;
     second_fade.from = 0.0f;
     second_fade.to = 1.0f;
-    second_fade.elapsed = 0.0f;
     second_fade.duration = 0.8f;
+    second_fade.elapsed = 0.0f;
     second_fade.delay = 0.0f;
     second_fade.value = 0.0f;
     field_0xbc = 0.0f;
@@ -477,8 +475,8 @@ void MechTouchUITagButton::Process(float dt) {
     const f32 upper = 1.0f - TagButtonSize;
     const f32 clipped_x = upper > screen_position.x ? screen_position.x : upper;
     const f32 clipped_y = upper > screen_position.y ? screen_position.y : upper;
-    position.x = lower > clipped_x ? lower : clipped_x;
     position.y = lower > clipped_y ? lower : clipped_y;
+    position.x = lower > clipped_x ? lower : clipped_x;
 }
 
 void MechTouchUITagButton::Render() {
@@ -743,51 +741,51 @@ void MechTouchUIPlayerButton::SetupTargetIds() {
 
         const i32 id = model.model_id;
         const i32 collected = InCollectList_Index(id, NULL, 0);
-        if (collected == -1 && static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
-            (GCDataList[id].flags_094[3] & 1) == 0 &&
-            !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
-              (GCDataList[id].flags_094[3] & 2) != 0)) {
-            continue;
-        }
+        if (!(collected == -1 && static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
+              (GCDataList[id].flags_094[3] & 1) == 0 &&
+              !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
+                (GCDataList[id].flags_094[3] & 2) != 0))) {
 
-        if (VehicleArea != 0) {
-            const u32 model_flags = CDataList[id].model_flags;
-            if ((model_flags & 0x2000) == 0 && !(BonusArea != 0 && (model_flags & 0x4000000) != 0) &&
-                static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
-                !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
-                  (GCDataList[id].flags_094[3] & 2) != 0)) {
-                continue;
-            }
+            if (VehicleArea != 0) {
+                const u32 model_flags = CDataList[id].model_flags;
+                if ((model_flags & 0x2000) == 0 && !(BonusArea != 0 && (model_flags & 0x4000000) != 0) &&
+                    static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
+                    !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
+                      (GCDataList[id].flags_094[3] & 2) != 0)) {
+                    continue;
+                }
 
-            if (BonusArea != 0) {
-                const i32 area = AreaFromMiniKitID(id);
-                if (area != -1) {
-                    if (Game_AreaSave == NULL || Game_AreaSave[area].minikit_complete == 0) {
+                if (BonusArea != 0) {
+                    const i32 area = AreaFromMiniKitID(id);
+                    if (area != -1) {
+                        if (Game_AreaSave == NULL || Game_AreaSave[area].minikit_complete == 0) {
+                            continue;
+                        }
+                    } else if (static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
+                               !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
+                                 (GCDataList[id].flags_094[3] & 2) != 0)) {
                         continue;
                     }
-                } else if (static_cast<i32>(GCDataList[id].flags_090) >= 0 &&
-                           !(VehicleArea != 0 && BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 &&
-                             (GCDataList[id].flags_094[3] & 2) != 0)) {
-                    continue;
+                }
+            } else if ((CDataList[id].model_flags & 0x2000) == 0 && (GCDataList[id].flags_090 & 0x40) == 0) {
+
+                if (BonusArea == 0 || VehicleArea == 0) {
+                    if (!(static_cast<i32>(GCDataList[id].flags_090) < 0)) {
+                        if ((GCDataList[id].flags_094[3] & 1) == 0 && (collected == -1 || Collection_Got(id) == 0)) {
+                            continue;
+                        }
+                    } else {
+                        if (Cheats_CheckFlags(0x100) == 0) {
+                            continue;
+                        }
+                    }
+                }
+
+                free_play_target_ids[free_play_count++] = id;
+                if (free_play_count == 32) {
+                    return;
                 }
             }
-        } else if ((CDataList[id].model_flags & 0x2000) != 0 || (GCDataList[id].flags_090 & 0x40) != 0) {
-            continue;
-        }
-
-        if (BonusArea == 0 || VehicleArea == 0) {
-            if (static_cast<i32>(GCDataList[id].flags_090) < 0) {
-                if (Cheats_CheckFlags(0x100) == 0) {
-                    continue;
-                }
-            } else if ((GCDataList[id].flags_094[3] & 1) == 0 && (collected == -1 || Collection_Got(id) == 0)) {
-                continue;
-            }
-        }
-
-        free_play_target_ids[free_play_count++] = id;
-        if (free_play_count == 32) {
-            return;
         }
     }
 }
@@ -838,14 +836,13 @@ void MechTouchUIPlayerButton::TriggerTagNext() {
         if (target_ids[index] >= 0) {
             for (i32 slot = 0; slot < 8; ++slot) {
                 GameObject_s *target = Player[slot];
-                if (target == NULL || target->id != target_ids[index] || !TouchHacks::CanTagTo(*player, *target)) {
-                    continue;
+                if (target != NULL && target->id == target_ids[index] && !(!TouchHacks::CanTagTo(*player, *target))) {
+                    if (TagCode(player, target, 0, 0, 1) == 1) {
+                        GameAudio_PlaySfx(0x21, NULL, 0, 0);
+                        Tag_NewTransfer(source, target);
+                    }
+                    return;
                 }
-                if (TagCode(player, target, 0, 0, 1) == 1) {
-                    GameAudio_PlaySfx(0x21, NULL, 0, 0);
-                    Tag_NewTransfer(source, target);
-                }
-                return;
             }
         }
         if (index == current_index) {
@@ -904,16 +901,16 @@ MechTouchUIPartySelector::MechTouchUIPartySelector(MechTouchUIPlayerButton &butt
     const VuVec button_position = button.position;
     const f32 button_bottom = button.position.y - button.radius_y;
     const bool small_screen = NuIOS_IsSmallScreen() != 0;
-    const f32 gap = small_screen ? 0.11f : 0.06f;
     const f32 scale = small_screen ? 0.16f : 0.15f;
+    const f32 gap = small_screen ? 0.11f : 0.06f;
     const i32 icons_per_row = small_screen ? 5 : 7;
     const f32 first_y = (button_bottom - gap) - gap;
     f32 x = button_position.x;
     f32 y = first_y;
     f32 delay = 0.0f;
     f32 delay_step = 0.03f;
-    i32 column = 0;
     i32 icon_index = 0;
+    i32 column = 0;
 
     for (i32 target_index = 0; target_index < 32; ++target_index) {
         if (target_ids[target_index] < 0 || player == NULL) {
@@ -939,16 +936,16 @@ MechTouchUIPartySelector::MechTouchUIPartySelector(MechTouchUIPlayerButton &butt
         ++column;
         MechSystems::Get()->TouchUI().AddUIElement(*icon);
         ++icon_index;
-        if (column >= icons_per_row) {
+        if (!(column >= icons_per_row)) {
+            y -= scale + gap;
+            delay += delay_step;
+            delay_step *= 0.9f;
+        } else {
             column = 0;
             x += GetAspectRatio() * (scale + gap);
             y = first_y;
             delay = 0.0f;
             delay_step = 0.03f;
-        } else {
-            y -= scale + gap;
-            delay += delay_step;
-            delay_step *= 0.9f;
         }
     }
 }

@@ -60,7 +60,6 @@ i32 (*GizmoBlowUp_NoTargetFn)(WORLDINFO_s *, GameObject_s *) = NULL;
 
 void GizBlowup_DeleteTerrain();
 void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *blowup);
-void GizmoBlowupCreateStuff(GIZMOBLOWUP_s *blowup);
 void GizmoBlowUp_AddEffects(NUVEC *position, GIZMOBLOWUP_s *blowup, i32 count, i32 flags, GameObject_s *object);
 void GameAntinode_UnregisterAntiNode(GAMEANTINODESYS_s *system, GAMEANTINODE_s *node);
 void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special);
@@ -69,69 +68,6 @@ void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup);
 
 void GizmoBlowupGenDecalMatrix(GIZMOBLOWUP_s *, NUMTX *, i32);
 void GizmoBlowupGenShadowMatrix(GIZMOBLOWUP_s *, NUMTX *);
-
-void GizmoBlowupDraw(void *world_ptr, void *, float) {
-    WORLDINFO_s *world = static_cast<WORLDINFO_s *>(world_ptr);
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    NUMTX_ALIGNED16 matrix;
-    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
-        if ((blowup->visibility_flags & 0x40) != 0) {
-            i32 drawn = NuSpecialDrawAt(&blowup->type->animated_special, &blowup->transform);
-            blowup->visibility_flags = (blowup->visibility_flags & 0x7f) | (drawn << 7);
-            if ((blowup->visibility_flags & 0x80) != 0) {
-                NuCameraTransformScreenClip(&blowup->screen_position, &blowup->position, 1, NULL);
-            }
-            if ((blowup->status_flags & 0x808000) == 0x808000 && (blowup->draw_flags & 0x10) != 0 &&
-                GizmoBlowup_TransformDrawFn != NULL) {
-                GizmoBlowup_TransformDrawFn(blowup);
-            }
-        } else {
-            blowup->visibility_flags &= 0x7f;
-            if ((blowup->output_flags & 1) != 0) {
-                if ((blowup->draw_flags & 0x400) == 0) {
-                    GizmoBlowupGenDecalMatrix(blowup, &matrix, 0);
-                    NuSpecialDrawAt(&blowup->type->decal_special, &matrix);
-                }
-                if (NuSpecialExistsFn(&blowup->type->burst_special)) {
-                    NuSpecialDrawAt(&blowup->type->burst_special, &blowup->transform);
-                }
-            }
-        }
-        if ((blowup->state_flags & 0x80) != 0 && (blowup->draw_flags & 0x20000) == 0 &&
-            NuSpecialExistsFn(&blowup->type->shadow_special)) {
-            GizmoBlowupGenShadowMatrix(blowup, &matrix);
-            NuSpecialDrawAt(&blowup->type->shadow_special, &blowup->transform);
-        }
-    }
-}
-
-void GizmoSwapBlowups(GIZMOBLOWUP_s *first, GIZMOBLOWUP_s *second) {
-    GIZMOBLOWUP_s temporary = *first;
-    *first = *second;
-    *second = temporary;
-}
-
-void GizmoSortBlowups(WORLDINFO_s *world) {
-    i32 blowup_index = 0;
-    GIZMOBLOWUPTYPE_s *type = world->gizmo_blowup_types;
-    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index, ++type) {
-        while (blowup_index < world->gizmo_blowup_count) {
-            GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[blowup_index];
-            if (blowup->type != type) {
-                GIZMOBLOWUP_s *candidate = blowup + 1;
-                GIZMOBLOWUP_s *end = world->gizmo_blowups + world->gizmo_blowup_count;
-                while (candidate != end && candidate->type != type) {
-                    ++candidate;
-                }
-                if (candidate == end) {
-                    break;
-                }
-                GizmoSwapBlowups(blowup, candidate);
-            }
-            ++blowup_index;
-        }
-    }
-}
 
 i32 MAXBLOWUPRANDSPANG = 60;
 extern NUVEC v010;
@@ -145,92 +81,342 @@ void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
 i32 ReleaseHearts();
 EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
 
-void GizmoBlowUp_AddEffects(nuvec_s *position, GIZMOBLOWUP_s *blowup, i32 offset, i32 flags, GameObject_s *object) {
-    GIZMOBLOWUPTYPE_s *type = blowup->type;
-    NUVEC effect_position = *position;
-    if (offset != 0) {
-        effect_position.x += blowup->field_0x80;
-        effect_position.y += blowup->field_0x84;
-        effect_position.z += blowup->field_0x88;
-    }
-    if ((flags & 1) != 0) {
-        for (i32 i = 4; i < 7; ++i) {
-            if (type->particle_types[i] != -1) {
-                i32 key = -1;
-                AddFiniteShotDebrisEffect(&key, type->particle_types[i], &effect_position, 1);
+void Bolt_AddDeflectedBolt(BOLT_s *, nuvec_s *, nuvec_s *, unsigned char *);
+void Bolt_End(BOLT_s *, i32);
+void Bolt_PlayHitSfx(BOLT_s *);
+
+i16 GetGenericGoon(i32);
+static i32 Blowup_GetMaxGizmos(void *world_ptr);
+static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *);
+void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float);
+void GizmoBlowupLateUpdate(void *world_ptr, void *, float);
+void GizmoBlowupBurstDraw(void *world_ptr, void *, float);
+static char *Blowup_GetGizmoName(GIZMO *gizmo);
+static i32 Blowup_GetOutput(GIZMO *gizmo, i32 output_index, i32);
+static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index);
+static i32 Blowup_GetNumOutputs(GIZMO *gizmo);
+static void Blowup_Activate(GIZMO *gizmo, i32 enabled);
+static void Blowup_SetVisibility(GIZMO *gizmo, i32 visible);
+i32 Blowup_GetVisibility(GIZMO *gizmo);
+static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo);
+static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end);
+static void Blowup_ClearProgress(void *, void *progress_ptr);
+static void Blowup_StoreProgress(void *world_ptr, void *, void *progress_ptr);
+static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr);
+void *gizmoblowup_reservebuffers(void *world_ptr);
+i32 gizmoblowup_Load(void *world_ptr, void *);
+
+static i32 gizmoblowupnametable_numids;
+static char gizmoblowupnametable[32][32];
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+    u32 flagremaptab[32][2] = {
+        {0x00000001u, 0x00000002u}, {0x00000002u, 0x00000040u}, {0x00000004u, 0x00000001u}, {0x00000008u, 0x00000004u},
+        {0x00000010u, 0x00000008u}, {0x00000020u, 0x00000010u}, {0x00000040u, 0x00000020u}, {0x00000080u, 0x00000080u},
+        {0x00000100u, 0x00000100u}, {0x00000200u, 0x00000200u}, {0x00000400u, 0x00000400u}, {0x00000800u, 0x00000800u},
+        {0x00001000u, 0x00001000u}, {0x00002000u, 0x20000000u}, {0x00004000u, 0x00008000u}, {0x00008000u, 0x00010000u},
+        {0x00010000u, 0x00020000u}, {0x00020000u, 0x00040000u}, {0x00040000u, 0x00080000u}, {0x00080000u, 0x00100000u},
+        {0x00100000u, 0x00200000u}, {0x00200000u, 0x00400000u}, {0x00400000u, 0x00800000u}, {0x00800000u, 0x01000000u},
+        {0x01000000u, 0x02000000u}, {0x02000000u, 0x04000000u}, {0x04000000u, 0x10000000u}, {0x08000000u, 0x40000000u},
+        {0x10000000u, 0x00004000u}, {0x20000000u, 0x08000000u}, {0x40000000u, 0x00002000u}, {0x80000000u, 0x80000000u}};
+}
+
+// Definitions from the original gizmoblowups translation unit.
+
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special);
+void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data);
+
+enum GIZMOBLOWUP_OUTPUT_FLAGS : u8 {
+    GIZMOBLOWUP_OUTPUT_BLOWN_UP = 1 << 0,
+    GIZMOBLOWUP_OUTPUT_PUNCHED = 1 << 1,
+};
+
+enum GIZMOBLOWUP_VISIBILITY_FLAGS : u8 {
+    GIZMOBLOWUP_VISIBLE = 1 << 6,
+    GIZMOBLOWUP_DRAWN = 1 << 7,
+};
+
+enum GIZMOBLOWUP_STATE_FLAGS : u8 {
+    GIZMOBLOWUP_STATE_ACTIVE = 1 << 0,
+    GIZMOBLOWUP_STATE_DELAY_ACTIVE = 1 << 1,
+    GIZMOBLOWUP_STATE_REPEAT_ANIMATION = 1 << 3,
+    GIZMOBLOWUP_STATE_ANIMATION_PLAYING = 1 << 4,
+    GIZMOBLOWUP_STATE_REPEATING = 1 << 6,
+    GIZMOBLOWUP_STATE_ACTIVATED = 1 << 7,
+};
+
+enum GIZMOBLOWUPTYPE_RUNTIME_FLAGS : u8 {
+    GIZMOBLOWUPTYPE_ANIMATION_UPDATED = 1 << 0,
+};
+
+enum GIZMOBLOWUPTYPE_ANIMATION_FLAGS : u8 {
+    GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM = 1 << 5,
+};
+
+enum GIZMOBLOWUP_DRAW_FLAGS : u32 {
+    GIZMOBLOWUP_DRAW_CUSTOM_TRANSFORM = 0x00000010,
+    GIZMOBLOWUP_DRAW_HIDE_DECAL = 0x00000400,
+    GIZMOBLOWUP_DRAW_RESET_SHADOW_MAP = 0x00020000,
+    GIZMOBLOWUP_DRAW_PROJECT_ONLY = 0x00800000,
+    GIZMOBLOWUP_DRAW_REFLECTION = 0x40000000,
+};
+
+enum GIZMOBLOWUP_DRAW_STATUS_FLAGS : u32 {
+    GIZMOBLOWUP_DRAW_STATUS_TRANSFORM_READY = 0x00808000,
+};
+
+static char *Blowup_OutputName[] = {"Blownup", "Punched", "Plugging"};
+
+i32 blowup_gizmotype_id = -1;
+
+struct BLOWUPPROGRESS_s {
+    u32 blown_up[16];
+    u32 activated[16];
+    u32 visible[16];
+    u32 secondary_output[16];
+};
+DECOMP_ASSERT(sizeof(BLOWUPPROGRESS_s) == 0x100, "BLOWUPPROGRESS_s ABI");
+
+void GizBlowup_DeleteTerrain();
+void GizBlowup_InitTerrain();
+void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup);
+i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup);
+extern AREADATA_s *PODSPRINT_ADATA;
+
+extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
+extern f32 TargetDist_Near2, TargetDist_Mid2;
+extern i32 ShadowMode;
+DECOMP_ASSERT(offsetof(WORLDINFO_s, blowup_target_candidates) == 0x50d4, "Blowup target candidate-list ABI");
+
+static i32 Blowup_GetMaxGizmos(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    return world != NULL ? world->current_level->max_gizmo_blowups : 0;
+}
+
+static char *Blowup_GetGizmoName(GIZMO *gizmo) {
+    return gizmo != NULL ? static_cast<GIZMOBLOWUP_s *>(gizmo->object)->name : NULL;
+}
+
+static i32 Blowup_GetOutput(GIZMO *gizmo, i32 output_index, i32) {
+    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+    switch (output_index) {
+        case 0:
+            if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0) {
+                return 1;
             }
+            break;
+        case 1:
+            if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_PUNCHED) != 0) {
+                return 1;
+            }
+            break;
+        case 2:
+            if ((blowup->field_0x9f & 0x10) != 0) {
+                return 1;
+            }
+            break;
+        default:
+            return 0;
+    }
+    return 0;
+}
+
+static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    return output_index >= 0 && output_index < 3 ? Blowup_OutputName[output_index] : NULL;
+}
+
+static i32 Blowup_GetNumOutputs(GIZMO *gizmo) {
+    return 3;
+}
+
+i32 Blowup_GetVisibility(GIZMO *gizmo) {
+    if (gizmo == NULL) {
+        return 0;
+    }
+    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+    return (blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0;
+}
+
+static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo) {
+    return gizmo != NULL ? &static_cast<GIZMOBLOWUP_s *>(gizmo->object)->position : NULL;
+}
+
+static void Blowup_ClearProgress(void *, void *progress_ptr) {
+    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
+    if (progress != NULL) {
+        memset(progress->blown_up, 0, sizeof(progress->blown_up));
+        memset(progress->activated, 0xff, sizeof(progress->activated));
+        memset(progress->visible, 0xff, sizeof(progress->visible));
+        memset(progress->secondary_output, 0, sizeof(progress->secondary_output));
+    }
+}
+
+static void Blowup_Activate(GIZMO *gizmo, i32 enabled) {
+    if (gizmo == NULL)
+        return;
+
+    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+    bool activated = enabled != 0;
+    blowup->state_flags = (blowup->state_flags & 0x7f) | (activated << 7);
+
+    nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
+    if (animation != NULL) {
+        if (enabled == 0) {
+            animation->playing = 0;
+        } else {
+            if ((blowup->state_flags & GIZMOBLOWUP_STATE_ANIMATION_PLAYING) != 0)
+                animation->playing = 1;
         }
     }
-    if ((flags & 2) != 0) {
-        for (i32 i = 0; i < 2; ++i) {
-            if (type->particle_types[i] != -1) {
-                AddFiniteShotPART(type->particle_types[i], &effect_position, 1);
-            }
-        }
-    }
-    if ((flags & 4) != 0) {
-        i32 count = static_cast<i8>(blowup->field_0x115) * blowup->field_0xa8;
-        NUVEC direction = v010;
-        NuVecRotateX(&direction, &direction, static_cast<u16>(blowup->field_0xf6));
-        NuVecRotateY(&direction, &direction, static_cast<u16>(blowup->field_0xf8));
-        i32 pickup_flag = (blowup->draw_flags >> 8) & 1;
-        i32 hearts = count > 0 ? ReleaseHearts() : 0;
-        AddPickups(count, hearts, 0, pickup_flag, position, &direction, 0.0f, -1, 1.5f, 2000000.0f, NULL, 1, 1, true);
-    }
-    if ((flags & 0x10) != 0) {
-        GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
-        NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
-    }
-    if (static_cast<i32>(blowup->draw_flags) < 0 || static_cast<i8>(blowup->saved_state_1) <= 0) {
-        for (i32 i = 0; i < 4; ++i) {
-            if (!NuSpecialExistsFn(&type->alternate_specials[i]))
-                continue;
-            for (i32 j = 0; j < type->field_0xfa; ++j) {
-                NUMTX_ALIGNED16 matrix;
-                NuMtxSetIdentity(&matrix);
-                matrix.m30 = position->x;
-                matrix.m31 = position->y;
-                matrix.m32 = position->z;
-                NUVEC velocity = v010;
-                f32 range = (MAXBLOWUPRANDSPANG << 16) / 360;
-                i32 random = static_cast<i16>(qrand() * (1.0f / 65535.0f) * range -
-                                              ((static_cast<i32>(MAXBLOWUPRANDSPANG * 0.5f) << 16) / 360));
-                NuVecRotateX(&velocity, &velocity, static_cast<u16>(blowup->field_0xf6) + random);
-                range = (MAXBLOWUPRANDSPANG << 16) / 360;
-                random = static_cast<i16>(qrand() * (1.0f / 65535.0f) * range -
-                                          ((static_cast<i32>(MAXBLOWUPRANDSPANG * 0.5f) << 16) / 360));
-                NuVecRotateY(&velocity, &velocity, static_cast<u16>(blowup->field_0xf8) + random);
-                NuVecScale(&velocity, &velocity, type->field_0x98);
-                if (object != NULL) {
-                    velocity.x += 0.75f * object->apiobj.velocity.x;
-                    velocity.y += 0.75f * object->apiobj.velocity.y;
-                    velocity.z += 0.75f * object->apiobj.velocity.z;
+
+    if (activated) {
+        blowup->output_flags &= ~GIZMOBLOWUP_OUTPUT_BLOWN_UP;
+        blowup->field_0x9f &= ~1;
+        blowup->visibility_flags |= GIZMOBLOWUP_VISIBLE;
+        blowup->visibility_flags &= 0x7f;
+        blowup->state_flags |= 0x80;
+        blowup->saved_state_1 = blowup->initial_state_1;
+        blowup->saved_state_0 = blowup->initial_state_0;
+
+        animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
+        if (animation != NULL) {
+            if (animation->playing != 0) {
+                blowup->state_flags |= GIZMOBLOWUP_STATE_ANIMATION_PLAYING;
+                if (animation->repeating != 0) {
+                    blowup->state_flags |= GIZMOBLOWUP_STATE_REPEAT_ANIMATION | GIZMOBLOWUP_STATE_REPEATING;
                 }
-                ADDPART_s part = Default_ADDPART;
-                part.matrix = &matrix;
-                part.velocity = &velocity;
-                part.special = &type->alternate_specials[i];
-                part.gravity = type->field_0x94;
-                part.flags |= 0x80;
-                part.stop_fn = PartStop_Flickerer;
-                part.draw_fn = PartDraw_Flickerer;
-                part.time_step = FRAMETIME;
-                part.field_c4 = 1;
-                AddPart(&part);
             }
         }
+        blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
     }
-    if (GizmoBlowUp_SfxFn != NULL) {
-        GizmoBlowUp_SfxFn(blowup, position);
-    } else {
-        GameAudio_PlaySfx(0x33, position, 0, 0);
+}
+
+static void Blowup_SetVisibility(GIZMO *gizmo, i32 visible) {
+    if (gizmo == NULL) {
+        return;
     }
-    if ((flags & 8) != 0) {
-        i32 explosion_flags = (blowup->draw_flags & 0x40) != 0 ? 0x122 : 0x127;
-        if ((blowup->draw_flags & 0x10000000) != 0)
-            explosion_flags |= 8;
-        AddExplosion(position, blowup->field_0xb8, 0.5f, NULL, -1, explosion_flags);
+
+    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+    u8 visibility_flag = visible != 0;
+    visibility_flag <<= 6;
+    blowup->visibility_flags = (blowup->visibility_flags & ~GIZMOBLOWUP_VISIBLE) | visibility_flag;
+
+    if (blowup->platform_id != -1) {
+        PlatOnOff(blowup->platform_id, visible);
     }
+
+    if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0) {
+        if (blowup->anti_node == NULL) {
+            blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
+        }
+    } else if (blowup->anti_node != NULL) {
+        GameAntinode_UnregisterAntiNode(WORLD->game_antinode_sys, blowup->anti_node);
+        blowup->anti_node = NULL;
+    }
+}
+
+static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 0x100);
+}
+
+static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    for (i32 index = 0; index < world->gizmo_blowup_count; ++index) {
+        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[index];
+        if (NuStrLen(blowup->name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, blowup);
+        }
+    }
+}
+
+static void Blowup_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
+    if (progress == NULL) {
+        return;
+    }
+
+    Blowup_ClearProgress(NULL, progress);
+    if (world == NULL || world->gizmo_blowups == NULL) {
+        return;
+    }
+
+    i32 count = world->gizmo_blowup_count;
+    if (count > 512) {
+        count = 512;
+    }
+    for (i32 index = 0; index < count; ++index) {
+        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[index];
+        const i32 word = index >> 5;
+        const u32 bit = 1u << (index & 31);
+        if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0) {
+            progress->blown_up[word] |= bit;
+        }
+        if ((blowup->state_flags & GIZMOBLOWUP_STATE_ACTIVATED) == 0) {
+            progress->activated[word] &= ~bit;
+        }
+        if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) == 0) {
+            progress->visible[word] &= ~bit;
+        }
+        if ((blowup->field_0x9f & 0x10) != 0) {
+            progress->secondary_output[word] |= bit;
+        }
+    }
+}
+
+void SetLevelExBlowupFlags(u32 flags) {
+    EXBLOWUPFLAGS = flags;
+}
+
+void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32)) {
+    if (callback != NULL) {
+        BlowupExFunc = callback;
+    }
+}
+
+u32 RemapTypeFlagToBlowupFlag(u32 flag) {
+    for (i32 index = 0; index < 32; ++index) {
+        if (flagremaptab[index][0] == flag) {
+            return flagremaptab[index][1];
+        }
+    }
+    return 0;
+}
+
+u32 RemapAllTypeFlagsToBlowupFlags(u32 flags) {
+    u32 result = 0;
+    for (i32 bit = 0; bit < 32; ++bit) {
+        u32 flag = flags & (1u << bit);
+        if (flag != 0) {
+            result |= RemapTypeFlagToBlowupFlag(flag);
+        }
+    }
+    return result;
+}
+
+MechObjectInterface *GIZMOBLOWUP_s::GetMechObjectInterface() {
+    if (mech_object_interface != NULL)
+        return mech_object_interface;
+    new GizBlowupObjectInterface(*this);
+    return mech_object_interface;
+}
+
+void GIZMOBLOWUP_s::ClearMechObjectInterface() {
+    if (mech_object_interface != NULL)
+        delete mech_object_interface;
+}
+
+i32 InitGizmoBlowupTypes(WORLDINFO_s *world) {
+    world->gizmo_blowup_types = NULL;
+    world->gizmo_blowup_type_count = 0;
+    if (world->current_level->max_gizmo_blowup_types == 0) {
+        return 0;
+    }
+    world->gizmo_blowup_types = static_cast<GIZMOBLOWUPTYPE_s *>(
+        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108,
+                        world->current_level->max_gizmo_blowup_types * sizeof(GIZMOBLOWUPTYPE_s)));
+    return world->gizmo_blowup_types != NULL;
 }
 
 i32 InitGizmoBlowups(WORLDINFO_s *world) {
@@ -245,6 +431,22 @@ i32 InitGizmoBlowups(WORLDINFO_s *world) {
         &world->giz_buffer, &world->unknown_0108, world->current_level->max_gizmo_blowups * sizeof(GIZMOBLOWUP_s)));
     memset(world->gizmo_blowups, 0, world->current_level->max_gizmo_blowups * sizeof(GIZMOBLOWUP_s));
     return world->gizmo_blowups != NULL;
+}
+
+i32 InitGizmoBlowupsMtxBuffer(WORLDINFO_s *world) {
+    world->gizmo_blowup_mtx_buffer = NULL;
+    world->giz_buffer.addr = (world->giz_buffer.addr + 0x7f) & ~static_cast<usize>(0x7f);
+    world->gizmo_blowup_mtx_buffer =
+        static_cast<NUMTX *>(GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, 0x8000));
+    return world->gizmo_blowup_mtx_buffer != NULL;
+}
+
+void *gizmoblowup_reservebuffers(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    InitGizmoBlowupTypes(world);
+    InitGizmoBlowups(world);
+    InitGizmoBlowupsMtxBuffer(world);
+    return world->gizmo_blowups;
 }
 
 void GizBlowup_Respawn(GIZMOBLOWUP_s *blowup) {
@@ -300,9 +502,306 @@ void GizBlowup_Respawn(GIZMOBLOWUP_s *blowup) {
         i32 handle = -1;
         AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[2], &blowup->mid_position, 1);
     }
-    if (blowup->type->particle_types[3] != -1) {
-        i32 handle = -1;
-        AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[3], &blowup->mid_position, 1);
+    if (blowup->type->particle_types[3] == -1) {
+        return;
+    }
+    i32 handle = -1;
+    AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[3], &blowup->mid_position, 1);
+}
+
+u32 GizmoBlowups_TotalScore(void *context) {
+    WORLDINFO_s *world = static_cast<WORLDINFO_s *>(context);
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    u32 total = 0;
+    if (blowup != NULL) {
+        for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup)
+            total += static_cast<i8>(blowup->field_0x115) * blowup->field_0xa8;
+    }
+    return total;
+}
+
+ADDGIZMOTYPE *NewBlowup_RegisterGizmo(i32 type_id) {
+    static ADDGIZMOTYPE addtype;
+
+    addtype = Default_ADDGIZMOTYPE;
+    addtype.name = "blowup";
+    addtype.prefix = "";
+    addtype.fns.unknown1 = 0x100;
+    addtype.fns.early_update_fn = GizmoBlowupEarlyUpdate;
+    addtype.fns.panel_draw_fn = NULL;
+    addtype.fns.get_max_gizmos_fn = Blowup_GetMaxGizmos;
+    addtype.fns.get_visibility_fn = Blowup_GetVisibility;
+    addtype.fns.get_pos_fn = GizmoBlowup_GetPos;
+    addtype.fns.using_special_fn = NULL;
+    addtype.fns.add_gizmos_fn = Blowup_AddGizmos;
+    addtype.fns.bolt_hit_plat_fn = NULL;
+    addtype.fns.get_best_bolt_target_fn = NULL;
+    addtype.fns.late_update_fn = GizmoBlowupLateUpdate;
+    addtype.fns.bolt_hit_fn = NULL;
+    addtype.fns.get_gizmo_name_fn = Blowup_GetGizmoName;
+    addtype.fns.get_output_fn = Blowup_GetOutput;
+    addtype.fns.get_output_name_fn = Blowup_GetOutputName;
+    addtype.fns.draw_fn = GizmoBlowupBurstDraw;
+    addtype.fns.get_num_outputs_fn = Blowup_GetNumOutputs;
+    addtype.fns.activate_fn = Blowup_Activate;
+    addtype.fns.activate_rev_fn = NULL;
+    addtype.fns.set_visibility_fn = Blowup_SetVisibility;
+    addtype.fns.allocate_progress_data_fn = Blowup_AllocateProgressData;
+    addtype.fns.clear_progress_fn = Blowup_ClearProgress;
+    addtype.fns.store_progress_fn = Blowup_StoreProgress;
+    addtype.fns.reset_fn = Blowups_Reset;
+    addtype.fns.reserve_buffer_space_fn = gizmoblowup_reservebuffers;
+    addtype.fns.load_fn = gizmoblowup_Load;
+    addtype.fns.post_load_fn = NULL;
+    addtype.fns.add_level_sfx_fn = NULL;
+    blowup_gizmotype_id = type_id;
+
+    return &addtype;
+}
+
+void GizmoBlowupLateUpdate(void *world_ptr, void *, float) {
+    if (world_ptr == NULL) {
+        return;
+    }
+
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GIZMOBLOWUPTYPE_s *blowup_type = world->gizmo_blowup_types;
+    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index, ++blowup_type) {
+        if (NuSpecialExistsFn(&blowup_type->animated_special) != 0) {
+            nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup_type->animated_special);
+            if (animation != NULL && (blowup_type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) != 0) {
+                blowup_type->animation_runtime_flags &= ~GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
+            }
+        }
+    }
+}
+
+GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special, i32 flags, i32 *result) {
+    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
+        GIZMOBLOWUPTYPE_s *existing = &world->gizmo_blowup_types[index];
+        if (!(NuSpecialCompare(&existing->animated_special, special) != 0 &&
+              (flags != 0 || (existing->animation_flags & 0x20) != 0))) {
+            continue;
+        }
+        *result = 0;
+        return NULL;
+    }
+
+    if (world->gizmo_blowup_type_count >= world->current_level->max_gizmo_blowup_types) {
+        return NULL;
+    }
+
+    GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[world->gizmo_blowup_type_count];
+    nuhspecial_s *animated_special = &type->animated_special;
+    if (special != NULL && NuSpecialExistsFn(special)) {
+        *animated_special = *special;
+        NuStrCpy(type->name, NuSpecialGetName(animated_special));
+    }
+    type->animation_start_frame = 1.0f;
+    type->particle_types[0] = -1;
+    type->particle_types[1] = -1;
+    type->particle_types[4] = -1;
+    type->particle_types[5] = -1;
+    type->particle_types[6] = -1;
+    type->particle_types[2] = -1;
+    type->particle_types[3] = -1;
+    type->effect_flags = 100;
+    type->field_0xfb = 1;
+    type->type_flags = ((flags < 1) ? -1 : 0) & 0xffffe000;
+    type->type_flags += 0xe000;
+
+    nuinstanim_s *animation = NuSpecialGetInstAnim(animated_special);
+    if (animation != NULL) {
+        type->animation_end_frame =
+            NuAnimEndFrameOld(animated_special->scene->instance_animation_data[animation->anim_ix]);
+    } else {
+        type->animation_end_frame = 1.0f;
+    }
+    type->animation_base_frame = 1.0f;
+    type->field_0x9c = 0.0f;
+    type->field_0x84 = 1.0f;
+    GameAntiNodeData_Init(&type->anti_node_data, special);
+    ++world->gizmo_blowup_type_count;
+    return type;
+}
+
+void GizmoBlowupTypeRemove(GIZMOBLOWUPTYPE_s *type, WORLDINFO_s *world) {
+    if (world == NULL || world->gizmo_blowup_type_count <= 0 || type == NULL) {
+        return;
+    }
+
+    GIZMOBLOWUPTYPE_s *types = world->gizmo_blowup_types;
+    GIZMOBLOWUPTYPE_s *active_end = types + world->gizmo_blowup_type_count;
+    if (type < types || type >= active_end) {
+        return;
+    }
+
+    i32 capacity =
+        world->current_level != NULL ? world->current_level->max_gizmo_blowup_types : world->gizmo_blowup_type_count;
+    // Preserve active-only handling when the level capacity is missing or inconsistent.
+    if (capacity < world->gizmo_blowup_type_count) {
+        capacity = world->gizmo_blowup_type_count;
+    }
+    GIZMOBLOWUPTYPE_s *last_type = active_end - 1;
+    GIZMOBLOWUPTYPE_s *last_allocated_type = types + capacity - 1;
+    if (type < last_allocated_type) {
+        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_allocated_type; ++moved_type) {
+            if (world->gizmo_blowup_count <= 0) {
+                continue;
+            }
+            GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+            GIZMOBLOWUP_s *end = blowup + world->gizmo_blowup_count;
+            for (; blowup != end; ++blowup) {
+                if (blowup->type == moved_type) {
+                    blowup->type = moved_type - 1;
+                }
+            }
+        }
+    }
+    while (type != last_type) {
+        *type = *(type + 1);
+        ++type;
+    }
+    memset(type, 0, sizeof(*type));
+    --world->gizmo_blowup_type_count;
+}
+
+f32 GizmoBlowup_SetAutoSetReflectY(GIZMOBLOWUP_s *blowup, nuvec_s *position) {
+    if (blowup != NULL) {
+        if (blowup->platform_id != 0) {
+            PlatOnOff(blowup->platform_id, 0);
+        }
+        f32 ground = GameShadow(NULL, position, 5.0f, -1);
+        if (blowup->platform_id != 0) {
+            PlatOnOff(blowup->platform_id, 1);
+        }
+        if (ground != 2000000.0f) {
+            return ground;
+        }
+    }
+    return 0.0f;
+}
+
+void GizmoSwapBlowups(GIZMOBLOWUP_s *first, GIZMOBLOWUP_s *second) {
+    GIZMOBLOWUP_s temporary = *first;
+    *first = *second;
+    *second = temporary;
+}
+
+void GizmoSortBlowups(WORLDINFO_s *world) {
+    i32 blowup_index = 0;
+    GIZMOBLOWUPTYPE_s *type = world->gizmo_blowup_types;
+    auto world_gizmo_blowup_type_count = world->gizmo_blowup_type_count;
+    for (i32 type_index = 0; type_index < world_gizmo_blowup_type_count; ++type_index, ++type) {
+        while (blowup_index < world->gizmo_blowup_count) {
+            GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[blowup_index];
+            if (blowup->type != type) {
+                GIZMOBLOWUP_s *candidate = blowup + 1;
+                GIZMOBLOWUP_s *end = world->gizmo_blowups + world->gizmo_blowup_count;
+                while (candidate != end && candidate->type != type) {
+                    ++candidate;
+                }
+                if (candidate == end) {
+                    break;
+                }
+                GizmoSwapBlowups(blowup, candidate);
+            }
+            ++blowup_index;
+        }
+    }
+}
+
+void BlowupObjEmit_Stop(PART_s *) {
+    STUBBED();
+}
+
+void GizmoBlowUp_AddEffects(nuvec_s *position, GIZMOBLOWUP_s *blowup, i32 offset, i32 flags, GameObject_s *object) {
+    GIZMOBLOWUPTYPE_s *type = blowup->type;
+    NUVEC effect_position = *position;
+    if (offset != 0) {
+        effect_position.x += blowup->field_0x80;
+        effect_position.y += blowup->field_0x84;
+        effect_position.z += blowup->field_0x88;
+    }
+    if ((flags & 1) != 0) {
+        for (i32 i = 4; i < 7; ++i) {
+            if (type->particle_types[i] == -1) {
+                continue;
+            }
+            i32 key = -1;
+            AddFiniteShotDebrisEffect(&key, type->particle_types[i], &effect_position, 1);
+        }
+    }
+    if ((flags & 2) != 0) {
+        for (i32 i = 0; i < 2; ++i) {
+            if (type->particle_types[i] != -1) {
+                AddFiniteShotPART(type->particle_types[i], &effect_position, 1);
+            }
+        }
+    }
+    if ((flags & 4) != 0) {
+        i32 count = static_cast<i8>(blowup->field_0x115) * blowup->field_0xa8;
+        NUVEC direction = v010;
+        NuVecRotateX(&direction, &direction, static_cast<u16>(blowup->field_0xf6));
+        NuVecRotateY(&direction, &direction, static_cast<u16>(blowup->field_0xf8));
+        i32 pickup_flag = (blowup->draw_flags >> 8) & 1;
+        i32 hearts = count > 0 ? ReleaseHearts() : 0;
+        AddPickups(count, hearts, 0, pickup_flag, position, &direction, 0.0f, -1, 1.5f, 2000000.0f, NULL, 1, 1, true);
+    }
+    if ((flags & 0x10) != 0) {
+        GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
+        NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
+    }
+    if (static_cast<i32>(blowup->draw_flags) < 0 || static_cast<i8>(blowup->saved_state_1) <= 0) {
+        auto f0xf6 = blowup->field_0xf6;
+        for (i32 i = 0; i < 4; ++i) {
+            if (!NuSpecialExistsFn(&type->alternate_specials[i]))
+                continue;
+            for (i32 j = 0; j < type->field_0xfa; ++j) {
+                NUMTX_ALIGNED16 matrix;
+                NuMtxSetIdentity(&matrix);
+                matrix.m30 = position->x;
+                matrix.m31 = position->y;
+                matrix.m32 = position->z;
+                NUVEC velocity = v010;
+                f32 range = (MAXBLOWUPRANDSPANG << 16) / 360;
+                i32 random = static_cast<i16>(qrand() * (1.0f / 65535.0f) * range -
+                                              ((static_cast<i32>(MAXBLOWUPRANDSPANG * 0.5f) << 16) / 360));
+                NuVecRotateX(&velocity, &velocity, static_cast<u16>(f0xf6) + random);
+                range = (MAXBLOWUPRANDSPANG << 16) / 360;
+                random = static_cast<i16>(qrand() * (1.0f / 65535.0f) * range -
+                                          ((static_cast<i32>(MAXBLOWUPRANDSPANG * 0.5f) << 16) / 360));
+                NuVecRotateY(&velocity, &velocity, static_cast<u16>(blowup->field_0xf8) + random);
+                NuVecScale(&velocity, &velocity, type->field_0x98);
+                if (object != NULL) {
+                    velocity.x += 0.75f * object->apiobj.velocity.x;
+                    velocity.y += 0.75f * object->apiobj.velocity.y;
+                    velocity.z += 0.75f * object->apiobj.velocity.z;
+                }
+                ADDPART_s part = Default_ADDPART;
+                part.matrix = &matrix;
+                part.velocity = &velocity;
+                part.special = &type->alternate_specials[i];
+                part.gravity = type->field_0x94;
+                part.flags |= 0x80;
+                part.stop_fn = PartStop_Flickerer;
+                part.time_step = FRAMETIME;
+                part.draw_fn = PartDraw_Flickerer;
+                part.field_c4 = 1;
+                AddPart(&part);
+            }
+        }
+    }
+    if (GizmoBlowUp_SfxFn != NULL) {
+        GizmoBlowUp_SfxFn(blowup, position);
+    } else {
+        GameAudio_PlaySfx(0x33, position, 0, 0);
+    }
+    if ((flags & 8) != 0) {
+        i32 explosion_flags = (blowup->draw_flags & 0x40) != 0 ? 0x122 : 0x127;
+        if ((blowup->draw_flags & 0x10000000) != 0)
+            explosion_flags |= 8;
+        AddExplosion(position, blowup->field_0xb8, 0.5f, NULL, -1, explosion_flags);
     }
 }
 
@@ -389,31 +888,34 @@ i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 dama
             NuSpecialSetVisibility(&type->animated_special, 0);
         }
         blowup->output_flags |= 1;
-        blowup->visibility_flags &= 0x3f;
         blowup->field_0x9f &= ~1;
+        blowup->visibility_flags &= 0x3f;
         blowup->state_flags &= 0x73;
         blowup->animation_time = 1.0f;
-        if (object == NULL) {
+        if (object != NULL) {
+            if (blowup->saved_state_0 != 0 &&
+                (object->id != id_SPEEDERBIKE || (object->apiobj.flags_low & 0x80) == 0 ||
+                 WORLD->current_level != SPEEDERCHASEA_LDATA || disable_narrow_socks != 0)) {
+                ObjHitObj(NULL, object, blowup->saved_state_0, 1, 0, hit_context);
+            }
+        } else {
             if ((blowup->draw_flags & 0x208) && blowup->saved_state_0 != 0 &&
-                (blowup->field_0xb4 > 0.0f || blowup->field_0xb8 <= 0.0f)) {
+                (!(blowup->field_0xb4 <= 0.0f) || !(blowup->field_0xb8 > 0.0f))) {
                 const f32 radius_squared = blowup->field_0xb4 * blowup->field_0xb4;
+                auto blowup_saved_state_0 = blowup->saved_state_0;
                 for (i32 player = 0; player < 8; ++player) {
                     GameObject_s *target = Player[player];
                     if (target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-                        target->apiobj.field_0x287 == 0 && target->field_0x101c <= 0.0f) {
+                        target->apiobj.field_0x287 == 0 && !(target->field_0x101c > 0.0f)) {
                         const f32 x = blowup->mid_position.x - target->apiobj.collision_position.x;
                         const f32 y = blowup->mid_position.y - target->apiobj.collision_position.y;
                         const f32 z = blowup->mid_position.z - target->apiobj.collision_position.z;
                         if (x * x + y * y + z * z < radius_squared) {
-                            ObjHitObj(NULL, target, blowup->saved_state_0, 1, 0, hit_context);
+                            ObjHitObj(NULL, target, blowup_saved_state_0, 1, 0, hit_context);
                         }
                     }
                 }
             }
-        } else if (blowup->saved_state_0 != 0 &&
-                   (object->id != id_SPEEDERBIKE || (object->apiobj.flags_low & 0x80) == 0 ||
-                    WORLD->current_level != SPEEDERCHASEA_LDATA || disable_narrow_socks != 0)) {
-            ObjHitObj(NULL, object, blowup->saved_state_0, 1, 0, hit_context);
         }
         if (blowup->platform_id != -1) {
             PlatOnOff(blowup->platform_id, 0);
@@ -456,755 +958,6 @@ i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 dama
         GizmoBlowUp_AddEffects(&blowup->mid_position, blowup, 1, effect_flags, object);
     }
     return 1;
-}
-
-void BlowupObjEmit_Stop(PART_s *) {
-    STUBBED();
-}
-
-GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special, i32 flags, i32 *result) {
-    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
-        GIZMOBLOWUPTYPE_s *existing = &world->gizmo_blowup_types[index];
-        if (NuSpecialCompare(&existing->animated_special, special) != 0 &&
-            (flags != 0 || (existing->animation_flags & 0x20) != 0)) {
-            *result = 0;
-            return NULL;
-        }
-    }
-
-    if (world->gizmo_blowup_type_count >= world->current_level->max_gizmo_blowup_types) {
-        return NULL;
-    }
-
-    GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[world->gizmo_blowup_type_count];
-    nuhspecial_s *animated_special = &type->animated_special;
-    if (special != NULL && NuSpecialExistsFn(special)) {
-        *animated_special = *special;
-        NuStrCpy(type->name, NuSpecialGetName(animated_special));
-    }
-    type->animation_start_frame = 1.0f;
-    type->particle_types[0] = -1;
-    type->particle_types[1] = -1;
-    type->particle_types[4] = -1;
-    type->particle_types[5] = -1;
-    type->particle_types[6] = -1;
-    type->particle_types[2] = -1;
-    type->particle_types[3] = -1;
-    type->effect_flags = 100;
-    type->field_0xfb = 1;
-    type->type_flags = ((flags < 1) ? -1 : 0) & 0xffffe000;
-    type->type_flags += 0xe000;
-
-    nuinstanim_s *animation = NuSpecialGetInstAnim(animated_special);
-    if (animation != NULL) {
-        type->animation_end_frame =
-            NuAnimEndFrameOld(animated_special->scene->instance_animation_data[animation->anim_ix]);
-    } else {
-        type->animation_end_frame = 1.0f;
-    }
-    type->animation_base_frame = 1.0f;
-    type->field_0x9c = 0.0f;
-    type->field_0x84 = 1.0f;
-    GameAntiNodeData_Init(&type->anti_node_data, special);
-    ++world->gizmo_blowup_type_count;
-    return type;
-}
-
-GIZMOBLOWUPTYPE_s *GizmoBlowup_FindType(char *name, WORLDINFO_s *world) {
-    if (world == NULL || world->gizmo_blowup_types == NULL || world->gizmo_blowup_type_count == 0 || name == NULL) {
-        return NULL;
-    }
-    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
-        if (NuStrCmp(world->gizmo_blowup_types[index].name, name) == 0) {
-            return &world->gizmo_blowup_types[index];
-        }
-    }
-    return NULL;
-}
-
-i32 InitGizmoBlowupTypes(WORLDINFO_s *world) {
-    world->gizmo_blowup_types = NULL;
-    world->gizmo_blowup_type_count = 0;
-    if (world->current_level->max_gizmo_blowup_types == 0) {
-        return 0;
-    }
-    world->gizmo_blowup_types = static_cast<GIZMOBLOWUPTYPE_s *>(
-        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108,
-                        world->current_level->max_gizmo_blowup_types * sizeof(GIZMOBLOWUPTYPE_s)));
-    return world->gizmo_blowup_types != NULL;
-}
-
-i32 SetGizmoBlowUpTarget(GameObject_s *object, GIZMOBLOWUP_s *blowup) {
-    object->attack_target_position = blowup->mid_position;
-    object->attack_target_velocity = v000;
-    object->field_0xe21 |= 8;
-    object->attack_blowup_target = VehicleArea != 0 ? NULL : blowup;
-    return 1;
-}
-
-void GizBlowup_InitTerrain() {
-    if (WORLD->gizmo_blowups != NULL) {
-        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
-            GIZMOBLOWUP_s *blowup = &WORLD->gizmo_blowups[i];
-            blowup->platform_id = -1;
-            blowup->field_0x10c = -1;
-            if ((blowup->draw_flags & 4) != 0)
-                GizBlowup_InitSingleTerrain(blowup);
-        }
-    }
-}
-
-void GizmoBlowupTypeRemove(GIZMOBLOWUPTYPE_s *type, WORLDINFO_s *world) {
-    if (world == NULL || world->gizmo_blowup_type_count <= 0 || type == NULL) {
-        return;
-    }
-
-    GIZMOBLOWUPTYPE_s *types = world->gizmo_blowup_types;
-    GIZMOBLOWUPTYPE_s *active_end = types + world->gizmo_blowup_type_count;
-    if (type < types || type >= active_end) {
-        return;
-    }
-
-    i32 capacity =
-        world->current_level != NULL ? world->current_level->max_gizmo_blowup_types : world->gizmo_blowup_type_count;
-    // Preserve active-only handling when the level capacity is missing or inconsistent.
-    if (capacity < world->gizmo_blowup_type_count) {
-        capacity = world->gizmo_blowup_type_count;
-    }
-    GIZMOBLOWUPTYPE_s *last_allocated_type = types + capacity - 1;
-    GIZMOBLOWUPTYPE_s *last_type = active_end - 1;
-    if (type < last_allocated_type) {
-        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_allocated_type; ++moved_type) {
-            if (world->gizmo_blowup_count <= 0) {
-                continue;
-            }
-            GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-            GIZMOBLOWUP_s *end = blowup + world->gizmo_blowup_count;
-            for (; blowup != end; ++blowup) {
-                if (blowup->type == moved_type) {
-                    blowup->type = moved_type - 1;
-                }
-            }
-        }
-    }
-    while (type != last_type) {
-        *type = *(type + 1);
-        ++type;
-    }
-    memset(type, 0, sizeof(*type));
-    --world->gizmo_blowup_type_count;
-}
-
-void Bolt_AddDeflectedBolt(BOLT_s *, nuvec_s *, nuvec_s *, unsigned char *);
-void Bolt_End(BOLT_s *, i32);
-void Bolt_PlayHitSfx(BOLT_s *);
-
-void GizmoBlowup_HitBlowup(GameObject_s *object, GIZMOBLOWUP_s *blowup, i32 hit_type, BOLT_s *bolt, nuvec_s *position,
-                           unsigned char *hit_data, u32 mode, i32) {
-    if (GizmoBlowupBlowup(blowup, 1, hit_type, 1, NULL, 1)) {
-        if (object != NULL) {
-            NewRumble(object->pad_gamepad->pad, 0.4f, 0);
-            GameCam_HitJudder();
-        }
-    } else if (bolt != NULL) {
-        NUVEC direction;
-        NuVecSub(&direction, &blowup->position, &bolt->position);
-        NuVecNorm(&direction, &direction);
-        Bolt_AddDeflectedBolt(bolt, &bolt->field_0xac, &direction, hit_data);
-    }
-    if (BoltSys->stop_targeting != NULL) {
-        BoltSys->stop_targeting(object, position);
-    }
-    if (mode == 1) {
-        BoltSys->debris(bolt, position, -1, NULL, 0);
-        if (bolt->owner != NULL) {
-            NewRumble(bolt->owner->pad_gamepad->pad, 0.6f, 0);
-        }
-        Bolt_End(bolt, 1);
-        Bolt_PlayHitSfx(bolt);
-    }
-}
-
-GIZMOBLOWUP_s *FindNearestGizmoBlowUp(WORLDINFO_s *world, nuvec_s *position, float max_distance_squared) {
-    if (world == NULL || world->gizmo_blowup_count <= 0 || position == NULL)
-        return NULL;
-    GIZMOBLOWUP_s *nearest = NULL;
-    f32 nearest_distance = max_distance_squared;
-    GIZMOBLOWUP_s *end = world->gizmo_blowups + world->gizmo_blowup_count;
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    do {
-        if ((blowup->status_flags & 0x804001) != 0x804000)
-            continue;
-        f32 x = blowup->position.x - position->x;
-        f32 y = blowup->position.y - position->y;
-        f32 z = blowup->position.z - position->z;
-        f32 distance = x * x + y * y + z * z;
-        if (distance < max_distance_squared && distance < nearest_distance) {
-            nearest = blowup;
-            nearest_distance = distance;
-        }
-    } while (++blowup != end);
-    return nearest;
-}
-
-i16 GetGenericGoon(i32);
-
-void GizmoBlowupCreateStuff(GIZMOBLOWUP_s *blowup) {
-    char script[32] = "GoonBox";
-    i32 model = GetGenericGoon(0);
-    f32 choice = qrand() * (1.0f / 65535.0f) * 100.0f;
-    if (!(choice < 50.0f)) {
-        choice -= 50.0f;
-        if (choice < 50.0f) {
-            i32 count = static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 3.0f);
-            for (i32 i = 0; i <= count; ++i) {
-                i32 angle = static_cast<u16>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 65536.0f);
-                GameObject_s *object =
-                    AddDynamicCreature(model, &blowup->mid_position, angle, script, NULL, NULL, 1, NULL, NULL, 0, -1);
-                if (object != NULL) {
-                    object->field_0x1038 = 0.0f;
-                    object->field_0x1004 = 0.0f;
-                    object->apiobj.field_0xa8 = 0.0f * object->apiobj.character_data->model_scale;
-                } else {
-                    i32 coins =
-                        (static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 1000.0f) / 100) * 100;
-                    if (coins < 100)
-                        coins = 100;
-                    NUVEC direction = v010;
-                    NuVecRotateX(&direction, &direction, static_cast<u16>(blowup->field_0xf6));
-                    NuVecRotateY(&direction, &direction, static_cast<u16>(blowup->field_0xf8));
-                    AddPickups(coins, ReleaseHearts(), 0, 0, &blowup->mid_position, &direction, 0.0f, -1, 1.5f,
-                               2000000.0f, NULL, 1, 1, true);
-                }
-            }
-            return;
-        }
-        choice -= 50.0f;
-        if (choice < 0.0f)
-            return;
-    }
-    i32 coins = (static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 1000.0f) / 100) * 100;
-    if (coins < 100)
-        coins = 100;
-    NUVEC direction = v010;
-    NuVecRotateX(&direction, &direction, static_cast<u16>(blowup->field_0xf6));
-    NuVecRotateY(&direction, &direction, static_cast<u16>(blowup->field_0xf8));
-    AddPickups(coins, ReleaseHearts(), 0, 0, &blowup->mid_position, &direction, 0.0f, -1, 1.5f, 2000000.0f, NULL, 1, 1,
-               true);
-}
-
-void GizmoBlowupsFinalSetup(WORLDINFO_s *world) {
-    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
-        GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[type_index];
-        type->animation_runtime_flags &= ~1;
-        nuinstanim_s *animation = NuSpecialGetInstAnim(&type->animated_special);
-        type->animation_base_frame = animation != NULL ? animation->ltime : 0.0f;
-        if (NuSpecialExistsFn(&type->decal_special) != 0) {
-            NuSpecialSetVisibility(&type->decal_special, 0);
-        }
-    }
-
-    for (i32 instance_index = 0; instance_index < world->gizmo_blowup_count; ++instance_index) {
-        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[instance_index];
-        blowup->animation_time = 1.0f;
-        blowup->field_0x9f &= ~0x08;
-        blowup->visibility_flags &= ~0x03;
-        blowup->output_flags = 0;
-        blowup->state_flags = (blowup->state_flags & 0xb7) | 0x81;
-
-        nuhspecial_s *special = blowup->override_special;
-        if (special == NULL || NuSpecialExistsFn(special) == 0) {
-            special = &blowup->type->animated_special;
-        }
-
-        if (NuSpecialExistsFn(special) == 0) {
-            blowup->bounds_min = v000;
-            blowup->bounds_max = v000;
-        } else {
-            if (NuSpecialExistsFn(&blowup->type->burst_special) != 0) {
-                NuSpecialSetVisibility(&blowup->type->burst_special, 0);
-            }
-            if ((blowup->type->animation_flags & 0x20) != 0) {
-                blowup->position = *NuSpecialGetDrawPos(special);
-            }
-
-            NUVEC centre;
-            NuSpecialGetRadius(special, &centre, &blowup->target_scale);
-            centre.x += blowup->position.x;
-            centre.y += blowup->position.y;
-            centre.z += blowup->position.z;
-            blowup->bounds_min.x = centre.x - blowup->target_scale;
-            blowup->bounds_min.y = centre.y - blowup->target_scale;
-            blowup->bounds_min.z = centre.z - blowup->target_scale;
-            blowup->bounds_max.x = centre.x + blowup->target_scale;
-            blowup->bounds_max.y = centre.y + blowup->target_scale;
-            blowup->bounds_max.z = centre.z + blowup->target_scale;
-
-            nuinstanim_s *animation = NuSpecialGetInstAnim(special);
-            if (animation != NULL && animation->playing != 0) {
-                const u8 original_state = blowup->state_flags;
-                blowup->state_flags = original_state | 0x10;
-                if (animation->repeating != 0) {
-                    blowup->state_flags = original_state | 0x58;
-                }
-            }
-        }
-
-        GizmoBlowupUpdateMatrix(blowup);
-        blowup->initial_state_1 = static_cast<u8>(blowup->initial_state_1 * GizmoBlowup_HitMultiplier);
-    }
-
-    GizBlowup_DeleteTerrain();
-    GizBlowup_InitTerrain();
-}
-
-void GizBlowup_DeleteTerrain() {
-    if (WORLD->gizmo_blowups != NULL) {
-        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
-            GizBlowup_DeleteSingleTerrain(&WORLD->gizmo_blowups[i]);
-        }
-    }
-}
-
-i32 GizmoBlowupTypeGetCount(WORLDINFO_s *world) {
-    return world != NULL ? world->gizmo_blowup_type_count : -1;
-}
-
-void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *blowup) {
-    if (blowup == NULL) {
-        return;
-    }
-
-    NUVEC position = blowup->position;
-    blowup->transform = *NuSpecialGetDrawMtx(&blowup->type->animated_special);
-    *NUMTX_GET_ROW_VEC(&blowup->transform, 3) = v000;
-    NuMtxRotateY(&blowup->transform, blowup->field_0xf2);
-    NuMtxPreRotateX(&blowup->transform, blowup->field_0xf0);
-    NuMtxPreRotateY(&blowup->transform, blowup->field_0xf4);
-    NuMtxTranslate(&blowup->transform, &position);
-}
-
-u32 GizmoBlowups_TotalScore(void *context) {
-    WORLDINFO_s *world = static_cast<WORLDINFO_s *>(context);
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    u32 total = 0;
-    if (blowup != NULL) {
-        for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup)
-            total += static_cast<i8>(blowup->field_0x115) * blowup->field_0xa8;
-    }
-    return total;
-}
-static i32 Blowup_GetMaxGizmos(void *world_ptr);
-static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *);
-void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float);
-void GizmoBlowupLateUpdate(void *world_ptr, void *, float);
-void GizmoBlowupBurstDraw(void *world_ptr, void *, float);
-static char *Blowup_GetGizmoName(GIZMO *gizmo);
-static i32 Blowup_GetOutput(GIZMO *gizmo, i32 output_index, i32);
-static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index);
-static i32 Blowup_GetNumOutputs(GIZMO *gizmo);
-static void Blowup_Activate(GIZMO *gizmo, i32 enabled);
-static void Blowup_SetVisibility(GIZMO *gizmo, i32 visible);
-i32 Blowup_GetVisibility(GIZMO *gizmo);
-static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo);
-static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end);
-static void Blowup_ClearProgress(void *, void *progress_ptr);
-static void Blowup_StoreProgress(void *world_ptr, void *, void *progress_ptr);
-static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr);
-void *gizmoblowup_reservebuffers(void *world_ptr);
-i32 gizmoblowup_Load(void *world_ptr, void *);
-
-ADDGIZMOTYPE *NewBlowup_RegisterGizmo(i32 type_id) {
-    static ADDGIZMOTYPE addtype;
-
-    addtype = Default_ADDGIZMOTYPE;
-    addtype.name = "blowup";
-    addtype.prefix = "";
-    addtype.fns.unknown1 = 0x100;
-    addtype.fns.early_update_fn = GizmoBlowupEarlyUpdate;
-    addtype.fns.panel_draw_fn = NULL;
-    addtype.fns.get_visibility_fn = Blowup_GetVisibility;
-    addtype.fns.get_max_gizmos_fn = Blowup_GetMaxGizmos;
-    addtype.fns.get_pos_fn = GizmoBlowup_GetPos;
-    addtype.fns.using_special_fn = NULL;
-    addtype.fns.add_gizmos_fn = Blowup_AddGizmos;
-    addtype.fns.bolt_hit_plat_fn = NULL;
-    addtype.fns.get_best_bolt_target_fn = NULL;
-    addtype.fns.late_update_fn = GizmoBlowupLateUpdate;
-    addtype.fns.bolt_hit_fn = NULL;
-    addtype.fns.draw_fn = GizmoBlowupBurstDraw;
-    addtype.fns.get_gizmo_name_fn = Blowup_GetGizmoName;
-    addtype.fns.get_output_fn = Blowup_GetOutput;
-    addtype.fns.get_output_name_fn = Blowup_GetOutputName;
-    addtype.fns.get_num_outputs_fn = Blowup_GetNumOutputs;
-    addtype.fns.activate_fn = Blowup_Activate;
-    addtype.fns.activate_rev_fn = NULL;
-    addtype.fns.set_visibility_fn = Blowup_SetVisibility;
-    addtype.fns.allocate_progress_data_fn = Blowup_AllocateProgressData;
-    addtype.fns.clear_progress_fn = Blowup_ClearProgress;
-    addtype.fns.store_progress_fn = Blowup_StoreProgress;
-    addtype.fns.reset_fn = Blowups_Reset;
-    addtype.fns.reserve_buffer_space_fn = gizmoblowup_reservebuffers;
-    addtype.fns.load_fn = gizmoblowup_Load;
-    addtype.fns.post_load_fn = NULL;
-    addtype.fns.add_level_sfx_fn = NULL;
-    blowup_gizmotype_id = type_id;
-
-    return &addtype;
-}
-
-static i32 gizmoblowupnametable_numids;
-static char gizmoblowupnametable[32][32];
-
-i32 GizmoBlowupTypeNameBlank(char *name) {
-    for (u32 offset = 0; offset < 0x20; offset += sizeof(i32)) {
-        if (*reinterpret_cast<i32 *>(name + offset) != 0) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-i32 GizmoBlowupCheckProximity(WORLDINFO_s *world, GameObject_s *object) {
-    i32 count = 0;
-    if (object == NULL || static_cast<i8>(object->apiobj.field_0x1f8) >= 0)
-        return count;
-    i32 special;
-    i32 ordinary;
-    if ((object->apiobj.character_data->model_flags & 0x2000) != 0 || object->field_0xcc0 != NULL) {
-        special = 1;
-        ordinary = 0;
-    } else {
-        special = 0;
-        ordinary = 1;
-    }
-    i32 destroy = 0;
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
-        if ((blowup->status_flags & 0x804001) != 0x804000)
-            continue;
-        if (special && (blowup->draw_flags & 0x200) == 0)
-            continue;
-        if (ordinary && (blowup->draw_flags & 8) == 0)
-            continue;
-        if ((blowup->state_flags & 4) != 0 || (blowup->field_0x9f & 2) != 0)
-            continue;
-        f32 x = object->apiobj.collision_position.x - blowup->mid_position.x;
-        f32 y = object->apiobj.collision_position.y - blowup->mid_position.y;
-        f32 z = object->apiobj.collision_position.z - blowup->mid_position.z;
-        if (blowup->field_0xb4 != 0.0f && !(x * x + y * y + z * z < blowup->field_0xb4 * blowup->field_0xb4))
-            continue;
-        i32 hit_type;
-        if (special) {
-            blowup->output_flags |= 0x10;
-            hit_type = 5;
-        } else {
-            blowup->output_flags |= 0x20;
-            hit_type = 4;
-        }
-        nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
-        if (blowup->field_0xc0 > 0.0f) {
-            blowup->activation_delay = blowup->field_0xc0;
-            blowup->state_flags |= 4;
-        } else if (animation == NULL || (blowup->state_flags & 8) != 0) {
-            destroy = 1;
-        } else {
-            blowup->state_flags |= 8;
-            blowup->field_0x9f |= 2;
-            blowup->animation_time = 0.0f;
-        }
-        if (destroy) {
-            GizmoBlowupBlowup(blowup, 1, hit_type, 1, object, 1);
-            ++count;
-        }
-    }
-    return count;
-}
-
-void GizmoBlowupGenDecalMatrix(GIZMOBLOWUP_s *blowup, numtx_s *matrix, i32 alternate) {
-    if (blowup == NULL)
-        return;
-    NuMtxSetIdentity(matrix);
-    if (alternate != 0) {
-        NuMtxScaleU(matrix, blowup->field_0xc8);
-    } else {
-        NuMtxScaleU(matrix, (1.0f - 10.0f * blowup->animation_time) * blowup->field_0xc8);
-    }
-    matrix->m30 = 0.0f;
-    matrix->m31 = 0.0f;
-    matrix->m32 = 0.0f;
-    NuMtxRotateY(matrix, static_cast<u16>(blowup->field_0xe6));
-    NuMtxPreRotateX(matrix, static_cast<u16>(blowup->field_0xe4));
-    NuMtxPreRotateY(matrix, static_cast<u16>(blowup->field_0xe8));
-    NUVEC position;
-    position.x = blowup->position.x + blowup->field_0x74;
-    position.y = blowup->position.y + blowup->field_0x78;
-    position.z = blowup->position.z + blowup->field_0x7c;
-    NuMtxTranslate(matrix, &position);
-}
-
-void GizmoBlowupResetNameTable(void) {
-    memset(gizmoblowupnametable, 0, sizeof(gizmoblowupnametable));
-    gizmoblowupnametable_numids = 0;
-}
-
-i32 GizmoBlowupGetNameTableId(char *name) {
-    for (i32 id = 0; id < gizmoblowupnametable_numids; ++id) {
-        if (NuStrICmp(gizmoblowupnametable[id], name) == 0) {
-            return id;
-        }
-    }
-
-    if (gizmoblowupnametable_numids >= 32) {
-        return -1;
-    }
-
-    NuStrNCpy(gizmoblowupnametable[gizmoblowupnametable_numids], name, sizeof(gizmoblowupnametable[0]));
-    return gizmoblowupnametable_numids++;
-}
-
-i32 InitGizmoBlowupsMtxBuffer(WORLDINFO_s *world) {
-    world->gizmo_blowup_mtx_buffer = NULL;
-    world->giz_buffer.addr = (world->giz_buffer.addr + 0x7f) & ~static_cast<usize>(0x7f);
-    world->gizmo_blowup_mtx_buffer =
-        static_cast<NUMTX *>(GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, 0x8000));
-    return world->gizmo_blowup_mtx_buffer != NULL;
-}
-
-// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
-extern "C" {
-    u32 flagremaptab[32][2] = {
-        {0x00000001u, 0x00000002u}, {0x00000002u, 0x00000040u}, {0x00000004u, 0x00000001u}, {0x00000008u, 0x00000004u},
-        {0x00000010u, 0x00000008u}, {0x00000020u, 0x00000010u}, {0x00000040u, 0x00000020u}, {0x00000080u, 0x00000080u},
-        {0x00000100u, 0x00000100u}, {0x00000200u, 0x00000200u}, {0x00000400u, 0x00000400u}, {0x00000800u, 0x00000800u},
-        {0x00001000u, 0x00001000u}, {0x00002000u, 0x20000000u}, {0x00004000u, 0x00008000u}, {0x00008000u, 0x00010000u},
-        {0x00010000u, 0x00020000u}, {0x00020000u, 0x00040000u}, {0x00040000u, 0x00080000u}, {0x00080000u, 0x00100000u},
-        {0x00100000u, 0x00200000u}, {0x00200000u, 0x00400000u}, {0x00400000u, 0x00800000u}, {0x00800000u, 0x01000000u},
-        {0x01000000u, 0x02000000u}, {0x02000000u, 0x04000000u}, {0x04000000u, 0x10000000u}, {0x08000000u, 0x40000000u},
-        {0x10000000u, 0x00004000u}, {0x20000000u, 0x08000000u}, {0x40000000u, 0x00002000u}, {0x80000000u, 0x80000000u}};
-}
-
-void SetLevelExBlowupFlags(u32 flags) {
-    EXBLOWUPFLAGS = flags;
-}
-
-void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32)) {
-    if (callback != NULL) {
-        BlowupExFunc = callback;
-    }
-}
-
-u32 RemapTypeFlagToBlowupFlag(u32 flag) {
-    for (i32 index = 0; index < 32; ++index) {
-        if (flagremaptab[index][0] == flag) {
-            return flagremaptab[index][1];
-        }
-    }
-    return 0;
-}
-
-void GizmoBlowupGenShadowMatrix(GIZMOBLOWUP_s *blowup, numtx_s *matrix) {
-    extern NUVEC v111;
-    if (blowup == NULL)
-        return;
-    NuMtxSetIdentity(matrix);
-    NuMtxSetScale(matrix, &v111);
-    matrix->m30 = 0.0f;
-    matrix->m31 = 0.0f;
-    matrix->m32 = 0.0f;
-    NuMtxRotateY(matrix, static_cast<u16>(blowup->field_0xec));
-    NuMtxPreRotateX(matrix, static_cast<u16>(blowup->field_0xea));
-    NuMtxPreRotateY(matrix, static_cast<u16>(blowup->field_0xee));
-    NUVEC position;
-    position.x = blowup->position.x + blowup->field_0x8c;
-    position.y = blowup->position.y + blowup->field_0x90;
-    position.z = blowup->position.z + blowup->field_0x94;
-    NuMtxTranslate(matrix, &position);
-}
-
-i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup) {
-    if (blowup == NULL || (blowup->output_flags & 1) != 0 || (blowup->draw_flags & 4) == 0)
-        return 0;
-    if (blowup->platform_id == -1) {
-        i32 instance = NuSpecialGetInstanceix(&blowup->type->animated_special);
-        if (blowup->override_special != NULL && NuSpecialExistsFn(blowup->override_special)) {
-            instance = NuSpecialGetInstanceix(blowup->override_special);
-            blowup->platform_id = FindPlatInst(instance);
-        } else if ((blowup->draw_flags & 0x802000) == 0x2000 || (blowup->draw_flags & 0x20000000) == 0) {
-            blowup->platform_id = NewPlatInst(blowup, instance);
-        } else {
-            blowup->platform_id = FindPlatInst(instance);
-        }
-        if (blowup->platform_id == -1)
-            return 0;
-        if ((blowup->visibility_flags & 0x40) == 0)
-            PlatOnOff(blowup->platform_id, 0);
-    }
-    PlatInstRotate(blowup->platform_id, 1);
-    if (blowup->field_0x10c == -1 && NuSpecialExistsFn(&blowup->type->burst_special)) {
-        blowup->field_0x10c = NewPlatInst(blowup, NuSpecialGetInstanceix(&blowup->type->burst_special));
-        if (blowup->field_0x10c == -1)
-            return -1;
-    }
-    PlatInstRotate(blowup->field_0x10c, 1);
-    return 1;
-}
-
-void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup) {
-    if (blowup == NULL)
-        return;
-    if ((blowup->override_special == NULL || !NuSpecialExistsFn(blowup->override_special)) &&
-        blowup->platform_id != -1) {
-        DeletePlatinst(blowup->platform_id);
-        blowup->platform_id = -1;
-    }
-    if (blowup->field_0x10c != -1) {
-        DeletePlatinst(blowup->field_0x10c);
-        blowup->field_0x10c = -1;
-    }
-}
-
-void GizmoBlowupVisibilityOverrides(WORLDINFO_s *world) {
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
-        if ((blowup->type->animation_flags & 0x20) != 0 && (blowup->draw_flags & 0x800000) == 0) {
-            NuSpecialSetVisibility(&blowup->type->animated_special, 0);
-        }
-    }
-    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
-        nuhspecial_s *special = &world->gizmo_blowup_types[index].decal_special;
-        if (NuSpecialExistsFn(special)) {
-            NuSpecialSetVisibility(special, 0);
-        }
-    }
-}
-
-f32 GizmoBlowup_SetAutoSetReflectY(GIZMOBLOWUP_s *blowup, nuvec_s *position) {
-    if (blowup != NULL) {
-        if (blowup->platform_id != 0) {
-            PlatOnOff(blowup->platform_id, 0);
-        }
-        f32 ground = GameShadow(NULL, position, 5.0f, -1);
-        if (blowup->platform_id != 0) {
-            PlatOnOff(blowup->platform_id, 1);
-        }
-        if (ground != 2000000.0f) {
-            return ground;
-        }
-    }
-    return 0.0f;
-}
-
-u32 RemapAllTypeFlagsToBlowupFlags(u32 flags) {
-    u32 result = 0;
-    for (i32 bit = 0; bit < 32; ++bit) {
-        u32 flag = flags & (1u << bit);
-        if (flag != 0) {
-            result |= RemapTypeFlagToBlowupFlag(flag);
-        }
-    }
-    return result;
-}
-
-char *GizmoBlowupTypeGetNameFromIndex(WORLDINFO_s *world, i32 index) {
-    if (index == -1 || world == NULL || index > world->gizmo_blowup_type_count)
-        return NULL;
-    char *name = world->gizmo_blowup_types[index].name;
-    return NuStrLen(name) != 0 ? name : NULL;
-}
-
-void GizmoBlowUpTypeBlowUp(WORLDINFO_s *world, i32 index, nuvec_s *position) {
-    if (world == NULL)
-        return;
-    char *name = GizmoBlowupTypeGetNameFromIndex(world, index);
-    if (name == NULL)
-        return;
-    GIZMOBLOWUPTYPE_s *type = GizmoBlowup_FindType(name, world);
-    if (type == NULL)
-        return;
-    GIZMOBLOWUP_s blowup;
-    memset(&blowup, 0, sizeof(blowup));
-    blowup.type = type;
-    GizmoBlowUp_AddEffects(position, &blowup, 0, 7, NULL);
-    GameAudio_PlaySfx(0x33, position, 0, 0);
-}
-
-i32 GizmoBlowupGetTypeFromNameTableId(WORLDINFO_s *world, i32 name_id) {
-    if (name_id < 0 || name_id >= gizmoblowupnametable_numids) {
-        return -1;
-    }
-
-    const char *name = gizmoblowupnametable[name_id];
-    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
-        if (NuStrICmp(world->gizmo_blowup_types[type_index].name, name) == 0) {
-            return type_index;
-        }
-    }
-
-    return -1;
-}
-
-// Definitions from the original gizmoblowups translation unit.
-
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special);
-void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data);
-
-enum GIZMOBLOWUP_OUTPUT_FLAGS : u8 {
-    GIZMOBLOWUP_OUTPUT_BLOWN_UP = 1 << 0,
-    GIZMOBLOWUP_OUTPUT_PUNCHED = 1 << 1,
-};
-
-enum GIZMOBLOWUP_VISIBILITY_FLAGS : u8 {
-    GIZMOBLOWUP_VISIBLE = 1 << 6,
-    GIZMOBLOWUP_DRAWN = 1 << 7,
-};
-
-enum GIZMOBLOWUP_STATE_FLAGS : u8 {
-    GIZMOBLOWUP_STATE_ACTIVE = 1 << 0,
-    GIZMOBLOWUP_STATE_DELAY_ACTIVE = 1 << 1,
-    GIZMOBLOWUP_STATE_REPEAT_ANIMATION = 1 << 3,
-    GIZMOBLOWUP_STATE_ANIMATION_PLAYING = 1 << 4,
-    GIZMOBLOWUP_STATE_REPEATING = 1 << 6,
-    GIZMOBLOWUP_STATE_ACTIVATED = 1 << 7,
-};
-
-enum GIZMOBLOWUPTYPE_RUNTIME_FLAGS : u8 {
-    GIZMOBLOWUPTYPE_ANIMATION_UPDATED = 1 << 0,
-};
-
-enum GIZMOBLOWUPTYPE_ANIMATION_FLAGS : u8 {
-    GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM = 1 << 5,
-};
-
-enum GIZMOBLOWUP_DRAW_FLAGS : u32 {
-    GIZMOBLOWUP_DRAW_CUSTOM_TRANSFORM = 0x00000010,
-    GIZMOBLOWUP_DRAW_HIDE_DECAL = 0x00000400,
-    GIZMOBLOWUP_DRAW_RESET_SHADOW_MAP = 0x00020000,
-    GIZMOBLOWUP_DRAW_PROJECT_ONLY = 0x00800000,
-    GIZMOBLOWUP_DRAW_REFLECTION = 0x40000000,
-};
-
-enum GIZMOBLOWUP_DRAW_STATUS_FLAGS : u32 {
-    GIZMOBLOWUP_DRAW_STATUS_TRANSFORM_READY = 0x00808000,
-};
-
-static char *Blowup_OutputName[] = {"Blownup", "Punched", "Plugging"};
-
-i32 blowup_gizmotype_id = -1;
-
-static i32 Blowup_GetMaxGizmos(void *world_ptr) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    return world != NULL ? world->current_level->max_gizmo_blowups : 0;
-}
-
-static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    for (i32 index = 0; index < world->gizmo_blowup_count; ++index) {
-        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[index];
-        if (NuStrLen(blowup->name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, blowup);
-        }
-    }
 }
 
 void UpdateMidPos(GIZMOBLOWUP_s *blowup) {
@@ -1251,14 +1004,6 @@ void UpdateMidPos(GIZMOBLOWUP_s *blowup) {
     blowup->state_flags &= ~1;
 }
 
-void PlayAnim(nuinstanim_s *animation, float *playback, float speed, i32 backwards) {
-    animation->flags = static_cast<NUINSTANIM_FLAGS>(animation->flags | NUINSTANIM_FLAG_PLAYING);
-    if (speed >= 0.0f) {
-        *playback = SeekLinearF(*playback, backwards == 0 ? -1.0f : 1.0f, speed);
-    }
-    animation->tfactor = *playback * animation->fparam1;
-}
-
 void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
     if (world_ptr == NULL) {
         return;
@@ -1277,9 +1022,9 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                     blowup->visibility_flags &= ~GIZMOBLOWUP_VISIBLE;
                 }
 
-                f32 push_radius_x = (blowup->bounds_max.x - blowup->bounds_min.x) * 0.5f;
                 f32 push_radius_z = (blowup->bounds_max.z - blowup->bounds_min.z) * 0.5f;
-                f32 push_radius = push_radius_x > push_radius_z ? push_radius_x : push_radius_z;
+                f32 push_radius_x = (blowup->bounds_max.x - blowup->bounds_min.x) * 0.5f;
+                f32 push_radius = push_radius_z > push_radius_x ? push_radius_z : push_radius_x;
                 PushAway(&blowup->mid_position, push_radius, &blowup->bounds_min, &blowup->bounds_max, NULL, NULL, 1.0f,
                          4);
             }
@@ -1350,10 +1095,10 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                     }
                 }
             } else if ((blowup->state_flags & GIZMOBLOWUP_STATE_DELAY_ACTIVE) != 0) {
-                if (!(blowup->animation_time > 0.0f)) {
-                    blowup->state_flags &= ~GIZMOBLOWUP_STATE_DELAY_ACTIVE;
-                } else {
+                if (blowup->animation_time > 0.0f) {
                     blowup->animation_time -= FRAMETIME;
+                } else {
+                    blowup->state_flags &= ~GIZMOBLOWUP_STATE_DELAY_ACTIVE;
                 }
             }
             if ((blowup->field_0x9f & 1) != 0) {
@@ -1374,21 +1119,234 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
     }
 }
 
-void GizmoBlowupLateUpdate(void *world_ptr, void *, float) {
-    if (world_ptr == NULL) {
+void PlayAnim(nuinstanim_s *animation, float *playback, float speed, i32 backwards) {
+    animation->flags = static_cast<NUINSTANIM_FLAGS>(animation->flags | NUINSTANIM_FLAG_PLAYING);
+    if (speed >= 0.0f) {
+        *playback = SeekLinearF(*playback, backwards == 0 ? -1.0f : 1.0f, speed);
+    }
+    animation->tfactor = *playback * animation->fparam1;
+}
+
+i32 GizmoBlowupTypeNameBlank(char *name) {
+    for (u32 offset = 0; offset < 0x20; offset += sizeof(i32)) {
+        if (*reinterpret_cast<i32 *>(name + offset) != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup) {
+    if (blowup == NULL || (blowup->output_flags & 1) != 0 || (blowup->draw_flags & 4) == 0)
+        return 0;
+    if (blowup->platform_id == -1) {
+        i32 instance = NuSpecialGetInstanceix(&blowup->type->animated_special);
+        if (blowup->override_special != NULL && NuSpecialExistsFn(blowup->override_special)) {
+            instance = NuSpecialGetInstanceix(blowup->override_special);
+            blowup->platform_id = FindPlatInst(instance);
+        } else if ((blowup->draw_flags & 0x802000) == 0x2000 || (blowup->draw_flags & 0x20000000) == 0) {
+            blowup->platform_id = NewPlatInst(blowup, instance);
+        } else {
+            blowup->platform_id = FindPlatInst(instance);
+        }
+        if (blowup->platform_id == -1)
+            return 0;
+        if ((blowup->visibility_flags & 0x40) == 0)
+            PlatOnOff(blowup->platform_id, 0);
+    }
+    PlatInstRotate(blowup->platform_id, 1);
+    if (blowup->field_0x10c == -1 && NuSpecialExistsFn(&blowup->type->burst_special)) {
+        blowup->field_0x10c = NewPlatInst(blowup, NuSpecialGetInstanceix(&blowup->type->burst_special));
+        if (blowup->field_0x10c == -1)
+            return -1;
+    }
+    PlatInstRotate(blowup->field_0x10c, 1);
+    return 1;
+}
+
+i32 SetGizmoBlowUpTarget(GameObject_s *object, GIZMOBLOWUP_s *blowup) {
+    object->attack_target_position = blowup->mid_position;
+    object->attack_target_velocity = v000;
+    object->attack_blowup_target = VehicleArea != 0 ? NULL : blowup;
+    object->field_0xe21 |= 8;
+    return 1;
+}
+
+void GizBlowup_InitTerrain() {
+    if (WORLD->gizmo_blowups != NULL) {
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
+            GIZMOBLOWUP_s *blowup = &WORLD->gizmo_blowups[i];
+            blowup->platform_id = -1;
+            blowup->field_0x10c = -1;
+            if ((blowup->draw_flags & 4) != 0)
+                GizBlowup_InitSingleTerrain(blowup);
+        }
+    }
+}
+
+void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup) {
+    if (blowup == NULL)
+        return;
+    if ((blowup->override_special == NULL || !NuSpecialExistsFn(blowup->override_special)) &&
+        blowup->platform_id != -1) {
+        DeletePlatinst(blowup->platform_id);
+        blowup->platform_id = -1;
+    }
+    if (blowup->field_0x10c != -1) {
+        DeletePlatinst(blowup->field_0x10c);
+        blowup->field_0x10c = -1;
+    }
+}
+
+void GizBlowup_DeleteTerrain() {
+    if (WORLD->gizmo_blowups != NULL) {
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
+            GizBlowup_DeleteSingleTerrain(&WORLD->gizmo_blowups[i]);
+        }
+    }
+}
+
+static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
+    if (world == NULL)
+        return;
+    if (world->gizmo_blowups != NULL && world->gizmo_blowup_count > 0) {
+        const bool has_progress = progress != NULL;
+        GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+        for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
+            blowup->visibility_flags |= GIZMOBLOWUP_VISIBLE;
+            blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVATED;
+            blowup->output_flags &= ~GIZMOBLOWUP_OUTPUT_BLOWN_UP;
+            blowup->visibility_flags &= ~GIZMOBLOWUP_DRAWN;
+            blowup->field_0x9f &= ~1;
+            blowup->saved_state_1 = blowup->initial_state_1;
+            blowup->saved_state_0 = blowup->initial_state_0;
+
+            nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
+            u8 state_flags;
+            if (animation != NULL) {
+                state_flags = blowup->state_flags;
+                if (animation->playing != 0) {
+                    const u8 previous_state_flags = state_flags;
+                    state_flags |= GIZMOBLOWUP_STATE_ANIMATION_PLAYING;
+                    blowup->state_flags = state_flags;
+                    if (animation->repeating != 0) {
+                        state_flags = previous_state_flags | GIZMOBLOWUP_STATE_REPEAT_ANIMATION |
+                                      GIZMOBLOWUP_STATE_ANIMATION_PLAYING | GIZMOBLOWUP_STATE_REPEATING;
+                        blowup->state_flags = state_flags;
+                    }
+                }
+            } else {
+                state_flags = blowup->state_flags;
+            }
+            state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
+            blowup->state_flags = state_flags;
+
+            if (FreePlay != 0 && PODSPRINT_ADATA != NULL && world->area == PODSPRINT_ADATA &&
+                (blowup->draw_flags & 0x8000) == 0) {
+                blowup->draw_flags |= 0x8000;
+            }
+
+            u8 output_flags;
+            if (index <= 511 && has_progress) {
+                u32 bit = 1;
+                bit <<= (index & 31);
+                const i32 word = index >> 5;
+
+                const u8 blown_up = (progress->blown_up[word] & bit) != 0;
+                output_flags = (blowup->output_flags & ~GIZMOBLOWUP_OUTPUT_BLOWN_UP) | blown_up;
+                blowup->output_flags = output_flags;
+
+                const u8 old_visibility = blowup->visibility_flags;
+                u8 visible = (progress->visible[word] & bit) != 0;
+                visible <<= 6;
+                blowup->visibility_flags = (old_visibility & ~GIZMOBLOWUP_VISIBLE) | visible;
+                if ((old_visibility & GIZMOBLOWUP_VISIBLE) != 0) {
+                    if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) == 0) {
+                        GizBlowup_DeleteSingleTerrain(blowup);
+                        state_flags = blowup->state_flags;
+                        output_flags = blowup->output_flags;
+                    }
+                } else {
+                    if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0) {
+                        GizBlowup_InitSingleTerrain(blowup);
+                        state_flags = blowup->state_flags;
+                        output_flags = blowup->output_flags;
+                    }
+                }
+
+                u8 activated = (progress->activated[word] & bit) != 0;
+                activated <<= 7;
+                blowup->state_flags = (state_flags & ~GIZMOBLOWUP_STATE_ACTIVATED) | activated;
+
+                u8 secondary_output = (progress->secondary_output[word] & bit) != 0;
+                secondary_output <<= 4;
+                blowup->field_0x9f = (blowup->field_0x9f & ~0x10) | secondary_output;
+            } else {
+                output_flags = blowup->output_flags;
+            }
+            if ((output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0)
+                blowup->animation_time = 0.0f;
+        }
+    }
+    GizBlowup_DeleteTerrain();
+    GizBlowup_InitTerrain();
+}
+
+void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *blowup) {
+    if (blowup == NULL) {
         return;
     }
 
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    GIZMOBLOWUPTYPE_s *blowup_type = world->gizmo_blowup_types;
-    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index, ++blowup_type) {
-        if (NuSpecialExistsFn(&blowup_type->animated_special) != 0) {
-            nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup_type->animated_special);
-            if (animation != NULL && (blowup_type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) != 0) {
-                blowup_type->animation_runtime_flags &= ~GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
-            }
-        }
+    NUVEC position = blowup->position;
+    blowup->transform = *NuSpecialGetDrawMtx(&blowup->type->animated_special);
+    *NUMTX_GET_ROW_VEC(&blowup->transform, 3) = v000;
+    NuMtxRotateY(&blowup->transform, blowup->field_0xf2);
+    NuMtxPreRotateX(&blowup->transform, blowup->field_0xf0);
+    NuMtxPreRotateY(&blowup->transform, blowup->field_0xf4);
+    NuMtxTranslate(&blowup->transform, &position);
+}
+
+void GizmoBlowupGenDecalMatrix(GIZMOBLOWUP_s *blowup, numtx_s *matrix, i32 alternate) {
+    if (blowup == NULL)
+        return;
+    NuMtxSetIdentity(matrix);
+    if (alternate != 0) {
+        NuMtxScaleU(matrix, blowup->field_0xc8);
+    } else {
+        NuMtxScaleU(matrix, (1.0f - 10.0f * blowup->animation_time) * blowup->field_0xc8);
     }
+    matrix->m30 = 0.0f;
+    matrix->m31 = 0.0f;
+    matrix->m32 = 0.0f;
+    NuMtxRotateY(matrix, static_cast<u16>(blowup->field_0xe6));
+    NuMtxPreRotateX(matrix, static_cast<u16>(blowup->field_0xe4));
+    NuMtxPreRotateY(matrix, static_cast<u16>(blowup->field_0xe8));
+    NUVEC position;
+    position.x = blowup->position.x + blowup->field_0x74;
+    position.y = blowup->position.y + blowup->field_0x78;
+    position.z = blowup->position.z + blowup->field_0x7c;
+    NuMtxTranslate(matrix, &position);
+}
+
+void GizmoBlowupGenShadowMatrix(GIZMOBLOWUP_s *blowup, numtx_s *matrix) {
+    extern NUVEC v111;
+    if (blowup == NULL)
+        return;
+    NuMtxSetIdentity(matrix);
+    NuMtxSetScale(matrix, &v111);
+    matrix->m30 = 0.0f;
+    matrix->m31 = 0.0f;
+    matrix->m32 = 0.0f;
+    NuMtxRotateY(matrix, static_cast<u16>(blowup->field_0xec));
+    NuMtxPreRotateX(matrix, static_cast<u16>(blowup->field_0xea));
+    NuMtxPreRotateY(matrix, static_cast<u16>(blowup->field_0xee));
+    NUVEC position;
+    position.x = blowup->position.x + blowup->field_0x8c;
+    position.y = blowup->position.y + blowup->field_0x90;
+    position.z = blowup->position.z + blowup->field_0x94;
+    NuMtxTranslate(matrix, &position);
 }
 
 void GizmoBlowupBurstDraw(void *world_ptr, void *, float) {
@@ -1396,11 +1354,13 @@ void GizmoBlowupBurstDraw(void *world_ptr, void *, float) {
     i32 type_index = 0;
     GIZMOBLOWUP_s *type_instances = world->gizmo_blowups;
 
-    while (type_index < world->gizmo_blowup_type_count) {
+    auto world_gizmo_blowup_type_count = world->gizmo_blowup_type_count;
+    while (type_index < world_gizmo_blowup_type_count) {
         GIZMOBLOWUPTYPE_s *type = type_instances->type;
         GIZMOBLOWUP_s *next_type_instances = type_instances;
         if (type != NULL) {
             GIZMOBLOWUP_s *blowup = type_instances;
+            auto type_animation_flags = type->animation_flags;
             for (i32 instance_index = 0; instance_index < type->instance_count; ++instance_index, ++blowup) {
                 if ((blowup->draw_flags & GIZMOBLOWUP_DRAW_PROJECT_ONLY) != 0) {
                     blowup->visibility_flags |= GIZMOBLOWUP_DRAWN;
@@ -1445,7 +1405,7 @@ void GizmoBlowupBurstDraw(void *world_ptr, void *, float) {
                         frame = frame - end_frame + animation->tfirst;
                     }
 
-                    if ((type->animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) == 0) {
+                    if ((type_animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) == 0) {
                         if ((blowup->state_flags & GIZMOBLOWUP_STATE_REPEATING) == 0) {
                             frame = blowup->animation_time;
                         }
@@ -1525,273 +1485,51 @@ void GizmoBlowupBurstDraw(void *world_ptr, void *, float) {
     ResetShadowMapRendering();
 }
 
-static char *Blowup_GetGizmoName(GIZMO *gizmo) {
-    return gizmo != NULL ? static_cast<GIZMOBLOWUP_s *>(gizmo->object)->name : NULL;
-}
-
-static i32 Blowup_GetOutput(GIZMO *gizmo, i32 output_index, i32) {
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    switch (output_index) {
-        case 0:
-            if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0) {
-                return 1;
+void GizmoBlowupDraw(void *world_ptr, void *, float) {
+    WORLDINFO_s *world = static_cast<WORLDINFO_s *>(world_ptr);
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    NUMTX_ALIGNED16 matrix;
+    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
+        if ((blowup->visibility_flags & 0x40) != 0) {
+            i32 drawn = NuSpecialDrawAt(&blowup->type->animated_special, &blowup->transform);
+            blowup->visibility_flags = (blowup->visibility_flags & 0x7f) | (drawn << 7);
+            if ((blowup->visibility_flags & 0x80) != 0) {
+                NuCameraTransformScreenClip(&blowup->screen_position, &blowup->position, 1, NULL);
             }
-            break;
-        case 1:
-            if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_PUNCHED) != 0) {
-                return 1;
+            if ((blowup->status_flags & 0x808000) == 0x808000 && (blowup->draw_flags & 0x10) != 0 &&
+                GizmoBlowup_TransformDrawFn != NULL) {
+                GizmoBlowup_TransformDrawFn(blowup);
             }
-            break;
-        case 2:
-            if ((blowup->field_0x9f & 0x10) != 0) {
-                return 1;
-            }
-            break;
-        default:
-            return 0;
-    }
-    return 0;
-}
-
-static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    return output_index >= 0 && output_index < 3 ? Blowup_OutputName[output_index] : NULL;
-}
-
-static i32 Blowup_GetNumOutputs(GIZMO *gizmo) {
-    return 3;
-}
-
-static void Blowup_Activate(GIZMO *gizmo, i32 enabled) {
-    if (gizmo == NULL)
-        return;
-
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    bool activated = enabled != 0;
-    blowup->state_flags = (blowup->state_flags & 0x7f) | (activated << 7);
-
-    nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
-    if (animation != NULL) {
-        if (enabled != 0) {
-            if ((blowup->state_flags & GIZMOBLOWUP_STATE_ANIMATION_PLAYING) != 0)
-                animation->playing = 1;
         } else {
-            animation->playing = 0;
-        }
-    }
-
-    if (activated) {
-        blowup->output_flags &= ~GIZMOBLOWUP_OUTPUT_BLOWN_UP;
-        blowup->field_0x9f &= ~1;
-        blowup->visibility_flags |= GIZMOBLOWUP_VISIBLE;
-        blowup->visibility_flags &= 0x7f;
-        blowup->state_flags |= 0x80;
-        blowup->saved_state_1 = blowup->initial_state_1;
-        blowup->saved_state_0 = blowup->initial_state_0;
-
-        animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
-        if (animation != NULL) {
-            if (animation->playing != 0) {
-                blowup->state_flags |= GIZMOBLOWUP_STATE_ANIMATION_PLAYING;
-                if (animation->repeating != 0) {
-                    blowup->state_flags |= GIZMOBLOWUP_STATE_REPEAT_ANIMATION | GIZMOBLOWUP_STATE_REPEATING;
+            blowup->visibility_flags &= 0x7f;
+            if ((blowup->output_flags & 1) != 0) {
+                if ((blowup->draw_flags & 0x400) == 0) {
+                    GizmoBlowupGenDecalMatrix(blowup, &matrix, 0);
+                    NuSpecialDrawAt(&blowup->type->decal_special, &matrix);
+                }
+                if (NuSpecialExistsFn(&blowup->type->burst_special)) {
+                    NuSpecialDrawAt(&blowup->type->burst_special, &blowup->transform);
                 }
             }
         }
-        blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
-    }
-}
-
-static void Blowup_SetVisibility(GIZMO *gizmo, i32 visible) {
-    if (gizmo == NULL) {
-        return;
-    }
-
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    u8 visibility_flag = visible != 0;
-    visibility_flag <<= 6;
-    blowup->visibility_flags = (blowup->visibility_flags & ~GIZMOBLOWUP_VISIBLE) | visibility_flag;
-
-    if (blowup->platform_id != -1) {
-        PlatOnOff(blowup->platform_id, visible);
-    }
-
-    if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0) {
-        if (blowup->anti_node == NULL) {
-            blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
-        }
-    } else if (blowup->anti_node != NULL) {
-        GameAntinode_UnregisterAntiNode(WORLD->game_antinode_sys, blowup->anti_node);
-        blowup->anti_node = NULL;
-    }
-}
-
-i32 Blowup_GetVisibility(GIZMO *gizmo) {
-    if (gizmo == NULL) {
-        return 0;
-    }
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    return (blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0;
-}
-
-static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo) {
-    return gizmo != NULL ? &static_cast<GIZMOBLOWUP_s *>(gizmo->object)->position : NULL;
-}
-
-static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
-    return GizmoBufferAlloc(buffer, buffer_end, 0x100);
-}
-
-struct BLOWUPPROGRESS_s {
-    u32 blown_up[16];
-    u32 activated[16];
-    u32 visible[16];
-    u32 secondary_output[16];
-};
-DECOMP_ASSERT(sizeof(BLOWUPPROGRESS_s) == 0x100, "BLOWUPPROGRESS_s ABI");
-
-static void Blowup_ClearProgress(void *, void *progress_ptr) {
-    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
-    if (progress != NULL) {
-        memset(progress->blown_up, 0, sizeof(progress->blown_up));
-        memset(progress->activated, 0xff, sizeof(progress->activated));
-        memset(progress->visible, 0xff, sizeof(progress->visible));
-        memset(progress->secondary_output, 0, sizeof(progress->secondary_output));
-    }
-}
-
-static void Blowup_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
-    if (progress == NULL) {
-        return;
-    }
-
-    Blowup_ClearProgress(NULL, progress);
-    if (world == NULL || world->gizmo_blowups == NULL) {
-        return;
-    }
-
-    i32 count = world->gizmo_blowup_count;
-    if (count > 512) {
-        count = 512;
-    }
-    for (i32 index = 0; index < count; ++index) {
-        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[index];
-        const u32 bit = 1u << (index & 31);
-        const i32 word = index >> 5;
-        if ((blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0) {
-            progress->blown_up[word] |= bit;
-        }
-        if ((blowup->state_flags & GIZMOBLOWUP_STATE_ACTIVATED) == 0) {
-            progress->activated[word] &= ~bit;
-        }
-        if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) == 0) {
-            progress->visible[word] &= ~bit;
-        }
-        if ((blowup->field_0x9f & 0x10) != 0) {
-            progress->secondary_output[word] |= bit;
+        if ((blowup->state_flags & 0x80) != 0 && (blowup->draw_flags & 0x20000) == 0 &&
+            NuSpecialExistsFn(&blowup->type->shadow_special)) {
+            GizmoBlowupGenShadowMatrix(blowup, &matrix);
+            NuSpecialDrawAt(&blowup->type->shadow_special, &blowup->transform);
         }
     }
 }
 
-void GizBlowup_DeleteTerrain();
-void GizBlowup_InitTerrain();
-void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup);
-i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup);
-extern AREADATA_s *PODSPRINT_ADATA;
-
-static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    BLOWUPPROGRESS_s *progress = static_cast<BLOWUPPROGRESS_s *>(progress_ptr);
-    if (world == NULL)
-        return;
-    if (world->gizmo_blowups != NULL && world->gizmo_blowup_count > 0) {
-        const bool has_progress = progress != NULL;
-        GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-        for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
-            blowup->visibility_flags |= GIZMOBLOWUP_VISIBLE;
-            blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVATED;
-            blowup->output_flags &= ~GIZMOBLOWUP_OUTPUT_BLOWN_UP;
-            blowup->visibility_flags &= ~GIZMOBLOWUP_DRAWN;
-            blowup->field_0x9f &= ~1;
-            blowup->saved_state_1 = blowup->initial_state_1;
-            blowup->saved_state_0 = blowup->initial_state_0;
-
-            nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
-            u8 state_flags;
-            if (animation != NULL) {
-                state_flags = blowup->state_flags;
-                if (animation->playing != 0) {
-                    const u8 previous_state_flags = state_flags;
-                    state_flags |= GIZMOBLOWUP_STATE_ANIMATION_PLAYING;
-                    blowup->state_flags = state_flags;
-                    if (animation->repeating != 0) {
-                        state_flags = previous_state_flags | GIZMOBLOWUP_STATE_REPEAT_ANIMATION |
-                                      GIZMOBLOWUP_STATE_ANIMATION_PLAYING | GIZMOBLOWUP_STATE_REPEATING;
-                        blowup->state_flags = state_flags;
-                    }
-                }
-            } else {
-                state_flags = blowup->state_flags;
-            }
-            state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
-            blowup->state_flags = state_flags;
-
-            if (FreePlay != 0 && PODSPRINT_ADATA != NULL && world->area == PODSPRINT_ADATA &&
-                (blowup->draw_flags & 0x8000) == 0) {
-                blowup->draw_flags |= 0x8000;
-            }
-
-            u8 output_flags;
-            if (index <= 511 && has_progress) {
-                u32 bit = 1;
-                bit <<= (index & 31);
-                const i32 word = index >> 5;
-
-                const u8 blown_up = (progress->blown_up[word] & bit) != 0;
-                output_flags = (blowup->output_flags & ~GIZMOBLOWUP_OUTPUT_BLOWN_UP) | blown_up;
-                blowup->output_flags = output_flags;
-
-                const u8 old_visibility = blowup->visibility_flags;
-                u8 visible = (progress->visible[word] & bit) != 0;
-                visible <<= 6;
-                blowup->visibility_flags = (old_visibility & ~GIZMOBLOWUP_VISIBLE) | visible;
-                if ((old_visibility & GIZMOBLOWUP_VISIBLE) == 0) {
-                    if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) != 0) {
-                        GizBlowup_InitSingleTerrain(blowup);
-                        state_flags = blowup->state_flags;
-                        output_flags = blowup->output_flags;
-                    }
-                } else if ((blowup->visibility_flags & GIZMOBLOWUP_VISIBLE) == 0) {
-                    GizBlowup_DeleteSingleTerrain(blowup);
-                    state_flags = blowup->state_flags;
-                    output_flags = blowup->output_flags;
-                }
-
-                u8 activated = (progress->activated[word] & bit) != 0;
-                activated <<= 7;
-                blowup->state_flags = (state_flags & ~GIZMOBLOWUP_STATE_ACTIVATED) | activated;
-
-                u8 secondary_output = (progress->secondary_output[word] & bit) != 0;
-                secondary_output <<= 4;
-                blowup->field_0x9f = (blowup->field_0x9f & ~0x10) | secondary_output;
-            } else {
-                output_flags = blowup->output_flags;
-            }
-            if ((output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) != 0)
-                blowup->animation_time = 0.0f;
+GIZMOBLOWUPTYPE_s *GizmoBlowup_FindType(char *name, WORLDINFO_s *world) {
+    if (world == NULL || world->gizmo_blowup_types == NULL || world->gizmo_blowup_type_count == 0 || name == NULL) {
+        return NULL;
+    }
+    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
+        if (NuStrCmp(world->gizmo_blowup_types[index].name, name) == 0) {
+            return &world->gizmo_blowup_types[index];
         }
     }
-    GizBlowup_DeleteTerrain();
-    GizBlowup_InitTerrain();
-}
-
-void *gizmoblowup_reservebuffers(void *world_ptr) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    InitGizmoBlowupTypes(world);
-    InitGizmoBlowups(world);
-    InitGizmoBlowupsMtxBuffer(world);
-    return world->gizmo_blowups;
+    return NULL;
 }
 
 static void Blowup_ReadString(char *text) {
@@ -1827,6 +1565,8 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
     }
 
     char text[0x100];
+    auto world_page_part = world->page_part;
+    auto world_page_pp = world->page_pp;
     for (i32 file_type_index = 0; file_type_index < file_type_count; ++file_type_index) {
         GIZMOBLOWUPTYPE_s type;
         memset(&type, 0, sizeof(type));
@@ -1841,9 +1581,9 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
         }
         if (version > 16) {
             Blowup_ReadString(text);
-            type.particle_types[0] = PARTLookupTypePageOnly(text, world->page_part);
+            type.particle_types[0] = PARTLookupTypePageOnly(text, world_page_part);
             Blowup_ReadString(text);
-            type.particle_types[1] = PARTLookupTypePageOnly(text, world->page_part);
+            type.particle_types[1] = PARTLookupTypePageOnly(text, world_page_part);
         } else if (version > 4) {
             Blowup_ReadString(text);
             type.particle_types[0] = PARTLookupType(text);
@@ -1853,7 +1593,7 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
         for (i32 particle_index = 0; particle_index < 3; ++particle_index) {
             Blowup_ReadString(text);
             type.particle_types[particle_index + 4] =
-                LookupDebrisEffectPageOnly(text, static_cast<char>(world->page_pp));
+                LookupDebrisEffectPageOnly(text, static_cast<char>(world_page_pp));
         }
         if (version >= 26) {
             Blowup_ReadString(text);
@@ -1974,7 +1714,8 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
     for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
         GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[type_index];
         type->instance_count = 0;
-        for (i32 instance_index = 0; instance_index < world->gizmo_blowup_count; ++instance_index) {
+        auto world_gizmo_blowup_count = world->gizmo_blowup_count;
+        for (i32 instance_index = 0; instance_index < world_gizmo_blowup_count; ++instance_index) {
             if (world->gizmo_blowups[instance_index].type == type) {
                 ++type->instance_count;
             }
@@ -2000,166 +1741,69 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
     return 1;
 }
 
-u32 GetLevelExBlowupFlags(void) {
-    return EXBLOWUPFLAGS;
-}
+void GizmoBlowupsFinalSetup(WORLDINFO_s *world) {
+    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
+        GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[type_index];
+        type->animation_runtime_flags &= ~1;
+        nuinstanim_s *animation = NuSpecialGetInstAnim(&type->animated_special);
+        type->animation_base_frame = animation != NULL ? animation->ltime : 0.0f;
+        if (NuSpecialExistsFn(&type->decal_special) != 0) {
+            NuSpecialSetVisibility(&type->decal_special, 0);
+        }
+    }
 
-GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_count, f32 radius, NUVEC *minimum,
-                               NUVEC *maximum, BOLT_s *bolt, u32 hit_type, u8 *flags) {
-    const u32 exclude_flag_1 = EXBLOWUPFLAGS & 1;
-    const u32 exclude_flag_2 = EXBLOWUPFLAGS & 2;
-    const bool airborne_damage =
-        object != NULL &&
-        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f;
-    GIZMOBLOWUP_s *nearest = NULL;
-    f32 nearest_distance = 1000000.0f;
-    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
-    if (blowup == NULL) {
-        return NULL;
-    }
-    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index, ++blowup) {
-        u32 properties = blowup->draw_flags;
-        if ((blowup->status_flags & 0x804001) != 0x804000 ||
-            (exclude_flag_1 && (properties & 0x80000) && airborne_damage)) {
-            continue;
-        }
-        if (exclude_flag_2 && (properties & 0x200000) && hit_type - 8 < 2 && BlowupExFunc != NULL &&
-            BlowupExFunc(blowup, hit_type)) {
-            continue;
-        }
-        properties = blowup->draw_flags;
-        if (bolt != NULL && (blowup->platform_id != -1 || (properties & 0x8000) == 0 ||
-                             ((properties & 0x80000) && (object == NULL || object->field_0xcc0 == NULL)))) {
-            continue;
-        }
-        if (hit_type == 0 && (properties & 0x10000) == 0) {
-            continue;
-        }
-        if ((hit_type == 3 && (properties & 0x200000)) || ((properties & 0x20) && ShadowMode == 0) ||
-            ((properties & 0x40) != 0) != (hit_type == 7)) {
-            continue;
-        }
-        const NUVEC &center = blowup->mid_position;
-        const f32 extent = blowup->target_scale;
-        if (center.x - extent > maximum->x || minimum->x > center.x + extent || center.z - extent > maximum->z ||
-            minimum->z > center.z + extent || center.y - extent > maximum->y || minimum->y > center.y + extent) {
-            continue;
-        }
-        for (i32 point = point_count - 1; point >= 0; --point) {
-            if (SphereSphereOverlap(&blowup->mid_position, blowup->target_scale, &points[point], radius)) {
-                NUVEC *origin = object != NULL ? &object->apiobj.collision_position : &points[point];
-                const f32 distance = NuVecDistSqr(origin, &blowup->mid_position, NULL);
-                if (distance < nearest_distance) {
-                    nearest_distance = distance;
-                    nearest = blowup;
-                }
-                break;
-            }
-        }
-    }
-    if (nearest == NULL) {
-        return NULL;
-    }
-    i32 damage;
-    i32 cause;
-    if (hit_type == 7 || hit_type == 2) {
-        damage = -1;
-        cause = 9;
-    } else {
-        damage = 1;
-        if (bolt != NULL) {
-            damage = BoltType_FindByID(bolt->type_id, WORLD)->field_3c;
-            if (Cheats_CheckFlags(2) && (bolt->flags & 3)) {
-                damage *= 2;
-            }
-        }
-        cause = hit_type == 3 ? 10 : (hit_type == 0 ? 13 : 3);
-    }
-    if (GizmoBlowupBlowup(nearest, 1, cause, damage, NULL, 1) == 0) {
-        if (bolt != NULL) {
-            NUVEC normal;
-            NuVecSub(&normal, &nearest->position, &bolt->position);
-            NuVecNorm(&normal, &normal);
-            Bolt_AddDeflectedBolt(bolt, &bolt->field_0xac, &normal, flags);
-        }
-    } else if (object != NULL) {
-        NewRumble(object->pad_gamepad->pad, 0.4f, 0);
-        GameCam_HitJudder();
-    }
-    if (BoltSys->stop_targeting != NULL) {
-        BoltSys->stop_targeting(object, points);
-    }
-    return nearest;
-}
+    for (i32 instance_index = 0; instance_index < world->gizmo_blowup_count; ++instance_index) {
+        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[instance_index];
+        blowup->animation_time = 1.0f;
+        blowup->field_0x9f &= ~0x08;
+        blowup->visibility_flags &= ~0x03;
+        blowup->output_flags = 0;
+        blowup->state_flags = (blowup->state_flags & 0xb7) | 0x81;
 
-extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
-extern f32 TargetDist_Near2, TargetDist_Mid2;
-extern i32 ShadowMode;
-DECOMP_ASSERT(offsetof(WORLDINFO_s, blowup_target_candidates) == 0x50d4, "Blowup target candidate-list ABI");
-
-GIZMOBLOWUP_s *GizmoBlowUp_Target(GameObject_s *object, nuvec_s *position, nuvec_s *direction, float radius,
-                                  float range_squared, i32 directional, i32 planar, i32 bolt_id) {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    BOLTTYPE_s *bolt = BoltType_FindByID(bolt_id, world);
-    u16 near_angle = TargetDeg_Near, mid_angle = TargetDeg_Mid, far_angle = TargetDeg_Far;
-    f32 near_distance = TargetDist_Near2, mid_distance = TargetDist_Mid2;
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    if (blowup == NULL)
-        return NULL;
-    if (GizmoBlowUp_NoTargetFn != NULL && GizmoBlowUp_NoTargetFn(world, object) != 0)
-        return NULL;
-    NUVEC aim = *direction;
-    f32 min_x = position->x - radius, min_z = position->z - radius;
-    f32 max_x = position->x + radius, max_z = position->z + radius;
-    if (directional != 0 && (bolt->field_60 & 0x20000) != 0) {
-        aim.y = 0.0f;
-        NuVecNorm(&aim, &aim);
-    }
-    i32 count = static_cast<i32>(world->field_0x50d0);
-    if (count <= 0) {
-        count = world->gizmo_blowup_count;
-        if (world->field_0x50d0 == 0)
-            blowup = world->gizmo_blowups;
-    }
-    GIZMOBLOWUP_s *nearest = NULL, *fallback = NULL;
-    f32 nearest_distance = 100000000.0f;
-    for (i32 i = 0; i < count; ++i, ++blowup) {
-        if (world->field_0x50d0 != 0)
-            blowup = world->blowup_target_candidates[i];
-        if ((blowup->draw_flags & 0x8000) == 0 || (blowup->output_flags & 1) != 0 ||
-            (blowup->status_flags & 0x08800000) == 0 || (blowup->visibility_flags & 0x40) == 0)
-            continue;
-        if ((blowup->draw_flags & 0x20) != 0 && ShadowMode == 0)
-            continue;
-        if (blowup->mid_position.x < min_x || blowup->mid_position.x > max_x || blowup->mid_position.z < min_z ||
-            blowup->mid_position.z > max_z)
-            continue;
-        NUVEC delta;
-        f32 distance = planar != 0 ? NuVecXZDistSqr(&blowup->mid_position, position, &delta)
-                                   : NuVecDistSqr(&blowup->mid_position, position, &delta);
-        if (!(range_squared > distance))
-            continue;
-        if (directional == 0) {
-            u16 angle = NuAtan2D(blowup->mid_position.x - position->x, blowup->mid_position.z - position->z);
-            NuVecRotateY(&aim, &v001, angle);
+        nuhspecial_s *special = blowup->override_special;
+        if (special == NULL || NuSpecialExistsFn(special) == 0) {
+            special = &blowup->type->animated_special;
         }
-        if ((bolt->field_60 & 0x20000) != 0)
-            delta.y = 0.0f;
-        NuVecNorm(&delta, &delta);
-        f32 dot = NuVecDot(&delta, &aim);
-        u16 angle = distance < near_distance && directional != 0 ? near_angle
-                    : distance < mid_distance                    ? mid_angle
-                                                                 : far_angle;
-        if (!(dot > NuTrigTable[((i32)angle + 0x4000) >> 1 & 0x7fff]) || !(nearest_distance > distance))
-            continue;
-        if (object != NULL && object->attack_blowup_target == blowup) {
-            fallback = blowup;
+
+        if (NuSpecialExistsFn(special) == 0) {
+            blowup->bounds_max = v000;
+            blowup->bounds_min = v000;
         } else {
-            nearest_distance = distance;
-            nearest = blowup;
+            if (NuSpecialExistsFn(&blowup->type->burst_special) != 0) {
+                NuSpecialSetVisibility(&blowup->type->burst_special, 0);
+            }
+            if ((blowup->type->animation_flags & 0x20) != 0) {
+                blowup->position = *NuSpecialGetDrawPos(special);
+            }
+
+            NUVEC centre;
+            NuSpecialGetRadius(special, &centre, &blowup->target_scale);
+            centre.x += blowup->position.x;
+            centre.y += blowup->position.y;
+            centre.z += blowup->position.z;
+            blowup->bounds_min.x = centre.x - blowup->target_scale;
+            blowup->bounds_min.y = centre.y - blowup->target_scale;
+            blowup->bounds_min.z = centre.z - blowup->target_scale;
+            blowup->bounds_max.x = centre.x + blowup->target_scale;
+            blowup->bounds_max.y = centre.y + blowup->target_scale;
+            blowup->bounds_max.z = centre.z + blowup->target_scale;
+
+            nuinstanim_s *animation = NuSpecialGetInstAnim(special);
+            if (animation != NULL && animation->playing != 0) {
+                const u8 original_state = blowup->state_flags;
+                blowup->state_flags = original_state | 0x10;
+                if (animation->repeating != 0) {
+                    blowup->state_flags = original_state | 0x58;
+                }
+            }
         }
+
+        GizmoBlowupUpdateMatrix(blowup);
+        blowup->initial_state_1 = static_cast<u8>(blowup->initial_state_1 * GizmoBlowup_HitMultiplier);
     }
-    return nearest != NULL ? nearest : fallback;
+
+    GizBlowup_DeleteTerrain();
+    GizBlowup_InitTerrain();
 }
 
 GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_radius, f32 minimum_radius, i32 mode,
@@ -2242,15 +1886,125 @@ GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_ra
     return NULL;
 }
 
-GIZMOBLOWUP_s *GizmoBlowUp_FindByName(WORLDINFO_s *world, char *name) {
-    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    if (blowup != NULL) {
-        for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup) {
-            if (NuStrICmp(blowup->name, name) == 0)
-                return blowup;
+u32 GetLevelExBlowupFlags(void) {
+    return EXBLOWUPFLAGS;
+}
+
+GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_count, f32 radius, NUVEC *minimum,
+                               NUVEC *maximum, BOLT_s *bolt, u32 hit_type, u8 *flags) {
+    const u32 exclude_flag_1 = EXBLOWUPFLAGS & 1;
+    const u32 exclude_flag_2 = EXBLOWUPFLAGS & 2;
+    const bool airborne_damage =
+        object != NULL &&
+        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f;
+    GIZMOBLOWUP_s *nearest = NULL;
+    f32 nearest_distance = 1000000.0f;
+    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
+    if (blowup == NULL) {
+        return NULL;
+    }
+    auto f0xcc0 = object->field_0xcc0;
+    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index, ++blowup) {
+        u32 properties = blowup->draw_flags;
+        if ((blowup->status_flags & 0x804001) != 0x804000 ||
+            (exclude_flag_1 && (properties & 0x80000) && airborne_damage)) {
+            continue;
+        }
+        if (exclude_flag_2 && (properties & 0x200000) && hit_type - 8 < 2 && BlowupExFunc != NULL &&
+            BlowupExFunc(blowup, hit_type)) {
+            continue;
+        }
+        properties = blowup->draw_flags;
+        if (bolt != NULL && (blowup->platform_id != -1 || (properties & 0x8000) == 0 ||
+                             ((properties & 0x80000) && (object == NULL || f0xcc0 == NULL)))) {
+            continue;
+        }
+        if (hit_type == 0 && (properties & 0x10000) == 0) {
+            continue;
+        }
+        if ((hit_type == 3 && (properties & 0x200000)) || ((properties & 0x20) && ShadowMode == 0) ||
+            ((properties & 0x40) != 0) != (hit_type == 7)) {
+            continue;
+        }
+        const NUVEC &center = blowup->mid_position;
+        const f32 extent = blowup->target_scale;
+        if (center.x - extent > maximum->x || minimum->x > center.x + extent || center.z - extent > maximum->z ||
+            minimum->z > center.z + extent || center.y - extent > maximum->y || minimum->y > center.y + extent) {
+            continue;
+        }
+        for (i32 point = point_count - 1; point >= 0; --point) {
+            if (SphereSphereOverlap(&blowup->mid_position, blowup->target_scale, &points[point], radius)) {
+                NUVEC *origin = object != NULL ? &object->apiobj.collision_position : &points[point];
+                const f32 distance = NuVecDistSqr(origin, &blowup->mid_position, NULL);
+                if (distance < nearest_distance) {
+                    nearest_distance = distance;
+                    nearest = blowup;
+                }
+                break;
+            }
         }
     }
-    return NULL;
+    if (nearest == NULL) {
+        return NULL;
+    }
+    i32 damage;
+    i32 cause;
+    if (hit_type == 7 || hit_type == 2) {
+        damage = -1;
+        cause = 9;
+    } else {
+        damage = 1;
+        if (bolt != NULL) {
+            damage = BoltType_FindByID(bolt->type_id, WORLD)->field_3c;
+            if (Cheats_CheckFlags(2) && (bolt->flags & 3)) {
+                damage *= 2;
+            }
+        }
+        cause = hit_type == 3 ? 10 : (hit_type == 0 ? 13 : 3);
+    }
+    if (GizmoBlowupBlowup(nearest, 1, cause, damage, NULL, 1) != 0) {
+        if (object != NULL) {
+            NewRumble(object->pad_gamepad->pad, 0.4f, 0);
+            GameCam_HitJudder();
+        }
+    } else {
+        if (bolt != NULL) {
+            NUVEC normal;
+            NuVecSub(&normal, &nearest->position, &bolt->position);
+            NuVecNorm(&normal, &normal);
+            Bolt_AddDeflectedBolt(bolt, &bolt->field_0xac, &normal, flags);
+        }
+    }
+    if (BoltSys->stop_targeting != NULL) {
+        BoltSys->stop_targeting(object, points);
+    }
+    return nearest;
+}
+
+void GizmoBlowup_HitBlowup(GameObject_s *object, GIZMOBLOWUP_s *blowup, i32 hit_type, BOLT_s *bolt, nuvec_s *position,
+                           unsigned char *hit_data, u32 mode, i32) {
+    if (GizmoBlowupBlowup(blowup, 1, hit_type, 1, NULL, 1)) {
+        if (object != NULL) {
+            NewRumble(object->pad_gamepad->pad, 0.4f, 0);
+            GameCam_HitJudder();
+        }
+    } else if (bolt != NULL) {
+        NUVEC direction;
+        NuVecSub(&direction, &blowup->position, &bolt->position);
+        NuVecNorm(&direction, &direction);
+        Bolt_AddDeflectedBolt(bolt, &bolt->field_0xac, &direction, hit_data);
+    }
+    if (BoltSys->stop_targeting != NULL) {
+        BoltSys->stop_targeting(object, position);
+    }
+    if (mode == 1) {
+        BoltSys->debris(bolt, position, -1, NULL, 0);
+        if (bolt->owner != NULL) {
+            NewRumble(bolt->owner->pad_gamepad->pad, 0.6f, 0);
+        }
+        Bolt_End(bolt, 1);
+        Bolt_PlayHitSfx(bolt);
+    }
 }
 
 GIZMOBLOWUP_s *GizmoBlowUp_FindFromPlatID(WORLDINFO_s *world, i32 platform_id) {
@@ -2269,14 +2023,235 @@ GIZMOBLOWUP_s *GizmoBlowUp_FindFromPlatID(WORLDINFO_s *world, i32 platform_id) {
     return fallback;
 }
 
-void GIZMOBLOWUP_s::ClearMechObjectInterface() {
-    if (mech_object_interface != NULL)
-        delete mech_object_interface;
+GIZMOBLOWUP_s *GizmoBlowUp_FindByName(WORLDINFO_s *world, char *name) {
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    if (blowup != NULL) {
+        for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup) {
+            if (NuStrICmp(blowup->name, name) == 0)
+                return blowup;
+        }
+    }
+    return NULL;
 }
 
-MechObjectInterface *GIZMOBLOWUP_s::GetMechObjectInterface() {
-    if (mech_object_interface != NULL)
-        return mech_object_interface;
-    new GizBlowupObjectInterface(*this);
-    return mech_object_interface;
+GIZMOBLOWUP_s *GizmoBlowUp_Target(GameObject_s *object, nuvec_s *position, nuvec_s *direction, float radius,
+                                  float range_squared, i32 directional, i32 planar, i32 bolt_id) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    BOLTTYPE_s *bolt = BoltType_FindByID(bolt_id, world);
+    u16 near_angle = TargetDeg_Near, mid_angle = TargetDeg_Mid, far_angle = TargetDeg_Far;
+    f32 near_distance = TargetDist_Near2, mid_distance = TargetDist_Mid2;
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    if (blowup == NULL)
+        return NULL;
+    if (GizmoBlowUp_NoTargetFn != NULL && GizmoBlowUp_NoTargetFn(world, object) != 0)
+        return NULL;
+    NUVEC aim = *direction;
+    f32 min_x = position->x - radius, min_z = position->z - radius;
+    f32 max_x = position->x + radius, max_z = position->z + radius;
+    if (directional != 0 && (bolt->field_60 & 0x20000) != 0) {
+        aim.y = 0.0f;
+        NuVecNorm(&aim, &aim);
+    }
+    i32 count = static_cast<i32>(world->field_0x50d0);
+    if (count <= 0) {
+        count = world->gizmo_blowup_count;
+        if (world->field_0x50d0 == 0)
+            blowup = world->gizmo_blowups;
+    }
+    GIZMOBLOWUP_s *nearest = NULL, *fallback = NULL;
+    f32 nearest_distance = 100000000.0f;
+    for (i32 i = 0; i < count; ++i, ++blowup) {
+        if (world->field_0x50d0 != 0)
+            blowup = world->blowup_target_candidates[i];
+        if ((blowup->draw_flags & 0x8000) == 0 || (blowup->output_flags & 1) != 0 ||
+            (blowup->status_flags & 0x08800000) == 0 || (blowup->visibility_flags & 0x40) == 0)
+            continue;
+        if ((blowup->draw_flags & 0x20) != 0 && ShadowMode == 0)
+            continue;
+        if (blowup->mid_position.x < min_x || blowup->mid_position.x > max_x || blowup->mid_position.z < min_z ||
+            blowup->mid_position.z > max_z)
+            continue;
+        NUVEC delta;
+        f32 distance = planar != 0 ? NuVecXZDistSqr(&blowup->mid_position, position, &delta)
+                                   : NuVecDistSqr(&blowup->mid_position, position, &delta);
+        if (!(range_squared > distance))
+            continue;
+        if (directional == 0) {
+            u16 angle = NuAtan2D(blowup->mid_position.x - position->x, blowup->mid_position.z - position->z);
+            NuVecRotateY(&aim, &v001, angle);
+        }
+        if ((bolt->field_60 & 0x20000) != 0)
+            delta.y = 0.0f;
+        NuVecNorm(&delta, &delta);
+        f32 dot = NuVecDot(&delta, &aim);
+        u16 angle = distance < near_distance && directional != 0 ? near_angle
+                    : distance < mid_distance                    ? mid_angle
+                                                                 : far_angle;
+        if (!(dot > NuTrigTable[((i32)angle + 0x4000) >> 1 & 0x7fff]) || !(nearest_distance > distance))
+            continue;
+        if (object != NULL && object->attack_blowup_target == blowup) {
+            fallback = blowup;
+        } else {
+            nearest_distance = distance;
+            nearest = blowup;
+        }
+    }
+    return nearest != NULL ? nearest : fallback;
+}
+
+i32 GizmoBlowupCheckProximity(WORLDINFO_s *world, GameObject_s *object) {
+    i32 count = 0;
+    if (object == NULL || static_cast<i8>(object->apiobj.field_0x1f8) >= 0)
+        return count;
+    i32 special;
+    i32 ordinary;
+    if ((object->apiobj.character_data->model_flags & 0x2000) != 0 || object->field_0xcc0 != NULL) {
+        special = 1;
+        ordinary = 0;
+    } else {
+        special = 0;
+        ordinary = 1;
+    }
+    i32 destroy = 0;
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
+        if ((blowup->status_flags & 0x804001) != 0x804000)
+            continue;
+        if (special && (blowup->draw_flags & 0x200) == 0)
+            continue;
+        if (ordinary && (blowup->draw_flags & 8) == 0)
+            continue;
+        if ((blowup->state_flags & 4) != 0 || (blowup->field_0x9f & 2) != 0)
+            continue;
+        f32 x = object->apiobj.collision_position.x - blowup->mid_position.x;
+        f32 y = object->apiobj.collision_position.y - blowup->mid_position.y;
+        f32 z = object->apiobj.collision_position.z - blowup->mid_position.z;
+        if (blowup->field_0xb4 != 0.0f && !(x * x + y * y + z * z < blowup->field_0xb4 * blowup->field_0xb4))
+            continue;
+        i32 hit_type;
+        if (!special) {
+            blowup->output_flags |= 0x20;
+            hit_type = 4;
+        } else {
+            blowup->output_flags |= 0x10;
+            hit_type = 5;
+        }
+        nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
+        if (!(blowup->field_0xc0 > 0.0f)) {
+            if (animation == NULL || (blowup->state_flags & 8) != 0) {
+                destroy = 1;
+            } else {
+                blowup->state_flags |= 8;
+                blowup->field_0x9f |= 2;
+                blowup->animation_time = 0.0f;
+            }
+        } else {
+            blowup->activation_delay = blowup->field_0xc0;
+            blowup->state_flags |= 4;
+        }
+        if (destroy) {
+            GizmoBlowupBlowup(blowup, 1, hit_type, 1, object, 1);
+            ++count;
+        }
+    }
+    return count;
+}
+
+void GizmoBlowupVisibilityOverrides(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    for (i32 index = 0; index < world->gizmo_blowup_count; ++index, ++blowup) {
+        if ((blowup->type->animation_flags & 0x20) != 0 && (blowup->draw_flags & 0x800000) == 0) {
+            NuSpecialSetVisibility(&blowup->type->animated_special, 0);
+        }
+    }
+    for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
+        nuhspecial_s *special = &world->gizmo_blowup_types[index].decal_special;
+        if (NuSpecialExistsFn(special)) {
+            NuSpecialSetVisibility(special, 0);
+        }
+    }
+}
+
+i32 GizmoBlowupTypeGetCount(WORLDINFO_s *world) {
+    return world != NULL ? world->gizmo_blowup_type_count : -1;
+}
+
+char *GizmoBlowupTypeGetNameFromIndex(WORLDINFO_s *world, i32 index) {
+    if (index == -1 || world == NULL || index > world->gizmo_blowup_type_count)
+        return NULL;
+    char *name = world->gizmo_blowup_types[index].name;
+    return NuStrLen(name) != 0 ? name : NULL;
+}
+
+void GizmoBlowUpTypeBlowUp(WORLDINFO_s *world, i32 index, nuvec_s *position) {
+    if (world == NULL)
+        return;
+    char *name = GizmoBlowupTypeGetNameFromIndex(world, index);
+    if (name == NULL)
+        return;
+    GIZMOBLOWUPTYPE_s *type = GizmoBlowup_FindType(name, world);
+    if (type == NULL)
+        return;
+    GIZMOBLOWUP_s blowup;
+    memset(&blowup, 0, sizeof(blowup));
+    blowup.type = type;
+    GizmoBlowUp_AddEffects(position, &blowup, 0, 7, NULL);
+    GameAudio_PlaySfx(0x33, position, 0, 0);
+}
+
+void GizmoBlowupResetNameTable(void) {
+    memset(gizmoblowupnametable, 0, sizeof(gizmoblowupnametable));
+    gizmoblowupnametable_numids = 0;
+}
+
+i32 GizmoBlowupGetNameTableId(char *name) {
+    for (i32 id = 0; id < gizmoblowupnametable_numids; ++id) {
+        if (NuStrICmp(gizmoblowupnametable[id], name) == 0) {
+            return id;
+        }
+    }
+
+    if (gizmoblowupnametable_numids >= 32) {
+        return -1;
+    }
+
+    NuStrNCpy(gizmoblowupnametable[gizmoblowupnametable_numids], name, sizeof(gizmoblowupnametable[0]));
+    return gizmoblowupnametable_numids++;
+}
+
+i32 GizmoBlowupGetTypeFromNameTableId(WORLDINFO_s *world, i32 name_id) {
+    if (name_id < 0 || name_id >= gizmoblowupnametable_numids) {
+        return -1;
+    }
+
+    const char *name = gizmoblowupnametable[name_id];
+    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
+        if (NuStrICmp(world->gizmo_blowup_types[type_index].name, name) == 0) {
+            return type_index;
+        }
+    }
+
+    return -1;
+}
+
+GIZMOBLOWUP_s *FindNearestGizmoBlowUp(WORLDINFO_s *world, nuvec_s *position, float max_distance_squared) {
+    if (world == NULL || world->gizmo_blowup_count <= 0 || position == NULL)
+        return NULL;
+    GIZMOBLOWUP_s *nearest = NULL;
+    f32 nearest_distance = max_distance_squared;
+    GIZMOBLOWUP_s *end = world->gizmo_blowups + world->gizmo_blowup_count;
+    GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
+    do {
+        if ((blowup->status_flags & 0x804001) != 0x804000)
+            continue;
+        f32 x = blowup->position.x - position->x;
+        f32 y = blowup->position.y - position->y;
+        f32 z = blowup->position.z - position->z;
+        f32 distance = x * x + y * y + z * z;
+        if (distance < max_distance_squared && distance < nearest_distance) {
+            nearest = blowup;
+            nearest_distance = distance;
+        }
+    } while (++blowup != end);
+    return nearest;
 }

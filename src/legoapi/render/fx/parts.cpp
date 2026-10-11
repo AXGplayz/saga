@@ -291,6 +291,8 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
     minimum.z -= radius;
     maximum.z += radius;
     GameObject_s *object = Obj;
+    i8 force_player_mask = part->force_player_mask;
+    auto part_pickup_type = part->pickup_type;
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
         APIOBJECT_s *api = &object->apiobj;
         if ((api->field_0x1f8 & 0x1001) != 0x1001 || api->field_0x287 != 0)
@@ -298,7 +300,7 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
         i8 context = static_cast<i8>(object->character_context);
         if ((CInfo[context].flags & 0x8000) != 0 || (object->field_0xe20 & 0x20) != 0)
             continue;
-        if (part->force_player_mask == 0) {
+        if (force_player_mask == 0) {
             if (part->owner == object) {
                 if (part->scale_time < 0.5f)
                     continue;
@@ -321,10 +323,61 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
             if (minimum.y > api->collision_max.y || api->collision_min.y > maximum.y)
                 continue;
         }
-        if ((part->flags & 0x40) != 0) {
+        if ((part->flags & 0x40) == 0) {
+            GAMECHARACTERDATA_s *character = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24);
+            if ((character->flags_090 & 0x8000) != 0)
+                continue;
+            if (!SphereSphereOverlapScaleY(&part->position, part->field_0e4, part->field_0e4, &api->collision_position,
+                                           api->collision_radius, api->field_0x1e0))
+                continue;
+            if (!((part->active & 2) != 0 && (part->flags & 0x1000008) == 0x1000008))
+                KillPart(part, 1);
+            if ((part->flags & 8) != 0 && !((part->flags & 0x1000000) != 0 && (part->active & 2) != 0) &&
+                ((api->flags_low & 0x80) != 0 || (part->flags & 0x800000) == 0)) {
+                u32 flags = CInfo[static_cast<i8>(object->character_context)].flags;
+                if ((flags & 0x4000000) != 0 || ((flags & 0x8000000) != 0 && (object->jump_flags & 2) != 0)) {
+                    i32 effect = -1;
+                    if (object->id == id_BOB)
+                        effect = (object->field_0xefd & 2) != 0 ? 2 : 3;
+                    else if (object->blade_index != -1)
+                        effect = BladeTab[object->blade_index].hit_effect;
+                    DeflectPart(part, object, ForceThrowSpeed, ForceThrowGravity, 0, effect);
+                } else {
+                    GameCam_Judder(GameCam, 0.2f, 0, NULL);
+                    ReleaseBuildIt(object, 0);
+                    ReleasePush(object);
+                    if (object->field_0xd24 >= 1.0f)
+                        ObjHitShield(part->owner, object, object->field_0xe37, NULL);
+                    else if (!CannotKill(object)) {
+                        ObjHitObj((part->flags & 0x10000) != 0 ? NULL : part->owner, object, part->field_204,
+                                  static_cast<u16>(part->force_flags), 0, 1);
+                    } else if (part->owner != NULL) {
+                        NewRumble(part->owner->pad_gamepad->pad, 0.5f, 0);
+                        NewRumble(object->pad_gamepad->pad, 0.5f, 0);
+                    }
+                }
+            }
+            if (api->field_0x287 != 0 || (api->flags_low & 2) != 0)
+                continue;
+            if ((part->active & 1) == 0) {
+                f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
+                if (api->scaled_radius > 1.0f)
+                    speed /= api->scaled_radius;
+                NUVEC direction;
+                NuVecNorm(&direction, &part->velocity);
+                api->velocity.x += direction.x * speed;
+                api->velocity.z += direction.z * speed;
+            }
+            if ((part->flags & 0x2000000) != 0 && ((part->flags & 0x4000000) == 0 || (part->active & 2) != 0)) {
+                u16 angle = NuAtan2D(api->position.x - part->position.x, api->position.z - part->position.z);
+                f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
+                api->field_0x1fc = NU_SIN_LUT(angle) * speed;
+                api->field_0x204 = NU_COS_LUT(angle) * speed;
+            }
+        } else {
         collect_pickup:
             if ((part->active & 2) == 0) {
-                if (part->pickup_type == 0xcb) {
+                if (part_pickup_type == 0xcb) {
                     if (!(part->scale_time >= 0.5f))
                         continue;
                     if (VehicleArea == 0 && (static_cast<i8>(object->current_hp) <= 0 ||
@@ -337,82 +390,33 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
                 KillPart(part, 2);
                 continue;
             }
-            if (part->pickup_type == 0xcb) {
-                CollectHitPoint(object, &part->position, 1);
-                KillPart(part, 2);
-            } else if (part->pickup_type == 0xd0) {
-                CollectPowerUp(object, &part->position, part->rotation_y, 1);
-                KillPart(part, 2);
-            } else if (part->force_player_mask == 3) {
-                if ((api->character_data->model_flags & 0x2000) == 0 || object->torpedo == NULL)
-                    continue;
-                if (object->torpedo->count < getMaxTorpedos(object)) {
-                    TORPEDOPACKET_s *packet = object->torpedo;
-                    packet->pickup_positions[packet->count] = part->position;
-                    packet->pickup_data[packet->count] = part->field_10c[0];
-                    packet->pickup_flags[packet->count] = part->field_10c[1];
-                    ++packet->count;
-                    object->torpedo->field_08 = 0.0f;
-                    object->torpedo->field_03 = 0;
+            if (part_pickup_type != 0xcb) {
+                if (part_pickup_type == 0xd0) {
+                    CollectPowerUp(object, &part->position, part->rotation_y, 1);
+                    KillPart(part, 2);
+                } else if (force_player_mask == 3) {
+                    if ((api->character_data->model_flags & 0x2000) == 0 || object->torpedo == NULL)
+                        continue;
+                    if (object->torpedo->count < getMaxTorpedos(object)) {
+                        TORPEDOPACKET_s *packet = object->torpedo;
+                        packet->pickup_positions[packet->count] = part->position;
+                        packet->pickup_data[packet->count] = part->field_10c[0];
+                        packet->pickup_flags[packet->count] = part->field_10c[1];
+                        ++packet->count;
+                        object->torpedo->field_08 = 0.0f;
+                        object->torpedo->field_03 = 0;
+                        KillPart(part, 2);
+                    }
+                } else {
+                    GIZMOPICKUP_s pickup;
+                    SetCoinType(part_pickup_type, &pickup);
+                    GizmoPickup_CollectCoin(WORLD, &part->position, pickup.type_index, pickup.model_variant, object, 1);
                     KillPart(part, 2);
                 }
             } else {
-                GIZMOPICKUP_s pickup;
-                SetCoinType(part->pickup_type, &pickup);
-                GizmoPickup_CollectCoin(WORLD, &part->position, pickup.type_index, pickup.model_variant, object, 1);
+                CollectHitPoint(object, &part->position, 1);
                 KillPart(part, 2);
             }
-            continue;
-        }
-        GAMECHARACTERDATA_s *character = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24);
-        if ((character->flags_090 & 0x8000) != 0)
-            continue;
-        if (!SphereSphereOverlapScaleY(&part->position, part->field_0e4, part->field_0e4, &api->collision_position,
-                                       api->collision_radius, api->field_0x1e0))
-            continue;
-        if (!((part->active & 2) != 0 && (part->flags & 0x1000008) == 0x1000008))
-            KillPart(part, 1);
-        if ((part->flags & 8) != 0 && !((part->flags & 0x1000000) != 0 && (part->active & 2) != 0) &&
-            ((api->flags_low & 0x80) != 0 || (part->flags & 0x800000) == 0)) {
-            u32 flags = CInfo[static_cast<i8>(object->character_context)].flags;
-            if ((flags & 0x4000000) != 0 || ((flags & 0x8000000) != 0 && (object->jump_flags & 2) != 0)) {
-                i32 effect = -1;
-                if (object->id == id_BOB)
-                    effect = (object->field_0xefd & 2) != 0 ? 2 : 3;
-                else if (object->blade_index != -1)
-                    effect = BladeTab[object->blade_index].hit_effect;
-                DeflectPart(part, object, ForceThrowSpeed, ForceThrowGravity, 0, effect);
-            } else {
-                GameCam_Judder(GameCam, 0.2f, 0, NULL);
-                ReleaseBuildIt(object, 0);
-                ReleasePush(object);
-                if (object->field_0xd24 >= 1.0f)
-                    ObjHitShield(part->owner, object, object->field_0xe37, NULL);
-                else if (!CannotKill(object)) {
-                    ObjHitObj((part->flags & 0x10000) != 0 ? NULL : part->owner, object, part->field_204,
-                              static_cast<u16>(part->force_flags), 0, 1);
-                } else if (part->owner != NULL) {
-                    NewRumble(part->owner->pad_gamepad->pad, 0.5f, 0);
-                    NewRumble(object->pad_gamepad->pad, 0.5f, 0);
-                }
-            }
-        }
-        if (api->field_0x287 != 0 || (api->flags_low & 2) != 0)
-            continue;
-        if ((part->active & 1) == 0) {
-            f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
-            if (api->scaled_radius > 1.0f)
-                speed /= api->scaled_radius;
-            NUVEC direction;
-            NuVecNorm(&direction, &part->velocity);
-            api->velocity.x += direction.x * speed;
-            api->velocity.z += direction.z * speed;
-        }
-        if ((part->flags & 0x2000000) != 0 && ((part->flags & 0x4000000) == 0 || (part->active & 2) != 0)) {
-            u16 angle = NuAtan2D(api->position.x - part->position.x, api->position.z - part->position.z);
-            f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
-            api->field_0x1fc = NU_SIN_LUT(angle) * speed;
-            api->field_0x204 = NU_COS_LUT(angle) * speed;
         }
     }
 }
@@ -633,18 +637,17 @@ void CollectPowerUp(GameObject_s *object, NUVEC *position, u16 rotation, i32) {
         return;
     }
 
-    const i8 player_index = object->apiobj.field_0x27c;
     if (ONEPLAYERPOWERUPS != 0) {
         const u16 camera_rotation = GameCam_GetAdjustedYRot(NULL);
         const u16 panel_rotation = rotation - RotDiff(0, camera_rotation);
-        NUVEC target_position = {ICONX, PowerUp_GetPanelY(player_index) + STATSPOSY, 1.0f};
-        if (player_index == 0) {
+        NUVEC target_position = {ICONX, PowerUp_GetPanelY(object->apiobj.field_0x27c) + STATSPOSY, 1.0f};
+        if (object->apiobj.field_0x27c == 0) {
             target_position.x = -target_position.x;
         }
 
         if (object->field_0xdec > 0.0f) {
-            NUVEC icon_position = {ICONX, PowerUp_GetPanelY(player_index) + STATSPOSY, 1.0f};
-            if (player_index == 0) {
+            NUVEC icon_position = {ICONX, PowerUp_GetPanelY(object->apiobj.field_0x27c) + STATSPOSY, 1.0f};
+            if (object->apiobj.field_0x27c == 0) {
                 icon_position.x = -icon_position.x;
             }
             ADDGAMEMSG icon_message = AddGameMsg_Default;
@@ -660,22 +663,22 @@ void CollectPowerUp(GameObject_s *object, NUVEC *position, u16 rotation, i32) {
 
         ADDGAMEMSG message = AddGameMsg_Default;
         message.position = position;
-        message.target_position = &target_position;
         message.scale = AreaPickupScale;
+        message.target_position = &target_position;
         message.target_scale = POWERUPOBJSIZE;
         message.flags = 0x2112d;
         message.duration = 1.0f;
         message.icon = 0xd0;
-        message.extra_position = reinterpret_cast<NUVEC *>(&WORLD->lev_objs[0xd0]);
         message.update_fn = PowerUp_UpdateMsg;
         message.end_fn = PowerUp_EndMsg;
-        message.player_index = player_index;
+        message.extra_position = reinterpret_cast<NUVEC *>(&WORLD->lev_objs[0xd0]);
         message.field_0x4d = 1;
+        message.player_index = object->apiobj.field_0x27c;
         message.field_0x4e = 7;
         GAMEMESSAGE_s *game_message = AddGameMsg(&message);
         if (game_message != NULL) {
             game_message->rotation_y = panel_rotation;
-            PowerUp_PanelYRot[player_index] = panel_rotation;
+            PowerUp_PanelYRot[object->apiobj.field_0x27c] = panel_rotation;
         }
     }
 
@@ -806,8 +809,8 @@ void KillParts_SpeederBike(ADDPART_s *params, i32, i32, GameObject_s *object) {
     params->flags = 0x400;
     params->field_44 = SpeederPart_Kill;
     params->field_48 = SpeederPart_Update;
-    params->draw_fn = SpeederPart_Draw;
     params->velocity = &velocity;
+    params->draw_fn = SpeederPart_Draw;
 
     PART_s *part = AddPart(params);
     if (part == NULL) {
@@ -855,9 +858,9 @@ void KillParts_SpeederBike(ADDPART_s *params, i32, i32, GameObject_s *object) {
     if (distance >= 0.0f) {
         yaw -= 0x8000;
     }
-    part->rotation_y = yaw;
     part->rotation_x = -pitch;
     part->field_13c = 0;
+    part->rotation_y = yaw;
 }
 
 extern WORLDINFO_s *WORLD;
@@ -1184,14 +1187,14 @@ extern "C" {
             NuMtxSetTranslation(&part->transform, params->position);
         }
         part->initial_position = part->position;
-        part->owner = params->owner;
         part->recipient = params->recipient;
+        part->owner = params->owner;
         part->velocity = *params->velocity;
-        part->force_player_mask = -1;
         part->field_20b = -1;
+        part->force_player_mask = -1;
         part->field_100 = part->field_104 = params->field_a4;
-        part->active = (part->active & ~0x60) | 0x21;
         part->time_step = params->time_step;
+        part->active = (part->active & ~0x60) | 0x21;
         part->scale_time = 0.0f;
         part->target_radius = params->field_14;
         part->radius = (params->time_step / PARTSCALEUPTIME) * params->field_14;
@@ -1199,10 +1202,10 @@ extern "C" {
         part->field_214 = params->field_c0;
         part->gravity = params->gravity;
         part->field_0ec = params->field_20;
-        part->active &= ~2;
         part->pickup_type = params->field_28;
         part->field_0f0 = params->field_88;
         part->flags = params->flags;
+        part->active &= ~2;
         part->field_20a = params->field_c4;
         part->render_flags &= ~0x40;
         if (params->lighting != NULL) {
@@ -1266,8 +1269,8 @@ extern "C" {
         part->field_1e4 = params->field_64;
         part->field_1e8 = params->field_68;
         part->field_1ec = params->field_6c;
-        part->field_1f0 = params->field_70;
         part->field_1f8 = params->field_74;
+        part->field_1f0 = params->field_70;
         part->field_1f4 = params->field_78;
         part->field_1fc = params->field_7c;
         part->previous_transform = part->transform;
@@ -1575,11 +1578,11 @@ extern "C" {
         new_key_index = DebAlloc();
         effect->particle_keys[particle_key_slot] = static_cast<i16>(new_key_index);
         key = &debkeydata[effect->particle_keys[particle_key_slot]];
-        key->effect_index = static_cast<i16>(effect_index);
-        key->field_1d4 = 0;
         key->generator = gensorttab[static_cast<i8>(effect->generator_type)];
-        key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
+        key->effect_index = static_cast<i16>(effect_index);
         key->effect_orientation = *particle_orientation;
+        key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
+        key->field_1d4 = 0;
         key->effect_orientation.m30 = 0.0f;
         key->effect_orientation.m31 = 0.0f;
         key->effect_orientation.m32 = 0.0f;
@@ -1691,8 +1694,8 @@ extern "C" {
                 continue;
             }
             debris_chunk_control_s *control = freechunkcontrols[freechunkcontrolsptr];
-            control->particle_chunk = key->particle_chunks[chunk_index];
             control->active = 1;
+            control->particle_chunk = key->particle_chunks[chunk_index];
             control->owner = key;
             control->expiry_time =
                 now + effect->particle_lifetime + static_cast<f32>(effect->trail_count) * effect->trail_time;
@@ -1724,6 +1727,7 @@ extern "C" {
     }
 
     void AddVariableShotPARTEffect(i32 effect_index, NUVEC *position, f32 rate, f32 duration, NUMTX *orientation) {
+        NUVEC part_position;
         part_type_s *type = &part_types[effect_index];
         if (type->name[0] == 0 || type->emission_rate <= 0.0f) {
             return;
@@ -1748,112 +1752,110 @@ extern "C" {
                 emission_time = static_cast<i32>(partglobaltime / interval) * interval + interval;
             }
         }
-        if (!(emission_time <= end_time)) {
-            return;
-        }
+        if (emission_time <= end_time) {
 
-        i32 remaining = 99;
-        do {
-            ADDPART_ALIGNED16 params = Default_ADDPART;
+            i32 remaining = 99;
+            do {
+                ADDPART_ALIGNED16 params = Default_ADDPART;
 
-            NUVEC part_position;
-            f32 random = NuRandFloatSeeded(&partseed);
-            part_position.x = (random + random) * type->position_random.x - type->position_random.x;
-            random = NuRandFloatSeeded(&partseed);
-            part_position.y = (random + random) * type->position_random.y - type->position_random.y;
-            random = NuRandFloatSeeded(&partseed);
-            part_position.z = (random + random) * type->position_random.z - type->position_random.z;
-            NuVecMtxTransformVU0(&part_position, &part_position, orientation);
-            NuVecAdd(&part_position, &part_position, position);
+                f32 random = NuRandFloatSeeded(&partseed);
+                part_position.x = (random + random) * type->position_random.x - type->position_random.x;
+                random = NuRandFloatSeeded(&partseed);
+                part_position.y = (random + random) * type->position_random.y - type->position_random.y;
+                random = NuRandFloatSeeded(&partseed);
+                part_position.z = (random + random) * type->position_random.z - type->position_random.z;
+                NuVecMtxTransformVU0(&part_position, &part_position, orientation);
+                NuVecAdd(&part_position, &part_position, position);
 
-            NUVEC velocity = {0.0f, type->speed, 0.0f};
-            random = NuRandFloatSeeded(&partseed);
-            velocity.x += (random + random) * type->velocity_random.x - type->velocity_random.x;
-            random = NuRandFloatSeeded(&partseed);
-            velocity.y += (random + random) * type->velocity_random.y - type->velocity_random.y;
-            random = NuRandFloatSeeded(&partseed);
-            velocity.z += (random + random) * type->velocity_random.z - type->velocity_random.z;
-            NuVecMtxTransformVU0(&velocity, &velocity, orientation);
+                NUVEC velocity = {0.0f, type->speed, 0.0f};
+                random = NuRandFloatSeeded(&partseed);
+                velocity.x += (random + random) * type->velocity_random.x - type->velocity_random.x;
+                random = NuRandFloatSeeded(&partseed);
+                velocity.y += (random + random) * type->velocity_random.y - type->velocity_random.y;
+                random = NuRandFloatSeeded(&partseed);
+                velocity.z += (random + random) * type->velocity_random.z - type->velocity_random.z;
+                NuVecMtxTransformVU0(&velocity, &velocity, orientation);
 
-            params.position = &part_position;
-            params.velocity = &velocity;
-            params.gravity = type->gravity;
-            params.field_20 = type->bounce;
+                params.gravity = type->gravity;
+                params.position = &part_position;
+                params.velocity = &velocity;
+                params.field_20 = type->bounce;
 
-            i32 variant = 0;
-            if (type->variant_count != 0 && type->variant_mode <= 1) {
-                variant = static_cast<i32>(NuRandFloatSeeded(&partseed) * 65535.0f) % type->variant_count;
-            }
-            params.field_28 = type->effect_ids[variant];
-            nuhspecial_s special;
-            if (params.field_28 == 9999) {
-                params.special = NULL;
-            } else if (params.field_28 != -1) {
-                params.special = &special;
-                NuGScnGetSpecial(&special, part_scene[type->scene_indices[variant]], params.field_28);
-            }
-
-            params.field_a4 = type->lifetime + NuRandFloatSeeded(&partseed) * type->lifetime_random;
-            NUMTX_ALIGNED16 matrix;
-            NuMtxSetIdentity(&matrix);
-            const f32 rotation_x = static_cast<f32>(type->rotation[0]);
-            const f32 random_x = NuRandFloatSeeded(&partseed);
-            const f32 range_x = static_cast<f32>(type->rotation_random[0]);
-            const f32 rotation_y = static_cast<f32>(type->rotation[1]);
-            const f32 random_y = NuRandFloatSeeded(&partseed);
-            const f32 range_y = static_cast<f32>(type->rotation_random[1]);
-            const f32 rotation_z = static_cast<f32>(type->rotation[2]);
-            const f32 random_z = NuRandFloatSeeded(&partseed);
-            const f32 range_z = static_cast<f32>(type->rotation_random[2]);
-            for (i32 axis = 0; axis < 3; ++axis) {
-                params.field_a8[axis] = type->rotation[axis];
-                params.field_a8[axis + 3] = type->rotation_random[axis];
-            }
-            NuMtxRotateX(&matrix,
-                         static_cast<i16>(static_cast<i32>((random_x + random_x) * range_x + rotation_x - range_x)));
-            NuMtxRotateY(&matrix,
-                         static_cast<i16>(static_cast<i32>((random_y + random_y) * range_y + rotation_y - range_y)));
-            NuMtxRotateZ(&matrix,
-                         static_cast<i16>(static_cast<i32>((random_z + random_z) * range_z + rotation_z - range_z)));
-            matrix.m30 = part_position.x;
-            matrix.m31 = part_position.y;
-            matrix.m32 = part_position.z;
-            params.matrix = &matrix;
-
-            params.flags = type->flags & ~0x60000;
-            if (type->trail_effects[0] != -1) {
-                params.field_60 = type->trail_effects[0];
-                params.flags |= 0x40000;
-            }
-            if (type->trail_effects[1] != -1) {
-                params.field_64 = type->trail_effects[1];
-                params.flags |= 0x40000;
-            }
-            if (type->attached_effect != -1) {
-                params.field_58 = type->attached_effect;
-                params.flags |= 0x20000;
-            }
-            params.field_68 = type->trail_rates[0];
-            params.field_6c = type->trail_rates[1];
-            params.field_70 = type->impact_effect;
-            if (type->impact_part == -1 && type->impact_part_name[0] != 0) {
-                type->impact_part = PARTLookupType(type->impact_part_name);
-            }
-            params.field_74 = type->impact_part;
-            params.field_78 = type->kill_effect;
-            params.field_98 = type->field_160;
-            params.field_9c = type->field_164;
-            params.field_a0 = type->field_168;
-            AddPart(&params);
-
-            for (i32 sound = 0; sound < 4; ++sound) {
-                if (type->sounds[sound] != -1 && type->sound_modes[sound] == 3) {
-                    PlaySfxById(type->sounds[sound], &part_position);
+                i32 variant = 0;
+                if (type->variant_count != 0 && type->variant_mode <= 1) {
+                    variant = static_cast<i32>(NuRandFloatSeeded(&partseed) * 65535.0f) % type->variant_count;
                 }
-            }
-            type->last_used_time = emission_time;
-            emission_time += interval;
-        } while (emission_time <= end_time && --remaining != 0);
+                params.field_28 = type->effect_ids[variant];
+                nuhspecial_s special;
+                if (params.field_28 == 9999) {
+                    params.special = NULL;
+                } else if (params.field_28 != -1) {
+                    params.special = &special;
+                    NuGScnGetSpecial(&special, part_scene[type->scene_indices[variant]], params.field_28);
+                }
+
+                params.field_a4 = type->lifetime + NuRandFloatSeeded(&partseed) * type->lifetime_random;
+                NUMTX_ALIGNED16 matrix;
+                NuMtxSetIdentity(&matrix);
+                const f32 rotation_x = static_cast<f32>(type->rotation[0]);
+                const f32 random_x = NuRandFloatSeeded(&partseed);
+                const f32 range_x = static_cast<f32>(type->rotation_random[0]);
+                const f32 rotation_y = static_cast<f32>(type->rotation[1]);
+                const f32 random_y = NuRandFloatSeeded(&partseed);
+                const f32 range_y = static_cast<f32>(type->rotation_random[1]);
+                const f32 rotation_z = static_cast<f32>(type->rotation[2]);
+                const f32 random_z = NuRandFloatSeeded(&partseed);
+                const f32 range_z = static_cast<f32>(type->rotation_random[2]);
+                for (i32 axis = 0; axis < 3; ++axis) {
+                    params.field_a8[axis] = type->rotation[axis];
+                    params.field_a8[axis + 3] = type->rotation_random[axis];
+                }
+                NuMtxRotateX(&matrix, static_cast<i16>(
+                                          static_cast<i32>((random_x + random_x) * range_x + rotation_x - range_x)));
+                NuMtxRotateY(&matrix, static_cast<i16>(
+                                          static_cast<i32>((random_y + random_y) * range_y + rotation_y - range_y)));
+                NuMtxRotateZ(&matrix, static_cast<i16>(
+                                          static_cast<i32>((random_z + random_z) * range_z + rotation_z - range_z)));
+                matrix.m30 = part_position.x;
+                matrix.m31 = part_position.y;
+                matrix.m32 = part_position.z;
+                params.matrix = &matrix;
+
+                params.flags = type->flags & ~0x60000;
+                if (type->trail_effects[0] != -1) {
+                    params.field_60 = type->trail_effects[0];
+                    params.flags |= 0x40000;
+                }
+                if (type->trail_effects[1] != -1) {
+                    params.field_64 = type->trail_effects[1];
+                    params.flags |= 0x40000;
+                }
+                if (type->attached_effect != -1) {
+                    params.field_58 = type->attached_effect;
+                    params.flags |= 0x20000;
+                }
+                params.field_68 = type->trail_rates[0];
+                params.field_6c = type->trail_rates[1];
+                params.field_70 = type->impact_effect;
+                if (type->impact_part == -1 && type->impact_part_name[0] != 0) {
+                    type->impact_part = PARTLookupType(type->impact_part_name);
+                }
+                params.field_74 = type->impact_part;
+                params.field_78 = type->kill_effect;
+                params.field_98 = type->field_160;
+                params.field_9c = type->field_164;
+                params.field_a0 = type->field_168;
+                AddPart(&params);
+
+                for (i32 sound = 0; sound < 4; ++sound) {
+                    if (type->sounds[sound] != -1 && type->sound_modes[sound] == 3) {
+                        PlaySfxById(type->sounds[sound], &part_position);
+                    }
+                }
+                type->last_used_time = emission_time;
+                emission_time += interval;
+            } while (emission_time <= end_time && --remaining != 0);
+        }
     }
 
     i32 PartRayCast(NUVEC *position, NUVEC *movement, f32 radius, i32 flags) {
@@ -1999,23 +2001,17 @@ extern "C" {
             return NULL;
         PART_s *result = NULL;
         PART_s *part = Part;
-        if (position != NULL) {
-            f32 nearest = 1000000.0f;
-            for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
-                if ((part->active & 1) != 0 && (player == -1 || part->force_player_mask == player) &&
-                    (owner == NULL || part->owner == owner)) {
-                    f32 distance = NuVecDistSqr(position, &part->position, NULL);
-                    if (distance < nearest) {
-                        nearest = distance;
-                        result = part;
-                    }
-                }
-            }
-        } else {
-            for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
-                if ((part->active & 1) != 0 && (player == -1 || part->force_player_mask == player) &&
-                    (owner == NULL || part->owner == owner))
+        f32 nearest = 1000000.0f;
+        for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
+            if ((part->active & 1) != 0 && (player == -1 || part->force_player_mask == player) &&
+                (owner == NULL || part->owner == owner)) {
+                if (position == NULL)
                     return part;
+                f32 distance = NuVecDistSqr(position, &part->position, NULL);
+                if (distance < nearest) {
+                    nearest = distance;
+                    result = part;
+                }
             }
         }
         return result;
@@ -2276,8 +2272,8 @@ extern "C" {
     void UpdateParts(f32 time) {
         i32 key;
         NUVEC direction;
-        NUMTX_ALIGNED16 impact_orientation;
         NUMTX_ALIGNED16 movement_orientation;
+        NUMTX_ALIGNED16 impact_orientation;
         NUMTX_ALIGNED16 emitter_orientation;
         partglobaltime += time;
         if (partglobaltime > 900.0f)
@@ -2469,11 +2465,11 @@ extern "C" {
                                                        part->field_1fc);
             }
             if (part->lighting_template != NULL) {
-                if ((part->flags & 0x1000) != 0) {
+                if ((part->flags & 0x1000) == 0) {
+                    rtlDynamicSetPos(*part->lighting_template, &part->position);
+                } else {
                     direction.x = direction.y = direction.z = 10000.0f;
                     rtlDynamicSetPos(*part->lighting_template, &direction);
-                } else {
-                    rtlDynamicSetPos(*part->lighting_template, &part->position);
                 }
             }
             if (part->field_1ac != NULL)
@@ -2493,6 +2489,7 @@ extern f32 TargetDist_Near2, TargetDist_Mid2;
 BOLTTYPE_s *BoltType_FindByID(i32, WORLDINFO_s *);
 PART_s *TargetPart(GameObject_s *object, nuvec_s *position, nuvec_s *direction, f32 radius, f32 range_squared,
                    i32 directional, i32 bolt_id) {
+    NUVEC delta;
     NUVEC aim = *direction;
     BOLTTYPE_s *bolt = BoltType_FindByID(bolt_id, WORLD);
     PART_s *part = Part;
@@ -2514,7 +2511,7 @@ PART_s *TargetPart(GameObject_s *object, nuvec_s *position, nuvec_s *direction, 
         if (part->position.x < min_x || part->position.x > max_x || part->position.z < min_z ||
             part->position.z > max_z)
             continue;
-        NUVEC delta;
+
         f32 distance = NuVecDistSqr(&part->position, position, &delta);
         if (!(range_squared > distance))
             continue;
@@ -2574,7 +2571,11 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
         for (i32 i = 0; i < 8; ++i)
             type->effect_pages[i] = EdFileReadChar();
     } else {
-        type->effect_pages[0] = version > 1 ? EdFileReadChar() : 0;
+        if (!(version > 1)) {
+            type->effect_pages[0] = 0;
+        } else {
+            type->effect_pages[0] = EdFileReadChar();
+        }
         for (i32 i = 1; i < 8; ++i)
             type->effect_pages[i] = -1;
     }
@@ -2610,7 +2611,11 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
     type->speed = EdFileReadFloat();
     type->gravity = EdFileReadFloat();
     type->emission_rate = EdFileReadFloat();
-    type->bounce = version > 7 ? EdFileReadFloat() : 0.75f;
+    if (version > 7) {
+        type->bounce = EdFileReadFloat();
+    } else {
+        type->bounce = 0.75f;
+    }
     type->position_random.x = EdFileReadFloat();
     type->position_random.y = EdFileReadFloat();
     type->position_random.z = EdFileReadFloat();
@@ -2621,16 +2626,16 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
     type->emission_period_random = EdFileReadFloat();
     type->emission_pause = EdFileReadFloat();
     type->emission_pause_random = EdFileReadFloat();
-    if (version > 12) {
-        for (i32 i = 0; i < 3; ++i)
-            type->rotation[i] = EdFileReadInt();
-        for (i32 i = 0; i < 3; ++i)
-            type->rotation_random[i] = EdFileReadInt();
-    } else {
+    if (!(version > 12)) {
         for (i32 i = 0; i < 3; ++i)
             type->rotation[i] = EdFileReadShort();
         for (i32 i = 0; i < 3; ++i)
             type->rotation_random[i] = EdFileReadShort();
+    } else {
+        for (i32 i = 0; i < 3; ++i)
+            type->rotation[i] = EdFileReadInt();
+        for (i32 i = 0; i < 3; ++i)
+            type->rotation_random[i] = EdFileReadInt();
     }
     type->flags = EdFileReadUnsignedInt();
     if (type->effect_ids[0] == 9999)
@@ -2693,9 +2698,17 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
             type->sound_modes[i] = 0;
     }
     type->maximum_distance = version > 9 ? EdFileReadFloat() : 25.0f;
-    type->field_160 = version > 14 ? EdFileReadFloat() : 1.0f;
+    if (version > 14) {
+        type->field_160 = EdFileReadFloat();
+    } else {
+        type->field_160 = 1.0f;
+    }
     type->field_164 = version > 14 ? EdFileReadFloat() : 1.0f;
-    type->field_168 = version > 14 ? EdFileReadFloat() : 1.0f;
+    if (version > 14) {
+        type->field_168 = EdFileReadFloat();
+    } else {
+        type->field_168 = 1.0f;
+    }
     type->scale = 1.0f;
     type->field_174 = 0;
 }
@@ -2873,8 +2886,8 @@ extern "C" PART_s *HitParts(GameObject_s *owner, NUVEC *positions, i32 count, f3
         for (i32 j = count - 1; j >= 0; --j) {
             NUVEC difference;
             NuVecSub(&difference, &positions[j], &part->position);
-            f32 distance = difference.x * difference.x + difference.y * difference.y + difference.z * difference.z;
             f32 combined_radius = radius + part->target_radius;
+            f32 distance = difference.x * difference.x + difference.y * difference.y + difference.z * difference.z;
             if (distance <= combined_radius * combined_radius)
                 return part;
         }
@@ -2951,13 +2964,13 @@ void AddTorpedoAsPart(nuvec_s *position, nuvec_s *velocity, float scale, float l
     params.special = &world->lev_objs[0x79].special;
     params.field_28 = 0x79;
     params.flags = 0x256;
-    params.move_fn = params.gravity == 0.0f ? PartMove_VehiclePickup : NULL;
     params.field_40 = PartCollide_3D;
+    params.move_fn = params.gravity == 0.0f ? PartMove_VehiclePickup : NULL;
     if (FreePlay != 0 && WORLD->current_level == ANAKINSFLIGHTB_LDATA)
         params.field_40 = PartCollide_2D;
     params.field_48 = NULL;
-    params.stop_fn = PartStop_Flickerer;
     params.draw_fn = PartDraw_Torp;
+    params.stop_fn = PartStop_Flickerer;
     params.field_88 = lifetime;
     params.time_step = FRAMETIME;
     params.field_c0 = scale;
@@ -3013,16 +3026,16 @@ void PowerUp_AddPart(NUVEC *position, NUVEC *velocity, f32 scale, f32 lifetime) 
     params.gravity = AreaPickupGravity;
     params.field_28 = 0xd0;
     params.flags = 0x256;
-    params.field_3c = PowerUp_ImpactPart;
     params.field_40 = PartCollide_3D;
+    params.field_3c = PowerUp_ImpactPart;
     params.field_48 = PowerUp_UpdatePart;
     params.stop_fn = PartStop_Flickerer;
     params.draw_fn = PowerUp_DrawPart;
     if (params.gravity == 0.0f)
         params.move_fn = PartMove_VehiclePickup;
-    params.field_88 = lifetime;
     params.time_step = FRAMETIME;
     params.field_c0 = scale;
+    params.field_88 = lifetime;
     PART_s *part = AddPart(&params);
     if (part != NULL)
         part->rotation_y = NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f;
@@ -3114,10 +3127,10 @@ void AddCoinsAsParts(i32 type_id, nuvec_s *position, nuvec_s *velocity, float li
     if (object->active == 0)
         return;
     ADDPART_ALIGNED16 params = Default_ADDPART;
-    params.special = &object->special;
     params.field_28 = model;
-    params.position = position;
     params.velocity = velocity;
+    params.position = position;
+    params.special = &object->special;
     params.field_14 = params.field_18 = scale * type->shadow_radius_x;
     params.flags = 0x56;
     params.gravity = AreaPickupGravity;
@@ -3207,8 +3220,8 @@ void UpdatePartEmits(f32 time) {
         if ((type->flags & 0x400000) != 0) {
             if (type->maximum_distance > emitter->camera_distance && previous_distance >= type->maximum_distance) {
                 emitter->time_24 = partglobaltime;
-                emitter->time_28 = partglobaltime - 1.0f;
                 emitter->time_20 = partglobaltime - interval + 0.001f;
+                emitter->time_28 = partglobaltime - 1.0f;
             } else if (emitter->time_24 > emitter->time_28) {
                 emitter->time_28 += time;
                 emitter->time_24 += time;
@@ -3344,8 +3357,8 @@ void UpdatePartEmits(f32 time) {
                 params.field_70 = type->impact_effect;
                 if (type->impact_part == -1 && type->impact_part_name[0] != 0)
                     type->impact_part = PARTLookupType(type->impact_part_name);
-                params.field_74 = type->impact_part;
                 params.field_7c = type->effect_scale;
+                params.field_74 = type->impact_part;
                 params.field_98 = type->field_160;
                 params.field_9c = type->field_164;
                 params.field_a0 = type->field_168;
@@ -3372,8 +3385,8 @@ void UpdatePartEmits(f32 time) {
 i32 LineIntersectSphere(NUVEC *, NUVEC *, NUVEC *, f32, f32 *);
 
 PART_s *FindIncomingPart(void *owner, NUVEC *position, f32 radius, u32 flags, f32 range) {
-    PART_s *nearest = NULL;
     f32 nearest_distance = range > 0.0f ? range : 100.0f;
+    PART_s *nearest = NULL;
     for (i32 i = 0; i < MAXPARTS; ++i) {
         PART_s *part = &Part[i];
         if ((part->active & 1) == 0 || part->owner == owner || (part->flags & flags) != flags)
@@ -3620,11 +3633,11 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
             params.field_14 = params.field_18 = 0.2f;
             params.gravity = -10.0f;
             params.special = &piece->special;
-            params.flags = mode == 0 ? 0x480 : 0x90;
             params.field_3c = PartImpact_Brick;
+            params.flags = mode == 0 ? 0x480 : 0x90;
             params.stop_fn = PartStop_Flickerer;
-            params.draw_fn = PartDraw_Flickerer;
             params.time_step = FRAMETIME;
+            params.draw_fn = PartDraw_Flickerer;
             params.lighting = Cheats_CheckFlags(1) ? reinterpret_cast<PARTLIGHTSOURCE_s *>(ZeroRTL)
                                                    : reinterpret_cast<PARTLIGHTSOURCE_s *>(&object->light_data);
             params.field_c4 = 1;
@@ -3662,73 +3675,77 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
     i32 part_index = 0;
     for (i32 render_index = 0; render_index < render_count; ++render_index) {
         const i32 layer = render_indices[render_index];
-        if (layer == -1 || (animation != -1 && layer != animation) || (excluded_layer != -1 && layer == excluded_layer))
-            continue;
-        nuhgobjrender_s *render = &object->apiobj.character_model->hierarchy->render_parts[layer];
-        if (render->rigid_specials == NULL)
-            continue;
-        for (i32 joint = 0; joint < object->apiobj.character_model->hierarchy->joint_count; ++joint, ++part_index) {
-            nuhspecial_s *special = static_cast<nuhspecial_s *>(render->rigid_specials[joint]);
-            if (special == NULL)
+        if ((layer != -1 && !(animation != -1 && layer != animation) &&
+             !(excluded_layer != -1 && layer == excluded_layer))) {
+            nuhgobjrender_s *render = &object->apiobj.character_model->hierarchy->render_parts[layer];
+            if (render->rigid_specials == NULL)
                 continue;
-            NUMTX matrix;
-            NUVEC momentum;
-            ADDPART_s params;
-            if (VehicleArea != 0 && (object->apiobj.character_data->model_flags & 0x2000) != 0 &&
-                object->apiobj.character_data->game_character->field_0x28 > 0.0f) {
-                NuMtxMul(&matrix, &joint_matrices[joint], &object->apiobj.field_0xb8);
-                SetKillPartMom(&momentum);
-                NuVecScale(&momentum, &momentum, 4.0f);
-                momentum.x += object->apiobj.velocity.x * 0.75f;
-                momentum.y = 6.0f + momentum.y + object->apiobj.velocity.y * 0.75f;
-                momentum.z += object->apiobj.velocity.z * 0.75f;
-                params = Default_ADDPART;
-                params.field_14 = params.field_18 = 0.4f;
-                params.gravity = -10.0f;
-            } else {
-                SetKillPartMom(&momentum);
-                momentum.y += vertical_scale;
-                if (animation != -1)
-                    momentum.y += 1.0f;
-                if ((object->apiobj.character_data->model_flags & 0x2000) != 0) {
+            for (i32 joint = 0; joint < object->apiobj.character_model->hierarchy->joint_count; ++joint, ++part_index) {
+                nuhspecial_s *special = static_cast<nuhspecial_s *>(render->rigid_specials[joint]);
+                if (special == NULL)
+                    continue;
+                NUMTX matrix;
+                NUVEC momentum;
+                ADDPART_s params;
+                if (VehicleArea != 0 && (object->apiobj.character_data->model_flags & 0x2000) != 0 &&
+                    object->apiobj.character_data->game_character->field_0x28 > 0.0f) {
+                    NuMtxMul(&matrix, &joint_matrices[joint], &object->apiobj.field_0xb8);
+                    SetKillPartMom(&momentum);
+                    NuVecScale(&momentum, &momentum, 4.0f);
+                    momentum.y = 6.0f + momentum.y + object->apiobj.velocity.y * 0.75f;
                     momentum.x += object->apiobj.velocity.x * 0.75f;
-                    momentum.y += object->apiobj.velocity.y * 0.75f;
                     momentum.z += object->apiobj.velocity.z * 0.75f;
-                } else if (use_vehicle_velocity != 0) {
-                    momentum.x += object->reset_velocity.x * 0.75f;
-                    momentum.y += object->reset_velocity.y * 0.75f;
-                    momentum.z += object->reset_velocity.z * 0.75f;
-                } else if (angle_override != NULL) {
-                    momentum.x += NuTrigTable[(*angle_override >> 1) & 0x7fff] * 2.0f;
-                    momentum.z += NuTrigTable[((static_cast<u16>(*angle_override + 0x4000)) >> 1) & 0x7fff] * 2.0f;
+                    params = Default_ADDPART;
+                    params.field_14 = params.field_18 = 0.4f;
+                    params.gravity = -10.0f;
+                } else {
+                    SetKillPartMom(&momentum);
+                    momentum.y += vertical_scale;
+                    if (animation != -1)
+                        momentum.y += 1.0f;
+                    if ((object->apiobj.character_data->model_flags & 0x2000) == 0) {
+                        if (use_vehicle_velocity != 0) {
+                            momentum.x += object->reset_velocity.x * 0.75f;
+                            momentum.y += object->reset_velocity.y * 0.75f;
+                            momentum.z += object->reset_velocity.z * 0.75f;
+                        } else if (angle_override != NULL) {
+                            momentum.z +=
+                                NuTrigTable[((static_cast<u16>(*angle_override + 0x4000)) >> 1) & 0x7fff] * 2.0f;
+                            momentum.x += NuTrigTable[(*angle_override >> 1) & 0x7fff] * 2.0f;
+                        }
+                    } else {
+                        momentum.y += object->apiobj.velocity.y * 0.75f;
+                        momentum.z += object->apiobj.velocity.z * 0.75f;
+                        momentum.x += object->apiobj.velocity.x * 0.75f;
+                    }
+                    NuMtxMul(&matrix, &joint_matrices[joint], &object->apiobj.field_0xb8);
+                    params = Default_ADDPART;
+                    params.field_14 = params.field_18 = 0.1f;
+                    params.gravity = -5.0f;
                 }
-                NuMtxMul(&matrix, &joint_matrices[joint], &object->apiobj.field_0xb8);
-                params = Default_ADDPART;
-                params.field_14 = params.field_18 = 0.1f;
-                params.gravity = -5.0f;
-            }
-            params.matrix = &matrix;
-            params.velocity = &momentum;
-            params.special = special;
-            params.lighting = Cheats_CheckFlags(1) ? reinterpret_cast<PARTLIGHTSOURCE_s *>(ZeroRTL)
-                                                   : reinterpret_cast<PARTLIGHTSOURCE_s *>(&object->light_data);
-            if (object->id == id_TIEFIGHTER) {
-                KillParts_TIEFIGHTER(&params, part_index, mode, object, random_variant, random_rotation_a,
-                                     random_rotation_b, &momentum);
-            } else if (object->id == id_ATAT) {
-                KillParts_ATAT(&params, part_index, mode, object);
-            } else if (object->id == id_SPEEDERBIKE) {
-                KillParts_SpeederBike(&params, part_index, mode, object);
-            } else {
-                params.flags = mode == 0 ? 0x480 : 0x90;
-                params.field_3c = PartImpact_Brick;
-                params.stop_fn = PartStop_Flickerer;
-                params.draw_fn = PartDraw_Flickerer;
-                params.time_step = FRAMETIME;
-                params.field_c4 = 1;
-                PART_s *part = AddPart(&params);
-                if (part != NULL)
-                    part->field_100 = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 2.0f + 7.0f;
+                params.matrix = &matrix;
+                params.special = special;
+                params.velocity = &momentum;
+                params.lighting = Cheats_CheckFlags(1) ? reinterpret_cast<PARTLIGHTSOURCE_s *>(ZeroRTL)
+                                                       : reinterpret_cast<PARTLIGHTSOURCE_s *>(&object->light_data);
+                if (object->id == id_TIEFIGHTER) {
+                    KillParts_TIEFIGHTER(&params, part_index, mode, object, random_variant, random_rotation_a,
+                                         random_rotation_b, &momentum);
+                } else if (object->id == id_ATAT) {
+                    KillParts_ATAT(&params, part_index, mode, object);
+                } else if (object->id == id_SPEEDERBIKE) {
+                    KillParts_SpeederBike(&params, part_index, mode, object);
+                } else {
+                    params.flags = mode == 0 ? 0x480 : 0x90;
+                    params.field_3c = PartImpact_Brick;
+                    params.stop_fn = PartStop_Flickerer;
+                    params.draw_fn = PartDraw_Flickerer;
+                    params.time_step = FRAMETIME;
+                    params.field_c4 = 1;
+                    PART_s *part = AddPart(&params);
+                    if (part != NULL)
+                        part->field_100 = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 2.0f + 7.0f;
+                }
             }
         }
     }
@@ -3743,9 +3760,9 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
             NUVEC momentum;
             SetKillPartMom(&momentum);
             NuVecScale(&momentum, &momentum, 4.0f);
-            momentum.x += object->apiobj.velocity.x * 0.75f;
             momentum.y = 6.0f + momentum.y + object->apiobj.velocity.y * 0.75f;
             momentum.z += object->apiobj.velocity.z * 0.75f;
+            momentum.x += object->apiobj.velocity.x * 0.75f;
             ADDPART_s params = Default_ADDPART;
             params.matrix = &matrix;
             params.velocity = &momentum;

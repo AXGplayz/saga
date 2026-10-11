@@ -41,8 +41,8 @@ void Detonators_Draw() {
         return;
     }
 
-    for (i32 i = 0; i < 10; ++i) {
-        DETONATOR_s &detonator = Detonator[i];
+    for (DETONATOR_s *cursor = Detonator; cursor != Detonator + 10; ++cursor) {
+        DETONATOR_s &detonator = *cursor;
         detonator.draw_result = 0;
         if (!detonator.active) {
             continue;
@@ -52,16 +52,18 @@ void Detonators_Draw() {
         NuMtxSetRotationY(&matrix, detonator.rotation_y);
         NuMtxRotateZ(&matrix, detonator.rotation_z);
         NuMtxRotateX(&matrix, detonator.rotation_x);
-        NuMtxTranslate(&matrix, &detonator.field_0x0c);
+        NuMtxTranslate(&matrix, &detonator.position);
         NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &matrix);
 
         const bool flicker_on = PickUpFlickerTest <= PickupFlickerFrame % PickUpFlickerFrames;
-        const bool attached =
-            detonator.timer < 0.5f && (detonator.object == NULL || detonator.object->apiobj.field_0x287 != 0 ||
-                                       detonator.object->field_0xde0 < 0.3f);
-        const i32 special_index = flicker_on || attached ? 0xee : 0xef;
-        if (WORLD->lev_objs[special_index].active) {
-            detonator.draw_result = NuSpecialDrawAt(&WORLD->lev_objs[special_index].special, &matrix);
+        if (!flicker_on &&
+            !(!(detonator.timer >= 10.0f) && (detonator.object == NULL || detonator.object->apiobj.field_0x287 != 0 ||
+                                              !(detonator.object->field_0xde0 >= 0.3f)))) {
+            if (WORLD->lev_objs[0xef].active)
+                detonator.draw_result = NuSpecialDrawAt(&WORLD->lev_objs[0xef].special, &matrix);
+        } else {
+            if (WORLD->lev_objs[0xee].active)
+                detonator.draw_result = NuSpecialDrawAt(&WORLD->lev_objs[0xee].special, &matrix);
         }
     }
 }
@@ -126,11 +128,13 @@ static inline void DetonatorConsiderOldest(DETONATOR_s *detonator, f32 &oldest_t
 }
 
 static inline void DetonatorConsiderPlacementSlot(i32 index, GameObject_s *object, i32 &count, i32 &available) {
-    if (Detonator[index].active != 0 && Detonator[index].object == object) {
+    if (!(Detonator[index].active != 0 && Detonator[index].object == object)) {
+        if (available == -1) {
+            // Retail also permits replacing a detonator owned by another object.
+            available = index;
+        }
+    } else {
         ++count;
-    } else if (available == -1) {
-        // Retail also permits replacing a detonator owned by another object.
-        available = index;
     }
 }
 
@@ -167,6 +171,7 @@ static inline i32 DetonatorPlacementSlot(GameObject_s *object) {
 }
 
 void Detonator_MoveCode(GameObject_s *object) {
+    f32 oldest_time;
     if (object->character_context != 0x48 && object->character_context != 0x49) {
         if (WORLD->lev_objs[0xec].active == 0 || static_cast<i8>(object->apiobj.flags_low) >= 0 ||
             (object->apiobj.field_0x27d == 0 && object->field_0xe31 != 1) ||
@@ -182,7 +187,7 @@ void Detonator_MoveCode(GameObject_s *object) {
             object->field_0xe21 |= 0x80;
             object->field_0xde0 += FRAMETIME;
             if (object->field_0xde0 >= 0.3f && object->field_0xde0 >= 1.0f) {
-                f32 oldest_time = -1.0f;
+                oldest_time = -1.0f;
                 DETONATOR_s *oldest = NULL;
                 if (Detonator[0].active != 0) {
                     oldest = &Detonator[0];

@@ -97,6 +97,7 @@ static void *Shards_AllocateProgressData(VARIPTR *start, VARIPTR *end) {
 }
 
 static void Shards_Draw(void *context, void *, float) {
+    NUMTX_ALIGNED16 matrix;
     WORLDINFO *world = static_cast<WORLDINFO *>(context);
     SHARD *shard = static_cast<SHARD *>(world->shards);
     if (shard == NULL)
@@ -105,7 +106,7 @@ static void Shards_Draw(void *context, void *, float) {
         shard->drawn = 0;
         if ((shard->state_flags & 0x0a) != 2)
             continue;
-        NUMTX_ALIGNED16 matrix;
+
         if (shard->state_flags & 4) {
             u16 spin = (u16)((f32)(i32)shard->spin_angle + 98304.0f * shard->collection_time);
             NuMtxSetRotationY(&matrix, spin);
@@ -215,13 +216,13 @@ static void Shards_Reset(void *context, void *, void *data) {
         current->model_index += 65;
         current->spin_angle = qrand();
         current->current_position = current->position;
-        current->collector = NULL;
         current->collecting = 0;
-        current->random_offset = 0;
+        current->collector = NULL;
         current->collection_time = 0.0f;
+        current->random_offset = 0;
         if (i < 128 && progress != NULL) {
-            u32 mask = 1u << (i & 31);
             i32 word = i >> 5;
+            u32 mask = 1u << (i & 31);
             shard->collected = (progress->collected[word] & mask) != 0;
             shard->visible = (progress->visible[word] & mask) != 0;
             shard->active = (progress->active[word] & mask) != 0;
@@ -345,8 +346,8 @@ void Shards_HandleLostObj(WORLDINFO_s *world, GameObject_s *object) {
     for (i32 i = 0; i < world->shard_count; ++i, ++shard) {
         if ((shard->state_flags & 0x0c) == 4 && shard->collector == object) {
             shard->collector = NULL;
-            shard->collection_time = 0.0f;
             shard->collecting = 0;
+            shard->collection_time = 0.0f;
         }
     }
 }

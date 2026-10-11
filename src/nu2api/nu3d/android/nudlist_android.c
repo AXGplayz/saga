@@ -10,6 +10,9 @@
 
 #include <string.h>
 
+// The original unit constructs its six homogeneous vectors.
+#include "nu2api/nucore/nuvuvec.hpp"
+
 // Original 0x625ae0: writable handlers for item types 0x80..0xb0.
 static nudl_handler_fn __ItemFnTable[49] = {
     NuIOSDLMtlCallback,             // 0x80
@@ -341,21 +344,22 @@ extern "C" void *DisplayListCreateSkinTransformPS(VARIPTR *buffer, NUMTX *skin_m
         const usize vertex_data_size = static_cast<usize>(geometry->vertex_stride) * geometry->vertex_count;
         buffer->addr += vertex_data_size;
 
+        u8 *destination = static_cast<u8 *>(copy->dynamic_vertex_data);
         u8 *source = reinterpret_cast<u8 *>(static_cast<usize>(geometry->vertex_buffer)) +
                      static_cast<usize>(geometry->vertex_stride) * geometry->base_vertex;
-        u8 *destination = static_cast<u8 *>(copy->dynamic_vertex_data);
         memmove(destination, source, vertex_data_size);
 
         for (i32 vertex = 0; vertex < geometry->vertex_count; ++vertex) {
             NUVEC *position = reinterpret_cast<NUVEC *>(destination);
             for (i32 deformer = 0; deformer < deformer_weights->count; ++deformer) {
-                NUVEC *offsets = geometry->deformer_vertex_offsets[deformer];
                 const f32 weight = deformer_weights->weights[deformer];
-                if (offsets != NULL && weight != 0.0f) {
-                    position->x += offsets[vertex].x * weight;
-                    position->y += offsets[vertex].y * weight;
-                    position->z += offsets[vertex].z * weight;
+                NUVEC *offsets = geometry->deformer_vertex_offsets[deformer];
+                if (!(offsets != NULL && weight != 0.0f)) {
+                    continue;
                 }
+                position->x += offsets[vertex].x * weight;
+                position->y += offsets[vertex].y * weight;
+                position->z += offsets[vertex].z * weight;
             }
             destination += geometry->vertex_stride;
             source += geometry->vertex_stride;

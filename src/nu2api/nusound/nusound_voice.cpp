@@ -96,8 +96,8 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     this->field63_0x98 = 0.0f;
     this->field64_0x9c = 0.0f;
     this->field65_0xa0 = 1.0f; // falloff attenuation
-    this->field66_0xa4 = 0.0f;
-    this->field67_0xa8 = 1.0f; // final mix scalar
+    this->field67_0xa8 = 1.0f;
+    this->field66_0xa4 = 0.0f; // final mix scalar
     this->field68_0xac = 1.0f; // pitch scale
     this->pitch = 1.0f;
     this->volume = 1.0f;
@@ -107,24 +107,24 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     this->field70_0xb4 = 180.0f;
     this->field71_0xb8 = 70.0f;
     this->field72_0xbc = 0.0f;
-    this->field73_0xc0 = 0.0f;
     this->field74_0xc4 = 1.0f;
+    this->field73_0xc0 = 0.0f;
     this->falloff_type = 0;
-    this->field113_0x10c = 1.0f; // LFE gain
-    this->start_offset = 0.0f;
+    this->start_offset = 0.0f; // LFE gain
+    this->field113_0x10c = 1.0f;
     this->output_devices = 1;
     this->controller_bits = 0;
     this->output_bus = NuSoundSystem::sMasterBus;
     this->downmixer_type = 0;
     this->routing_table = NuSoundSystem::sDefaultRoutingTable;
-    this->surround_mode = 2; // 2D omni
-    this->listeners = NULL;
+    this->listeners = NULL; // 2D omni
+    this->surround_mode = 2;
     this->field130_0x144 = 1.0f;
     this->field131_0x148 = -1;
-    this->custom_surround_mix = NULL;
-
     this->flags2 = (u8)(this->flags2 & 0xf6 | loop << 3);
+
     this->flags2 &= 0xf9;
+    this->custom_surround_mix = NULL;
     this->flags = (u8)(this->flags & 0xf0 | 0x10); // mix update on the first Update
 
     this->SetState(PLAYSTATE_STOPPED); // libTTapp.so ctor tail (0x3275b9)
@@ -320,6 +320,7 @@ static inline VuVec CopySoundPosition(const VuVec &position) {
 }
 
 void NuSoundVoice::CalculatePositionalMix() {
+    NUMTX identity;
     memset(this->mix_gains, 0, sizeof(this->mix_gains));
 
     this->field67_0xa8 = 0.0f;
@@ -351,8 +352,8 @@ void NuSoundVoice::CalculatePositionalMix() {
         }
 
         f32 real_distance = real_listener->GetHeadDistance(CopySoundPosition(this->position));
-        NuSoundListener *second_real_listener = NULL;
         f32 second_real_distance = 0.0f;
+        NuSoundListener *second_real_listener = NULL;
         NuSoundListener *listener = this->listeners->Front();
         NuSoundListener *end = this->listeners->End();
         while (listener != end) {
@@ -369,7 +370,7 @@ void NuSoundVoice::CalculatePositionalMix() {
         f32 field_angle = 0.0f;
         f32 listener_mix[2][8] = {};
         if (real_listener->Get2DScreenPosition() != NULL) {
-            NUMTX identity;
+
             NuMtxSetIdentity(&identity);
             VuVec screen_position(real_listener->Get2DScreenPosition()->x, 0.0f,
                                   1.0f - real_listener->Get2DScreenPosition()->y, 1.0f);

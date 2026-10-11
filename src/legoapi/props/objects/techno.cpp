@@ -126,10 +126,11 @@ static void Technos_Reset(void *world_ptr, void *, void *progress_ptr) {
         return;
     }
 
-    for (i32 index = 0; index < world->ntechnos; ++index) {
-        TECHNO &techno = world->technos[index];
-        techno.ground_position.x = 0.0f;
+    TECHNO *cursor = world->technos;
+    for (i32 index = 0; index < world->ntechnos; ++index, ++cursor) {
+        TECHNO &techno = *cursor;
         techno.ground_position.y = 0.0f;
+        techno.ground_position.x = 0.0f;
         techno.ground_position.z = TechnoSys.interaction_time;
         NuVecRotateY(&techno.ground_position, &techno.ground_position, techno.y_rotation);
         NuVecAdd(&techno.ground_position, &techno.ground_position, &techno.position);
@@ -288,9 +289,8 @@ static void Technos_LateUpdate(void *world_ptr, void *, float) {
 static void Technos_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     for (i32 index = 0; index < world->ntechnos; ++index) {
-        TECHNO &techno = world->technos[index];
-        if (NuStrLen(techno.name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, &techno);
+        if (NuStrLen(world->technos[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->technos[index]);
         }
     }
 }
@@ -333,7 +333,11 @@ static i32 Technos_Load(void *world_ptr, void *) {
         }
 
         world->technos[index].scale = EdFileReadFloat();
-        world->technos[index].output = version == 4 ? 0 : EdFileReadInt();
+        if (version != 4) {
+            world->technos[index].output = EdFileReadInt();
+        } else {
+            world->technos[index].output = 0;
+        }
     }
     return 1;
 }
@@ -433,27 +437,6 @@ void *Technos_FindTgt(TECHNO_s *techno) {
     return techno->controlled_object;
 }
 
-NUVEC *Technos_TgtPos(TECHNO_s *techno) {
-    if (techno == NULL) {
-        return NULL;
-    }
-
-    if (techno->controlled_object == NULL) {
-        Technos_FindTgt(techno);
-    }
-
-    switch (techno->target_mode) {
-        case 1:
-            return &static_cast<GameObject_s *>(techno->controlled_object)->apiobj.collision_position;
-        case 2:
-            return NuSpecialGetPos(techno->controlled_object);
-        case 3:
-            return GizmoGetPos(WORLD->gizmo_sys, static_cast<GIZMO *>(techno->controlled_object));
-        default:
-            return NULL;
-    }
-}
-
 void Technos_MoveTarget(TECHNO_s *techno, GameObject_s *object) {
     f32 speed = 0.0f;
     if (object != NULL) {
@@ -497,6 +480,27 @@ void Technos_MoveTarget(TECHNO_s *techno, GameObject_s *object) {
         GizObstacle_SetTechnoControlled(obstacle, TechnoMoveSpeed[static_cast<i8>(object->apiobj.field_0x27c)]);
     } else {
         GizObstacle_SetTechnoControlled(obstacle, speed);
+    }
+}
+
+NUVEC *Technos_TgtPos(TECHNO_s *techno) {
+    if (techno == NULL) {
+        return NULL;
+    }
+
+    if (techno->controlled_object == NULL) {
+        Technos_FindTgt(techno);
+    }
+
+    switch (techno->target_mode) {
+        case 1:
+            return &static_cast<GameObject_s *>(techno->controlled_object)->apiobj.collision_position;
+        case 2:
+            return NuSpecialGetPos(techno->controlled_object);
+        case 3:
+            return GizmoGetPos(WORLD->gizmo_sys, static_cast<GIZMO *>(techno->controlled_object));
+        default:
+            return NULL;
     }
 }
 

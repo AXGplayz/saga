@@ -397,7 +397,7 @@ static void edgracbClumpModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                         eduiItemCheckCreate(3, edblack, edgra_mode == 3, 1, edgracbSetClumpMode, "Individual FS Mode"));
     edgraAttachMenu(parent, edgra_clumpmode_menu);
 }
-static void edgracbClumpSizesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+static inline void edgracbClumpSizesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edgra_nearest == -1 || !GrassClumps[edgra_nearest].element_count)
         return;
@@ -579,8 +579,8 @@ static void edgracbChangeInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (added == 1)
         eduiMenuAddItem(edgra_changeinstance_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "All Instances Filtered"));
     eduiMenuAttach(parent, edgra_changeinstance_menu);
-    edgra_changeinstance_menu->x = parent->x + 10;
     edgra_changeinstance_menu->y = parent->y + 40;
+    edgra_changeinstance_menu->x = parent->x + 10;
     if (selected_found)
         edgra_changeinstance_menu->field_0c = edgra_changeinstance_menu->selected;
 }
@@ -742,7 +742,20 @@ void edgraDoInput(nupad_s *pad) {
             }
         }
 
-        if (edgra_editormode == 1) {
+        if (edgra_editormode != 1) {
+            if (edgra_nearest != -1) {
+                edcamSetPos(&GrassClumps[edgra_nearest].position);
+                const i32 kind = static_cast<i8>(GrassClumps[edgra_nearest].kind);
+                edgra_mode = kind;
+                edgra_instance_type = GrassClumps[edgra_nearest].special_index;
+                if (kind != 3) {
+                    edgra_size = GrassClumps[edgra_nearest].size;
+                    edgra_clump_size = GrassClumps[edgra_nearest].element_count;
+                    edgra_rotz = GrassClumps[edgra_nearest].rotation_z;
+                    edgra_roty = GrassClumps[edgra_nearest].rotation_y;
+                }
+            }
+        } else {
             if (edgra_nearest != -1 && edgra_nearest_instance != -1) {
                 const i32 individual_index = GrassClumps[edgra_nearest].individual_index;
                 NUVEC *instance_position = &GetIndGrassClump(individual_index, edgra_nearest_instance)->position;
@@ -751,17 +764,6 @@ void edgraDoInput(nupad_s *pad) {
                 edcamSetPos(&position);
                 edgra_rotz = GetIndGrassClump(individual_index, edgra_nearest_instance)->field_10;
                 edgra_roty = GetIndGrassClump(individual_index, edgra_nearest_instance)->field_12;
-            }
-        } else if (edgra_nearest != -1) {
-            edcamSetPos(&GrassClumps[edgra_nearest].position);
-            const i32 kind = static_cast<i8>(GrassClumps[edgra_nearest].kind);
-            edgra_mode = kind;
-            edgra_instance_type = GrassClumps[edgra_nearest].special_index;
-            if (kind != 3) {
-                edgra_size = GrassClumps[edgra_nearest].size;
-                edgra_clump_size = GrassClumps[edgra_nearest].element_count;
-                edgra_rotz = GrassClumps[edgra_nearest].rotation_z;
-                edgra_roty = GrassClumps[edgra_nearest].rotation_y;
             }
         }
     }
@@ -800,9 +802,8 @@ void edgraDoInput(nupad_s *pad) {
                                                                          "Instance Filter"));
                 eduiMenuAddItem(edgra_options_menu,
                                 eduiItemTextPickCreate(0, edblack, edgraChangeFilterName, "Filter String: "));
-                edui_textpicker_s *filter = static_cast<edui_textpicker_s *>(edui_last_item);
-                strcpy(filter->value, edgra_filter_string);
-                filter->max_length = 15;
+                strcpy(static_cast<edui_textpicker_s *>(edui_last_item)->value, edgra_filter_string);
+                static_cast<edui_textpicker_s *>(edui_last_item)->max_length = 15;
                 eduiMenuAddItem(edgra_options_menu,
                                 eduiItemSelCreate(1, edblack, 0, 0, edgracbGlobalsMenu, "Global Options..."));
             }

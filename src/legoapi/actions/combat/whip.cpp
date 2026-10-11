@@ -22,15 +22,6 @@ struct SHOPINPUT;
 
 void SetWeaponIn(GameObject_s *object);
 
-void Whip_Release(GameObject_s *object) {
-    if (LEGOCONTEXT_WHIP != -1 && object->character_context == LEGOCONTEXT_WHIP && object->field_0x788 != NULL) {
-        object->carried_object_basis[0] = v100;
-        object->carried_object_basis[1] = v010;
-        object->carried_object_basis[2] = v001;
-        SuperCarry_Throw(object, 1);
-    }
-}
-
 void Whip_MoveCode(GameObject_s *object) {
     if (LEGOCONTEXT_WHIP == -1) {
         return;
@@ -90,32 +81,37 @@ void Whip_MoveCode(GameObject_s *object) {
         }
 
         GIZMOBLOWUP_s *target = static_cast<GIZMOBLOWUP_s *>(object->field_0x788);
-        i16 animation;
-        bool face_target;
-        if (object->field_0x7aa == 2 && target != NULL && (target->status_flags & 0x804000) == 0x804000) {
-            object->field_0x7a3 = 2;
-            animation = LEGOACT_WHIP_BREAK;
-            face_target = true;
-        } else if (object->field_0x7aa == 3 && target != NULL && (target->status_flags & 0x804000) == 0x804000) {
-            object->field_0x7a3 = 3;
-            animation = LEGOACT_WHIP_GRAB;
-            face_target = true;
-        } else {
-            object->field_0x7aa = 1;
-            object->field_0x7a3 = 1;
-            animation = LEGOACT_WHIP_CRACK;
-            face_target = false;
+        switch (object->field_0x7aa) {
+            case 2:
+                if (target != NULL && (target->status_flags & 0x804000) == 0x804000) {
+                    object->field_0x7a3 = 2;
+                    object->context_animation = LEGOACT_WHIP_BREAK;
+                    break;
+                }
+                goto crack_transition;
+            case 3:
+                if (target != NULL && (target->status_flags & 0x804000) == 0x804000) {
+                    object->field_0x7a3 = 3;
+                    object->context_animation = LEGOACT_WHIP_GRAB;
+                    break;
+                }
+            default:
+            crack_transition:
+                object->field_0x7aa = 1;
+                object->field_0x7a3 = 1;
+                object->context_animation_timer = 0.0f;
+                object->context_animation = LEGOACT_WHIP_CRACK;
+                object->airborne_action_duration = AnimDuration(object->id, LEGOACT_WHIP_CRACK, 0.0f, 0.0f, 1);
+                object->context_flags &= ~0x40;
+                return;
         }
 
         object->context_animation_timer = 0.0f;
-        object->context_animation = animation;
-        object->airborne_action_duration = AnimDuration(object->id, animation, 0.0f, 0.0f, 1);
+        object->airborne_action_duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
         object->context_flags &= ~0x40;
-        if (face_target) {
-            target = static_cast<GIZMOBLOWUP_s *>(object->field_0x788);
-            object->apiobj.movement_facing_angle = NuAtan2D(target->position.x - object->apiobj.position.x,
-                                                            target->position.z - object->apiobj.position.z);
-        }
+        target = static_cast<GIZMOBLOWUP_s *>(object->field_0x788);
+        object->apiobj.movement_facing_angle =
+            NuAtan2D(target->position.x - object->apiobj.position.x, target->position.z - object->apiobj.position.z);
         return;
     }
 
@@ -169,5 +165,14 @@ void Whip_MoveCode(GameObject_s *object) {
 
     if (object->character_context == -1 && object->field_0x7a3 == 3 && object->field_0x788 != NULL) {
         SuperCarry_Start(object, static_cast<GIZMOBLOWUP_s *>(object->field_0x788), 1);
+    }
+}
+
+void Whip_Release(GameObject_s *object) {
+    if (LEGOCONTEXT_WHIP != -1 && object->character_context == LEGOCONTEXT_WHIP && object->field_0x788 != NULL) {
+        object->carried_object_basis[0] = v100;
+        object->carried_object_basis[1] = v010;
+        object->carried_object_basis[2] = v001;
+        SuperCarry_Throw(object, 1);
     }
 }

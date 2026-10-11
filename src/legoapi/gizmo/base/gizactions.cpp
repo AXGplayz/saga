@@ -84,8 +84,8 @@ static void GizActions_ActivateBelt(GIZFLOW_s *, FLOWBOX_s *, char **params, int
 }
 
 static void GizActions_ChangeObstTriggerType(GIZFLOW_s *flow, FLOWBOX_s *, char **params, int count) {
-    char *name = NULL;
     i32 mode = -1;
+    char *name = NULL;
     for (i32 index = 0; index < count; ++index) {
         char *value = NuStrIStr(params[index], "name=");
         if (value != NULL) {
@@ -139,15 +139,15 @@ static void GizActions_HitBlowup(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
     if (damage == 0 || name == NULL) {
         return;
     }
-    if (gizmo_type == 1) {
-        GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, turret_gizmotype_id, name);
-        if (gizmo != NULL && gizmo->object != NULL) {
-            GizTurrets_Hit(WORLD, static_cast<GIZTURRET_s *>(gizmo->object), NULL, -1, damage);
-        }
-    } else {
+    if (gizmo_type != 1) {
         GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, name);
         if (gizmo != NULL && gizmo->object != NULL) {
             GizmoBlowupBlowup(static_cast<GIZMOBLOWUP_s *>(gizmo->object), 1, -1, damage, NULL, 1);
+        }
+    } else {
+        GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, turret_gizmotype_id, name);
+        if (gizmo != NULL && gizmo->object != NULL) {
+            GizTurrets_Hit(WORLD, static_cast<GIZTURRET_s *>(gizmo->object), NULL, -1, damage);
         }
     }
 }
@@ -459,76 +459,74 @@ static void GizAction_SetAIMessage(GIZFLOW_s *, FLOWBOX_s *, char **params, int 
 }
 
 static void GizAction_ChangeTechnoTgt(GIZFLOW_s *, FLOWBOX_s *, char **params, int count) {
-    if (count <= 0) {
-        return;
-    }
-    char *techno_name = NULL;
-    char *target_name = NULL;
-    i32 target_kind = 0;
-    u8 movement = 0xff;
-    for (i32 index = 0; index < count; ++index) {
-        char *value = NuStrIStr(params[index], "techno=");
-        if (value != NULL) {
-            techno_name = value + NuStrLen("techno=");
-        } else if ((value = NuStrIStr(params[index], "target=")) != NULL) {
-            target_name = value + NuStrLen("target=");
-        } else if (NuStrICmp(value, "Move_Waggle") == 0) {
-            movement = 1;
-        } else if (NuStrICmp(value, "Move_Spin") == 0) {
-            movement = 2;
-        } else if (NuStrICmp(value, "Move_Horizontal") == 0) {
-            movement = 8;
-        } else if (NuStrICmp(value, "Move_Vertical") == 0) {
-            movement = 4;
-        } else if (NuStrICmp(params[index], "GIZMO") == 0) {
-            target_kind = 3;
-        } else if (NuStrICmp(params[index], "HSPECIAL") == 0) {
-            target_kind = 2;
-        } else if (NuStrICmp(params[index], "CREATURE") == 0) {
-            target_kind = 1;
-        } else if (NuStrICmp(params[index], "NO_TARGET") == 0) {
-            target_kind = -1;
+    if (!(count <= 0)) {
+        char *target_name = NULL;
+        char *techno_name = NULL;
+        i32 target_kind = 0;
+        u8 movement = 0xff;
+        for (i32 index = 0; index < count; ++index) {
+            char *value = NuStrIStr(params[index], "techno=");
+            if (value != NULL) {
+                techno_name = value + NuStrLen("techno=");
+            } else if ((value = NuStrIStr(params[index], "target=")) != NULL) {
+                target_name = value + NuStrLen("target=");
+            } else if (NuStrICmp(value, "Move_Waggle") == 0) {
+                movement = 1;
+            } else if (NuStrICmp(value, "Move_Spin") == 0) {
+                movement = 2;
+            } else if (NuStrICmp(value, "Move_Horizontal") == 0) {
+                movement = 8;
+            } else if (NuStrICmp(value, "Move_Vertical") == 0) {
+                movement = 4;
+            } else if (NuStrICmp(params[index], "GIZMO") == 0) {
+                target_kind = 3;
+            } else if (NuStrICmp(params[index], "HSPECIAL") == 0) {
+                target_kind = 2;
+            } else if (NuStrICmp(params[index], "CREATURE") == 0) {
+                target_kind = 1;
+            } else if (NuStrICmp(params[index], "NO_TARGET") == 0) {
+                target_kind = -1;
+            }
         }
-    }
-    if (techno_name == NULL || (target_kind != -1 && target_name == NULL)) {
-        return;
-    }
-    i32 type_id = GizmoGetTypeIDByName(WORLD->gizmo_sys, "Techno");
-    GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, type_id, techno_name);
-    TECHNO *techno = gizmo != NULL ? static_cast<TECHNO *>(gizmo->object) : NULL;
-    if (techno == NULL) {
-        return;
-    }
-    if (movement != 0xff) {
-        techno->enabled = movement;
-    }
-    if (target_kind == -1) {
-        GameObject_s *operator_object = NULL;
-        Techno_FindOperator(techno->controlled_object, NULL, &operator_object);
+        if (techno_name == NULL || (target_kind != -1 && target_name == NULL)) {
+            return;
+        }
+        i32 type_id = GizmoGetTypeIDByName(WORLD->gizmo_sys, "Techno");
+        GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, type_id, techno_name);
+        TECHNO *techno = gizmo != NULL ? static_cast<TECHNO *>(gizmo->object) : NULL;
+        if (techno == NULL) {
+            return;
+        }
+        if (movement != 0xff) {
+            techno->enabled = movement;
+        }
+        if (target_kind == -1) {
+            GameObject_s *operator_object = NULL;
+            Techno_FindOperator(techno->controlled_object, NULL, &operator_object);
+            techno->controlled_object = NULL;
+            NuStrCpy(techno->target_name, "");
+            techno->flags &= ~TECHNO_FLAG_COMPLETE;
+            techno->target_mode = 0;
+            if (operator_object != NULL) {
+                operator_object->character_context = -1;
+            }
+        }
+        char old_name[16];
+        NuStrCpy(old_name, techno->target_name);
+        i32 old_complete = (techno->flags & TECHNO_FLAG_COMPLETE) != 0;
         techno->controlled_object = NULL;
-        NuStrCpy(techno->target_name, "");
+        NuStrNCpy(techno->target_name, target_name, 16);
+        techno->target_mode = static_cast<u8>(target_kind);
         techno->flags &= ~TECHNO_FLAG_COMPLETE;
-        techno->target_mode = 0;
-        if (operator_object != NULL) {
-            operator_object->character_context = -1;
-        }
-    }
-    char old_name[16];
-    NuStrCpy(old_name, techno->target_name);
-    void *old_target = techno->controlled_object;
-    i32 old_complete = (techno->flags & TECHNO_FLAG_COMPLETE) != 0;
-    techno->controlled_object = NULL;
-    NuStrNCpy(techno->target_name, target_name, 16);
-    techno->target_mode = static_cast<u8>(target_kind);
-    techno->flags &= ~TECHNO_FLAG_COMPLETE;
-    GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
-    if (Technos_FindTgt(techno) == NULL) {
-        techno->target_mode = 0;
+        GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
         if (Technos_FindTgt(techno) == NULL) {
-            NuStrCpy(techno->target_name, old_name);
-            techno->controlled_object = old_target;
-            techno->target_mode = static_cast<u8>(target_kind);
-            techno->flags = (techno->flags & ~TECHNO_FLAG_COMPLETE) | (old_complete << 3);
+            techno->target_mode = 0;
+            if (Technos_FindTgt(techno) == NULL) {
+                NuStrCpy(techno->target_name, old_name);
+                techno->controlled_object = techno->controlled_object;
+                techno->target_mode = static_cast<u8>(target_kind);
+                techno->flags = (techno->flags & ~TECHNO_FLAG_COMPLETE) | (old_complete << 3);
+            }
         }
     }
 }
@@ -591,7 +589,24 @@ static void GizAction_ActivateChar(GIZFLOW_s *flow, FLOWBOX_s *, char **params, 
             }
         }
     }
-    if (name != NULL && activate != 0) {
+    if (!(name != NULL && activate != 0)) {
+        if (activate == 0 && name != NULL) {
+            if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x1000) != 0 &&
+                Player[0]->apiobj.field_0x287 == 0 && Player[0]->ai.field_0x134 != 0xff) {
+                AICREATURE *creature = &world->ai_sys->creatures[Player[0]->ai.field_0x134];
+                if (creature != NULL && NuStrICmp(creature->name, name) == 0)
+                    ReleaseTakeOver(Player[0], 0);
+            }
+            if (Player[1] != NULL && (Player[1]->apiobj.field_0x1f8 & 0x1000) != 0 &&
+                Player[1]->apiobj.field_0x287 == 0 && Player[1]->ai.field_0x134 != 0xff) {
+                // The original second-player branch also reads player zero's creature index.
+                AICREATURE *creature = &world->ai_sys->creatures[Player[0]->ai.field_0x134];
+                if (creature != NULL && NuStrICmp(creature->name, name) == 0)
+                    ReleaseTakeOver(Player[1], 0);
+            }
+            DeactivateCharacter(name);
+        }
+    } else {
         if (buildit != NULL) {
             if (ActivateCharacter(name, &buildit->position, buildit->field_0x7c) == NULL) {
                 GizBuildIt_KillParts(buildit);
@@ -599,21 +614,6 @@ static void GizAction_ActivateChar(GIZFLOW_s *flow, FLOWBOX_s *, char **params, 
         } else {
             ActivateCharacter(name, NULL, 0);
         }
-    } else if (activate == 0 && name != NULL) {
-        if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x1000) != 0 && Player[0]->apiobj.field_0x287 == 0 &&
-            Player[0]->ai.field_0x134 != 0xff) {
-            AICREATURE *creature = &world->ai_sys->creatures[Player[0]->ai.field_0x134];
-            if (creature != NULL && NuStrICmp(creature->name, name) == 0)
-                ReleaseTakeOver(Player[0], 0);
-        }
-        if (Player[1] != NULL && (Player[1]->apiobj.field_0x1f8 & 0x1000) != 0 && Player[1]->apiobj.field_0x287 == 0 &&
-            Player[1]->ai.field_0x134 != 0xff) {
-            // The original second-player branch also reads player zero's creature index.
-            AICREATURE *creature = &world->ai_sys->creatures[Player[0]->ai.field_0x134];
-            if (creature != NULL && NuStrICmp(creature->name, name) == 0)
-                ReleaseTakeOver(Player[1], 0);
-        }
-        DeactivateCharacter(name);
     }
 }
 

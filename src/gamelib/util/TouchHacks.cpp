@@ -202,20 +202,21 @@ VuVec TouchHacks::CalculateJumpVelToHitPoint(GameObject_s &object, VuVec const &
 }
 
 VuVec TouchHacks::CalculateJumpVelToHitPointDblJump(GameObject_s &object, VuVec const &target) {
-    const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
     const GAMECHARACTERDATA *player_character = player->apiobj.character_data->game_character;
     const f32 player_jump_height = -(player_character->jump_speed * player_character->jump_speed) /
                                    (player_character->gravity + player_character->gravity);
+    const f32 half_gravity = object.apiobj.character_data->game_character->gravity * 0.5f;
     const f32 height = -(player_jump_height * 0.7f);
-    const f32 half_gravity = character->gravity * 0.5f;
     f32 first_time;
     f32 unused_time;
-    if (!SolveRoot(half_gravity, character->jump_speed, height, first_time, unused_time)) {
+    if (!SolveRoot(half_gravity, object.apiobj.character_data->game_character->jump_speed, height, first_time,
+                   unused_time)) {
         return VuVec_Zero;
     }
 
     f32 second_time;
-    if (!SolveRoot(half_gravity, character->jump_speed, height, second_time, unused_time)) {
+    if (!SolveRoot(half_gravity, object.apiobj.character_data->game_character->jump_speed, height, second_time,
+                   unused_time)) {
         return VuVec_Zero;
     }
 
@@ -237,15 +238,15 @@ bool TouchHacks::CanJumpToPoint(GameObject_s &object, AIPATHNODE_s const &node) 
 
 bool TouchHacks::CanJumpToPoint(GameObject_s &object, VuVec const &target) {
     const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
-    f32 first_time;
     f32 second_time;
+    f32 first_time;
     if (!SolveRoot(character->gravity * 0.5f, character->jump_speed, object.apiobj.position.y - target.y, first_time,
                    second_time)) {
         return false;
     }
 
-    const f32 dx = target.x - object.apiobj.position.x;
     const f32 dz = target.z - object.apiobj.position.z;
+    const f32 dx = target.x - object.apiobj.position.x;
     const f32 range = first_time * 1.4f;
     return range * range > dx * dx + dz * dz;
 }
@@ -454,21 +455,20 @@ MechObjectInterface *TouchHacks::FindBombTarget(GameObject_s &object) {
     GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
     if (blowup != NULL) {
         for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++blowup) {
-            if ((blowup->state_flags & 0x80) == 0 || blowup->type == NULL || (blowup->output_flags & 1) != 0 ||
-                (blowup->type->type_flags & 0x02000000) == 0) {
-                continue;
-            }
-            VuVec direction(blowup->mid_position.x - object.apiobj.position.x,
-                            blowup->mid_position.y - object.apiobj.position.y,
-                            blowup->mid_position.z - object.apiobj.position.z, 1.0f);
-            const f32 squared_distance =
-                direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
-            if (squared_distance < 90000.0f) {
-                NuVecNorm(&direction.xyz, &direction.xyz);
-                const f32 alignment = direction.x * forward.x + direction.y * forward.y + direction.z * forward.z;
-                if (alignment > best_alignment) {
-                    result = blowup->GetMechObjectInterface();
-                    best_alignment = alignment;
+            if ((blowup->state_flags & 0x80) != 0 && blowup->type != NULL && (blowup->output_flags & 1) == 0 &&
+                (blowup->type->type_flags & 0x02000000) != 0) {
+                VuVec direction(blowup->mid_position.x - object.apiobj.position.x,
+                                blowup->mid_position.y - object.apiobj.position.y,
+                                blowup->mid_position.z - object.apiobj.position.z, 1.0f);
+                const f32 squared_distance =
+                    direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
+                if (squared_distance < 90000.0f) {
+                    NuVecNorm(&direction.xyz, &direction.xyz);
+                    const f32 alignment = direction.x * forward.x + direction.y * forward.y + direction.z * forward.z;
+                    if (alignment > best_alignment) {
+                        result = blowup->GetMechObjectInterface();
+                        best_alignment = alignment;
+                    }
                 }
             }
         }
@@ -553,12 +553,14 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *world) {
     }
 
     GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup) {
+    auto world_gizmo_blowup_count = world->gizmo_blowup_count;
+    for (i32 i = 0; i < world_gizmo_blowup_count; ++i, ++blowup) {
         blowup->ClearMechObjectInterface();
     }
     if (world->giz_buildit_sys != NULL) {
         GIZBUILDIT_s *buildit = world->giz_buildit_sys->buildits;
-        for (i32 i = 0; i < world->giz_buildit_sys->count; ++i, ++buildit) {
+        auto world_giz_buildit_sys = world->giz_buildit_sys;
+        for (i32 i = 0; i < world_giz_buildit_sys->count; ++i, ++buildit) {
             buildit->ClearMechObjectInterface();
         }
     }
@@ -568,7 +570,8 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *world) {
     }
     if (world->hat_machine_sys != NULL) {
         HATMACHINE_s *machine = world->hat_machine_sys->machines;
-        for (i32 i = 0; i < world->hat_machine_sys->count; ++i, ++machine) {
+        auto world_hat_machine_sys = world->hat_machine_sys;
+        for (i32 i = 0; i < world_hat_machine_sys->count; ++i, ++machine) {
             machine->ClearMechObjectInterface();
         }
     }
@@ -584,7 +587,8 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *world) {
     }
     if (world->giz_turret_sys != NULL) {
         GIZTURRET_s *turret = world->giz_turret_sys->turrets;
-        for (i32 i = 0; i < world->giz_turret_sys->count; ++i, ++turret) {
+        auto world_giz_turret_sys = world->giz_turret_sys;
+        for (i32 i = 0; i < world_giz_turret_sys->count; ++i, ++turret) {
             turret->ClearMechObjectInterface();
         }
     }

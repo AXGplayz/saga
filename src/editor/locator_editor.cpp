@@ -94,6 +94,27 @@ static __used__ void locatorEditor_cbDeleteLocator(eduimenu_s *, eduiitem_s *ite
     }
     aieditor_ClearMainMenu();
 }
+static __used__ void locatorEditor_cbSetLocatorSet(eduimenu_s *, eduiitem_s *item, u32) {
+    if (item != nullptr) {
+        if (item->data != 0) {
+            EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&aieditor->locator_sets);
+            for (i32 index = 1; set != nullptr && index < item->data; ++index) {
+                set = (EDLOCATORSET_s *)NuLinkedListGetNext(&aieditor->locator_sets, &set->link);
+            }
+            if (set != nullptr && set != aieditor->current_locator_set) {
+                aieditor->current_locator_set = set;
+                aieditor->current_locator = set->locators[0];
+                if (aieditor->current_locator != nullptr) {
+                    aieditor->current_path = aieditor->current_locator->path;
+                    edcamSetPos(&aieditor->current_locator->position);
+                }
+            }
+        } else {
+            aieditor->current_locator_set = nullptr;
+        }
+    }
+    aieditor_ClearMainMenu();
+}
 static __used__ void locatorEditor_cbRenameLocator(eduimenu_s *, eduiitem_s *item, u32) {
     char *name = ((edui_textpicker_s *)item)->value;
     if (aieditor->current_locator == nullptr || name[0] == 0) {
@@ -107,27 +128,6 @@ static __used__ void locatorEditor_cbRenameLocator(eduimenu_s *, eduiitem_s *ite
         locator = (EDLOCATOR_s *)NuLinkedListGetNext(&aieditor->locators, &locator->link);
     }
     strcpy(aieditor->current_locator->name, name);
-}
-static __used__ void locatorEditor_cbSetLocatorSet(eduimenu_s *, eduiitem_s *item, u32) {
-    if (item != nullptr) {
-        if (item->data == 0) {
-            aieditor->current_locator_set = nullptr;
-        } else {
-            EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&aieditor->locator_sets);
-            for (i32 index = 1; set != nullptr && index < item->data; ++index) {
-                set = (EDLOCATORSET_s *)NuLinkedListGetNext(&aieditor->locator_sets, &set->link);
-            }
-            if (set != nullptr && set != aieditor->current_locator_set) {
-                aieditor->current_locator_set = set;
-                aieditor->current_locator = set->locators[0];
-                if (aieditor->current_locator != nullptr) {
-                    aieditor->current_path = aieditor->current_locator->path;
-                    edcamSetPos(&aieditor->current_locator->position);
-                }
-            }
-        }
-    }
-    aieditor_ClearMainMenu();
 }
 static __used__ void locatorEditor_cbEmptyLocatorSet(eduimenu_s *parent, eduiitem_s *item, u32) {
     if (item == nullptr) {
@@ -810,15 +810,17 @@ void locatorEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
                       static_cast<f64>(distance));
     }
     NuQFntPrintEx(system_qfont, text_x, (y + 30) * 8, 16, "SQR - Options");
-    if (aieditor->nearest_locator == nullptr) {
-        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Create locator");
-    } else if (aieditor->nearest_locator != aieditor->current_locator) {
-        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Select locator");
+    if (aieditor->nearest_locator != nullptr) {
+        if (aieditor->nearest_locator != aieditor->current_locator) {
+            NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Select locator");
+        } else {
+            NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Move selected");
+            NuQFntPrintEx(system_qfont, text_x, (y + 60) * 8, 16, "TRI - Delete selected");
+            NuQFntPrintEx(system_qfont, text_x, (y + 75) * 8, 16, "LLEFT - Rotate left");
+            NuQFntPrintEx(system_qfont, text_x, (y + 90) * 8, 16, "LRIGHT - Rotate right");
+        }
     } else {
-        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Move selected");
-        NuQFntPrintEx(system_qfont, text_x, (y + 60) * 8, 16, "TRI - Delete selected");
-        NuQFntPrintEx(system_qfont, text_x, (y + 75) * 8, 16, "LLEFT - Rotate left");
-        NuQFntPrintEx(system_qfont, text_x, (y + 90) * 8, 16, "LRIGHT - Rotate right");
+        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Create locator");
     }
     if (aieditor->nearest_locator == nullptr &&
         *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0 &&
@@ -867,6 +869,7 @@ void locatorEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
 }
 
 __attribute__((optimize("no-tree-vectorize"))) eduimenu_s *locatorEditor_Process(nupad_s *pad) {
+    char base[32];
     if ((pad->digital_buttons_pressed & 0x80) != 0) {
         goto options;
     }
@@ -948,7 +951,7 @@ process_buttons:
         } else if ((pad->digital_buttons_pressed & 0x40) != 0 &&
                    *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0) {
             EDLOCATOR_s *previous = aieditor->current_locator;
-            char base[32];
+
             if (aieditor->current_locator_set != nullptr && NuStrLen(aieditor->current_locator_set->name) != 0) {
                 NuStrCpy(base, aieditor->current_locator_set->name);
             } else if (previous != nullptr) {
@@ -1016,28 +1019,30 @@ process_buttons:
             EDLOCATORSET_s *set = aieditor->current_locator_set;
             if (set != nullptr) {
                 i32 index = -1;
+                auto aieditor_current_locator = aieditor->current_locator;
                 for (i32 i = 0; i < 64; ++i) {
-                    if (set->locators[i] == aieditor->current_locator) {
+                    if (set->locators[i] == aieditor_current_locator) {
                         index = i;
                         break;
                     }
                 }
-                if ((pad->digital_buttons_pressed & 0x08) != 0) {
-                    next = index < 0 || index >= 63 || set->locators[index + 1] == nullptr ? set->locators[0]
-                                                                                           : set->locators[index + 1];
-                } else {
+                if ((pad->digital_buttons_pressed & 0x08) == 0) {
                     if (aieditor->current_locator == nullptr) {
                         next = set->locators[0];
                     } else if (index > 0) {
                         next = set->locators[index - 1];
                     } else {
                         for (i32 i = 63; i >= 0; --i) {
-                            if (set->locators[i] != nullptr) {
-                                next = set->locators[i];
-                                break;
+                            if (set->locators[i] == nullptr) {
+                                continue;
                             }
+                            next = set->locators[i];
+                            break;
                         }
                     }
+                } else {
+                    next = index < 0 || index >= 63 || set->locators[index + 1] == nullptr ? set->locators[0]
+                                                                                           : set->locators[index + 1];
                 }
             } else if ((pad->digital_buttons_pressed & 0x08) != 0) {
                 if (aieditor->current_locator != nullptr) {
@@ -1105,8 +1110,10 @@ process_buttons:
         i32 remainder = difference % 0x4000;
         if (remainder > 0x2000) {
             ++quadrant;
-        } else if (remainder < -0x2000) {
-            --quadrant;
+        } else {
+            if (remainder < -0x2000) {
+                --quadrant;
+            }
         }
         aieditorsettings.area_rotation =
             NuAngAdd(quadrant << 14, *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x60));

@@ -307,9 +307,9 @@ i32 StartBigJump(GameObject_s *object, NUVEC *destination, i32 mode, f32 height,
     u16 angle = NuAtan2D(destination->x - object->external_force.x, destination->z - object->external_force.z);
     if (object->field_0x7aa == 4)
         angle -= 0x8000;
-    object->apiobj.movement_facing_angle = angle;
     object->apiobj.facing_angle = angle;
     object->apiobj.field_0x276 = angle;
+    object->apiobj.movement_facing_angle = angle;
     object->field_0xefd = (object->field_0xefd & ~0x20) | ((mode & 1) << 5);
     PlayJumpSfx(object, 2);
     object->ai.movement_event_flags |= 2;
@@ -436,8 +436,8 @@ void StartJump(GameObject_s *object, i32 movement_state) {
         object->character_context = LEGOCONTEXT_JUMP;
         object->action_movement_state = static_cast<u8>(movement_state);
         object->jump_sequence = 1;
-        object->jump_start_height = object->apiobj.collision_min.y;
         object->context_animation_timer = 0.0f;
+        object->jump_start_height = object->apiobj.collision_min.y;
         object->context_animation = LEGOACT_JUMP;
         object->jump_flags =
             static_cast<u8>((object->jump_flags & ~PLAYER_JUMP_FLAG_SPECIAL_TAKEOFF) |

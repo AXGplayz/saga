@@ -154,8 +154,8 @@ void NuSoundInitDefaultRoutingTables(void) {
 }
 
 NuSoundSystem::NuSoundSystem() {
-    field_0xf8 = 0;
     samples = NULL;
+    field_0xf8 = 0;
     sample_count = 0x100;
     initialised = true;
     s_staticInstance = this;
@@ -180,20 +180,22 @@ bool NuSoundSystem::Initialise(i32 size) {
     sScratchMemMgr = NuMemoryGet()->CreateMemoryManager(&g_handler, "NuSoundSystem Memory");
 
     if (sTotalMemory[(i32)MemoryDiscipline::DECODER] != 0) {
-        s_mmDecoder = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
-        if (s_mmDecoder != NULL) {
-            new (s_mmDecoder) NuSoundMemoryManager{};
+        NuSoundMemoryManager *decoder = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
+        if (decoder != NULL) {
+            new (decoder) NuSoundMemoryManager{};
         }
+        s_mmDecoder = decoder;
 
-        s_mmDecoder->Init("decoder", sDecoderMemory, sTotalMemory[(i32)MemoryDiscipline::DECODER], 4, 0x800);
+        decoder->Init("decoder", sDecoderMemory, sTotalMemory[(i32)MemoryDiscipline::DECODER], 4, 0x800);
     }
 
-    s_mmSample = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
-    if (s_mmSample != NULL) {
-        new (s_mmSample) NuSoundMemoryManager{};
+    NuSoundMemoryManager *sample = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
+    if (sample != NULL) {
+        new (sample) NuSoundMemoryManager{};
     }
+    s_mmSample = sample;
 
-    s_mmSample->EnableDefragOnAlloc(true);
+    sample->EnableDefragOnAlloc(true);
     s_mmSample->Init("sample", sSampleMemory, sTotalMemory[(i32)MemoryDiscipline::SAMPLE], 4, 0x800);
 
     LOG_DEBUG("this->sample_count=%d", this->sample_count);
@@ -657,11 +659,12 @@ NuEList<NuSoundListener, DefaultElist> *NuSoundSystem::GetListeners() {
 
 NuSoundListener *NuSoundSystem::GetNearestRealListener(NuEList<NuSoundListener, DefaultElist> const &listeners,
                                                        VuVec const &position) {
-    f32 nearest_distance = FLT_MAX;
     NuSoundListener *nearest = NULL;
+    f32 nearest_distance = FLT_MAX;
+    NuSoundListener *end = listeners.end;
     NuSoundListener *listener = static_cast<NuSoundListener *>(listeners.begin->field_0x4);
 
-    while (listener != listeners.end) {
+    while (listener != end) {
         if (listener->IsEnabled() && listener->GetSensitivity() > 0.0f) {
             f32 distance = listener->GetHeadDistance(position) / listener->GetSensitivity();
             if (nearest_distance > distance || nearest == NULL) {
@@ -679,9 +682,10 @@ NuSoundListener *NuSoundSystem::GetNearestFocusListener(NuEList<NuSoundListener,
                                                         VuVec const &position, f32 &nearest_distance) {
     nearest_distance = FLT_MAX;
     NuSoundListener *nearest = NULL;
+    NuSoundListener *end = listeners.end;
     NuSoundListener *listener = static_cast<NuSoundListener *>(listeners.begin->field_0x4);
 
-    while (listener != listeners.end) {
+    while (listener != end) {
         if (listener->IsEnabled() && listener->GetSensitivity() > 0.0f) {
             f32 distance = listener->GetAttenuationDistance(position) / listener->GetSensitivity();
             if (nearest_distance > distance || nearest == NULL) {
@@ -917,7 +921,8 @@ void NuSoundSystem::SetMainThreadID(NuThread *) {
 
 void NuSoundSystem::Shutdown() {
     NuSoundVoice *voice = this->voice_list.Front();
-    while (voice != this->voice_list.End()) {
+    NuSoundVoice *voice_end = this->voice_list.End();
+    while (voice != voice_end) {
         NuSoundVoice *next = voice->field_0x28;
         voice->Stop(false);
         this->ReleaseVoice(voice);

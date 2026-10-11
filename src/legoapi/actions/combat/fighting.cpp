@@ -125,8 +125,8 @@ void TakeHitCode(GameObject_s *object) {
     i32 animation_active;
     i32 kill_parts_mode;
     i32 hearts;
-    i32 first_flag;
     i32 second_flag;
+    i32 first_flag;
     u32 coins;
     bool has_coins;
 
@@ -319,7 +319,6 @@ i32 StunGameObject(GameObject_s *object, GameObject_s *attacker, float duration,
     if (animation == -1)
         return 0;
 
-    const u8 saved_variant = object->field_0xe31;
     object->context_animation = animation;
     object->external_force.z = AnimSpeed(object->apiobj.character_model, animation);
     if (animation != 0x3d && animation != 0xb9) {
@@ -362,7 +361,7 @@ i32 StunGameObject(GameObject_s *object, GameObject_s *attacker, float duration,
                      -(object->apiobj.collision_position.z - attacker->apiobj.collision_position.z));
     }
 
-    object->field_0xe31 = saved_variant;
+    object->field_0xe31 = object->field_0xe31;
     return (object->context_animation == 0xb9) + 1;
 }
 
@@ -440,8 +439,8 @@ void StartQuickShoot(GameObject_s *object, i32 action) {
         nextShootTarget = NuMechPtr<MechObjectInterface, 4>();
     if ((object->apiobj.field_0x1f4 & 0x40000) == 0 || object->apiobj.field_0x27c == -1) {
         NewBuzzFrames(object->pad_gamepad->pad, (object->apiobj.character_data->model_flags & 0x2000) != 0 ? 1 : 2, 0);
-        object->quick_shoot_bolt_id = bolt_id;
         object->quick_shoot_flags = flags;
+        object->quick_shoot_bolt_id = bolt_id;
         object->field_0xef9 |= 8;
         if ((object->apiobj.character_data->game_character->flags_098[0] & 2) != 0)
             SetWeaponIn(object);
@@ -551,8 +550,8 @@ void Punch_Hit(GameObject_s *attacker, GameObject_s *target, float, float gap) {
             if (static_cast<i8>(attacker->context_flags) < 0) {
                 angle -= 0x8000;
             }
-            target->apiobj.velocity.x += NuTrigTable[angle >> 1] * impulse;
             target->apiobj.velocity.z += NuTrigTable[((static_cast<u32>(angle) + 0x4000) >> 1) & 0x7fff] * impulse;
+            target->apiobj.velocity.x += NuTrigTable[angle >> 1] * impulse;
         }
     } else {
         GIZMOBLOWUP_s *blowup = attacker->blowup_target;

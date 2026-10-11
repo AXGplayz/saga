@@ -310,13 +310,14 @@ void CutScenes_Stop(CUTSYS *system) {
 void CutScenes_Reset(WORLDINFO_s *world) {
     CUTSYS *system = world->cutscene_sys;
     if (system != NULL) {
-        for (i32 i = 0; i < system->count; ++i) {
+        auto system_count = system->count;
+        for (i32 i = 0; i < system_count; ++i) {
             CUTINFO *cut = system->cuts[i];
             instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
             if (instance == NULL)
                 continue;
-            instNUGCUTCHARSYS_s *runtime = instance->character_instance;
             NUGCUTCHARSYS_s *characters = static_cast<NUGCUTSCENE_s *>(cut->scene)->character_system;
+            instNUGCUTCHARSYS_s *runtime = instance->character_instance;
             if (runtime == NULL || characters == NULL)
                 continue;
             for (i32 j = 0; j < characters->character_count; ++j) {
@@ -362,10 +363,11 @@ void CutScenes_Reset(WORLDINFO_s *world) {
         }
         if (cut == NULL && cutskip_dontplaylevelintro == 0) {
             for (i32 i = 0; i < world->cutscene_sys->count; ++i) {
-                if ((world->cutscene_sys->cuts[i]->flags & 0x1000) != 0) {
-                    cut = world->cutscene_sys->cuts[i];
-                    break;
+                if ((world->cutscene_sys->cuts[i]->flags & 0x1000) == 0) {
+                    continue;
                 }
+                cut = world->cutscene_sys->cuts[i];
+                break;
             }
         }
         if (cut != NULL) {
@@ -428,6 +430,7 @@ void CutScenes_Start(WORLDINFO_s *world) {
 }
 
 void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
+    FADETYPE fade_type;
     i32 active_before[32];
     if (CutScenePlayer_Active() != 0 && CutStopInfo != NULL) {
         CutScenePlayer_SetObjects(static_cast<CUTINFO *>(CutStopInfo));
@@ -459,9 +462,9 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
             continue;
         }
         if ((cut->flags & 1) != 0) {
-            CUTSTOPGAME = 1;
             CUTDRAWWORLD = cut->flags & 2;
             CUTNOFOG = cut->flags & 4;
+            CUTSTOPGAME = 1;
             CutStopInfo = cut;
             stop_index = i;
             DebrisSetRenderGroup(cut->debris_render_group);
@@ -498,11 +501,9 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
         }
 
         if (i == stop_index || stop_index == -1) {
-            if (NOSOUND == 0 && NOMUSIC == 0 && i == stop_index && cut->music_handle != -1 && instance->rate == 0.0f &&
-                cutaudiopaused != 0 && music_man.GetStatus(TRACK_CLASS_CUTSCENE, NULL) != 4) {
-                static_cast<instNUGCUTSCENE_s *>(cut->instance)->rate = 0.0f;
-                CutSceneWaiting = 1;
-            } else {
+            if (!(NOSOUND == 0 && NOMUSIC == 0 && i == stop_index && cut->music_handle != -1 &&
+                  instance->rate == 0.0f && cutaudiopaused != 0 &&
+                  music_man.GetStatus(TRACK_CLASS_CUTSCENE, NULL) != 4)) {
                 if (static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame == 1.0f && cut->music_handle != -1 &&
                     music_man.GetStatus(TRACK_CLASS_CUTSCENE, NULL) != 4) {
                     music_man.PlayTrack(TRACK_CLASS_CUTSCENE, 0);
@@ -528,6 +529,9 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
                     CutSceneWaiting = 0;
                     cutaudiopaused = 0;
                 }
+            } else {
+                static_cast<instNUGCUTSCENE_s *>(cut->instance)->rate = 0.0f;
+                CutSceneWaiting = 1;
             }
 
             instNuGCutScenePause(static_cast<instNUGCUTSCENE_s *>(cut->instance), 0);
@@ -597,7 +601,7 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
         return;
     }
     if (NewLData == NULL || NewLData == WORLD->current_level || NewLData != HUB_LDATA) {
-        FADETYPE fade_type;
+
         fade_type.type = FADE_TYPE_STILL_WIPE;
         FadeSys.SetFade(fade_type, 0);
     }
@@ -610,27 +614,7 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
         }
     }
 
-    if (stop_cut->skip_level == -1) {
-        CUTINFO *next = NewCutScene(NULL, world->cutscene_sys, stop_cut->next_cutscene, 0);
-        if (CutScenePlayer_Active() != 0 && next == NULL) {
-            NewLevelFromMenu(HUB_LDATA, -1, -1, 1);
-            hub_from_cutsceneplayer = 1;
-        } else if ((stop_cut->flags & 0x400) != 0) {
-            NewMode = 1;
-        } else if (stop_cut->door_name[0] != '\0') {
-            DOOR_s *door = Door_FindByName(world, stop_cut->door_name);
-            if (door != NULL) {
-                Door_GoThrough(world, door, 1);
-            }
-        } else if ((stop_cut->flags & 0x100) != 0) {
-            FADETYPE fade_type;
-            fade_type.type = FADE_TYPE_STILL_WIPE;
-            FadeSys.SetFade(fade_type, 0);
-            NeedScreenGrab(1);
-            FadeSys.SetStage(1);
-            GameAudio_PlaySfx(0x2d, NULL, 0, 0);
-        }
-    } else {
+    if (stop_cut->skip_level != -1) {
         NewLData = &LDataList[stop_cut->skip_level];
         if (HUB_LDATA != NULL && NewLData == HUB_LDATA) {
             if (CutScenePlayer_Active() != 0) {
@@ -651,6 +635,26 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
             music_man.PauseTrack(TRACK_CLASS_CUTSCENE);
             newlevel_resumecutaudio = 1;
         }
+    } else {
+        CUTINFO *next = NewCutScene(NULL, world->cutscene_sys, stop_cut->next_cutscene, 0);
+        if (CutScenePlayer_Active() != 0 && next == NULL) {
+            NewLevelFromMenu(HUB_LDATA, -1, -1, 1);
+            hub_from_cutsceneplayer = 1;
+        } else if ((stop_cut->flags & 0x400) != 0) {
+            NewMode = 1;
+        } else if (stop_cut->door_name[0] != '\0') {
+            DOOR_s *door = Door_FindByName(world, stop_cut->door_name);
+            if (door != NULL) {
+                Door_GoThrough(world, door, 1);
+            }
+        } else if ((stop_cut->flags & 0x100) != 0) {
+            FADETYPE fade_type;
+            fade_type.type = FADE_TYPE_STILL_WIPE;
+            FadeSys.SetFade(fade_type, 0);
+            NeedScreenGrab(1);
+            FadeSys.SetStage(1);
+            GameAudio_PlaySfx(0x2d, NULL, 0, 0);
+        }
     }
     CUTNOFOG = 0;
 
@@ -660,17 +664,6 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
         CutInstEnd[CutInstEndCount++] = stop_instance;
         stop_instance->flags_88 |= 2;
     }
-}
-
-void *CutScene_FindInst(CUTSYS *system, char *name) {
-    if (system != NULL) {
-        for (i32 i = 0; i < system->count; ++i) {
-            if (NuStrICmp(system->cuts[i]->name, name) == 0) {
-                return system->cuts[i]->instance;
-            }
-        }
-    }
-    return NULL;
 }
 
 CUTINFO *CutScene_Find(CUTSYS *cutscene_system, char *name) {
@@ -704,6 +697,17 @@ void CutScenes_Destroy(CUTSYS *system) {
     }
 }
 
+void *CutScene_FindInst(CUTSYS *system, char *name) {
+    if (system != NULL) {
+        for (i32 i = 0; i < system->count; ++i) {
+            if (NuStrICmp(system->cuts[i]->name, name) == 0) {
+                return system->cuts[i]->instance;
+            }
+        }
+    }
+    return NULL;
+}
+
 i32 CutScene_HasPlayed(CUTINFO *cut) {
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
     CUTSYS *cutscene_system = world->cutscene_sys;
@@ -735,7 +739,7 @@ void CutScene_StartAudio() {
 }
 
 i32 CutScene_IsSkippable(CUTINFO *cut) {
-    return FadeSys.fade == 0.0f && cut != NULL && (CutStopInfo != cut || CutSceneWaiting == 0 || cutaudiopaused == 0);
+    return FadeSys.fade == 0.0f && cut != NULL && (cut != CutStopInfo || CutSceneWaiting == 0 || cutaudiopaused == 0);
 }
 
 i32 CutScene_StartFn_LSW(CUTINFO *cut) {
@@ -857,12 +861,14 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
         animation_rate = 0.0f;
     }
     if (layer_mask == -1) {
-        if (use_low_detail) {
-            layer_mask = static_cast<i32>(game_data->layer_mask_low);
-        } else if (reinterpret_cast<u8 *>(CutSceneSys)[7] == 0) {
-            layer_mask = static_cast<i32>(game_data->layer_mask_special);
+        if (!use_low_detail) {
+            if (reinterpret_cast<u8 *>(CutSceneSys)[7] == 0) {
+                layer_mask = static_cast<i32>(game_data->layer_mask_special);
+            } else {
+                layer_mask = static_cast<i32>(game_data->layer_mask);
+            }
         } else {
-            layer_mask = static_cast<i32>(game_data->layer_mask);
+            layer_mask = static_cast<i32>(game_data->layer_mask_low);
         }
     }
     if (static_cast<i8>(cutscene_instance->flags_88) < 0) {
@@ -898,16 +904,16 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
     if (instance->field_15 != animation_index) {
         const u8 requested_animation = static_cast<u8>(animation_index);
         if (!(blend_time > 0.0f) || instance->field_15 == 0xff) {
-            instance->field_16 = requested_animation;
             instance->animation_frame_a = !(animation_start_frame > 1.0f) ? 1.0f : animation_start_frame;
+            instance->field_16 = requested_animation;
         } else {
             if ((instance->field_14 & 1) == 0) {
-                if (instance->field_15 == 0) {
-                    instance->animation_frame_a = frame;
-                    instance->field_16 = requested_animation;
-                } else {
+                if (instance->field_15 != 0) {
                     instance->field_16 = instance->field_15;
                     animation_index = instance->field_15;
+                } else {
+                    instance->field_16 = requested_animation;
+                    instance->animation_frame_a = frame;
                 }
             } else {
                 instance->field_16 = instance->field_17;
@@ -942,8 +948,8 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
             if (instance->blend_progress >= 1.0f) {
                 instance->blend_progress = 0;
                 animation_a_index = instance->field_17;
-                instance->field_14 ^= 1;
                 instance->field_16 = instance->field_17;
+                instance->field_14 ^= 1;
                 instance->animation_frame_a = instance->animation_frame_b;
                 blending = false;
             }
@@ -1027,19 +1033,19 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
         instance->animation_frame_a += FRAMETIME * 60.0f * animation_rate;
         if (instance->animation_frame_a > end_frame) {
             CHARACTERANIM_s *animation_info = static_cast<CHARACTERANIM_s *>(model->model_data_a[current_animation]);
-            if ((animation_info->flags & 2) == 0) {
-                instance->animation_frame_a = end_frame;
-            } else {
+            if ((animation_info->flags & 2) != 0) {
                 instance->animation_frame_a = instance->animation_frame_a - end_frame + 1.0f;
+            } else {
+                instance->animation_frame_a = end_frame;
             }
         }
     }
 
     EnableShadowMapRendering(0);
-    if (Cheats_CheckFlags(1) == 0) {
-        FindAndSetLights(reinterpret_cast<NUVEC *>(&world_matrix.m30), 1.0f, world->rtl_set);
-    } else {
+    if (Cheats_CheckFlags(1) != 0) {
         SetZeroLights();
+    } else {
+        FindAndSetLights(reinterpret_cast<NUVEC *>(&world_matrix.m30), 1.0f, world->rtl_set);
     }
 
     u8 render_character = 1;
@@ -1066,10 +1072,10 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
     }
     ResetShadowMapRendering();
 
-    f32 ground_height = 2000000.0f;
-    i32 platform = -1;
     i32 surface = -1;
+    f32 ground_height = 2000000.0f;
     bool shadow_sampled = false;
+    i32 platform = -1;
     if ((character->flags & 0x10) != 0 && CutBlobShadowAlpha != 0 && (character_data->model_flags & 0x10000) == 0 &&
         g_isLowEndDevice == 0) {
         u8 shadow_alpha = CutBlobShadowAlpha;
@@ -1078,33 +1084,7 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
         }
         if (shadow_alpha != 0) {
             f32 shadow_radius = game_data->field_0x8c;
-            if (game_data->shadow_locators == 0) {
-                if (!(shadow_radius < 99.0f)) {
-                    shadow_radius = character_data->collision_radius * character_data->model_scale * 2.0f;
-                }
-                if (shadow_radius > 0.0f) {
-                    ground_height = GameShadow(NULL, reinterpret_cast<NUVEC *>(&world_matrix.m30), 5.0f, -1);
-                    if (ground_height != 2000000.0f) {
-                        platform = NewShadowOnPlatform();
-                        surface = ShadowInfo();
-                        if (ShadNorm.y > 0.0f) {
-                            NUVEC shadow_position = *reinterpret_cast<NUVEC *>(&world_matrix.m30);
-                            shadow_position.y = ground_height + 0.005f;
-                            f32 alpha = BlobShadowFade(&shadow_position, CutBlobShadowFadeNear, CutBlobShadowFadeFar,
-                                                       ShadNorm.y);
-                            if (alpha > 0.0f) {
-                                u16 x_rotation;
-                                u16 z_rotation;
-                                FindAnglesZX(&ShadNorm, &x_rotation, &z_rotation);
-                                NuRndrAddShadow(&shadow_position, shadow_radius,
-                                                static_cast<i32>(static_cast<f32>(shadow_alpha) * alpha * ShadNorm.y),
-                                                x_rotation, 0, z_rotation);
-                            }
-                        }
-                    }
-                    shadow_sampled = true;
-                }
-            } else {
+            if (game_data->shadow_locators != 0) {
                 if (!(shadow_radius < 99.0f)) {
                     shadow_radius = character_data->collision_radius * character_data->model_scale;
                 }
@@ -1133,6 +1113,32 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
                 ground_height = 2000000.0f;
                 platform = -1;
                 shadow_sampled = false;
+            } else {
+                if (!(shadow_radius < 99.0f)) {
+                    shadow_radius = character_data->collision_radius * character_data->model_scale * 2.0f;
+                }
+                if (shadow_radius > 0.0f) {
+                    ground_height = GameShadow(NULL, reinterpret_cast<NUVEC *>(&world_matrix.m30), 5.0f, -1);
+                    if (ground_height != 2000000.0f) {
+                        platform = NewShadowOnPlatform();
+                        surface = ShadowInfo();
+                        if (ShadNorm.y > 0.0f) {
+                            NUVEC shadow_position = *reinterpret_cast<NUVEC *>(&world_matrix.m30);
+                            shadow_position.y = ground_height + 0.005f;
+                            f32 alpha = BlobShadowFade(&shadow_position, CutBlobShadowFadeNear, CutBlobShadowFadeFar,
+                                                       ShadNorm.y);
+                            if (alpha > 0.0f) {
+                                u16 x_rotation;
+                                u16 z_rotation;
+                                FindAnglesZX(&ShadNorm, &x_rotation, &z_rotation);
+                                NuRndrAddShadow(&shadow_position, shadow_radius,
+                                                static_cast<i32>(static_cast<f32>(shadow_alpha) * alpha * ShadNorm.y),
+                                                x_rotation, 0, z_rotation);
+                            }
+                        }
+                    }
+                    shadow_sampled = true;
+                }
             }
         }
     }
@@ -1212,8 +1218,8 @@ static void CutScene_EvalCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
     if ((character->flags & 2) == 0) {
         object = static_cast<GameObject_s *>(instance->character_model);
     }
-    NUMTX matrix;
     i32 visible;
+    NUMTX matrix;
     NuGCutCharAnimProcess(character, frame, &matrix, &visible, NULL, NULL, NULL, NULL, NULL);
     if (static_cast<i8>(cutscene_instance->flags_88) < 0) {
         NuMtxMul(&matrix, &matrix, &cutscene_instance->matrix);
@@ -1257,8 +1263,8 @@ static void CutScene_FindCharacters(NUGCUTSCENE_s *cutscene) {
 
 static void CutScene_ResetCharacters(instNUGCUTSCENE_s *instance) {
     NUGCUTSCENE_s *cutscene = instance->cutscene;
-    instNUGCUTCHARSYS_s *character_instance = instance->character_instance;
     NUGCUTCHARSYS_s *character_system = cutscene->character_system;
+    instNUGCUTCHARSYS_s *character_instance = instance->character_instance;
 
     i32 i = 0;
     while (i < character_system->character_count) {
@@ -1285,32 +1291,31 @@ static void CutScene_RigidPostRender(NUGCUTRIGID_s *rigid, instNUGCUTRIGID_s *in
         return;
     }
     i32 surface = ShadowInfo();
-    if (static_cast<u32>(surface) > 0x20 || (TerSurface[surface].flags & 2) == 0) {
-        return;
-    }
+    if (!(static_cast<u32>(surface) > 0x20) && (TerSurface[surface].flags & 2) != 0) {
 
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    NUMTX reflection = *matrix;
-    reflection.m01 = -reflection.m01;
-    reflection.m11 = -reflection.m11;
-    reflection.m21 = -reflection.m21;
-    reflection.m31 = ground - (reflection.m31 - ground);
+        WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+        NUMTX reflection = *matrix;
+        reflection.m01 = -reflection.m01;
+        reflection.m11 = -reflection.m11;
+        reflection.m21 = -reflection.m21;
+        reflection.m31 = ground - (reflection.m31 - ground);
 
-    nuhspecial_s *special = reinterpret_cast<nuhspecial_s *>(instance);
-    i32 object_index = LevelObject_FindIndexFromName_RefOnly(NuSpecialGetName(special));
-    if (object_index != -1) {
-        i32 reflection_index = LevelObject_GetReflection(object_index);
-        if (reflection_index != -1) {
-            nuhspecial_s *reflection_special = &world->lev_objs[reflection_index].special;
-            if (reflection_special != NULL) {
-                special = reflection_special;
+        nuhspecial_s *special = reinterpret_cast<nuhspecial_s *>(instance);
+        i32 object_index = LevelObject_FindIndexFromName_RefOnly(NuSpecialGetName(special));
+        if (object_index != -1) {
+            i32 reflection_index = LevelObject_GetReflection(object_index);
+            if (reflection_index != -1) {
+                nuhspecial_s *reflection_special = &world->lev_objs[reflection_index].special;
+                if (reflection_special != NULL) {
+                    special = reflection_special;
+                }
             }
         }
-    }
 
-    NuRndrStartReflectionRender(0);
-    NuSpecialDrawAt(special, &reflection);
-    NuRndrEndReflectionRender();
+        NuRndrStartReflectionRender(0);
+        NuSpecialDrawAt(special, &reflection);
+        NuRndrEndReflectionRender();
+    }
 }
 
 static void CutScene_CreateCharacterInstance(NUGCUTCHAR_s *character, instNUGCUTCHAR_s *instance, variptr_u *) {
@@ -1397,63 +1402,62 @@ void CutScenes_ConfigureList(char *filename, variptr_u *buffer, variptr_u) {
     char file[128];
 
     while (CUTCOUNT < 1000 && NuFParGetLine(parser) != 0) {
-        if (NuFParGetWord(parser) == 0 || NuStrICmp(parser->word_buf, "cutscene_start") != 0) {
-            continue;
-        }
+        if (NuFParGetWord(parser) != 0 && NuStrICmp(parser->word_buf, "cutscene_start") == 0) {
 
-        directory[0] = '\0';
-        file[0] = '\0';
-        entries[CUTCOUNT].level = -1;
-        while (NuFParGetLine(parser) != 0 && NuFParGetWord(parser) != 0) {
-            if (__builtin_expect(NuStrICmp(parser->word_buf, "cutscene_end") == 0, 1)) {
-                if (directory[0] == '\0') {
-                    break;
-                }
-                if (file[0] == '\0') {
-                    break;
-                }
-                if (entries[CUTCOUNT].level == -1) {
-                    break;
-                }
-
-                i32 duplicate = 0;
-                for (i32 i = 0; i < CUTCOUNT; ++i) {
-                    if (duplicate != 0) {
+            directory[0] = '\0';
+            file[0] = '\0';
+            entries[CUTCOUNT].level = -1;
+            while (NuFParGetLine(parser) != 0 && NuFParGetWord(parser) != 0) {
+                if (__builtin_expect(NuStrICmp(parser->word_buf, "cutscene_end") == 0, 1)) {
+                    if (directory[0] == '\0') {
                         break;
                     }
-                    if (NuStrICmp(directory, entries[i].directory) == 0 && NuStrICmp(file, entries[i].filename) == 0 &&
-                        entries[CUTCOUNT].level == entries[i].level) {
-                        duplicate = 1;
+                    if (file[0] == '\0') {
+                        break;
                     }
+                    if (entries[CUTCOUNT].level == -1) {
+                        break;
+                    }
+
+                    i32 duplicate = 0;
+                    for (i32 i = 0; i < CUTCOUNT; ++i) {
+                        if (duplicate != 0) {
+                            break;
+                        }
+                        if (NuStrICmp(directory, entries[i].directory) == 0 &&
+                            NuStrICmp(file, entries[i].filename) == 0 && entries[CUTCOUNT].level == entries[i].level) {
+                            duplicate = 1;
+                        }
+                    }
+                    if (duplicate == 0) {
+                        entries[CUTCOUNT].directory = cursor;
+                        NuStrCpy(cursor, directory);
+                        i32 directory_length = NuStrLen(directory);
+                        cursor[directory_length] = '\0';
+                        cursor += directory_length + 1;
+                        entries[CUTCOUNT].filename = cursor;
+                        NuStrCpy(cursor, file);
+                        i32 file_length = NuStrLen(file);
+                        cursor[file_length] = '\0';
+                        cursor += file_length + 1;
+                        ++CUTCOUNT;
+                    }
+                    break;
                 }
-                if (duplicate == 0) {
-                    entries[CUTCOUNT].directory = cursor;
-                    NuStrCpy(cursor, directory);
-                    i32 directory_length = NuStrLen(directory);
-                    cursor[directory_length] = '\0';
-                    cursor += directory_length + 1;
-                    entries[CUTCOUNT].filename = cursor;
-                    NuStrCpy(cursor, file);
-                    i32 file_length = NuStrLen(file);
-                    cursor[file_length] = '\0';
-                    cursor += file_length + 1;
-                    ++CUTCOUNT;
-                }
-                break;
-            }
-            if (NuStrICmp(parser->word_buf, "dir") == 0 || NuStrICmp(parser->word_buf, "path") == 0) {
-                if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) <= 127) {
-                    NuStrCpy(directory, parser->word_buf);
-                }
-            } else if (NuStrICmp(parser->word_buf, "file") == 0 || NuStrICmp(parser->word_buf, "filename") == 0) {
-                if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) <= 63) {
-                    NuStrCpy(file, parser->word_buf);
-                }
-            } else if (NuStrICmp(parser->word_buf, "level") == 0 || NuStrICmp(parser->word_buf, "in_level") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    i32 level;
-                    Level_FindByName(parser->word_buf, &level);
-                    entries[CUTCOUNT].level = static_cast<i16>(level);
+                if (NuStrICmp(parser->word_buf, "dir") == 0 || NuStrICmp(parser->word_buf, "path") == 0) {
+                    if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) <= 127) {
+                        NuStrCpy(directory, parser->word_buf);
+                    }
+                } else if (NuStrICmp(parser->word_buf, "file") == 0 || NuStrICmp(parser->word_buf, "filename") == 0) {
+                    if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) <= 63) {
+                        NuStrCpy(file, parser->word_buf);
+                    }
+                } else if (NuStrICmp(parser->word_buf, "level") == 0 || NuStrICmp(parser->word_buf, "in_level") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        i32 level;
+                        Level_FindByName(parser->word_buf, &level);
+                        entries[CUTCOUNT].level = static_cast<i16>(level);
+                    }
                 }
             }
         }
@@ -1567,6 +1571,21 @@ i32 CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *cut, NUGCUTCHAR_s *character) 
     return -1;
 }
 
+CUTINFO *NewCutScene(CUTINFO *cut, CUTSYS *system, char *name, i32) {
+    if (cut == NULL) {
+        if (name == NULL || system == NULL)
+            return NULL;
+        cut = CutScene_Find(system, name);
+    }
+    if (cut != NULL) {
+        if (NewCutInfoCount < 8) {
+            NewCutInfo[NewCutInfoCount++] = cut;
+            return cut;
+        }
+    }
+    return NULL;
+}
+
 void ResetScene(nugscn_s *scene, SCENEPROGRESS_s *progress) {
     if (progress == NULL || scene == NULL)
         return;
@@ -1605,21 +1624,6 @@ void ResetScene(nugscn_s *scene, SCENEPROGRESS_s *progress) {
         translation->y += base_translation->y;
         translation->z += base_translation->z;
     }
-}
-
-CUTINFO *NewCutScene(CUTINFO *cut, CUTSYS *system, char *name, i32) {
-    if (cut == NULL) {
-        if (name == NULL || system == NULL)
-            return NULL;
-        cut = CutScene_Find(system, name);
-    }
-    if (cut != NULL) {
-        if (NewCutInfoCount < 8) {
-            NewCutInfo[NewCutInfoCount++] = cut;
-            return cut;
-        }
-    }
-    return NULL;
 }
 
 void NextStatusStage(STATUSPACKET_s *);
@@ -1702,10 +1706,12 @@ NUGCUTSCENE_s *RelocateCutScene(NUGCUTSCENE_s *source, variptr_u *buffer) {
             cutscene->locator_system =
                 reinterpret_cast<NUGCUTLOCATORSYS_s *>(reinterpret_cast<isize>(cutscene->locator_system) + data_delta);
             NUGCUTLOCATORSYS_s *system = cutscene->locator_system;
-            system->locators =
-                system->locators != NULL
-                    ? reinterpret_cast<NUGCUTLOCATOR_s *>(reinterpret_cast<isize>(system->locators) + data_delta)
-                    : NULL;
+            if (system->locators != NULL) {
+                system->locators =
+                    reinterpret_cast<NUGCUTLOCATOR_s *>(reinterpret_cast<isize>(system->locators) + data_delta);
+            } else {
+                system->locators = NULL;
+            }
             if (system->locators != NULL) {
                 for (i32 i = 0; i < system->locator_count; ++i) {
                     NUGCUTLOCATOR_s *locator = &system->locators[i];
@@ -1734,10 +1740,12 @@ NUGCUTSCENE_s *RelocateCutScene(NUGCUTSCENE_s *source, variptr_u *buffer) {
             cutscene->rigid_system =
                 reinterpret_cast<NUGCUTRIGIDSYS_s *>(reinterpret_cast<isize>(cutscene->rigid_system) + data_delta);
             NUGCUTRIGIDSYS_s *system = cutscene->rigid_system;
-            system->rigids =
-                system->rigids != NULL
-                    ? reinterpret_cast<NUGCUTRIGID_s *>(reinterpret_cast<isize>(system->rigids) + data_delta)
-                    : NULL;
+            if (system->rigids != NULL) {
+                system->rigids =
+                    reinterpret_cast<NUGCUTRIGID_s *>(reinterpret_cast<isize>(system->rigids) + data_delta);
+            } else {
+                system->rigids = NULL;
+            }
             if (system->rigids != NULL) {
                 for (i32 i = 0; i < system->count; ++i) {
                     NUGCUTRIGID_s *rigid = &system->rigids[i];
@@ -1803,12 +1811,15 @@ NUGCUTSCENE_s *RelocateCutScene(NUGCUTSCENE_s *source, variptr_u *buffer) {
             cutscene->trigger_system =
                 reinterpret_cast<NUGCUTTRIGGERSYS_s *>(reinterpret_cast<isize>(cutscene->trigger_system) + data_delta);
             NUGCUTTRIGGERSYS_s *system = cutscene->trigger_system;
-            system->events =
-                system->events != NULL
-                    ? reinterpret_cast<NUGCUTTRIGGEREVENT_s *>(reinterpret_cast<isize>(system->events) + data_delta)
-                    : NULL;
             if (system->events != NULL) {
-                for (i32 i = 0; i < system->event_count; ++i) {
+                system->events =
+                    reinterpret_cast<NUGCUTTRIGGEREVENT_s *>(reinterpret_cast<isize>(system->events) + data_delta);
+            } else {
+                system->events = NULL;
+            }
+            if (system->events != NULL) {
+                auto system_event_count = system->event_count;
+                for (i32 i = 0; i < system_event_count; ++i) {
                     NUGCUTTRIGGEREVENT_s *event = &system->events[i];
                     event->field_04 =
                         event->field_04 != NULL
@@ -1880,7 +1891,7 @@ void GoldBrick_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 activ
         }
     }
     if ((stage->field_0x14 == 0 || stage->field_0x18 < 1.0f) && packet->mission_state != 0 &&
-        packet->previous_gold_bricks < Game.field_0x7c26[0])
+        Game.field_0x7c26[0] > packet->previous_gold_bricks)
         iconalphaoverride = 0.0f;
 }
 

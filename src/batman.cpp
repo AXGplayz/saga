@@ -133,8 +133,8 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     } else {
         i = Level * sizeof(LEVELDATA_s);
     }
-    last_area = -1;
     Area = reinterpret_cast<LEVELDATA_s *>(reinterpret_cast<char *>(LDataList) + i)->area_index;
+    last_area = -1;
     LastAData = NULL;
 
     if (Area == -1) {
@@ -147,10 +147,12 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     FreePlay = 1;
     goto continue_init;
 check_gamedemo:
-    if (1 < GAMEDEMO) {
-        FreePlay = 1;
-        GAMEDEMO = 2;
-    } else if (GAMEDEMO != 0 && FreePlay != 0) {
+    if (!(1 < GAMEDEMO)) {
+        if (GAMEDEMO != 0 && FreePlay != 0) {
+            FreePlay = 1;
+            GAMEDEMO = 2;
+        }
+    } else {
         FreePlay = 1;
         GAMEDEMO = 2;
     }
@@ -160,8 +162,8 @@ continue_init:
         Hub_MakeModelList();
     } else {
         if (FreePlay != 0) {
-            FreePlay = 0;
             NextArea_FreePlay = 0;
+            FreePlay = 0;
         }
     }
 
@@ -816,7 +818,9 @@ giz_freeplay:
             }
 
             if ((pause_rndr_on == 0) || (FadeSys.pending_type == FADE_TYPE_WIPE)) {
-                if (MainRenderTime > 0.0f) {
+                if (!(MainRenderTime > 0.0f)) {
+                    NoRender();
+                } else {
                     world = WORLD;
                     GameFog_Update(WORLD);
                     GameFog_Set();
@@ -977,8 +981,6 @@ giz_freeplay:
                     if (screendump == 0) {
                         ViewCamDraw();
                     }
-                } else {
-                    NoRender();
                 }
             }
 
@@ -1025,10 +1027,12 @@ giz_freeplay:
             } else if (FRAMETIME > MAXFRAMETIME) {
                 FRAMETIME = MAXFRAMETIME;
             }
-            if (FRAMETIME < DEFAULTFRAMETIME) {
+            if (!(FRAMETIME < DEFAULTFRAMETIME)) {
+                if (FRAMETIME > MAXFRAMETIME) {
+                    FRAMETIME = MAXFRAMETIME;
+                }
+            } else {
                 FRAMETIME = DEFAULTFRAMETIME;
-            } else if (FRAMETIME > MAXFRAMETIME) {
-                FRAMETIME = MAXFRAMETIME;
             }
 
             if (enable_zero_frametime != 0) {
@@ -1290,7 +1294,10 @@ after_sound:
     afterArea = HUB_ADATA;
     i = Area;
 
-    if (Area != -1) {
+    if (Area == -1) {
+        NextArea_FreePlay = 0;
+        FreePlay = 0;
+    } else {
         if ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) != 0) {
             NextArea_FreePlay = 1;
             FreePlay = 1;
@@ -1313,9 +1320,6 @@ after_sound:
                 }
             }
         }
-    } else {
-        NextArea_FreePlay = 0;
-        FreePlay = 0;
     }
 
     c = StatusPacket.status_flags;

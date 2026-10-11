@@ -143,8 +143,8 @@ void ResetSinglePushBlock(WORLDINFO_s *, pushblock_s *block, i32) {
     block->platform_id = FindPlatInst(NuSpecialGetInstanceix(&block->special));
     SetAnimFrame(&block->special, 1.0f);
     block->runtime_flags_0c8 &= 0xf2;
-    block->flags_0cb &= ~2u;
     block->runtime_flags_0c9 &= 0xf0;
+    block->flags_0cb &= ~2u;
     block->completion_flags &= 0xf807;
     block->packed_state_flags &= 0xfffc7fff;
     block->pushing_object = NULL;
@@ -168,11 +168,10 @@ pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object, fl
     pushblock_s *nearest = NULL;
     if (world == NULL)
         return nearest;
-    i32 count = world->push_block_count;
     pushblock_s *blocks = world->push_blocks;
     if (blocks == NULL)
         return nearest;
-    if (count == 0)
+    if (world->push_block_count == 0)
         return nearest;
     if (LEGOCONTEXT_PUSH == -1)
         return nearest;
@@ -246,13 +245,12 @@ pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object, fl
             continue;
         if ((block->flags_0cb & 2) != 0)
             continue;
-        f32 max_x = block->bounds_max.x;
         NUVEC *pos = block->position;
         f32 top = pos->y + fabsf(block->bounds_max.y);
         f32 bottom = pos->y - fabsf(block->bounds_min.y);
-        f32 min_x = block->bounds_min.x;
         f32 min_z = block->bounds_min.z;
         f32 max_z = block->bounds_max.z;
+        f32 min_x = block->bounds_min.x;
         if (top > max_y && bottom > max_y)
             continue;
         if (min_y > top) {
@@ -301,12 +299,12 @@ pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object, fl
             continue;
         if ((block->flags_0ca & 0x50) == 0x50)
             continue;
-        gap = fabsf(dx) - max_x;
+        gap = fabsf(dx) - block->bounds_max.x;
         goto have_gap;
     }
     mode3_geometry: {
         f32 block_min_x = min_x + pos->x - 0.01f;
-        f32 block_max_x = pos->x + max_x - 0.01f;
+        f32 block_max_x = pos->x + block->bounds_max.x - 0.01f;
         if (block_min_x >= object->apiobj.collision_position.x)
             continue;
         if (object->apiobj.collision_position.x >= block_max_x)
@@ -319,7 +317,7 @@ pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object, fl
         goto have_gap;
     }
     mode2_geometry: {
-        f32 block_max_x = max_x + pos->x - 0.01f;
+        f32 block_max_x = block->bounds_max.x + pos->x - 0.01f;
         f32 block_min_x = pos->x + min_x - 0.01f;
         if (object->apiobj.collision_position.x >= block_max_x)
             continue;
@@ -379,31 +377,34 @@ void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress) {
             block->output_count = positions;
             block->runtime_flags_0c9 = (block->runtime_flags_0c9 & 0x8f) | ((positions & 7) << 4);
             const i32 required = world->push_block_position_count + positions;
-            if (required > world->current_level->max_push_block_end_pos) {
+            if (!(required > world->current_level->max_push_block_end_pos)) {
+                if (positions != 0 && runoutofpostabspace == 0) {
+                    block->snap_positions = &world->push_block_positions[world->push_block_position_count];
+                    f32 animation_frame = 1.0f;
+                    for (i32 position = 0; position < ((block->runtime_flags_0c9 >> 4) & 7);
+                         ++position, animation_frame += 1.0f) {
+                        NUMTX evaluated;
+                        EvalAnim(&block->special, animation_frame, &evaluated, 0);
+                        block->snap_positions[position] = *reinterpret_cast<NUVEC *>(&evaluated.m30);
+                        evaluated = *NuSpecialGetMtx(&block->special);
+                        block->snap_positions[position].x += evaluated.m30;
+                        block->snap_positions[position].y += evaluated.m31;
+                        block->snap_positions[position].z += evaluated.m32;
+                        ++world->push_block_position_count;
+                    }
+                }
+            } else {
                 pushposincrease +=
                     runoutofpostabspace == 0 ? required - world->current_level->max_push_block_end_pos : positions;
                 runoutofpostabspace = 1;
-            } else if (positions != 0 && runoutofpostabspace == 0) {
-                block->snap_positions = &world->push_block_positions[world->push_block_position_count];
-                f32 animation_frame = 1.0f;
-                for (i32 position = 0; position < ((block->runtime_flags_0c9 >> 4) & 7);
-                     ++position, animation_frame += 1.0f) {
-                    NUMTX evaluated;
-                    EvalAnim(&block->special, animation_frame, &evaluated, 0);
-                    block->snap_positions[position] = *reinterpret_cast<NUVEC *>(&evaluated.m30);
-                    evaluated = *NuSpecialGetMtx(&block->special);
-                    block->snap_positions[position].x += evaluated.m30;
-                    block->snap_positions[position].y += evaluated.m31;
-                    block->snap_positions[position].z += evaluated.m32;
-                    ++world->push_block_position_count;
-                }
             }
         }
         ResetSinglePushBlock(world, block, index);
     }
 
     block = world->push_blocks;
-    for (i32 index = 0; index < world->push_block_count; ++index, ++block) {
+    auto world_push_block_count = world->push_block_count;
+    for (i32 index = 0; index < world_push_block_count; ++index, ++block) {
         NUVEC centre = *block->position;
         block->velocity = v000;
         block->target_velocity = v000;

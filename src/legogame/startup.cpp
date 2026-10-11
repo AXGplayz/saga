@@ -227,10 +227,10 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     // Font path depends on language.  `Text_Language == 0` is Japanese in the
     // original; everything else uses the Latin font.
-    if (Text_Language != 0) {
-        Text_LoadFont((char *)"stuff\\text\\starwars_font", &permbuffer_ptr, &permbuffer_end);
-    } else {
+    if (Text_Language == 0) {
         Text_LoadFont((char *)"stuff\\text\\starwars_font_j", &permbuffer_ptr, &permbuffer_end);
+    } else {
+        Text_LoadFont((char *)"stuff\\text\\starwars_font", &permbuffer_ptr, &permbuffer_end);
     }
 
     // PAL builds show the language menu — the loader spins here until the menu
@@ -307,8 +307,8 @@ static void LoadPermData(BGPROCINFO *proc) {
         manager.end = aligned_base + kSmallHeapSize;
         permbuffer_ptr.addr = aligned_base + kSmallHeapSize;
         manager.remaining = kSmallHeapSize;
-        manager.high_water = 0;
         manager.end_cell = &manager.end;
+        manager.high_water = 0;
         memset(manager.free_lists, 0, sizeof(manager.free_lists));
     }
 
@@ -438,10 +438,13 @@ void LoadPerm(void) {
         LoadPerm_LanguageSelect = 0;
     } else {
         i32 language_index = 0;
-        while (language_index < LANGUAGECOUNT && Text_LanguageList[language_index].language != device_language) {
-            language_index++;
+        while (Text_LanguageList[language_index].language != device_language) {
+            ++language_index;
+            if (language_index == LANGUAGECOUNT) {
+                break;
+            }
         }
-        if (!(language_index < LANGUAGECOUNT)) {
+        if (language_index == LANGUAGECOUNT) {
             LoadPerm_LanguageSelect = 0;
         } else {
             NuLanguageSet(device_language);
@@ -514,8 +517,8 @@ void LoadPerm(void) {
                 if (texture_id != 0) {
                     NUMTL *mtl = NuMtlCreate(1);
                     if (mtl != nullptr) {
-                        mtl->diffuse_color = {1.0f, 1.0f, 1.0f};
                         mtl->opacity = 1.0f;
+                        mtl->diffuse_color = {1.0f, 1.0f, 1.0f};
                         mtl->shader_desc.flags = 0x1000;
                         mtl->tex_id = static_cast<i16>(texture_id);
                         u8 *attrib = reinterpret_cast<u8 *>(&mtl->attribs);
@@ -566,14 +569,16 @@ void LoadPerm(void) {
 
                 if (legal_timer > 0.0f && legal_timer < 5.8f && legal_mtl != nullptr) {
                     f32 alpha;
-                    if (legal_timer < 0.3f) {
-                        alpha = legal_timer / 0.3f;
-                    } else if (legal_timer < 5.3f) {
-                        alpha = 1.0f;
-                    } else if (legal_timer >= 5.6000003814697266f) {
-                        alpha = 0.0f;
+                    if (!(legal_timer < 0.3f)) {
+                        if (legal_timer < 5.3f) {
+                            alpha = 1.0f;
+                        } else if (legal_timer >= 5.6000003814697266f) {
+                            alpha = 0.0f;
+                        } else {
+                            alpha = 1.0f - (legal_timer - 5.3f) / 0.30000019f;
+                        }
                     } else {
-                        alpha = 1.0f - (legal_timer - 5.3f) / 0.30000019f;
+                        alpha = legal_timer / 0.3f;
                     }
 
                     if (alpha > 0.0f) {
@@ -597,12 +602,12 @@ void LoadPerm(void) {
                             const f32 aspect = NuIOS_GetAspectRatio();
                             f32 half_w;
                             f32 half_h;
-                            if (!(!(aspect > 1.7777778f))) {
-                                half_h = 0.5f;
-                                half_w = aspect * 0.5f / 1.7777778f;
-                            } else {
+                            if (!(aspect > 1.7777778f)) {
                                 half_w = 0.5f;
                                 half_h = aspect * 0.5f / 1.7777778f;
+                            } else {
+                                half_h = 0.5f;
+                                half_w = aspect * 0.5f / 1.7777778f;
                             }
 
                             NuRndrClear(0xb00, 0, 1.0f);

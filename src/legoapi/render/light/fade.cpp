@@ -46,7 +46,10 @@ void FadeStillWipe::DrawFade() {
 
 void FadeStillWipe::InitFade() {
     const u32 old_direction = info->direction;
-    if ((info->stage & 1) == 0) {
+    if ((info->stage & 1) != 0) {
+        info->rate = -1.3333334f;
+        info->fade = 1.0f;
+    } else {
         info->fade = 1.0f;
         info->rate = 2.0f;
         pause_rndr_on = 0;
@@ -55,9 +58,6 @@ void FadeStillWipe::InitFade() {
         else
             NeedScreenGrab(1);
         wait_till_next_frame = 1;
-    } else {
-        info->fade = 1.0f;
-        info->rate = -1.3333334f;
     }
     do {
         i32 value = qrand();
@@ -86,12 +86,12 @@ void Fade::Init(FADEINFO_s *state) {
 }
 
 void Fade::InitFade() {
-    if ((info->stage & 1) == 0) {
-        info->fade = 0.0f;
-        info->rate = 2.0f;
-    } else {
+    if ((info->stage & 1) != 0) {
         info->fade = 1.0f;
         info->rate = -1.3333334f;
+    } else {
+        info->fade = 0.0f;
+        info->rate = 2.0f;
     }
 }
 
@@ -108,12 +108,12 @@ void FadeWipe::Init(FADEINFO_s *state) {
 
 void FadeWipe::InitFade() {
     const u32 old = info->direction;
-    if ((info->stage & 1) == 0) {
-        info->fade = 0.0f;
-        info->rate = 2.0f;
-    } else {
+    if ((info->stage & 1) != 0) {
         info->fade = 1.0f;
         info->rate = -1.3333334f;
+    } else {
+        info->fade = 0.0f;
+        info->rate = 2.0f;
     }
     do {
         i32 value = qrand();
@@ -229,8 +229,8 @@ i32 FadeSystem::AddFade(FadeBase *o) {
 i32 FadeSystem::SetFade(FADETYPE const &t, u32 frames) {
     FADETYPE_VALUE type = t.type;
     if (type != FADE_TYPE_NONE && fades[type] != NULL) {
-        pending_type = type;
         direction = frames;
+        pending_type = type;
         return 1;
     }
     pending_type = FADE_TYPE_NONE;

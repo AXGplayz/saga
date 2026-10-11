@@ -127,7 +127,11 @@ void GetSurfaceInfo(GameObject_s *object, i32 update_surface, f32 shadow_height)
     api.field_0x220 = ShadRoofY;
     if (ShadRoofY != 2000000.0f) {
         const i32 roof_surface = ShadowRoofInfo();
-        api.field_0x280 = static_cast<u8>(roof_surface) <= 31 ? static_cast<u8>(roof_surface) : 0;
+        if (static_cast<u8>(roof_surface) <= 31) {
+            api.field_0x280 = static_cast<u8>(roof_surface);
+        } else {
+            api.field_0x280 = 0;
+        }
     } else {
         api.field_0x280 = 0xff;
     }
@@ -229,8 +233,8 @@ void Surface_Deflect(nuvec_s *normal, nuvec_s *movement, nuvec_s *result, i32 mo
     const f32 normal_x = normal->x;
     const f32 normal_y = normal->y;
     f32 correction = -movement_y * normal_y - movement_x * normal_x;
-    const f32 movement_z = movement->z;
     const f32 normal_z = normal->z;
+    const f32 movement_z = movement->z;
     correction -= movement_z * normal_z;
     if (mode == SURFACE_DEFLECT_PUSH_OUT_FAST) {
         correction += FRAMETIME * 0.015f;

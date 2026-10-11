@@ -101,19 +101,19 @@ static __used__ i32 RowMoveWander(AIGROUP *group, AIROW *row, AIROW *previous, A
                 }
                 group->leader = NULL;
                 group->is_reversed = !group->is_reversed;
-                if (group->is_reversed) {
-                    for (i32 i = group->member_count - 1; i != -1; --i) {
+                if (!group->is_reversed) {
+                    for (i32 i = 0; i < group->member_count; ++i) {
                         APIOBJECT *object = group->members[i];
-                        if (object != NULL && (object->field_0x1f8 & 0x1001) == 0x1001 && object->field_0x287 == 0) {
+                        if (object->objptr != NULL && (object->field_0x1f8 & 0x1001) == 0x1001 &&
+                            object->field_0x287 == 0) {
                             group->leader = object;
                             break;
                         }
                     }
                 } else {
-                    for (i32 i = 0; i < group->member_count; ++i) {
+                    for (i32 i = group->member_count - 1; i != -1; --i) {
                         APIOBJECT *object = group->members[i];
-                        if (object->objptr != NULL && (object->field_0x1f8 & 0x1001) == 0x1001 &&
-                            object->field_0x287 == 0) {
+                        if (object != NULL && (object->field_0x1f8 & 0x1001) == 0x1001 && object->field_0x287 == 0) {
                             group->leader = object;
                             break;
                         }
@@ -359,7 +359,7 @@ static void AISysCheckAntinode_Rectangle(APIOBJECT *object, AIANTINODE *antinode
     }
     difference->z = object->ai->movement_position.z - antinode->position.z;
     if (difference->z > radius || difference->z < -radius || object->collision_min.y > antinode->max_y ||
-        !(antinode->min_y <= object->collision_max.y)) {
+        antinode->min_y > object->collision_max.y) {
         return;
     }
     NuVecRotateY(difference, difference, -antinode->flags);
@@ -627,11 +627,9 @@ static char *AISysLoadString(AISYS *system, i32 length) {
 
 static void AISysLoadPathRoutes(AISYS *system, AIPATH *path, i32 version, char *name_buffer) {
     path->route_matrix = static_cast<u8 **>(AISysLoadAlloc(system, path->node_count * sizeof(u8 *)));
-    if (path->node_count != 0) {
-        for (i32 i = 0; i < path->node_count; ++i) {
-            path->route_matrix[i] = static_cast<u8 *>(AISysLoadAlloc(system, path->node_count));
-            EdFileRead(path->route_matrix[i], path->node_count);
-        }
+    for (i32 i = 0; i < path->node_count; ++i) {
+        path->route_matrix[i] = static_cast<u8 *>(AISysLoadAlloc(system, path->node_count));
+        EdFileRead(path->route_matrix[i], path->node_count);
     }
 
     if (version <= 4)
@@ -721,7 +719,11 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene, char
         path->node_count = static_cast<u8>(EdFileReadChar());
         path->flags = static_cast<u8>(EdFileReadChar());
         path->index = static_cast<u8>(path_index);
-        path->connection_count = version == 1 ? static_cast<i16>(EdFileReadChar()) : EdFileReadShort();
+        if (version == 1) {
+            path->connection_count = static_cast<i16>(EdFileReadChar());
+        } else {
+            path->connection_count = EdFileReadShort();
+        }
 
         if (path->connection_count != 0) {
             path->connections =
@@ -757,7 +759,11 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene, char
             path->nodes = static_cast<AIPATHNODE *>(AISysLoadAlloc(system, path->node_count * sizeof(AIPATHNODE)));
             for (i32 node_index = 0; node_index < path->node_count; ++node_index) {
                 AIPATHNODE *node = &path->nodes[node_index];
-                node->name = AISysLoadString(system, EdFileReadInt());
+                const i32 name_length = EdFileReadInt();
+                if (name_length != 0) {
+                    node->name = static_cast<char *>(AISysLoadAlloc(system, name_length + 1));
+                    EdFileRead(node->name, name_length);
+                }
                 node->position.x = EdFileReadFloat();
                 node->position.y = EdFileReadFloat();
                 node->position.z = EdFileReadFloat();
@@ -777,9 +783,12 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene, char
                 EdFileReadChar();
                 node->runtime_flags = static_cast<u8>(EdFileReadChar()) & ~6u;
                 node->path_flags = EdFileReadShort();
-                node->special_route_index = static_cast<u8>(EdFileReadChar());
-                if (version < 19)
+                if (version < 19) {
+                    EdFileReadChar();
                     node->special_route_index = 0xff;
+                } else {
+                    node->special_route_index = static_cast<u8>(EdFileReadChar());
+                }
 
                 char *special_name = name_buffer;
                 i32 special_name_length = EdFileReadChar();
@@ -827,8 +836,10 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene, char
             AIPATHSPECIALROUTE *route = &path_system->special_routes[i];
             route->path_count = static_cast<u8>(EdFileReadChar());
             route->paths = static_cast<AIPATH **>(AISysLoadAlloc(system, route->path_count * sizeof(AIPATH *)));
-            for (i32 path_index = 0; path_index < route->path_count; ++path_index) {
-                route->paths[path_index] = path_system->paths[EdFileReadChar()];
+            auto route_path_count = route->path_count;
+            for (i32 path_index = 0; path_index < route_path_count; ++path_index) {
+                const i32 read_path_index = EdFileReadChar();
+                route->paths[path_index] = path_system->paths[read_path_index];
             }
         }
     }
@@ -836,7 +847,8 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene, char
 }
 
 static AIAREA *AISysLoadFindArea(AISYS *system, char *name) {
-    for (i32 index = 0; index < system->area_count; ++index) {
+    auto system_area_count = system->area_count;
+    for (i32 index = 0; index < system_area_count; ++index) {
         AIAREA *area = &system->areas[index];
         if (NuStrICmp(name, area->name) == 0) {
             return area;
@@ -867,18 +879,17 @@ static u32 AISysCharacterTestPathCnx(AISYS *system, APIOBJECT *object, AIPACKET 
     }
     if ((object->flags_low & 0x80) == 0 && packet->current_route != 0xff &&
         ((static_cast<u64>(connection->route_mask) >> packet->current_route) & 1) == 0) {
-        AIPATHCNX *current = packet->path_info.connection;
-        if (current == NULL || current == connection) {
+        if (packet->path_info.connection == NULL || packet->path_info.connection == connection) {
             return 0;
         }
         AIPATHNODE *shared = NULL;
-        if (current->node_indices[0] == connection->node_indices[0]) {
+        if (packet->path_info.connection->node_indices[0] == connection->node_indices[0]) {
             shared = &path->nodes[connection->node_indices[0]];
-        } else if (current->node_indices[0] == connection->node_indices[1]) {
-            shared = &path->nodes[current->node_indices[0]];
-        } else if (current->node_indices[1] == connection->node_indices[0]) {
+        } else if (packet->path_info.connection->node_indices[0] == connection->node_indices[1]) {
+            shared = &path->nodes[packet->path_info.connection->node_indices[0]];
+        } else if (packet->path_info.connection->node_indices[1] == connection->node_indices[0]) {
             shared = &path->nodes[connection->node_indices[0]];
-        } else if (current->node_indices[1] == connection->node_indices[1]) {
+        } else if (packet->path_info.connection->node_indices[1] == connection->node_indices[1]) {
             shared = &path->nodes[connection->node_indices[1]];
         }
         if (shared == NULL || ((static_cast<u64>(shared->route_boundary_mask) >> packet->current_route) & 1) == 0) {
@@ -951,12 +962,12 @@ static u32 AISysCharacterTestPathCnx(AISYS *system, APIOBJECT *object, AIPACKET 
             AISysCharacterSetPathCnx(packet, &object->position, connection, direction);
             packet->path_info.dist = local.z / connection->horizontal_distance;
             packet->path_info.width = local.x;
-            if (first_radius < distance) {
-                packet->last_path_position.x = first_radius * radial.x / distance + first->position.x;
-                packet->last_path_position.z = first_radius * radial.z / distance + first->position.z;
-            } else {
+            if (!(first_radius < distance)) {
                 packet->last_path_position.x = object->position.x;
                 packet->last_path_position.z = object->position.z;
+            } else {
+                packet->last_path_position.x = first_radius * radial.x / distance + first->position.x;
+                packet->last_path_position.z = first_radius * radial.z / distance + first->position.z;
             }
             packet->last_path_position.y = first->position.y;
             packet->inside_path_node = -1;
@@ -996,12 +1007,12 @@ static u32 AISysCharacterTestPathCnx(AISYS *system, APIOBJECT *object, AIPACKET 
             AISysCharacterSetPathCnx(packet, &object->position, connection, direction);
             packet->path_info.dist = local.z / connection->horizontal_distance;
             packet->path_info.width = local.x;
-            if (first_radius < distance) {
-                packet->last_path_position.x = first_radius * radial.x / distance + first->position.x;
-                packet->last_path_position.z = first_radius * radial.z / distance + first->position.z;
-            } else {
+            if (!(first_radius < distance)) {
                 packet->last_path_position.x = object->position.x;
                 packet->last_path_position.z = object->position.z;
+            } else {
+                packet->last_path_position.x = first_radius * radial.x / distance + first->position.x;
+                packet->last_path_position.z = first_radius * radial.z / distance + first->position.z;
             }
             packet->last_path_position.y = first->position.y;
             packet->inside_path_node = -1;
@@ -1032,12 +1043,12 @@ static u32 AISysCharacterTestPathCnx(AISYS *system, APIOBJECT *object, AIPACKET 
             AISysCharacterSetPathCnx(packet, &object->position, connection, direction);
             packet->path_info.dist = local.z / connection->horizontal_distance;
             packet->path_info.width = local.x;
-            if (second_radius < distance) {
-                packet->last_path_position.x = second_radius * radial.x / distance + second->position.x;
-                packet->last_path_position.z = second_radius * radial.z / distance + second->position.z;
-            } else {
+            if (!(second_radius < distance)) {
                 packet->last_path_position.x = object->position.x;
                 packet->last_path_position.z = object->position.z;
+            } else {
+                packet->last_path_position.x = second_radius * radial.x / distance + second->position.x;
+                packet->last_path_position.z = second_radius * radial.z / distance + second->position.z;
             }
             packet->last_path_position.y = second->position.y;
             packet->inside_path_node = -1;
@@ -1141,7 +1152,8 @@ static void AISysResetPathSearchConnectionChecks(AIPATH *path) {
 }
 
 static AILOCATOR *AISysLoadFindLocator(AISYS *system, char *name) {
-    for (i32 index = 0; index < system->locator_count; ++index) {
+    auto system_locator_count = system->locator_count;
+    for (i32 index = 0; index < system_locator_count; ++index) {
         AILOCATOR *locator = &system->locators[index];
         if (NuStrICmp(name, locator->name) == 0) {
             return locator;
@@ -1268,6 +1280,7 @@ static void AISysLoadCreatures(AISYS *system, i32 version) {
     }
 
     system->creatures = static_cast<AICREATURE *>(AISysLoadAlloc(system, system->creature_count * sizeof(AICREATURE)));
+    auto system_path_sys = system->path_sys;
     for (i32 index = 0; index < system->creature_count; ++index) {
         AICREATURE *creature = &system->creatures[index];
         EdFileRead(creature->name, sizeof(creature->name));
@@ -1296,7 +1309,7 @@ static void AISysLoadCreatures(AISYS *system, i32 version) {
         creature->z_spacing = EdFileReadFloat();
         creature->flags = EdFileReadInt();
         u8 path_index = static_cast<u8>(EdFileReadChar());
-        creature->path_info.path = system->path_sys->paths[path_index];
+        creature->path_info.path = system_path_sys->paths[path_index];
         creature->path_info.direction = static_cast<u8>(EdFileReadChar());
         u16 connection_index = static_cast<u16>(EdFileReadShort());
         creature->path_info.connection = &creature->path_info.path->connections[connection_index];
@@ -2433,7 +2446,7 @@ extern "C" {
                             object->collision_min.y > antinode->max_y) {
                             continue;
                         }
-                        if (antinode->min_y <= object->collision_max.y) {
+                        if (!(antinode->min_y > object->collision_max.y)) {
                             checkantinodefns[antinode->type](object, antinode, &difference, radius);
                         }
                     }
@@ -3018,8 +3031,143 @@ extern "C" {
             }
         }
 
-        for (i32 index = 0; index < 16; ++index) {
-            AIGROUP *group = &system->groups[index];
+        {
+            AIGROUP *group = &system->groups[0];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[1];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[2];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[3];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[4];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[5];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[6];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[7];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[8];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[9];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[10];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[11];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[12];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[13];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[14];
+            if (group->is_used) {
+                if (group->member_is_alive == 0)
+                    group->can_respawn = 1;
+                else
+                    group->can_respawn = 0;
+            }
+        }
+        {
+            AIGROUP *group = &system->groups[15];
             if (group->is_used) {
                 if (group->member_is_alive == 0)
                     group->can_respawn = 1;
@@ -3287,10 +3435,12 @@ extern "C" {
                 }
             }
 
-            path = packet->path_info.path;
-            if (packet->inside_path_node != -1 && path != NULL) {
-                const i16 node_index = packet->inside_path_node;
-                path->inside_node_bits[node_index / 8] |= static_cast<u8>(1u << (node_index % 8));
+            const i16 node_index = packet->inside_path_node;
+            if (node_index != -1) {
+                path = packet->path_info.path;
+                if (path != NULL) {
+                    path->inside_node_bits[node_index / 8] |= static_cast<u8>(1u << (node_index % 8));
+                }
             }
             packet->time_off_path = 0.0f;
             movement_source_flags = packet->field_0x1e7;

@@ -192,6 +192,7 @@ static struct {
 // ===========================================================================
 
 static __used__ void PodRaceSnipersUpdate(void) {
+    NUVEC direction;
     static i32 player_ix;
     i32 bolttype = (WORLD->current_level == PODSPRINTA_LDATA) ? 0x29 : 0x28;
     BOLTTYPE_s *type = BoltType_FindByID(bolttype, WORLD);
@@ -203,15 +204,16 @@ static __used__ void PodRaceSnipersUpdate(void) {
         bool in_range = false;
         for (i32 j = 0; j < 2; ++j) {
             GameObject_s *target = Player[j];
-            if (target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
-                float dx = target->apiobj.collision_position.x - s->pos.x;
-                float dz = target->apiobj.collision_position.z - s->pos.z;
-                float dist2 = dx * dx + dz * dz;
-                if (dist2 < PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
-                    in_range = true;
-                    if (dist2 < PodRace_sniper_fire_radius * PodRace_sniper_fire_radius)
-                        s->state = PodRace_sniper_fire_range_time;
-                }
+            if (!(target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001)) {
+                continue;
+            }
+            float dz = target->apiobj.collision_position.z - s->pos.z;
+            float dx = target->apiobj.collision_position.x - s->pos.x;
+            float dist2 = dx * dx + dz * dz;
+            if (dist2 < PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
+                in_range = true;
+                if (dist2 < PodRace_sniper_fire_radius * PodRace_sniper_fire_radius)
+                    s->state = PodRace_sniper_fire_range_time;
             }
         }
         s->fire_timer += FRAMETIME;
@@ -243,7 +245,7 @@ static __used__ void PodRaceSnipersUpdate(void) {
                     NuVecRotateY(&aim, &aim, NuRandInt());
                     NuVecAdd(&aim, &aim, &s->pos);
                 }
-                NUVEC direction;
+
                 float distance = NuVecDist(&aim, &s->prev, &direction);
                 temp_yrot = NuAtan2D(direction.x, direction.z);
                 temp_xrot = NuAtan2D(-direction.y, distance);
@@ -267,6 +269,7 @@ static __used__ void PodRaceSnipersReset(void) {
         NUGSPLINE *spline = NuSplineFind(WORLD->current_gscn, buf);
         if (spline != NULL && spline->length > 0 && PodRace_nsnipers <= 9) {
             i32 npts = 0;
+            auto spline_length = spline->length;
             do {
                 SNIPER_s *dst = &PodRace_snipers[PodRace_nsnipers];
                 memcpy(dst, &spline->pts[npts], 0x18);
@@ -274,7 +277,7 @@ static __used__ void PodRaceSnipersReset(void) {
                 dst->state = 0.0f;
                 PodRace_nsnipers++;
                 npts += 2;
-            } while (spline->length > npts && PodRace_nsnipers <= 9);
+            } while (spline_length > npts && PodRace_nsnipers <= 9);
         }
     }
 }
@@ -375,10 +378,11 @@ static void PodSprint_InitAISpline(WORLDINFO_s *world, PODSPRINT_AISPLINE_s *ai,
     ai->spline = NuSplineFind(world->current_gscn, name);
     if (ai->spline != NULL && podsprint.finish_line != NULL && podsprint.halfway != NULL) {
         i32 count = 0;
-        for (i32 i = 0; i < (i32)(i16)ai->spline->length - 1; i++) {
+        auto ai_spline = ai->spline;
+        for (i32 i = 0; i < (i32)(i16)ai_spline->length - 1; i++) {
             if (count > 5)
                 break;
-            NUVEC *pts = ai->spline->pts;
+            NUVEC *pts = ai_spline->pts;
             NUVEC *pts2 = ((count & 1) ? podsprint.finish_line : podsprint.halfway)->pts;
             if (XZLinesIntersect(&pts[i], &pts[i + 1], &pts2[0], &pts2[1], NULL, NULL)) {
                 ai->vals[count] = (i16)i;
@@ -565,44 +569,6 @@ void NegotiationsB_Init(WORLDINFO_s *world) {
         f->strength_0x6c = 0.5f;
 }
 
-void GunganA_Init(WORLDINFO_s *world) {
-    if (netclient == 0) {
-        memset(&gungan_a, 0, sizeof(gungan_a));
-        gungan_a.models[0] = id_KAADU;
-        gungan_a.models[1] = id_GUNGAN;
-        gungan_a.models[2] = id_FALUMPASET;
-        gungan_a.models[3] = id_GUNGAN;
-        for (i32 i = 0; i < 32; i++) {
-            char buf[32];
-            sprintf(buf, "origin_%d", i);
-            gungan_a.origins[i] = AIPathFindLocator(world->ai_sys, buf);
-            sprintf(buf, "target_%d", i);
-            gungan_a.targets[i] = AIPathFindLocator(world->ai_sys, buf);
-            if (gungan_a.origins[i] == NULL || gungan_a.targets[i] == NULL)
-                break;
-            gungan_a.count++;
-        }
-    }
-    GIZMOBLOWUP_s *b = GizmoBlowUp_FindByName(world, "Trunk2_exp11");
-    if (b != NULL) {
-        UpdateMidPos(b);
-        b->field_0x124 = 1;
-        b->field_0x128 = b->target_scale;
-        GIZMOBLOWUP_s *b2 = GizmoBlowUp_FindByName(world, "leaves_exp11");
-        if (b2 != NULL) {
-            b2->field_0x124 = 1;
-            b2->field_0x120 = &b->mid_position;
-            b2->field_0x128 = b->target_scale;
-        }
-        GIZMOBLOWUP_s *b3 = GizmoBlowUp_FindByName(world, "branch3_exp11");
-        if (b3 != NULL) {
-            b3->field_0x124 = 1;
-            b3->field_0x120 = &b->mid_position;
-            b3->field_0x128 = b->target_scale;
-        }
-    }
-}
-
 void GunganA_Update(WORLDINFO_s *world) {
     (void)world;
     if (netclient != 0)
@@ -645,6 +611,44 @@ void GunganA_Update(WORLDINFO_s *world) {
         }
     reset_spawn_timer:
         gungan_a.spawn_timer = 0.25f - NuFloatRand(NULL) * 0.5f;
+    }
+}
+
+void GunganA_Init(WORLDINFO_s *world) {
+    if (netclient == 0) {
+        memset(&gungan_a, 0, sizeof(gungan_a));
+        gungan_a.models[0] = id_KAADU;
+        gungan_a.models[1] = id_GUNGAN;
+        gungan_a.models[2] = id_FALUMPASET;
+        gungan_a.models[3] = id_GUNGAN;
+        for (i32 i = 0; i < 32; i++) {
+            char buf[32];
+            sprintf(buf, "origin_%d", i);
+            gungan_a.origins[i] = AIPathFindLocator(world->ai_sys, buf);
+            sprintf(buf, "target_%d", i);
+            gungan_a.targets[i] = AIPathFindLocator(world->ai_sys, buf);
+            if (gungan_a.origins[i] == NULL || gungan_a.targets[i] == NULL)
+                break;
+            gungan_a.count++;
+        }
+    }
+    GIZMOBLOWUP_s *b = GizmoBlowUp_FindByName(world, "Trunk2_exp11");
+    if (b != NULL) {
+        UpdateMidPos(b);
+        b->field_0x124 = 1;
+        b->field_0x128 = b->target_scale;
+        GIZMOBLOWUP_s *b2 = GizmoBlowUp_FindByName(world, "leaves_exp11");
+        if (b2 != NULL) {
+            b2->field_0x124 = 1;
+            b2->field_0x120 = &b->mid_position;
+            b2->field_0x128 = b->target_scale;
+        }
+        GIZMOBLOWUP_s *b3 = GizmoBlowUp_FindByName(world, "branch3_exp11");
+        if (b3 != NULL) {
+            b3->field_0x124 = 1;
+            b3->field_0x120 = &b->mid_position;
+            b3->field_0x128 = b->target_scale;
+        }
     }
 }
 
@@ -785,7 +789,11 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                 if (PodRace->prev_lap_display < PodRace->max_lap_time && PodRace->lap_attempts_per_increment != 0 &&
                     PodRace->lap_attempts % PodRace->lap_attempts_per_increment == 0) {
                     float time = PodRace->prev_lap_display + PodRace->lap_time_increment;
-                    PodRace->prev_lap_display = time < PodRace->max_lap_time ? time : PodRace->max_lap_time;
+                    if (time < PodRace->max_lap_time) {
+                        PodRace->prev_lap_display = time;
+                    } else {
+                        PodRace->prev_lap_display = PodRace->max_lap_time;
+                    }
                 }
             }
         }
@@ -837,8 +845,8 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                         speed = 1.5f * speed - ratio * speed;
                     }
                     speed /= length;
-                    pod->previous_axis.x = direction.x * speed;
                     pod->previous_axis.y = direction.y * speed;
+                    pod->previous_axis.x = direction.x * speed;
                     pod->previous_axis.z = direction.z * speed;
                 }
                 direction.x = pod->previous_axis.x * FRAMETIME;
@@ -916,8 +924,8 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
         ResetLevel(world, reason, 1);
     }
     if (netclient == 0) {
-        podrace_netpacket->start_countdown = PodRace->lap_countdown;
         podrace_netpacket->remaining_time = PodRace->lap_display;
+        podrace_netpacket->start_countdown = PodRace->lap_countdown;
         podrace_netpacket->available_time = PodRace->prev_lap_display;
         podrace_netpacket->lap = Lap;
     }
@@ -1048,25 +1056,27 @@ void PodRaceA_AlwaysUpdate(WORLDINFO_s *world) {
 
 void PodRaceADraw(WORLDINFO_s *world) {
     NUMTX mtx;
-    if (netclient != 0) {
+    if (netclient == 0) {
+        if (NuSpecialExistsFn(&minesys) != 0) {
+            MINESYS_s *mines = &minesys;
+            for (MINEENTRY_s *entry = mines->mines; entry != &mines->mines[64]; entry++) {
+                if (entry->active != 0) {
+                    float s = entry->grow_alpha;
+                    NUVEC scale = {s, s, s};
+                    NuMtxSetScale(&mtx, &scale);
+                    NuMtxTranslate(&mtx, &entry->pos);
+                    NuMtxPreRotateX(&mtx, entry->rotx);
+                    NuMtxPreRotateY(&mtx, entry->roty);
+                    NuSpecialDrawAt(&minesys, &mtx);
+                }
+            }
+        }
+    } else {
         for (i32 i = 0; i < 0x40; i++) {
             i64 bit = (i32)(1u << (i & 0x1f));
             if ((client_mines.present_mask & bit) != 0) {
                 NuMtxSetIdentity(&mtx);
                 NuMtxTranslate(&mtx, &client_mines.positions[i]);
-                NuSpecialDrawAt(&minesys, &mtx);
-            }
-        }
-    } else if (NuSpecialExistsFn(&minesys) != 0) {
-        MINESYS_s *mines = &minesys;
-        for (MINEENTRY_s *entry = mines->mines; entry != &mines->mines[64]; entry++) {
-            if (entry->active != 0) {
-                float s = entry->grow_alpha;
-                NUVEC scale = {s, s, s};
-                NuMtxSetScale(&mtx, &scale);
-                NuMtxTranslate(&mtx, &entry->pos);
-                NuMtxPreRotateX(&mtx, entry->rotx);
-                NuMtxPreRotateY(&mtx, entry->roty);
                 NuSpecialDrawAt(&minesys, &mtx);
             }
         }
@@ -1288,8 +1298,8 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     racepod_s *pod = &PodRace->lap_entries[slot];
     pod->data = (u32 *)spline;
     pod->start = start;
-    pod->model_id = model_id;
     pod->next = (void *)1;
+    pod->model_id = model_id;
 
     float spline_length = spline->length;
     float duration = time_factor * PodRace->prev_lap_display;
@@ -1375,8 +1385,8 @@ i32 Action_Sebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **, 
         NuVecSub(&object_offset, &object->apiobj.position, &object->sock_position.midpoint);
         NuVecRotateY(&object_offset, &object_offset, -object->yrot);
         goal.x = object_offset.x * sebulba_lerpf + target_offset.x * (1.0f - sebulba_lerpf);
-        goal.y = 0.0f;
         goal.z = 0.0f;
+        goal.y = 0.0f;
         NuVecAdd(&goal, &goal, &ahead.midpoint);
 
         packet->script_process.action_timer += FRAMETIME;
@@ -1503,6 +1513,24 @@ void PodRaceAReset(WORLDINFO_s *world) {
         NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_sebulba", 1);
 }
 
+// Clears the mine pools and resolves the mine special and its no-mine areas.
+static void InitPodRaceMines() {
+    memset(&minesys, 0, 0x1d2 * 4);
+    memset(&client_mines, 0, sizeof(client_mines));
+    MINESYS_s *mines = &minesys;
+    if (NuSpecialFind(vehicle_scene, &mines->mine_special, "mine", 1) != 0) {
+        mines->mine_radius = NuSpecialGetOriginRadius(&mines->mine_special);
+        char b2[0x20];
+        for (i32 i = 0; i < 10; i++) {
+            sprintf(b2, "nomine_%d", i);
+            mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+            mines->nomine_count++;
+        }
+        mines->mine_debris = FindGameDebris(WORLD->debris_sys, "MINE_POP");
+        mines->mine_part = PARTLookupType("POD_MINE_PART");
+    }
+}
+
 void PodRaceInit(WORLDINFO_s *world) {
     podrace_netpacket = (PODRACENETPACKET_s *)(usize)SetLevelHack(0x14);
     PODRACE_s *podrace = (PODRACE_s *)world->podrace;
@@ -1512,57 +1540,16 @@ void PodRaceInit(WORLDINFO_s *world) {
     }
     PodRace = podrace;
     memset(podrace, 0, sizeof(*podrace)); // 0xaf24 bytes in the original
-    if (netclient != 0) {
-        memset(&minesys, 0, 0x1d2 * 4);
-        memset(&client_mines, 0, sizeof(client_mines));
-        MINESYS_s *mines = &minesys;
-        if (NuSpecialFind(vehicle_scene, &mines->mine_special, "mine", 1) != 0) {
-            mines->mine_radius = NuSpecialGetOriginRadius(&mines->mine_special);
-            char b2[0x20];
-            {
-                sprintf(b2, "nomine_%d", 0);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 1);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 2);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 3);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 4);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 5);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 6);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 7);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 8);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-                sprintf(b2, "nomine_%d", 9);
-                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
-                mines->nomine_count++;
-            }
-            mines->mine_debris = FindGameDebris(WORLD->debris_sys, "MINE_POP");
-            mines->mine_part = PARTLookupType("POD_MINE_PART");
-        }
-    } else {
+    if (netclient == 0) {
         FlightSpline_Init(world, podrace->splines, 0x20);
     }
+    InitPodRaceMines();
     PodKeyReset();
     ResetPodStuff();
     i16 id = apicharsys->playermodelids[id_ANAKINSPOD];
     if (id != -1) {
         APICHARACTERMODEL *entry = &apicharsys->models[id];
-        if (entry->model_data_b != NULL && ((PODMODELDATA_s *)entry->model_data_b)->value != NULL)
+        if (((PODMODELDATA_s *)entry->model_data_b)->value != NULL)
             podanimendframe = AnimEndFrame(entry, 1);
     }
 }
@@ -1666,50 +1653,6 @@ void PodSprintA_Init(WORLDINFO_s *world) {
     NuSpecialFind(world->current_gscn, &bigrocks[51], "bigrock_eight", 1);
 }
 
-void PodSprintA_Reset(WORLDINFO_s *world) {
-    PODSPRINT_s *ps = &podsprint;
-    ps->field_0x78 = 0;
-    pod_old_pos[0].x = pod_old_pos[0].y = pod_old_pos[0].z = -1.0f;
-    pod_old_pos[1].x = pod_old_pos[1].y = pod_old_pos[1].z = -1.0f;
-    ps->flags &= 0xef;
-    ps->field_0x88 = 0;
-    if ((ps->flags & 0xc) != 0 || (netclient != 0 && podsprint_netpacket->ai_state > 2)) {
-        ps->ai_state = 3;
-        ps->flags &= 0xf2;
-        ps->ai_index = 4;
-        VehicleAreaRememberSpeed = 1.0f;
-        GameObject_s *p = player;
-        if (p != NULL && (p->apiobj.field_0x1f8 & 0x1000)) {
-            p->field_0xdc8 = 1.0f;
-            p->apiobj.velocity.x = 0.0f;
-            p->apiobj.velocity.y = 0.0f;
-            p->apiobj.velocity.z = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.character_data)->field_0x24)->value;
-            NuVecRotateY(&p->apiobj.velocity, &p->apiobj.velocity, p->apiobj.field_0x276);
-        }
-        if (player2 != NULL && (player2->apiobj.field_0x1f8 & 0x1000)) {
-            GameObject_s *p2 = player2;
-            p2->field_0xdc8 = 1.0f;
-            p2->apiobj.velocity.x = 0.0f;
-            p2->apiobj.velocity.y = 0.0f;
-            p2->apiobj.velocity.z =
-                ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p2->apiobj.character_data)->field_0x24)->value;
-            NuVecRotateY(&p2->apiobj.velocity, &p2->apiobj.velocity, p2->apiobj.field_0x276);
-        }
-        if (game_cutscenes.cutscene != NULL) {
-            CutScene_SnapToEnd((CUTINFO *)game_cutscenes.cutscene);
-            CutScene_StoppedFn_LSW((CUTINFO *)game_cutscenes.cutscene);
-        }
-    } else {
-        ps->ai_state = 1;
-        ps->ai_index = 0;
-        ps->flags &= 0xfe;
-        ps->speed = 3.0f;
-        podstartracealpha = 0.0f;
-    }
-    PodRaceSnipersReset();
-    ps->boulders = AISysFindArea(world->ai_sys, "Boulders");
-}
-
 void PodSprintA_Update(WORLDINFO_s *world) {
     PODSPRINT_s *ps = &podsprint;
     VehicleAreaRememberSpeed = 1.0f;
@@ -1746,7 +1689,11 @@ speed_section:
             Player[0]->field_0xdc8 = 0.0f;
             Player[0]->apiobj.velocity.z = 0.0f;
             Player[0]->apiobj.velocity.x = 0.0f;
-            Player[0]->field_0xee0 = ps->speed <= 0.0f ? 1000000000.0f : 0.0f;
+            if (ps->speed <= 0.0f) {
+                Player[0]->field_0xee0 = 1000000000.0f;
+            } else {
+                Player[0]->field_0xee0 = 0.0f;
+            }
         }
         if (Player[1] != NULL) {
             Player[1]->field_0xdc8 = 0.0f;
@@ -1805,13 +1752,13 @@ speed_section:
                             StoreLevelProgress(world);
                             ResetLevel(world, "ep1_podsprint_sebulba", 1);
                         } else if (ps->ai_state > 3) {
-                            if (FreePlay == 0) {
+                            if (FreePlay != 0) {
+                                CompleteLevel(world);
+                            } else {
                                 if (NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podrace_Outro1", 1) == 0 &&
                                     NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podsprint_Outro1", 1) == 0) {
                                     CompleteLevel(world);
                                 }
-                            } else {
-                                CompleteLevel(world);
                             }
                         }
                     }
@@ -1829,13 +1776,13 @@ speed_section:
                             StoreLevelProgress(world);
                             ResetLevel(world, "ep1_podsprint_sebulba", 1);
                         } else if (ps->ai_state > 3) {
-                            if (FreePlay == 0) {
+                            if (FreePlay != 0) {
+                                CompleteLevel(world);
+                            } else {
                                 if (NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podrace_Outro1", 1) == 0 &&
                                     NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podsprint_Outro1", 1) == 0) {
                                     CompleteLevel(world);
                                 }
-                            } else {
-                                CompleteLevel(world);
                             }
                         }
                     }
@@ -1929,6 +1876,50 @@ void PodSprintA_Panel(WORLDINFO_s *world) {
     }
 }
 
+void PodSprintA_Reset(WORLDINFO_s *world) {
+    PODSPRINT_s *ps = &podsprint;
+    ps->field_0x78 = 0;
+    pod_old_pos[0].x = pod_old_pos[0].y = pod_old_pos[0].z = -1.0f;
+    pod_old_pos[1].x = pod_old_pos[1].y = pod_old_pos[1].z = -1.0f;
+    ps->flags &= 0xef;
+    ps->field_0x88 = 0;
+    if ((ps->flags & 0xc) == 0 && !(netclient != 0 && podsprint_netpacket->ai_state > 2)) {
+        ps->ai_index = 0;
+        ps->ai_state = 1;
+        ps->flags &= 0xfe;
+        ps->speed = 3.0f;
+        podstartracealpha = 0.0f;
+    } else {
+        ps->ai_state = 3;
+        ps->flags &= 0xf2;
+        ps->ai_index = 4;
+        VehicleAreaRememberSpeed = 1.0f;
+        GameObject_s *p = player;
+        if (p != NULL && (p->apiobj.field_0x1f8 & 0x1000)) {
+            p->field_0xdc8 = 1.0f;
+            p->apiobj.velocity.y = 0.0f;
+            p->apiobj.velocity.x = 0.0f;
+            p->apiobj.velocity.z = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.character_data)->field_0x24)->value;
+            NuVecRotateY(&p->apiobj.velocity, &p->apiobj.velocity, p->apiobj.field_0x276);
+        }
+        if (player2 != NULL && (player2->apiobj.field_0x1f8 & 0x1000)) {
+            GameObject_s *p2 = player2;
+            p2->field_0xdc8 = 1.0f;
+            p2->apiobj.velocity.y = 0.0f;
+            p2->apiobj.velocity.x = 0.0f;
+            p2->apiobj.velocity.z =
+                ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p2->apiobj.character_data)->field_0x24)->value;
+            NuVecRotateY(&p2->apiobj.velocity, &p2->apiobj.velocity, p2->apiobj.field_0x276);
+        }
+        if (game_cutscenes.cutscene != NULL) {
+            CutScene_SnapToEnd((CUTINFO *)game_cutscenes.cutscene);
+            CutScene_StoppedFn_LSW((CUTINFO *)game_cutscenes.cutscene);
+        }
+    }
+    PodRaceSnipersReset();
+    ps->boulders = AISysFindArea(world->ai_sys, "Boulders");
+}
+
 void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
     if (spline == NULL)
         return;
@@ -1949,7 +1940,10 @@ void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
     else
         return;
     i32 b = (i8)ps->ai_index;
-    if (b != 0) {
+    if (b == 0) {
+        *out1 = 0;
+        *out2 = ps->ai[idx].vals[0];
+    } else {
         i32 a = b, esi;
         if (b <= 4)
             esi = b - 1;
@@ -1959,9 +1953,6 @@ void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
         }
         *out1 = ps->ai[idx].vals[esi];
         *out2 = ps->ai[idx].vals[a];
-    } else {
-        *out1 = 0;
-        *out2 = ps->ai[idx].vals[0];
     }
 }
 
@@ -2200,12 +2191,12 @@ void RetakeG_Reset(WORLDINFO_s *) {
 
 void RetakeG_Update(WORLDINFO_s *world) {
     (void)world;
-    if (netclient != 0) {
-        RetakeG_GuardsToRescue_msg->value = (float)retakeg_netpacket->guard_b;
-        RetakeG_TotalGuards_msg->value = (float)retakeg_netpacket->guard_a;
-    } else {
+    if (netclient == 0) {
         retakeg_netpacket->guard_b = (i16)RetakeG_GuardsToRescue_msg->value;
         retakeg_netpacket->guard_a = (i16)RetakeG_TotalGuards_msg->value;
+    } else {
+        RetakeG_GuardsToRescue_msg->value = (float)retakeg_netpacket->guard_b;
+        RetakeG_TotalGuards_msg->value = (float)retakeg_netpacket->guard_a;
     }
     GIZFORCE_s *g0 = LevGizForce[0];
     GIZFORCE_s *g1 = LevGizForce[1];

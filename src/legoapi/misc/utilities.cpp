@@ -119,22 +119,22 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
 
 void VecRotateAxis(nuvec_s *vector, u16 angle, nuvec_s *axis) {
     NuVecNorm(axis, axis);
-    const f32 cosine = NuTrigTable[((static_cast<u32>(angle) + 0x4000) >> 1) & 0x7fff];
     const f32 sine = NuTrigTable[angle >> 1];
+    const f32 cosine = NuTrigTable[((static_cast<u32>(angle) + 0x4000) >> 1) & 0x7fff];
     const f32 complement = 1.0f - cosine;
     const f32 x = axis->x;
     const f32 y = axis->y;
-    const f32 z = axis->z;
     const NUVEC source = *vector;
-    const f32 tx = complement * x;
+    const f32 z = axis->z;
     const f32 ty = complement * y;
+    const f32 tx = complement * x;
     const f32 tz = complement * z;
     const f32 xy = tx * y;
-    const f32 xz = tx * z;
     const f32 yz = ty * z;
     const f32 sx = sine * x;
-    const f32 sy = sine * y;
+    const f32 xz = tx * z;
     const f32 sz = z * sine;
+    const f32 sy = sine * y;
     vector->x = ((tx * x + cosine) * source.x + 0.0f) + (xy - sz) * source.y + (xz + sy) * source.z;
     vector->y = ((xy + sz) * source.x + 0.0f) + (y * ty + cosine) * source.y + (yz - sx) * source.z;
     vector->z = ((xz - sy) * source.x + 0.0f) + (sx + yz) * source.y + (tz * z + cosine) * source.z;
@@ -220,30 +220,34 @@ f32 XZLinesClosest(nuvec_s *a, nuvec_s *b, nuvec_s *c, nuvec_s *d, f32 *first, f
         *second = 1.0f;
         closest = distance;
     }
-    if (ac.z < 0.0f) {
+    if (!(ac.z < 0.0f)) {
+        if (ac.z > cd_length) {
+            distance = NuVecXZDist(d, &ac, NULL);
+            fraction = 1.0f;
+        } else {
+            fraction = ac.z / cd_length;
+            distance = NuFabs(ac.x);
+        }
+    } else {
         distance = NuVecXZDist(c, &ac, NULL);
         fraction = 0.0f;
-    } else if (ac.z > cd_length) {
-        distance = NuVecXZDist(d, &ac, NULL);
-        fraction = 1.0f;
-    } else {
-        fraction = ac.z / cd_length;
-        distance = NuFabs(ac.x);
     }
     if (distance < closest) {
         *second = fraction;
         *first = 0.0f;
         closest = distance;
     }
-    if (bc.z < 0.0f) {
+    if (!(bc.z < 0.0f)) {
+        if (bc.z > cd_length) {
+            distance = NuVecXZDist(d, &bc, NULL);
+            fraction = 1.0f;
+        } else {
+            fraction = bc.z / cd_length;
+            distance = NuFabs(bc.x);
+        }
+    } else {
         distance = NuVecXZDist(c, &bc, NULL);
         fraction = 0.0f;
-    } else if (bc.z > cd_length) {
-        distance = NuVecXZDist(d, &bc, NULL);
-        fraction = 1.0f;
-    } else {
-        fraction = bc.z / cd_length;
-        distance = NuFabs(bc.x);
     }
     if (distance < closest) {
         *second = fraction;
@@ -304,11 +308,11 @@ void MakeThrowVector(NUVEC *result, NUVEC *origin, NUVEC *target, NUVEC *target_
 i32 OnOrInsidePlane(nuvec_s *point, nuvec_s *plane_point, nuvec_s *plane_normal, nuvec_s *corrected_point,
                     float normal_offset, float *distance_out) {
     NUVEC test_point;
-    if (normal_offset != 0.0f) {
+    if (normal_offset == 0.0f) {
+        test_point = *point;
+    } else {
         NuVecScale(&test_point, plane_normal, normal_offset);
         NuVecAdd(&test_point, &test_point, point);
-    } else {
-        test_point = *point;
     }
 
     const f32 distance = (test_point.x - plane_point->x) * plane_normal->x +
@@ -513,14 +517,14 @@ f32 LineToPointDistance(VuVec &origin, VuVec &direction, VuVec &point, VuVec *cl
 
     VuVec on_segment = origin;
     if (projection > 0.0f) {
-        if (projection >= length) {
-            on_segment.x += direction.x;
-            on_segment.y += direction.y;
-            on_segment.z += direction.z;
-        } else {
+        if (!(projection >= length)) {
             on_segment.x += nx * projection;
             on_segment.y += ny * projection;
             on_segment.z += nz * projection;
+        } else {
+            on_segment.x += direction.x;
+            on_segment.y += direction.y;
+            on_segment.z += direction.z;
         }
         on_segment.w = 0.0f;
     }
@@ -658,8 +662,8 @@ i32 MatrixReflectionVU0_AXISY(numtx_s *matrix, f32 plane, f32 override_plane, nu
 i32 SphereSphereOverlapScaleY(nuvec_s *position_a, float radius_a, float y_radius_a, nuvec_s *position_b,
                               float radius_b, float y_radius_b) {
     f32 dx = position_b->x - position_a->x;
-    f32 dy = position_b->y - position_a->y;
     f32 dz = position_b->z - position_a->z;
+    f32 dy = position_b->y - position_a->y;
     if (radius_b != y_radius_b || radius_a != y_radius_a) {
         dy *= (radius_b + radius_a) / (y_radius_b + y_radius_a);
     }

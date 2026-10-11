@@ -144,6 +144,13 @@ void BaseEditor::WriteBeginBlock(i32 file, i32 type) {
     NuFileWriteInt(file, 0);
 }
 
+void BaseEditor::WriteMetaData(i32 file, i32 type, i32 version, i32 count) {
+    NuFileWriteInt(file, 1);
+    NuFileWriteInt(file, type);
+    NuFileWriteInt(file, version);
+    NuFileWriteInt(file, count);
+}
+
 void BaseEditor::WriteEndBlock(i32 file) {
     --blockDepth;
     NuFileAlign(file, 15);
@@ -151,13 +158,6 @@ void BaseEditor::WriteEndBlock(i32 file) {
     NuFileSeek(file, blockStart[blockDepth] + 4, NUFILE_SEEK_START);
     NuFileWriteInt(file, end - blockStart[blockDepth]);
     NuFileSeek(file, end, NUFILE_SEEK_START);
-}
-
-void BaseEditor::WriteMetaData(i32 file, i32 type, i32 version, i32 count) {
-    NuFileWriteInt(file, 1);
-    NuFileWriteInt(file, type);
-    NuFileWriteInt(file, version);
-    NuFileWriteInt(file, count);
 }
 
 void CursorTool::Initialise(variptr_u &, variptr_u &, i32) {
@@ -177,8 +177,8 @@ i32 CursorTool::Process(EdInputContext &input) {
     if (theLevelEditor.field_0x30 == 0)
         return 0;
 
-    ClassObject hover = {NULL, NULL, NULL};
     ClassObject after = {NULL, NULL, NULL};
+    ClassObject hover = {NULL, NULL, NULL};
     if (theClassEditor.selected_objects.first != NULL) {
         ClassObjectListEntry *first = theClassEditor.selected_objects.first;
         after = {first->ed_class, first->object, first->reference};
@@ -224,23 +224,24 @@ ClassEditor::ClassEditor() {
     next = NULL;
     previous = NULL;
     first_tool = NULL;
-    last_tool = NULL;
     tool_count = 0;
-    selected_objects.first = NULL;
+    last_tool = NULL;
     selected_objects.last = NULL;
     selected_objects.count = 0;
-    current_object.ed_class = NULL;
+    selected_objects.first = NULL;
     current_object.object = NULL;
     current_object.reference = NULL;
-    pending_object.ed_class = NULL;
+    current_object.ed_class = NULL;
     pending_object.object = NULL;
     pending_object.reference = NULL;
+    pending_object.ed_class = NULL;
     snap_distance = 10.0f;
     manipulator = &theDefaultManipulator;
     class_filter = -1;
 }
 
 void ClassEditor::AddMenuItems(eduimenu_s *menu) {
+    i32 index;
     eduiMenuAddItem(menu, eduiItemSelCreate(0, &EdLevelAttr, 0, 0, cbEdClassFileMenu, const_cast<char *>("File")));
     eduiMenuAddItem(menu, eduiItemSelCreate(0, &EdLevelAttr, 0, 0, cbEdClassToolsMenu, const_cast<char *>("Tools")));
     eduiMenuAddItem(menu, eduiItemSelCreate(0, &EdLevelAttr, 0, 0, cbEdClassSnapMenu, const_cast<char *>("Snap")));
@@ -263,7 +264,7 @@ void ClassEditor::AddMenuItems(eduimenu_s *menu) {
     EdClass *classes[32];
     i32 class_count = 0;
     for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next) {
-        i32 index;
+
         for (index = 0; index < class_count; ++index) {
             if (classes[index] == entry->ed_class)
                 break;
@@ -297,9 +298,9 @@ i32 ClassEditor::CreateObject(ClassObject &source) {
         return 1;
     }
     Placeable::CurrentLedFile = theLevelEditor.current_led_file;
-    EdClass *ed_class = created.ed_class;
-    EdClassInterface *interface = ed_class->interface;
-    void *object = theRegistry.CreateObject(interface, (ed_class->flags & 0x04000000) ? source.object : NULL, 4, 0, 2);
+    EdClassInterface *interface = created.ed_class->interface;
+    void *object =
+        theRegistry.CreateObject(interface, (created.ed_class->flags & 0x04000000) ? source.object : NULL, 4, 0, 2);
     if (object == NULL)
         return 0;
 
@@ -308,11 +309,11 @@ i32 ClassEditor::CreateObject(ClassObject &source) {
         i32 flags = 0x04000000;
         if (created.reference == NULL || !created.reference->SetAttributeData(object, 1, EdType_Int, &flags, 0)) {
             EdMember member;
-            if (ed_class->FindMember(&member, object, 1, 1))
+            if (created.ed_class->FindMember(&member, object, 1, 1))
                 member.reference->SetAttributeData(member.object, 1, EdType_Int, &flags, 0);
         }
     } else {
-        ed_class->CopyObject(object, source.object);
+        created.ed_class->CopyObject(object, source.object);
         interface = created.ed_class->interface;
         interface->vtable->construct(interface, object, source.object);
     }
@@ -347,20 +348,20 @@ i32 ClassEditor::CreateObject(i32 class_id) {
     return CreateObject(ed_class);
 }
 
-void ClassEditor::Enter() {
-    for (i32 i = 0; i < theRegistry.class_count; ++i) {
-        EdClassInterface *interface = theRegistry.classes[i].interface;
-        if (interface != NULL) {
-            interface->vtable->enter_editor(interface);
-        }
-    }
-}
-
 void ClassEditor::Exit() {
     for (i32 i = 0; i < theRegistry.class_count; ++i) {
         EdClassInterface *interface = theRegistry.classes[i].interface;
         if (interface != NULL) {
             interface->vtable->exit_editor(interface);
+        }
+    }
+}
+
+void ClassEditor::Enter() {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->enter_editor(interface);
         }
     }
 }
@@ -383,6 +384,7 @@ void ClassEditor::Initialise(variptr_u &first, variptr_u &second, i32) {
 }
 
 void ClassEditor::Process(EdInputContext &input) {
+    EdMember member;
     UpdateSnapRay(*reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(&input) + 0x30));
     UpdateSelectedObjects(input);
     UpdateClassFilter(input);
@@ -424,33 +426,35 @@ void ClassEditor::Process(EdInputContext &input) {
         if (manipulator->Process(input, selected_objects) == 0 && active_tool != NULL)
             active_tool->Process(input);
     }
-    if (selected_objects.count > 0) {
-        if (input.GetPress(9) != 0.0f)
-            FocusSelected();
-        if (input.GetPress(10) != 0.0f)
-            ViewSelected();
-        for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next)
-            theRegistry.ClassIFaceProcess(entry->ed_class, entry->object, input);
-        if (input.GetPress(39) != 0.0f) {
-            ClassObjectListEntry *entry = selected_objects.first;
-            EdMember member;
-            VuVec position __attribute__((aligned(16)));
-            if (entry->reference == NULL ||
-                !entry->reference->GetAttributeData(entry->object, 8, EdType_VuVec, &position, 0)) {
-                if (entry->ed_class->FindMember(&member, entry->object, 8, 1))
-                    member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
-            }
-            theLevelEditor.background_colour[0] = position.x;
-            theLevelEditor.background_colour[1] = position.y;
-            theLevelEditor.background_colour[2] = position.z;
-            theLevelEditor.background_colour[3] = position.w;
-            edcamSetPos(reinterpret_cast<NUVEC *>(theLevelEditor.background_colour));
-            thePropertyTool.Process(input);
-            if (mode == 0)
-                mode = 3;
-            SetMode(mode);
-            thePropertyTool.SetDefaultActiveMenu(NULL);
+    if (!(selected_objects.count > 0)) {
+        return;
+    }
+    if (input.GetPress(9) != 0.0f)
+        FocusSelected();
+    if (input.GetPress(10) != 0.0f)
+        ViewSelected();
+    for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next)
+        theRegistry.ClassIFaceProcess(entry->ed_class, entry->object, input);
+    if (input.GetPress(39) != 0.0f) {
+        ClassObjectListEntry *entry = selected_objects.first;
+
+        VuVec position __attribute__((aligned(16)));
+        i32 position_type = EdType_VuVec;
+        if (entry->reference == NULL ||
+            !entry->reference->GetAttributeData(entry->object, 8, position_type, &position, 0)) {
+            if (entry->ed_class->FindMember(&member, entry->object, 8, 1))
+                member.reference->GetAttributeData(member.object, 8, position_type, &position, 0);
         }
+        theLevelEditor.background_colour[0] = position.x;
+        theLevelEditor.background_colour[1] = position.y;
+        theLevelEditor.background_colour[2] = position.z;
+        theLevelEditor.background_colour[3] = position.w;
+        edcamSetPos(reinterpret_cast<NUVEC *>(theLevelEditor.background_colour));
+        thePropertyTool.Process(input);
+        if (mode == 0)
+            mode = 3;
+        SetMode(mode);
+        thePropertyTool.SetDefaultActiveMenu(NULL);
     }
 }
 
@@ -623,55 +627,6 @@ i32 ClassEditor::Editable(void *object, EdClass *object_class, i32 index) {
     return theLevelEditor.IsEditable(scene) != 0;
 }
 
-i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, ClassObject &after, i32 filter) {
-    EdClass *candidate_classes[16] = {};
-    void *candidate_objects[16] = {};
-    i32 candidate_count = 0;
-    for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
-        EdClass *ed_class = &theRegistry.classes[class_index];
-        EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0 ||
-            interface->vtable->get_next_object == NULL)
-            continue;
-        for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
-             object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
-            if (!Editable(object, ed_class, -1))
-                continue;
-            EdMember member;
-            if (!ed_class->FindMember(&member, object, 8, 1))
-                continue;
-            VuVec position;
-            member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
-            f32 dx = position.x - point.x;
-            f32 dy = position.y - point.y;
-            f32 dz = position.z - point.z;
-            f32 distance_squared = dx * dx + dy * dy + dz * dz;
-            f32 radius = 1.0f;
-            if (ed_class->FindMember(&member, object, 0x40, 1))
-                member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0);
-            if (distance_squared < radius * radius && candidate_count < 16) {
-                candidate_classes[candidate_count] = ed_class;
-                candidate_objects[candidate_count] = object;
-                ++candidate_count;
-            }
-        }
-    }
-    if (candidate_count == 0)
-        return 0;
-    i32 choice = 0;
-    if (after.object != NULL) {
-        for (i32 index = 0; index < candidate_count; ++index) {
-            if (candidate_objects[index] == after.object) {
-                choice = (index + 1) % candidate_count;
-                break;
-            }
-        }
-    }
-    result.ed_class = candidate_classes[choice];
-    result.object = candidate_objects[choice];
-    return 1;
-}
-
 i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, i32 filter) {
     EdClass *nearest_class = NULL;
     void *nearest_object = NULL;
@@ -712,28 +667,42 @@ i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, i32 filter
             nearest_object = NULL;
         }
     }
-    result.ed_class = nearest_class;
     result.object = nearest_object;
+    result.ed_class = nearest_class;
     return nearest_object != NULL;
 }
 
-i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject &result, ClassObject &after,
-                                   i32 filter) {
-    ClassObject candidates[16] __attribute__((aligned(16))) = {};
+i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, ClassObject &after, i32 filter) {
+    EdMember member;
+    EdClass *candidate_classes[16] = {};
+    void *candidate_objects[16] = {};
     i32 candidate_count = 0;
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
-        EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0)
+        if (!Editable(NULL, ed_class, class_index) || ed_class->interface == NULL || (ed_class->flags & 8) == 0 ||
+            ed_class->interface->vtable->get_next_object == NULL)
             continue;
-        for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
-             object = interface->vtable->get_next_object(interface, object)) {
+        for (void *object = ed_class->interface->vtable->get_next_object(ed_class->interface, NULL); object != NULL;
+             object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
             if (!Editable(object, ed_class, -1))
                 continue;
-            EdRef *reference = NULL;
-            f32 distance = interface->vtable->distance_to_ray(interface, origin, direction, object, &reference);
-            if (distance < 0.01f && candidate_count < 16)
-                candidates[candidate_count++] = {ed_class, object, reference};
+
+            if (!ed_class->FindMember(&member, object, 8, 1))
+                continue;
+            VuVec position;
+            member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
+            f32 dx = position.x - point.x;
+            f32 dy = position.y - point.y;
+            f32 dz = position.z - point.z;
+            f32 distance_squared = dx * dx + dy * dy + dz * dz;
+            f32 radius = 1.0f;
+            if (ed_class->FindMember(&member, object, 0x40, 1))
+                member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0);
+            if (distance_squared < radius * radius && candidate_count < 16) {
+                candidate_classes[candidate_count] = ed_class;
+                candidate_objects[candidate_count] = object;
+                ++candidate_count;
+            }
         }
     }
     if (candidate_count == 0)
@@ -741,32 +710,33 @@ i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject 
     i32 choice = 0;
     if (after.object != NULL) {
         for (i32 index = 0; index < candidate_count; ++index) {
-            if (candidates[index].object == after.object) {
+            if (candidate_objects[index] == after.object) {
                 choice = (index + 1) % candidate_count;
                 break;
             }
         }
     }
-    result = candidates[choice];
+    result.ed_class = candidate_classes[choice];
+    result.object = candidate_objects[choice];
     return 1;
 }
 
 i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject &result, i32 filter) {
     EdClass *nearest_class = NULL;
     void *nearest_object = NULL;
-    EdRef *nearest_reference = NULL;
     f32 nearest_distance = FLT_MAX;
+    EdRef *nearest_reference = NULL;
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
-        EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0)
+        if (!Editable(NULL, ed_class, class_index) || ed_class->interface == NULL || (ed_class->flags & 8) == 0)
             continue;
-        for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
-             object = interface->vtable->get_next_object(interface, object)) {
+        for (void *object = ed_class->interface->vtable->get_next_object(ed_class->interface, NULL); object != NULL;
+             object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
             if (!Editable(object, ed_class, -1))
                 continue;
             EdRef *reference = NULL;
-            f32 distance = interface->vtable->distance_to_ray(interface, origin, direction, object, &reference);
+            f32 distance = ed_class->interface->vtable->distance_to_ray(ed_class->interface, origin, direction, object,
+                                                                        &reference);
             if (distance < nearest_distance) {
                 nearest_class = ed_class;
                 nearest_object = object;
@@ -781,6 +751,41 @@ i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject 
     }
     result = {nearest_class, nearest_object, nearest_reference};
     return nearest_object != NULL;
+}
+
+i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject &result, ClassObject &after,
+                                   i32 filter) {
+    ClassObject candidates[16] __attribute__((aligned(16))) = {};
+    i32 candidate_count = 0;
+    for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
+        EdClass *ed_class = &theRegistry.classes[class_index];
+        if (!Editable(NULL, ed_class, class_index) || ed_class->interface == NULL || (ed_class->flags & 8) == 0)
+            continue;
+        for (void *object = ed_class->interface->vtable->get_next_object(ed_class->interface, NULL); object != NULL;
+             object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
+            if (!Editable(object, ed_class, -1))
+                continue;
+            EdRef *reference = NULL;
+            f32 distance = ed_class->interface->vtable->distance_to_ray(ed_class->interface, origin, direction, object,
+                                                                        &reference);
+            if (distance < 0.01f && candidate_count < 16)
+                candidates[candidate_count++] = {ed_class, object, reference};
+        }
+    }
+    if (candidate_count == 0)
+        return 0;
+    i32 choice = 0;
+    if (after.object != NULL) {
+        for (i32 index = 0; index < candidate_count; ++index) {
+            if (candidates[index].object != after.object) {
+                continue;
+            }
+            choice = (index + 1) % candidate_count;
+            break;
+        }
+    }
+    result = candidates[choice];
+    return 1;
 }
 
 void ClassEditor::FocusSelected() {
@@ -1061,16 +1066,16 @@ void ClassEditor::SetViewMenuHilight(eduimenu_s *menu) {
 void ClassEditor::SnapPoint(VuVec &point) {
     if (static_cast<u32>(snap_mode - 1) > 1)
         return;
+    VuVec candidate = point;
     VuVec ray = snap_ray;
     NuVecNorm(reinterpret_cast<NUVEC *>(&ray), reinterpret_cast<NUVEC *>(&ray));
-    ray.x *= -snap_distance;
     ray.y *= -snap_distance;
-    ray.z *= -snap_distance;
-    ray.w = 0.0f;
-    VuVec candidate = point;
-    candidate.x += ray.x;
-    candidate.y += ray.y;
-    candidate.z += ray.z;
+    ray.x *= -snap_distance;
+    ray.z = -snap_distance * ray.z;
+    candidate.w = 0.0f;
+    candidate.x = ray.x + point.x;
+    candidate.y = ray.y + point.y;
+    candidate.z = ray.z + point.z;
     if (EdTerrRay(candidate, snap_ray))
         point = candidate;
 }
@@ -1156,8 +1161,9 @@ void ClassEditor::UpdateSelectedObjects(EdInputContext &input) {
     if (input.GetPress(20) != 0.0f) {
         void *current = entry->object;
         void *previous = NULL;
+        auto entry_ed_class = entry->ed_class;
         for (i32 remaining = 4096; remaining != 0; --remaining) {
-            if (Editable(current, entry->ed_class, -1))
+            if (Editable(current, entry_ed_class, -1))
                 previous = current;
             current = interface->vtable->get_next_object(interface, current);
             if (current == NULL)
@@ -1317,30 +1323,31 @@ void ClassEditor::cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32) {
             if (reinterpret_cast<i32 *>(interface)[2] == object->scene_id)
                 break;
         }
-        if (NuVecMag(&first_position) <= 0.1f)
+        if (!(NuVecMag(&first_position) > 0.1f))
             continue;
         for (i32 second = first + 1; second < count; ++second) {
             Placeable *other = objects[second];
-            if (other == NULL)
-                continue;
-            char const *other_name = other->GetName();
-            VuVec const *other_position = other->GetInitialPosition();
-            i32 other_type = 0;
-            for (; other_type < thePlaceableHelper.object_type_count; ++other_type) {
-                void *interface = thePlaceableHelper.object_types[other_type].interface;
-                if (reinterpret_cast<i32 *>(interface)[2] == other->scene_id)
-                    break;
-            }
-            if (NuVecMag(&first_position) <= 0.1f)
-                continue;
-            NUVEC separation = {first_position.x - other_position->x, first_position.y - other_position->y,
-                                first_position.z - other_position->z};
-            if (NuVecMag(&separation) < 0.1f && object_type == other_type &&
-                (strstr(name, other_name) != NULL || strstr(other_name, name) != NULL)) {
-                EdClassInterface *interface =
-                    reinterpret_cast<EdClassInterface *>(thePlaceableHelper.object_types[object_type].interface);
-                interface->vtable->destroy_object(interface, other, 0);
-                objects[second] = NULL;
+            if (other != NULL) {
+                char const *other_name = other->GetName();
+                VuVec const *other_position = other->GetInitialPosition();
+                NUVEC second_position = {other_position->x, other_position->y, other_position->z};
+                i32 other_type = 0;
+                for (; other_type < thePlaceableHelper.object_type_count; ++other_type) {
+                    void *interface = thePlaceableHelper.object_types[other_type].interface;
+                    if (reinterpret_cast<i32 *>(interface)[2] == other->scene_id)
+                        break;
+                }
+                if (!(NuVecMag(&first_position) > 0.1f))
+                    continue;
+                NUVEC separation = {first_position.x - second_position.x, first_position.y - second_position.y,
+                                    first_position.z - second_position.z};
+                if (NuVecMag(&separation) < 0.1f && object_type == other_type &&
+                    (strstr(name, other_name) != NULL || strstr(other_name, name) != NULL)) {
+                    EdClassInterface *interface =
+                        reinterpret_cast<EdClassInterface *>(thePlaceableHelper.object_types[object_type].interface);
+                    interface->vtable->destroy_object(interface, other, 0);
+                    objects[second] = NULL;
+                }
             }
         }
     }
@@ -1393,10 +1400,9 @@ void ClassEditor::cbEdClassSelectObjectMenu(eduimenu_s *parent, eduiitem_s *item
                                       reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbEdLevelDestroy, NULL);
     if (menu == NULL)
         return;
-    EdClassInterface *interface = ed_class->interface;
     EdRef *name_ref = ed_class->FindTypeRef(2, 1);
-    for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
-         object = interface->vtable->get_next_object(interface, object)) {
+    for (void *object = ed_class->interface->vtable->get_next_object(ed_class->interface, NULL); object != NULL;
+         object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
         char name[128];
         if (name_ref == NULL || !name_ref->GetAttributeData(object, 2, EdType_String, name, sizeof(name)))
             NuStrCpy(name, ed_class->name);
@@ -1645,9 +1651,10 @@ __attribute__((force_align_arg_pointer)) void ClassObject::GetName(char *destina
 
     char name[128];
     EdMember member;
-    if ((reference == NULL || !reference->GetAttributeData(object, 2, EdType_String, name, sizeof(name))) &&
+    i32 string_type = EdType_String;
+    if ((reference == NULL || !reference->GetAttributeData(object, 2, string_type, name, sizeof(name))) &&
         (!ed_class->FindMember(&member, object, 2, 1) ||
-         !member.reference->GetAttributeData(member.object, 2, EdType_String, name, sizeof(name)))) {
+         !member.reference->GetAttributeData(member.object, 2, string_type, name, sizeof(name)))) {
         NuStrCpy(name, "NoName");
     }
     sprintf(destination, "%s.%s", ed_class->name, name);
@@ -1833,79 +1840,92 @@ void LevelEditor::CreateMenu() {
 void LevelEditor::Display(ThingRenderData *) {
     f32 cursor_x __attribute__((aligned(16))) = 0.1f;
     f32 cursor_y __attribute__((aligned(16))) = 0.9f;
-    if (!editors_entered) {
-        return;
-    }
+    if (editors_entered) {
 
-    if (theLevelEditor.current_led_file != 0xff) {
-        LevelEditorScene *scene = theLevelEditor.GetEdScene(theLevelEditor.current_led_file);
-        if (scene != NULL) {
-            char *name = scene->name;
-            DrawInfoText(&name, 1, static_cast<i32>(640.0f * cursor_x), static_cast<i32>(448.0f * cursor_y), info_width,
-                         info_height, info_colour, info_background);
+        if (theLevelEditor.current_led_file != 0xff) {
+            LevelEditorScene *scene = theLevelEditor.GetEdScene(theLevelEditor.current_led_file);
+            if (scene != NULL) {
+                char *name = scene->name;
+                DrawInfoText(&name, 1, static_cast<i32>(640.0f * cursor_x), static_cast<i32>(448.0f * cursor_y),
+                             info_width, info_height, info_colour, info_background);
+            }
+        }
+        i32 draw_camera;
+        // The original keeps the no-cursor path in the main render sequence.
+        if (__builtin_expect(edmainGetCursorEnabled() == 0, 1)) {
+            draw_camera = field_0x28;
+        } else {
+            eduiFlushInteracts();
+            draw_camera = field_0x28;
+        }
+        if (draw_camera != 0) {
+            NUCAMERA *camera = edmainGetCamera();
+            const f32 distance = edcamGetDist();
+            const f32 far_clip = distance + distance;
+            if (global_camera.far_clip <= far_clip && global_camera.far_clip != far_clip) {
+                camera->far_clip = far_clip;
+            }
+            edcamSet();
+            EdDrawBegin(0);
+            EdDrawLineCross(*reinterpret_cast<VuVec *>(background_colour), 1.0f, 0xff000000);
+            EdDrawEnd();
+        }
+        if (active_editor != NULL) {
+            active_editor->Render();
+        }
+        NuRndrLine3dDbgFlush();
+        eduiGetCursorCoords(&cursor_x, &cursor_y);
+        DrawInfoText(info_text, 32, static_cast<i32>((1.0f + cursor_x) * 640.0f),
+                     static_cast<i32>((cursor_y + 1.0f) * 448.0f), info_width, info_height, info_colour,
+                     info_background);
+        if (edLevelActiveMenu != NULL) {
+            NuFntSet(EdLevelFnt);
+            NuFntScale(EdLevelFntScale, EdLevelFntScale);
+            eduiMenuRender(edLevelActiveMenu);
+        }
+        if (edLevelPinnedMenu != NULL) {
+            NuFntSet(EdLevelFnt);
+            NuFntScale(EdLevelFntScale, EdLevelFntScale);
+            eduiMenuRender(edLevelPinnedMenu);
+        }
+        eduiSetCursorColour(static_cast<u32>(field_0x2c));
+        if (edmainGetCursorEnabled()) {
+            eduiRenderCursor();
         }
     }
-    i32 draw_camera;
-    // The original keeps the no-cursor path in the main render sequence.
-    if (__builtin_expect(edmainGetCursorEnabled() == 0, 1)) {
-        draw_camera = field_0x28;
-    } else {
-        eduiFlushInteracts();
-        draw_camera = field_0x28;
+}
+
+void LevelEditor::EndMultiLoad(variptr_u *buffer, variptr_u *buffer_end) {
+    MemoryBuffer source = {buffer, buffer_end, 0, static_cast<u32>(buffer_end->addr - buffer->addr)};
+    if (editor_buffer_from_front == 0) {
+        editor_buffer_end = *buffer_end;
+        editor_buffer_begin.addr = buffer_end->addr - 0x20000;
     }
-    if (draw_camera != 0) {
-        NUCAMERA *camera = edmainGetCamera();
-        const f32 distance = edcamGetDist();
-        const f32 far_clip = distance + distance;
-        if (global_camera.far_clip <= far_clip && global_camera.far_clip != far_clip) {
-            camera->far_clip = far_clip;
-        }
-        edcamSet();
-        EdDrawBegin(0);
-        EdDrawLineCross(*reinterpret_cast<VuVec *>(background_colour), 1.0f, 0xff000000);
-        EdDrawEnd();
-    }
-    if (active_editor != NULL) {
-        active_editor->Render();
-    }
-    NuRndrLine3dDbgFlush();
-    eduiGetCursorCoords(&cursor_x, &cursor_y);
-    DrawInfoText(info_text, 32, static_cast<i32>((1.0f + cursor_x) * 640.0f),
-                 static_cast<i32>((cursor_y + 1.0f) * 448.0f), info_width, info_height, info_colour, info_background);
-    if (edLevelActiveMenu != NULL) {
-        NuFntSet(EdLevelFnt);
-        NuFntScale(EdLevelFntScale, EdLevelFntScale);
-        eduiMenuRender(edLevelActiveMenu);
-    }
-    if (edLevelPinnedMenu != NULL) {
-        NuFntSet(EdLevelFnt);
-        NuFntScale(EdLevelFntScale, EdLevelFntScale);
-        eduiMenuRender(edLevelPinnedMenu);
-    }
-    eduiSetCursorColour(static_cast<u32>(field_0x2c));
-    if (edmainGetCursorEnabled()) {
-        eduiRenderCursor();
-    }
+    editor_buffer_cursor = editor_buffer_begin;
+    MemoryBuffer scratch = {&editor_buffer_cursor, &editor_buffer_end, 0,
+                            static_cast<u32>(editor_buffer_end.addr - editor_buffer_begin.addr)};
+    theClassEditor.PostLoadInitialisation(&source, &scratch);
+    current_led_file = -1;
+    multi_load_active = 0;
 }
 
 void LevelEditor::DrawInfoText(char **lines, i32 count, i32 x, i32 y, i32 available_width, i32, i32 text_colour,
                                i32 background) {
     NuQFntPushPrintMode(2);
     NuQFntPushCoordinateSystem(NUQFNT_CSMODE_PS2);
-    NUQFNT *font = system_qfont;
-    NuQFntSet(font);
-    const f32 line_height = NuQFntHeight(font) * 0.15625f;
-    const f32 font_height = NuQFntHeight(font);
-    const f32 baseline = NuQFntBaseline(font);
+    NuQFntSet(system_qfont);
+    const i32 line_height = static_cast<i32>(NuQFntHeight(system_qfont) * 0.15625f);
+    const f32 font_height = NuQFntHeight(system_qfont);
+    const f32 baseline = NuQFntBaseline(system_qfont);
     i32 width = 0;
     i32 height = 0;
     for (i32 index = 0; index < count; ++index) {
         if (lines[index] != NULL) {
-            const i32 line_width = static_cast<i32>(NuQFntPrintLenU(font, lines[index])) >> 4;
+            const i32 line_width = static_cast<i32>(NuQFntPrintLenU(system_qfont, lines[index])) >> 4;
             if (line_width > width) {
                 width = line_width;
             }
-            height += static_cast<i32>(line_height);
+            height += line_height;
         }
     }
     NuQFntPopCoordinateSystem();
@@ -1922,30 +1942,17 @@ void LevelEditor::DrawInfoText(char **lines, i32 count, i32 x, i32 y, i32 availa
     NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, background, edLevel2dMtl);
     NuQFntPushPrintMode(2);
     NuQFntPushCoordinateSystem(NUQFNT_CSMODE_PS2);
-    NuQFntSet(font);
-    NuQFntSetColour(font, text_colour);
+    NuQFntSet(system_qfont);
+    NuQFntSetColour(system_qfont, text_colour);
     for (i32 index = 0; index < count; ++index) {
         if (lines[index] != NULL) {
-            NuQFntPrintEx(font, x << 4, static_cast<i32>(font_height * 0.125f + baseline) + y * 8, 0x10, lines[index]);
-            y += static_cast<i32>(line_height);
+            NuQFntPrintEx(system_qfont, x << 4, static_cast<i32>(0.125f * font_height + baseline) + y * 8, 0x10,
+                          lines[index]);
+            y += line_height;
         }
     }
     NuQFntPopCoordinateSystem();
     NuQFntPopPrintMode();
-}
-
-void LevelEditor::EndMultiLoad(variptr_u *buffer, variptr_u *buffer_end) {
-    MemoryBuffer source = {buffer, buffer_end, 0, static_cast<u32>(buffer_end->addr - buffer->addr)};
-    if (editor_buffer_from_front == 0) {
-        editor_buffer_end = *buffer_end;
-        editor_buffer_begin.addr = buffer_end->addr - 0x20000;
-    }
-    editor_buffer_cursor = editor_buffer_begin;
-    MemoryBuffer scratch = {&editor_buffer_cursor, &editor_buffer_end, 0,
-                            static_cast<u32>(editor_buffer_end.addr - editor_buffer_begin.addr)};
-    theClassEditor.PostLoadInitialisation(&source, &scratch);
-    current_led_file = -1;
-    multi_load_active = 0;
 }
 
 void LevelEditor::Enter() {
@@ -2000,13 +2007,6 @@ void LevelEditor::Flush() {
     memset(scenes, 0, sizeof(scenes));
 }
 
-LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
-    if (static_cast<u32>(index) >= 10) {
-        return NULL;
-    }
-    return &scenes[index];
-}
-
 nugscn_s *LevelEditor::GetScene(char *name) {
     for (i32 i = 0; i < reset_pending; ++i) {
         if (NuStrICmp(name, scenes[i].name) == 0) {
@@ -2014,6 +2014,13 @@ nugscn_s *LevelEditor::GetScene(char *name) {
         }
     }
     return NULL;
+}
+
+LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
+    if (static_cast<u32>(index) >= 10) {
+        return NULL;
+    }
+    return &scenes[index];
 }
 
 void LevelEditor::Initalise(variptr_u &buffer, variptr_u &buffer_end, i32 from_front) {
@@ -2100,8 +2107,8 @@ LevelEditor::LevelEditor() {
     background_colour[1] = 0.0f;
     field_0x20 = 0;
     background_colour[2] = 0.0f;
-    field_0x24 = 0;
     field_0x28 = 1;
+    field_0x24 = 0;
     field_0x30 = 1;
     field_0x38 = 1;
     info_x = 0;
@@ -2274,8 +2281,9 @@ void LevelEditor::ProcessEvenWhenPaused(ThingProcessData *data) {
         if (edLevelActiveMenu != NULL) {
             eduiMenuDestroy(edLevelActiveMenu);
         }
-        edLevelActiveMenu = edLevelNextMenu;
+        eduimenu_s *next_menu = edLevelNextMenu;
         edLevelNextMenu = NULL;
+        edLevelActiveMenu = next_menu;
     }
     nucamera_s *camera = &global_camera;
     if (field_0x28 != 0) {
@@ -2530,6 +2538,7 @@ void PropertyMenu::SelectAttr(i32 selected) {
 }
 
 void PropertyTool::AddPropertyMenuItems(eduimenu_s *menu, EdClass *ed_class, void *object, eduiitem_s *parent) {
+    auto menu_last = menu->last;
     for (EdRef *member = ed_class->members; member != NULL; member = member->next) {
         if (member->attributes < 0) {
             eduiitem_s *expander = eduiItemExpanderCreate(0, &EdLevelAttr, 0, member->name);
@@ -2541,7 +2550,7 @@ void PropertyTool::AddPropertyMenuItems(eduimenu_s *menu, EdClass *ed_class, voi
             EdClass *child_class = theRegistry.GetClass(member->type_id);
             AddPropertyMenuItems(menu, child_class, member->GetMemberObject(object), expander);
         } else if (member->control != NULL) {
-            eduiitem_s *last = menu->last;
+            eduiitem_s *last = menu_last;
             member->control->AddMenuItem(menu, member, object);
             if (parent != NULL) {
                 eduiitem_s *item = last != NULL ? last->next : menu->first;
@@ -2583,8 +2592,8 @@ void PropertyTool::AutoLocateMenu(PropertyMenu *property_menu) {
         ediMenuRetrieveMetrics(menu);
     }
     if (static_cast<float>(menu->x + menu->width) > 590.0f) {
-        menu->x = 20;
         menu->y = 5;
+        menu->x = 20;
     }
 }
 
@@ -2599,8 +2608,8 @@ void PropertyTool::BringToFront(PropertyMenu *menu) {
     } else {
         active_menu = menu->next;
     }
-    menu->next = NULL;
     menu->previous = NULL;
+    menu->next = NULL;
     --menu_count;
     menu->order = -2;
     PropertyMenu *position = active_menu;
@@ -2619,8 +2628,8 @@ void PropertyTool::BringToFront(PropertyMenu *menu) {
             active_menu = menu;
         }
     } else {
-        menu->next = position;
         menu->previous = position->previous;
+        menu->next = position;
         if (position->previous != NULL) {
             position->previous->next = menu;
         } else {
@@ -2636,10 +2645,11 @@ PropertyMenu *PropertyTool::CreatePropertyMenu(ClassObject &object) {
     PropertyMenuMetrics metrics __attribute__((aligned(16))) = ediGetMenuStartMetrics();
     char name[64];
     char title[128];
-    EdMember member;
+
     i32 name_type = EdType_String;
     if (object.reference == NULL ||
         !object.reference->GetAttributeData(object.object, 2, name_type, name, sizeof(name))) {
+        EdMember member;
         if (!object.ed_class->FindMember(&member, object.object, 2, 1) ||
             !member.reference->GetAttributeData(member.object, 2, name_type, name, sizeof(name)))
             NuStrCpy(name, const_cast<char *>("no name"));
@@ -2848,9 +2858,9 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
 
 PropertyTool::PropertyTool() {
     next = NULL;
-    previous = NULL;
     active_menu = NULL;
     last_menu = NULL;
+    previous = NULL;
     menu_count = 0;
     show_type_names = 1;
     menu_attr.background = 0x80000000;
@@ -2943,14 +2953,16 @@ void PropertyTool::SetDefaultActiveMenu(PropertyMenu *menu) {
 
 void PropertyTool::ToggleActiveMenu() {
     PropertyMenu *menu = GetActiveMenu(active_menu);
-    if (menu != NULL) {
+    if (menu == NULL) {
+        if (GetNextDefaultActiveMenu(eduiGetActiveMenu()) == NULL) {
+            SetDefaultActiveMenu(active_menu);
+        }
+    } else {
         if (menu == last_menu) {
             eduiSetActiveMenu(NULL);
         } else {
             SetDefaultActiveMenu(GetNextActiveMenu());
         }
-    } else if (GetNextDefaultActiveMenu(eduiGetActiveMenu()) == NULL) {
-        SetDefaultActiveMenu(active_menu);
     }
 }
 
@@ -2969,7 +2981,11 @@ void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *menu) {
 
 void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
     menu_startmetrics.x = menu->x > 0 ? menu->x : 20;
-    menu_startmetrics.y = menu->y > 0 ? menu->y : 5;
+    if (menu->y > 0) {
+        menu_startmetrics.y = menu->y;
+    } else {
+        menu_startmetrics.y = 5;
+    }
     menu_startmetrics.width = menu->width;
     menu_startmetrics.height = menu->height;
 }
@@ -3151,10 +3167,12 @@ void cbEdLevelDestroy(eduimenu_s *menu, eduimenu_s *) {
     if (menu == edLevelActiveMenu) {
         edLevelActiveMenu = NULL;
     }
-    if (menu == edLevelPinnedMenu) {
+    if (menu != edLevelPinnedMenu) {
+        if (edLevelPinnedMenu != NULL && edLevelActiveMenu == NULL) {
+            edLevelActiveMenu = edLevelPinnedMenu;
+        }
+    } else {
         edLevelPinnedMenu = NULL;
-    } else if (edLevelPinnedMenu != NULL && edLevelActiveMenu == NULL) {
-        edLevelActiveMenu = edLevelPinnedMenu;
     }
 }
 
@@ -3202,22 +3220,21 @@ void EdClass::SerialiseObject(EdStream &stream, void *object) {
     if (object != NULL) {
         u8 data[256];
         for (EdRef *member = members; member != NULL; member = member->next) {
-            if ((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
-                                               : (member->attributes & 0x10000000) != 0) {
-                continue;
-            }
-            if (member->attributes < 0) {
-                EdClass *member_class = theRegistry.GetClass(member->type_id);
-                member_class->SerialiseObject(stream, member->GetMemberObject(object));
-            } else {
-                EdType *type = theRegistry.GetType(member->type_id);
-                i32 size = member->size > 0 ? member->size : type->size;
-                if (stream.mode == 2) {
-                    member->GetMemberData(object, member->type_id, data, sizeof(data));
-                }
-                type->serialise(stream, data, size);
-                if (stream.mode == 1) {
-                    member->SetMemberData(object, member->type_id, data, sizeof(data), NULL);
+            if (!((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
+                                                 : (member->attributes & 0x10000000) != 0)) {
+                if (member->attributes < 0) {
+                    EdClass *member_class = theRegistry.GetClass(member->type_id);
+                    member_class->SerialiseObject(stream, member->GetMemberObject(object));
+                } else {
+                    EdType *type = theRegistry.GetType(member->type_id);
+                    i32 size = member->size > 0 ? member->size : type->size;
+                    if (stream.mode == 2) {
+                        member->GetMemberData(object, member->type_id, data, sizeof(data));
+                    }
+                    type->serialise(stream, data, size);
+                    if (stream.mode == 1) {
+                        member->SetMemberData(object, member->type_id, data, sizeof(data), NULL);
+                    }
                 }
             }
         }
@@ -3283,7 +3300,24 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
     if (stream.version == 0) {
         stream.SerialiseBuffer(&count, sizeof(count), 1);
     }
-    if (stream.mode == 2) {
+    if (stream.mode != 2) {
+        if (stream.mode == 1) {
+            if (stream.version <= 2) {
+                stream.SerialiseBuffer(&count, sizeof(count), 1);
+                for (i32 i = 0; i < count; ++i) {
+                    EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
+                    member->Serialise(stream, NULL);
+                    AddType(member);
+                }
+            }
+            stream.SerialiseBuffer(&count, sizeof(count), 1);
+            for (i32 i = 0; i < count; ++i) {
+                EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
+                member->Serialise(stream, NULL);
+                AddType(member);
+            }
+        }
+    } else {
         count = 0;
         for (EdRef *member = members; member != NULL; member = member->next) {
             if ((stream.flags & 0x400000) != 0) {
@@ -3311,21 +3345,6 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
                 }
             }
             member->Serialise(stream, class_mapping);
-        }
-    } else if (stream.mode == 1) {
-        if (stream.version <= 2) {
-            stream.SerialiseBuffer(&count, sizeof(count), 1);
-            for (i32 i = 0; i < count; ++i) {
-                EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
-                member->Serialise(stream, NULL);
-                AddType(member);
-            }
-        }
-        stream.SerialiseBuffer(&count, sizeof(count), 1);
-        for (i32 i = 0; i < count; ++i) {
-            EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
-            member->Serialise(stream, NULL);
-            AddType(member);
         }
     }
     stream.EndBlock();
@@ -3387,11 +3406,7 @@ void EdClass::SerialiseObject(EdStream &stream, void *object, EdClass *schema, E
                         continue;
                     }
                 }
-                if (member->attributes < 0) {
-                    EdClass *source_class = registry->GetClass(source->type_id);
-                    EdClass *member_class = theRegistry.GetClass(member->type_id);
-                    member_class->SerialiseObject(stream, member->GetMemberObject(object), source_class, registry);
-                } else {
+                if (!(member->attributes < 0)) {
                     registry->GetType(source->type_id);
                     EdType *type = theRegistry.GetType(member->type_id);
                     i32 size = member->size > 0 ? member->size : type->size;
@@ -3402,6 +3417,10 @@ void EdClass::SerialiseObject(EdStream &stream, void *object, EdClass *schema, E
                     if (stream.mode == 1) {
                         member->SetMemberData(object, member->type_id, data, sizeof(data), NULL);
                     }
+                } else {
+                    EdClass *source_class = registry->GetClass(source->type_id);
+                    EdClass *member_class = theRegistry.GetClass(member->type_id);
+                    member_class->SerialiseObject(stream, member->GetMemberObject(object), source_class, registry);
                 }
             } else {
                 EdType *type = registry->GetType(source->type_id);

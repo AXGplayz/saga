@@ -136,6 +136,7 @@ static void SecurityDoors_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *worl
 }
 
 static void SecurityDoors_Update(void *world_data, void *, float) {
+    i32 right_angle;
     if (world_data == NULL) {
         return;
     }
@@ -156,7 +157,7 @@ static void SecurityDoors_Update(void *world_data, void *, float) {
         }
 
         i32 left_angle;
-        i32 right_angle;
+
         if (door->opening <= 0.0f) {
             left_angle = 0;
             right_angle = 0;
@@ -184,6 +185,7 @@ static void SecurityDoors_Update(void *world_data, void *, float) {
 }
 
 static void SecurityDoors_Draw(void *world_data, void *, float) {
+    GameObject_s *nearest_player;
     WORLDINFO *world = static_cast<WORLDINFO *>(world_data);
     SECURITYDOOR *door = world->security_doors;
     if (door == NULL) {
@@ -195,18 +197,18 @@ static void SecurityDoors_Draw(void *world_data, void *, float) {
     const f32 pulse = 0.8f + NU_SIN_LUT(static_cast<i32>(pulse_phase)) * 0.2f;
 
     for (i32 i = 0; i < world->security_door_count; ++i, ++door) {
-        door->flags &= ~8;
+        door->flag_08 = 0;
         if (door->visible) {
             if (world->lev_objs[81].active != 0) {
                 NUMTX matrix = door->leaf_matrix[0];
                 if (NuSpecialDrawAt(&world->lev_objs[81].special, &matrix) != 0) {
-                    door->flags |= 8;
+                    door->flag_08 = 1;
                 }
             }
             if (world->lev_objs[82].active != 0) {
                 NUMTX matrix = door->leaf_matrix[1];
                 if (NuSpecialDrawAt(&world->lev_objs[82].special, &matrix) != 0) {
-                    door->flags |= 8;
+                    door->flag_08 = 1;
                 }
             }
 
@@ -221,7 +223,6 @@ static void SecurityDoors_Draw(void *world_data, void *, float) {
                 }
                 NuMtxTranslate(&matrix, &door->player_position);
 
-                GameObject_s *nearest_player;
                 f32 distance_squared;
                 if (FindNearestPlayerToVec(&door->position, &nearest_player, distance_squared, true, 0x2000000)) {
                     const f32 distance_phase = NuFmin(distance_squared / 6.0f, 1.0f) * 16384.0f + 49152.0f + 16384.0f;
@@ -301,8 +302,8 @@ static void SecurityDoors_StoreProgress(void *world_data, void *, void *progress
 
     SECURITYDOOR *door = world->security_doors;
     for (i32 i = 0; i != count && i != 32; ++i, ++door) {
-        const u32 mask = 1U << i;
         const i32 word = i >> 5;
+        const u32 mask = 1U << i;
         if (!door->visible) {
             progress->state[0 + word] &= ~mask;
         }
@@ -340,7 +341,7 @@ static void SecurityDoors_Reset(void *world_data, void *, void *progress_data) {
             door->player_position.y = 2000000.0f;
         } else {
             door->player_position.y = height + 0.01f;
-            FindAnglesZX(&v001, &door->terrain_angle_z, &door->terrain_angle_x);
+            FindAnglesZX(&ShadNorm, &door->terrain_angle_z, &door->terrain_angle_x);
         }
 
         door->opening = 0.0f;
@@ -348,16 +349,17 @@ static void SecurityDoors_Reset(void *world_data, void *, void *progress_data) {
         door->active = 1;
         door->visible = 1;
         door->opened = 0;
-        door->flags &= ~8;
+        door->flag_08 = 0;
 
-        NUVEC translation = {0.2667f, 0.0f, 0.0f};
+        NUVEC translation = {0.0f, 0.0f, 0.0f};
         NuMtxSetRotationY(&door->leaf_matrix[0], 0);
+        translation.x = 0.2667f;
         NuMtxTranslate(&door->leaf_matrix[0], &translation);
         NuMtxRotateY(&door->leaf_matrix[0], door->yaw);
         NuMtxTranslate(&door->leaf_matrix[0], &door->position);
 
-        translation.x = -0.2667f;
         NuMtxSetRotationY(&door->leaf_matrix[1], 0);
+        translation.x = -0.2667f;
         NuMtxTranslate(&door->leaf_matrix[1], &translation);
         NuMtxRotateY(&door->leaf_matrix[1], door->yaw);
         NuMtxTranslate(&door->leaf_matrix[1], &door->position);

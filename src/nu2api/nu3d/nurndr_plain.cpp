@@ -473,8 +473,8 @@ extern "C" i32 NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32
     radius *= circle_scale_radius;
     u1 -= u0;
     v1 -= v0;
-    f32 previous_x = radius * 0.0f * aspect + x;
     f32 previous_y = radius + y;
+    f32 previous_x = radius * 0.0f * aspect + x;
     f32 previous_u = 0.0f + u0;
     f32 previous_v = v1 + v0;
     f32 step = 6.284f / static_cast<f32>(count - 1);
@@ -582,8 +582,8 @@ extern "C" void NuRndrGradRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, 
 }
 static i32 dump_state = -1;
 struct ScreenGrabTileParams {
-    i8 channels[4];
     u16 width;
+    i8 channels[4];
 };
 extern "C" void NuRndrScreenGrabTileInit(void *, i32, f32, f32, f32);
 extern "C" void NuRndrScreenGrabTileDeInit(void *);
@@ -592,6 +592,7 @@ extern "C" void NuRndrScreenGrabTileEnd(void **);
 extern "C" i32 NuRndrDoingScreenGrab;
 extern "C" void NuVpResetRegions();
 extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f32 c, i32 number) {
+    char path[256];
     static f32 yTiles, xTiles, yPos, xPos;
     static ScreenGrabTileParams params;
     static NUFILE fh;
@@ -619,7 +620,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
     if (dump_state == -1) {
         NuRndrDoingScreenGrab = 1;
         NuRndrScreenGrabTileInit(&params, static_cast<i32>(tiles * tiles), b, a, c);
-        char path[256];
+
         if (number >= 0)
             sprintf(path, "%s%d.bmp", prefix, number);
         else {
@@ -806,8 +807,8 @@ extern "C" i32 NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *ma
         f32 y = vertices[0].position.y;
         f32 z = vertices[0].position.z;
         PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
-        vertex->x = x;
         vertex->y = y;
+        vertex->x = x;
         vertex->z = z;
         g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
         ++g_NuPrim_VertexCount;
@@ -824,8 +825,8 @@ extern "C" i32 NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *ma
         f32 z = vertices[1].position.z;
         PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
         vertex->x = x;
-        vertex->y = y;
         vertex->z = z;
+        vertex->y = y;
         g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
         ++g_NuPrim_VertexCount;
     }
@@ -911,8 +912,8 @@ extern "C" void NuRndrLineStrip2di(i32 *positions, f32 *uvs, i32 count, i32 colo
             NuRndrPrimSetColour(colour);
             if (uvs) {
                 f32 u = uvs[i];
-                f32 v = uvs[i + 1];
                 u8 *vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
+                f32 v = uvs[i + 1];
                 if (!g_NuPrim_NeedsHalfUVs) {
                     *(f32 *)(vertex + 0x10) = u;
                     *(f32 *)(vertex + 0x14) = v;
@@ -1068,15 +1069,15 @@ extern "C" void NuRndrSetDebBox(NUVEC *range) {
     minimum.x = corner1.x < minimum.x ? corner1.x : minimum.x;
     minimum.y = corner1.y < minimum.y ? corner1.y : minimum.y;
     minimum.z = corner1.z < minimum.z ? corner1.z : minimum.z;
-    maximum.x = corner1.x > maximum.x ? corner1.x : maximum.x;
     maximum.y = corner1.y > maximum.y ? corner1.y : maximum.y;
+    maximum.x = corner1.x > maximum.x ? corner1.x : maximum.x;
     maximum.z = corner1.z > maximum.z ? corner1.z : maximum.z;
     NUVEC corner2 = {
         (((size.x * cammtx.m00) * -0.2f + cammtx.m30) + (size.y * cammtx.m10) * 0.2f) + (size.z * cammtx.m20) * -0.05f,
         (((size.x * cammtx.m01) * -0.2f + cammtx.m31) + (size.y * cammtx.m11) * 0.2f) + (size.z * cammtx.m21) * -0.05f,
         (((size.x * cammtx.m02) * -0.2f + cammtx.m32) + (size.y * cammtx.m12) * 0.2f) + (size.z * cammtx.m22) * -0.05f};
-    minimum.x = corner2.x < minimum.x ? corner2.x : minimum.x;
     minimum.y = corner2.y < minimum.y ? corner2.y : minimum.y;
+    minimum.x = corner2.x < minimum.x ? corner2.x : minimum.x;
     minimum.z = corner2.z < minimum.z ? corner2.z : minimum.z;
     maximum.x = corner2.x > maximum.x ? corner2.x : maximum.x;
     maximum.y = corner2.y > maximum.y ? corner2.y : maximum.y;
@@ -1105,8 +1106,8 @@ extern "C" void NuRndrSetDebBox(NUVEC *range) {
         (((size.x * cammtx.m00) * 0.5f + cammtx.m30) + (size.y * cammtx.m10) * -0.5f) + (size.z * cammtx.m20) * 0.8f,
         (((size.x * cammtx.m01) * 0.5f + cammtx.m31) + (size.y * cammtx.m11) * -0.5f) + (size.z * cammtx.m21) * 0.8f,
         (((size.x * cammtx.m02) * 0.5f + cammtx.m32) + (size.y * cammtx.m12) * -0.5f) + (size.z * cammtx.m22) * 0.8f};
-    minimum.x = corner5.x < minimum.x ? corner5.x : minimum.x;
     minimum.y = corner5.y < minimum.y ? corner5.y : minimum.y;
+    minimum.x = corner5.x < minimum.x ? corner5.x : minimum.x;
     minimum.z = corner5.z < minimum.z ? corner5.z : minimum.z;
     maximum.x = corner5.x > maximum.x ? corner5.x : maximum.x;
     maximum.y = corner5.y > maximum.y ? corner5.y : maximum.y;
@@ -1116,8 +1117,8 @@ extern "C" void NuRndrSetDebBox(NUVEC *range) {
         (((size.x * cammtx.m01) * -0.5f + cammtx.m31) + (size.y * cammtx.m11) * 0.5f) + (size.z * cammtx.m21) * 0.8f,
         (((size.x * cammtx.m02) * -0.5f + cammtx.m32) + (size.y * cammtx.m12) * 0.5f) + (size.z * cammtx.m22) * 0.8f};
     minimum.x = corner6.x < minimum.x ? corner6.x : minimum.x;
-    minimum.y = corner6.y < minimum.y ? corner6.y : minimum.y;
     minimum.z = corner6.z < minimum.z ? corner6.z : minimum.z;
+    minimum.y = corner6.y < minimum.y ? corner6.y : minimum.y;
     maximum.x = corner6.x > maximum.x ? corner6.x : maximum.x;
     maximum.y = corner6.y > maximum.y ? corner6.y : maximum.y;
     maximum.z = corner6.z > maximum.z ? corner6.z : maximum.z;
@@ -1132,8 +1133,8 @@ extern "C" void NuRndrSetDebBox(NUVEC *range) {
     maximum.y = corner7.y > maximum.y ? corner7.y : maximum.y;
     maximum.z = corner7.z > maximum.z ? corner7.z : maximum.z;
     NuRndrDebBase.x = (maximum.x + minimum.x) * 0.5f - size.x * 0.5f;
-    NuRndrDebBase.y = (maximum.y + minimum.y) * 0.5f - size.y * 0.5f;
     NuRndrDebBase.z = (maximum.z + minimum.z) * 0.5f - size.z * 0.5f;
+    NuRndrDebBase.y = (maximum.y + minimum.y) * 0.5f - size.y * 0.5f;
     NuRndrDebRange = size;
     NuRndrDebRangeInv.x = 1.0f / size.x;
     NuRndrDebRangeInv.y = 1.0f / size.y;
@@ -1313,6 +1314,29 @@ extern "C" i32 NuRndrStrip3d(NURND_VERTEX3D *vertices, numtl_s *material, NUMTX 
     NuPrim3DEnd();
     return 1;
 }
+extern "C" void NuRndrTriStrip2di(i32 *positions, f32 *uvs, i32 count, i32 colour, NUMTL *material) {
+    NuPrim2DBegin(1, 7, material);
+    if (count > 0) {
+        const i32 end = count * 2;
+        for (i32 i = 0; i != end; i += 2) {
+            NuRndrPrimSetColour(colour);
+            if (uvs) {
+                f32 u = uvs[i];
+                u8 *vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
+                f32 v = uvs[i + 1];
+                if (!g_NuPrim_NeedsHalfUVs) {
+                    *(f32 *)(vertex + 0x10) = u;
+                    *(f32 *)(vertex + 0x14) = v;
+                } else {
+                    *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u);
+                    *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v);
+                }
+            }
+            NuPrim2DAddXYZ((f32)positions[i] * 0.0625f, (f32)positions[i + 1] * 0.0625f, 0.0f);
+        }
+    }
+    NuPrim2DEnd();
+}
 extern "C" i32 NuRndrTri3dClip(NURND_VERTEX3D *vertices, i32 count, NUMTX *matrix, numtl_s *material) {
     if (count == 0)
         return 1;
@@ -1333,29 +1357,6 @@ extern "C" i32 NuRndrTri3dClip(NURND_VERTEX3D *vertices, i32 count, NUMTX *matri
         g_NuPrim_VertexCount += count;
     NuPrim3DEnd();
     return 1;
-}
-extern "C" void NuRndrTriStrip2di(i32 *positions, f32 *uvs, i32 count, i32 colour, NUMTL *material) {
-    NuPrim2DBegin(1, 7, material);
-    if (count > 0) {
-        const i32 end = count * 2;
-        for (i32 i = 0; i != end; i += 2) {
-            NuRndrPrimSetColour(colour);
-            if (uvs) {
-                f32 u = uvs[i];
-                f32 v = uvs[i + 1];
-                u8 *vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-                if (!g_NuPrim_NeedsHalfUVs) {
-                    *(f32 *)(vertex + 0x10) = u;
-                    *(f32 *)(vertex + 0x14) = v;
-                } else {
-                    *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u);
-                    *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v);
-                }
-            }
-            NuPrim2DAddXYZ((f32)positions[i] * 0.0625f, (f32)positions[i + 1] * 0.0625f, 0.0f);
-        }
-    }
-    NuPrim2DEnd();
 }
 extern "C" i32 NuRndrTriStrip3dClip(NURND_VERTEX3D *vertices, i32 count, NUMTX *matrix, numtl_s *material) {
     return NuRndrStrip3d(vertices, material, matrix, count);

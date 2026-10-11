@@ -260,8 +260,8 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     i32 count = this->album_count;
     if (count == 0 || (track_count = this->track_count, track_count == 0)) {
         *buffer_start = buffer_original;
-        this->albums = NULL;
         this->album_count = 0;
+        this->albums = NULL;
         this->tracks = NULL;
         this->track_count = 0;
         return;
@@ -291,8 +291,8 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
         count = this->album_count;
         this->albums = album;
         track_count = this->track_count;
-        tracksPtr = (Track *)(album + count);
         pTVar3 = this->tracks;
+        tracksPtr = (Track *)(album + count);
         if (pTVar3 == tracksPtr)
             goto LAB_003203e6;
         alloced = tracksPtr;
@@ -450,9 +450,7 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
     if (this != NULL && the_music_player != NULL && this->album != NULL) {
         u32 index = (u32)ClassToIX(clazz);
         if (index < 6) {
-            if (trackHandle == -1) {
-                this->album->tracks[index] = NULL;
-            } else {
+            if (trackHandle != -1) {
                 Album *album = this->album;
                 // Validate the album encoded in the handle's high bits against
                 // the album being selected (see header note on handle packing).
@@ -462,6 +460,8 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
                     album->tracks[index] = &album->tracks_source[trackHandle & 0x7ff];
                     return true;
                 }
+            } else {
+                this->album->tracks[index] = NULL;
             }
         }
     }
@@ -471,16 +471,7 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
 
 i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
     if (this != NULL && the_music_player != NULL && this->album != NULL) {
-        if (name == NULL) {
-            i32 index = ClassToIX(clazz);
-            if (index != -1) {
-                Track *track = this->album->tracks[index];
-                if (track != NULL) {
-                    return (((i32)((char *)track - (char *)this->album->tracks_source) >> 2) * (u32)0xEEEEEEEF) |
-                           ((((i32)((char *)this->album - (char *)this->albums) >> 2) * (u32)0x38e38e39) << 11);
-                }
-            }
-        } else {
+        if (name != NULL) {
             LOG_DEBUG("Searching for track name '%s' of class %d, tracks_count=%d", name, clazz,
                       this->album->tracks_count);
             for (i32 i = 0; i < this->album->tracks_count; i++) {
@@ -488,6 +479,15 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
                     if (NuStrICmp(this->album->tracks_source[i].ident, name) == 0) {
                         return ((((i32)((char *)this->album - (char *)this->albums) >> 2) * (u32)0x38e38e39) << 11) | i;
                     }
+                }
+            }
+        } else {
+            i32 index = ClassToIX(clazz);
+            if (index != -1) {
+                Track *track = this->album->tracks[index];
+                if (track != NULL) {
+                    return (((i32)((char *)track - (char *)this->album->tracks_source) >> 2) * (u32)0xEEEEEEEF) |
+                           ((((i32)((char *)this->album - (char *)this->albums) >> 2) * (u32)0x38e38e39) << 11);
                 }
             }
         }
@@ -963,8 +963,8 @@ void NuMusic::SetFader(f32 target, f32 fade_seconds) {
         return;
     }
     if (fade_seconds != 0.0f) {
-        this->fader_target = target;
         this->fader_rate = 1.0f / fade_seconds;
+        this->fader_target = target;
         return;
     }
     // Zero fade time snaps both ends of the fader.
@@ -985,6 +985,10 @@ i32 NuMusic::SetTrackEntryTimeByClass(u32 clazz, f32 entry_time) {
     return 1;
 }
 
+void NuMusic::Track::SetEntryTime(f32 entry_time) {
+    this->start_offset = entry_time;
+}
+
 void NuMusic::Track::ManageEntryTime() {
     // Advance to the next INDEX entry; the value becomes this track's
     // start offset the next time it is played.
@@ -995,10 +999,6 @@ void NuMusic::Track::ManageEntryTime() {
         this->entry_index = index;
     }
     this->start_offset = value;
-}
-
-void NuMusic::Track::SetEntryTime(f32 entry_time) {
-    this->start_offset = entry_time;
 }
 
 void NuMusic::Process(f32 delta) {
@@ -1199,6 +1199,12 @@ NuMusic *NuMusic::GetPlayer() {
     return the_music_player;
 }
 
+void NuMusic::NoMusic(i32 no_music) {
+    if (this != NULL && the_music_player != NULL) {
+        this->track_index = no_music != 0;
+    }
+}
+
 int NuMusic::GetStatus(u32 clazz, i32 *class_status) {
     if (this == NULL || the_music_player == NULL) {
         return 0;
@@ -1264,12 +1270,6 @@ int NuMusic::GetStatus(u32 clazz, i32 *class_status) {
     return result;
 }
 
-void NuMusic::NoMusic(i32 no_music) {
-    if (this != NULL && the_music_player != NULL) {
-        this->track_index = no_music != 0;
-    }
-}
-
 i32 NuMusic::SetAlbum(char const *name) {
     if (this == NULL || the_music_player == NULL) {
         return 0;
@@ -1309,9 +1309,9 @@ void NuMusic::ParseTrack(u32 category, nufpar_s *fpar) {
     track = this->current_track;
 
     // Entry times carve sequential slices out of the shared INDEX pool.
-    track->entry_times = this->indexes + this->index_count;
-
     track->clazz = category;
+
+    track->entry_times = this->indexes + this->index_count;
     track->pitch = this->pitch_default;
     track->duck_volume = 1.0f;
     track->duck_fade = 1.0f;
@@ -1543,13 +1543,12 @@ void NuMusic::xNoDuck(nufpar_s *fpar) {
     ((u8 *)&this->current_track->flags)[0] |= 1;
 }
 void NuMusic::xDuck(nufpar_s *fpar) {
-    Track *track = this->current_track;
-    track->duck_volume = NuFParGetFloatRDP(fpar);
-    if (track->duck_volume < 0.0f) {
+    this->current_track->duck_volume = NuFParGetFloatRDP(fpar);
+    if (this->current_track->duck_volume < 0.0f) {
         // Negative values are decibels.
-        track->duck_volume = NuSound3dBToAmplitude(track->duck_volume);
+        this->current_track->duck_volume = NuSound3dBToAmplitude(this->current_track->duck_volume);
     }
-    track->duck_fade = NuFParGetFloatRDP(fpar);
+    this->current_track->duck_fade = NuFParGetFloatRDP(fpar);
 }
 void NuMusic::xLooping(nufpar_s *fpar) {
     (void)fpar;
@@ -1560,11 +1559,10 @@ void NuMusic::xNonLooping(nufpar_s *fpar) {
     ((u8 *)&this->current_track->flags)[0] &= 0xfd;
 }
 void NuMusic::xAttenuation(nufpar_s *fpar) {
-    Track *track = this->current_track;
-    track->attenuation = NuFParGetFloatRDP(fpar);
-    if (track->attenuation < 0.0f) {
+    this->current_track->attenuation = NuFParGetFloatRDP(fpar);
+    if (this->current_track->attenuation < 0.0f) {
         // Negative values are decibels.
-        track->attenuation = NuSound3dBToAmplitude(track->attenuation);
+        this->current_track->attenuation = NuSound3dBToAmplitude(this->current_track->attenuation);
     }
 }
 

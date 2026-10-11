@@ -9,6 +9,9 @@
 #include "nu2api/numath/nutrig.h"
 #include "legoapi/misc/supportall.h"
 #include "legoapi/render/core/screen.h"
+
+// The original unit constructs its six homogeneous vectors.
+#include "nu2api/nucore/nuvuvec.hpp"
 extern "C" i32 NuRndrBeginScene(i32 begin_flags);
 extern "C" void NuRndrEndScene(void);
 
@@ -233,12 +236,11 @@ void NuTouchInputStick::Update(NuInputTouchData const *data) {
     for (; count != 0; --count, ++touch_ptr) {
         const NuInputTouch &touch = *touch_ptr;
         u8 active = touch.unknown_00;
-        u8 released = touch.unknown_01;
         u8 started = touch.unknown_02;
         float tx = touch.unknown_04;
         float ty = touch.unknown_08;
         u32 touch_id = touch.unknown_14;
-        if (!released && !started && !active)
+        if (!touch.unknown_01 && !started && !active)
             continue;
         float dx = tx - x;
         float dy = ty - y;
@@ -252,7 +254,7 @@ void NuTouchInputStick::Update(NuInputTouchData const *data) {
                 unknown_3c = true;
             }
         }
-        if (released && unknown_38 == touch_id) {
+        if (touch.unknown_01 && unknown_38 == touch_id) {
             unknown_3c = false;
         } else if (unknown_3c && unknown_38 == touch_id) {
             float distance = NuFsqrt(dy2 + dx2);

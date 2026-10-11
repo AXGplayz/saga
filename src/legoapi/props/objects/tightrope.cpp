@@ -133,11 +133,13 @@ static i32 TightRope_MoveUpdate(GameObject_s *object, i32 jumping) {
     margin = (object->apiobj.character_data->game_character->flags_090 & 0x10000000) != 0 ? object->apiobj.field_0x1e0
                                                                                           : object->apiobj.field_0x1dc;
     result = 1;
-    if (object->context_destination.z > rope->horizontal_length - margin) {
+    if (!(object->context_destination.z > rope->horizontal_length - margin)) {
+        if (margin > object->context_destination.z) {
+            object->context_destination.z = margin;
+            result = 0;
+        }
+    } else {
         object->context_destination.z = rope->horizontal_length - margin;
-        result = 0;
-    } else if (margin > object->context_destination.z) {
-        object->context_destination.z = margin;
         result = 0;
     }
     NuVecScale(&object->context_destination, &rope->direction, object->context_destination.z);
@@ -239,9 +241,10 @@ static void TightRopes_Draw(void *world_info, void *, float) {
                                    : &object->apiobj.upper_position;
             distances[count] = NuVecDist(positions[count], &rope->start, NULL);
             ++count;
-            if (count == 64) {
-                break;
+            if (count != 64) {
+                continue;
             }
+            break;
         }
         for (i32 pass = 0; pass < count - 1; ++pass) {
             for (i32 point = 0; point < count - 1; ++point) {
@@ -310,7 +313,8 @@ static void TightRopes_StoreProgress(void *world_info, void *, void *progress_da
     WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
     if (world == NULL || world->tightropes == NULL)
         return;
-    for (i32 i = 0; i < world->tightrope_count && i < 32; ++i) {
+    auto world_tightrope_count = world->tightrope_count;
+    for (i32 i = 0; i < world_tightrope_count && i < 32; ++i) {
         u32 mask = 1u << i;
         if (!world->tightropes[i].visible)
             progress->state[1] &= ~mask;
@@ -582,8 +586,11 @@ void TightRope_MoveCode(GameObject_s *object, i32 jump_pressed) {
         if (TightRope_MoveUpdate(object, 0) == 0 && object->context_animation != 0x8f &&
             object->external_force.y >= 0.5f) {
             StartJump(object, 0);
-            object->apiobj.velocity.y =
-                (object->apiobj.character_data->game_character->flags_090 & 0x80000) != 0 ? 1.2f : 1.8f;
+            if ((object->apiobj.character_data->game_character->flags_090 & 0x80000) != 0) {
+                object->apiobj.velocity.y = 1.2f;
+            } else {
+                object->apiobj.velocity.y = 1.8f;
+            }
         }
     } else {
         f32 *playing = AnimPlaying(&object->apiobj.anim_packet, 0x8f, 1, 0);

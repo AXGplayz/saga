@@ -280,8 +280,8 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     i32 saved_max_fps;
     i32 area;
     NUGSCN *scene;
-    APICHARACTERMODELLIST_s *list;
     APICHARACTERMODELLIST_s *story_list;
+    APICHARACTERMODELLIST_s *list;
 
     area = Area;
     saved_max_fps = nuapi.max_fps;
@@ -332,10 +332,10 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     }
 
     if (makefreeplaymodellist != 0) {
-        if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0 || (Area_PlayerModelCount > 1 && BonusArea == 0)) {
-            MakeFreePlayModelList(Area_PlayerModelList[0], Area_PlayerModelList[2], area, level, 0);
-        } else {
+        if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) == 0 && !(Area_PlayerModelCount > 1 && BonusArea == 0)) {
             MakeFreePlayModelList(id_DEFAULTCHARACTER[0], id_DEFAULTCHARACTER[1], area, level, 0);
+        } else {
+            MakeFreePlayModelList(Area_PlayerModelList[0], Area_PlayerModelList[2], area, level, 0);
         }
         story_list = Area_StoryModelList;
         makefreeplaymodellist = 0;
@@ -412,8 +412,8 @@ void LoadAreaCharacters() {
     }
 
     if (Area == -1) {
-        VehicleArea = 0;
         BonusArea = 0;
+        VehicleArea = 0;
     } else {
         const u16 area_flags = ADataList[Area].flags;
         if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
@@ -603,7 +603,6 @@ load_type_done:
             }
         }
         if (load_type == 2) {
-            f32 backdrop_dt_scale = 1.0f;
             if (AreaDataLoaded != 0 && !character_load_active) {
                 if (!(LoadWait <= 0.0f) && (!(LoadTime < 45.0f) || skip_text_scroll)) {
                     LoadWait -= FRAMETIME;
@@ -611,9 +610,10 @@ load_type_done:
                         LoadWait = 0.0f;
                     }
                 }
-                backdrop_dt_scale = LoadWait / LOADWAITTIME;
             }
             legoSetMusicVolume((LoadWait / LOADWAITTIME) * music_volume);
+            const f32 backdrop_dt_scale =
+                AreaDataLoaded != 0 && !character_load_active ? LoadWait / LOADWAITTIME : 1.0f;
             BackDrop_Update(backdrop_dt_scale * FRAMETIME);
             BackDrop_UpdateColours(1);
         } else if (AreaDataLoaded != 0 && !character_load_active && icon_stage == 2 && !(LoadWait <= 0.0f)) {
@@ -669,8 +669,8 @@ load_type_done:
                     icon_time < icons_end_time) {
                     const f32 wobble = NuTrigTable[(wobble_angle >> 1) & 0x7fff] * 0.15f;
                     const bool widescreen = Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0;
-                    const f32 icon_x = widescreen ? 0.106875f : 0.1425f;
                     const f32 icon_travel = widescreen ? 0.406875f : 0.4425f;
+                    const f32 icon_x = widescreen ? 0.106875f : 0.1425f;
                     const f32 icon_scale = widescreen ? 0.35f : 0.4f;
 
                     if (icon_time < icon_end_time) {

@@ -127,9 +127,10 @@ static i32 HatMachine_Load(void *world_ptr, void *) {
                 EdFileReadNuVec(&system->machines[index].target_offset);
                 system->machines[index].scale = EdFileReadFloat();
                 if (version != 4) {
+                    HATMACHINE *machine = &system->machines[index];
                     const u8 hidden = static_cast<u8>(EdFileReadChar()) & 1;
-                    system->machines[index].flags = static_cast<HATMACHINE_FLAGS>(
-                        (system->machines[index].flags & ~HATMACHINE_FLAG_HIDE_MACHINE) | (hidden << 5));
+                    machine->flags =
+                        static_cast<HATMACHINE_FLAGS>((machine->flags & ~HATMACHINE_FLAG_HIDE_MACHINE) | (hidden << 5));
                 }
             }
             system->machines[index].platform_id = -1;
@@ -180,11 +181,11 @@ static void HatMachine_Update(void *world_ptr, void *, float elapsed) {
         if (machine->hat_delay > 0.0f) {
             machine->hat_delay -= FRAMETIME;
             if (machine->hat_delay <= 0.0f && machine->displayed_hat == 0) {
-                if (machine->configured_hat_count != 0) {
-                    machine->displayed_hat = machine->configured_hat_count;
-                } else {
+                if (machine->configured_hat_count == 0) {
                     machine->displayed_hat =
                         static_cast<u8>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 4.0f) + 1;
+                } else {
+                    machine->displayed_hat = machine->configured_hat_count;
                 }
                 machine->hat_delay = 1.0f;
             }
@@ -450,12 +451,14 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
             NuSpecialDrawAt(&world->lev_objs[283].special, &machine->transform);
         }
 
-        if ((machine->flags & HATMACHINE_FLAG_ENABLED) == 0) {
+        if ((machine->flags & HATMACHINE_FLAG_ENABLED) != 0) {
+            if (world->lev_objs[286].active != 0) {
+                NuSpecialDrawAt(&world->lev_objs[286].special, &machine->transform);
+            }
+        } else {
             if (world->lev_objs[287].active != 0) {
                 NuSpecialDrawAt(&world->lev_objs[287].special, &machine->transform);
             }
-        } else if (world->lev_objs[286].active != 0) {
-            NuSpecialDrawAt(&world->lev_objs[286].special, &machine->transform);
         }
 
         if ((machine->flags & HATMACHINE_FLAG_HIDE_MACHINE) == 0 && machine->target_offset.y != 2000000.0f &&
@@ -480,18 +483,7 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
         // The animated machine body is evaluated in its own space and then
         // composed with the machine transform.
         if (animated_instance_animation != NULL) {
-            if (machine->animation_state > 0) {
-                machine->animation_time += FRAMETIME;
-                if (machine->animation_state <= 3 && machine->animation_time >= 3.0f) {
-                    machine->animation_state = 4;
-                    machine->state_elapsed = 0.0f;
-                    machine->state_duration = 2.0f;
-                }
-                animation_frame = machine->animation_time * animated_instance_animation->tfactor * 60.0f;
-                if (animated_end_frame <= animation_frame) {
-                    animation_frame = animated_end_frame;
-                }
-            } else {
+            if (!(machine->animation_state > 0)) {
                 machine->animation_time = 0.0f;
                 animation_frame = 0.0f;
                 if ((machine->flags & (HATMACHINE_FLAG_ANIMATING | HATMACHINE_FLAG_FINISHED |
@@ -509,6 +501,17 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
                     } else if (qrand() <= 0x7ff) {
                         machine->idle_bounce_timer = 0.15f;
                     }
+                }
+            } else {
+                machine->animation_time += FRAMETIME;
+                if (machine->animation_state <= 3 && machine->animation_time >= 3.0f) {
+                    machine->animation_state = 4;
+                    machine->state_elapsed = 0.0f;
+                    machine->state_duration = 2.0f;
+                }
+                animation_frame = machine->animation_time * animated_instance_animation->tfactor * 60.0f;
+                if (animated_end_frame <= animation_frame) {
+                    animation_frame = animated_end_frame;
                 }
             }
 
@@ -725,8 +728,8 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
         if (distance < (0.25f + object->apiobj.field_0x1dc) * machine->scale &&
             (special_pressed != 0 || (object->panel_use_request == 2 && object->big_jump_data != NULL))) {
             object->field_0x788 = machine;
-            object->field_0x768 = 0.0f;
             object->delayed_turn_timer = 0.0f;
+            object->field_0x768 = 0.0f;
             object->apiobj.movement_facing_angle = machine->yaw;
             object->field_0xe21 &= ~0x10;
             object->character_context = 0x61;
@@ -839,6 +842,7 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
         }
         if (machine->configured_hat == 6) {
             PlaySfx(const_cast<char *>("Hunter_Granted"), &object->apiobj.collision_position);
+            machine = static_cast<HATMACHINE_s *>(object->field_0x788);
         }
         if (machine->configured_hat == 5) {
             PlaySfx(const_cast<char *>("Trooper_Granted"), &object->apiobj.collision_position);
@@ -853,9 +857,11 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
             NewRumble(object->pad_gamepad->pad, 0.5f, 0);
         } else {
             NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
+            machine = static_cast<HATMACHINE_s *>(object->field_0x788);
             machine->hat_delay = 0.6f;
             if (machine->configured_hat == 6) {
                 PlaySfx(const_cast<char *>("Hunter_Granted"), &object->apiobj.collision_position);
+                machine = static_cast<HATMACHINE_s *>(object->field_0x788);
             }
             if (machine->configured_hat == 5) {
                 PlaySfx(const_cast<char *>("Trooper_Granted"), &object->apiobj.collision_position);

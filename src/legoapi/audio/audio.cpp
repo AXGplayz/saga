@@ -97,9 +97,7 @@ void legoSetMusicVolume(float v) {
 void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
     (void)opts;
 
-    if (GameAudio_ActionMusicFn != NULL) {
-        PlayersUnderAttack = GameAudio_ActionMusicFn();
-    } else {
+    if (GameAudio_ActionMusicFn == NULL) {
         const auto player_under_attack = [](GameObject_s *player) {
             if (player == NULL)
                 return false;
@@ -110,9 +108,15 @@ void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
         };
         PlayersUnderAttack = DoubleScore != 0 || Cheat_PowerUpActive(-1) != 0 || player_under_attack(Player[0]) ||
                              player_under_attack(Player[1]);
+    } else {
+        PlayersUnderAttack = GameAudio_ActionMusicFn();
     }
 
-    MusicOther = CheckMusicOtherFn != NULL ? CheckMusicOtherFn() : 0;
+    if (CheckMusicOtherFn != NULL) {
+        MusicOther = CheckMusicOtherFn();
+    } else {
+        MusicOther = 0;
+    }
 
     if (sticky_attack != PlayersUnderAttack) {
         if (Paused == 0) {
@@ -165,12 +169,13 @@ process_music:
 void SpaceResetAudioPoint() {
     for (i32 door = 6; door >= 0; --door) {
         const f32 distance = DogFightDoors.doors[door].distance;
-        if ((Player[0] != NULL && Player[0]->sock_position.distance > distance) ||
-            (Player[1] != NULL && Player[1]->sock_position.distance > distance)) {
-            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
-            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
-            return;
+        if (!(Player[0] != NULL && Player[0]->sock_position.distance > distance) &&
+            !(Player[1] != NULL && Player[1]->sock_position.distance > distance)) {
+            continue;
         }
+        music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
+        music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
+        return;
     }
     SetPreSeekStartPoint(0.0f);
 }

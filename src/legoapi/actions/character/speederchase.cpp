@@ -98,6 +98,7 @@ u32 SpecialMove_GetFlags(i32, u32);
 
 GameObject_s *ObjOpponent(GameObject_s *object, f32 range, f32 extra_radius, i32 allow_untargeted, i32 mode,
                           i32 player_filter) {
+    NUVEC delta;
     i32 ignore_ai = objopponent_ignoreaiopponent;
     if (forceNextAttackOpponent.Get() != NULL && (object->apiobj.flags_low & 0x80) != 0) {
         return forceNextAttackOpponent->GetCharacterObject();
@@ -126,8 +127,8 @@ GameObject_s *ObjOpponent(GameObject_s *object, f32 range, f32 extra_radius, i32
         if ((player_filter == 1 && target->apiobj.field_0x27c != -1) ||
             (player_filter == 2 && target->apiobj.field_0x27c == -1))
             continue;
-        i8 context = target->character_context;
         GAMECHARACTERDATA *runtime = static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
+        i8 context = target->character_context;
         if ((context == 0x17 && (target->current_hp == 0 || (runtime->flags_090 & 0x40) != 0)) ||
             (CInfo[context].flags & 0x8000) != 0 || (context & 0xfd) == 0x39 || context == 0x3c)
             continue;
@@ -176,7 +177,7 @@ GameObject_s *ObjOpponent(GameObject_s *object, f32 range, f32 extra_radius, i32
         if (!(allow_untargeted != 0 && (ignore_ai != 0 || object->ai.action_target_ref == NULL || mode != 0)) &&
             (target_flags & 1) == 0)
             continue;
-        NUVEC delta;
+
         f32 distance = NuVecDistSqr(&target->apiobj.position, &object->apiobj.position, &delta);
         if (!(distance < range * range))
             continue;
@@ -264,6 +265,16 @@ f32 FindPodHoverHeight(GameObject_s *object) {
 
 extern i32 ObjInNarrowSock(GameObject_s *, SOCKSYS *, i32);
 i32 IDLESPEEDINNARROWSOCKSONLY = 0;
+
+i32 ObjIsTargetSpeeder(GameObject_s *object) {
+    if (object->id != id_SPEEDERBIKE) {
+        return 0;
+    }
+    if (object->field_0xcc0 == NULL) {
+        return 0;
+    }
+    return object->apiobj.field_0x27c == -1;
+}
 f32 GetVehicleSpeedMul(GameObject_s *object, f32 speed) {
     f32 effective;
     if (object->character_context == 0x36 || object->character_context == 0x2a || object->character_context == 0x3a)
@@ -286,16 +297,6 @@ f32 GetVehicleSpeedMul(GameObject_s *object, f32 speed) {
     if (effective < 0.0f)
         effective = 0.0f;
     return effective / ((GAMECHARACTERDATA_s *)object->apiobj.character_data->field11_0x24)->run_speed;
-}
-
-i32 ObjIsTargetSpeeder(GameObject_s *object) {
-    if (object->id != id_SPEEDERBIKE) {
-        return 0;
-    }
-    if (object->field_0xcc0 == NULL) {
-        return 0;
-    }
-    return object->apiobj.field_0x27c == -1;
 }
 
 void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32));
@@ -433,23 +434,22 @@ void SpeederChaseA_Panel(WORLDINFO_s *) {
         return;
     }
 
-    if (LevAIMessage[0] == NULL || LevAIMessage[1] == NULL || LevAIMessage[3] == NULL ||
-        LevAIMessage[3]->value != 0.0f || !(0.0f < LevAIMessage[0]->value)) {
-        return;
-    }
+    if (LevAIMessage[0] != NULL && LevAIMessage[1] != NULL && LevAIMessage[3] != NULL &&
+        LevAIMessage[3]->value == 1.0f && 0.0f < LevAIMessage[0]->value) {
 
-    i32 count = static_cast<i32>(LevAIMessage[0]->value);
-    if (count > 10) {
-        count = 10;
-    }
-    i32 killed = static_cast<i32>(LevAIMessage[1]->value);
-    for (i32 i = 0; i < count; ++i) {
-        character_ids[i] = id_SPEEDERBIKE;
-        if (count - killed <= i) {
-            dimmed[i] = 1;
+        i32 count = static_cast<i32>(LevAIMessage[0]->value);
+        if (count > 10) {
+            count = 10;
         }
+        i32 killed = static_cast<i32>(LevAIMessage[1]->value);
+        for (i32 i = 0; i < count; ++i) {
+            character_ids[i] = id_SPEEDERBIKE;
+            if (count - killed <= i) {
+                dimmed[i] = 1;
+            }
+        }
+        SpeederChase_DrawMeleeTargets(character_ids, dimmed, count);
     }
-    SpeederChase_DrawMeleeTargets(character_ids, dimmed, count);
 }
 
 void SpeederChaseA_Reset(WORLDINFO_s *) {
@@ -531,15 +531,16 @@ i32 Action_SpeederBeingChased(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_
     }
     // Retail has four tuning rows and only resets state bytes greater than 4.
     // State 4 therefore remains an invalid-input table overrun, not a fifth mode.
-    SPEEDERCHASEVALUES *values = &speedervals[processor->action_data_1];
     f32 ratio, speed, seek;
     if (error > 0.0f) {
+        SPEEDERCHASEVALUES *values = &speedervals[processor->action_data_1];
         ratio = error / values->behind_range;
         if (ratio > 1.0f)
             ratio = 1.0f;
         speed = values->behind_speed * ratio + (1.0f - ratio);
         seek = values->behind_seek;
     } else {
+        SPEEDERCHASEVALUES *values = &speedervals[processor->action_data_1];
         ratio = error / values->ahead_range;
         if (ratio > 1.0f)
             ratio = 1.0f;
@@ -566,7 +567,11 @@ i32 Action_SpeederBeingChased(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_
         return 0;
     if (processor->action_data_1 != static_cast<u8>(set_speedermode)) {
         processor->action_data_1 = set_speedermode;
-        processor->action_timer = set_speedermode == 1 ? 0.25f : 0.0f;
+        if (set_speedermode == 1) {
+            processor->action_timer = 0.25f;
+        } else {
+            processor->action_timer = 0.0f;
+        }
     }
     switch (processor->action_data_1) {
         case 0:
@@ -680,12 +685,13 @@ void SpeederChaseA_Update(WORLDINFO_s *world) {
     players_going_forward = 1;
     for (i32 i = 0; i < 2; ++i) {
         GameObject_s *object = Player[i];
-        if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0 &&
-            (object->apiobj.field_0x1f4 & 0x40000) == 0 &&
-            (GoingForwardsAlongNarrowSock(object) == 0 || Player[i]->field_0x7a5 == 0x2a)) {
-            players_going_forward = 0;
-            break;
+        if (!(object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0 &&
+              (object->apiobj.field_0x1f4 & 0x40000) == 0 &&
+              (GoingForwardsAlongNarrowSock(object) == 0 || Player[i]->field_0x7a5 == 0x2a))) {
+            continue;
         }
+        players_going_forward = 0;
+        break;
     }
 
     u8 *sound_flags = reinterpret_cast<u8 *>(LevSfxFlag);
@@ -748,7 +754,7 @@ f32 SpeederChaseATATInOutMul(nuvec_s *start, nuvec_s *end) {
 }
 
 f32 GetVehicleAreaRememberSpeed() {
-    if (bonusmodearcade == 0) {
+    if (VehicleArea == 0) {
         return 0.0f;
     }
 
@@ -760,7 +766,7 @@ f32 GetVehicleAreaRememberSpeed() {
     }
     if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
         speed += Player[1]->field_0xdc8;
-        player_count = 2.0f;
+        player_count += 1.0f;
     }
     if (player_count > 1.0f) {
         speed /= player_count;
@@ -822,9 +828,9 @@ void PodDust(WORLDINFO_s *world, GameObject_s *object) {
             else
                 continue;
             NUMTX matrix;
-            matrix.m00 = joint->m00;
-            matrix.m01 = joint->m01;
             matrix.m02 = joint->m02;
+            matrix.m01 = joint->m01;
+            matrix.m00 = joint->m00;
             matrix.m03 = joint->m03;
             matrix.m10 = joint->m20;
             matrix.m11 = joint->m21;
@@ -850,10 +856,10 @@ void PodDust(WORLDINFO_s *world, GameObject_s *object) {
                 u16 angle = object->apiobj.field_0x276;
                 f32 sine = NuTrigTable[angle >> 1];
                 f32 cosine = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
-                matrix.m00 = -cosine;
                 matrix.m01 = 0.0f;
                 matrix.m02 = sine;
                 matrix.m10 = -sine;
+                matrix.m00 = -cosine;
                 matrix.m11 = 0.0f;
                 matrix.m12 = -cosine;
                 matrix.m20 = 0.0f;

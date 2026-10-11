@@ -192,6 +192,7 @@ void Tag_ResetTransfers() {
 }
 
 void Tag_DrawIcon_Batman(GameObject_s *object) {
+    i32 count;
     if (VehicleArea != 0 || FadeSys.fade != 0.0f || static_cast<i8>(object->apiobj.field_0x1f8) >= 0 ||
         !(object->pause_context_state > 0.0f)) {
         return;
@@ -200,8 +201,8 @@ void Tag_DrawIcon_Batman(GameObject_s *object) {
     ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
     const f32 pulse_alpha = (game_pulse * 0.2f + 0.8f) * 128.0f;
     const u8 index = static_cast<u8>(object->apiobj.field_0x27c);
-    const u8 first_color = index < 1 ? 127 : 255;
     const u8 third_color = index < 1 ? 255 : 0;
+    const u8 first_color = index < 1 ? 127 : 255;
     const u8 alpha = static_cast<u8>(static_cast<i32>(pulse_alpha * object->pause_context_state));
 
     NUVEC_ALIGNED16 position;
@@ -216,7 +217,7 @@ void Tag_DrawIcon_Batman(GameObject_s *object) {
         f32 max_y = object->apiobj.collision_position.y;
         f32 x_sum = 0.0f;
         f32 z_sum = 0.0f;
-        i32 count = 0;
+        count = 0;
         if (model->points_of_interest[0] != NULL) {
             const f32 x = object->joint_matrices[0].m30;
             count = 1;
@@ -263,8 +264,8 @@ void Tag_DrawIcon_Batman(GameObject_s *object) {
     message.green = first_color;
     message.blue = third_color;
     message.alpha = alpha;
-    message.field_0x4e = 2;
     message.field_0x34 = index == 1 ? 0.002f : 0.0f;
+    message.field_0x4e = 2;
     message.text = ASCII_DOWN;
     message.flags = 0x1087;
     message.scale = 2.0f;
@@ -301,8 +302,8 @@ void Tag_UpdateTransfers(i32 effect0, i32 effect1, i32 count) {
     {
         f32 phase = Tag_Transfer[0].time + Tag_Transfer[0].time;
         {
-            GameObject_s *source = Tag_Transfer[0].source;
             GameObject_s *target = Player[0];
+            GameObject_s *source = Tag_Transfer[0].source;
             const f32 height = Tag_Transfer[0].height[0];
             NUVEC from = source->apiobj.collision_position;
             NUVEC to = target->apiobj.collision_position;
@@ -327,8 +328,8 @@ void Tag_UpdateTransfers(i32 effect0, i32 effect1, i32 count) {
                      source->apiobj.collision_min.y;
             to.y = (target->apiobj.collision_max.y - target->apiobj.collision_min.y) * height +
                    target->apiobj.collision_min.y;
-            position.x = (to.x - from.x) * phase + from.x;
             position.y = (to.y - from.y) * phase + from.y;
+            position.x = (to.x - from.x) * phase + from.x;
             position.z = (to.z - from.z) * phase + from.z;
             position.y += 0.005f * NU_SIN_LUT(static_cast<i32>(phase * 65536.0f));
             AddVariableShotDebrisEffectTimed1(effect0, &position, count, FRAMETIME, 0, 0, NULL);
@@ -403,8 +404,8 @@ second_player:
         }
         {
             phase = 1.0f - NU_SIN_LUT(static_cast<i32>(phase * 16384.0f + 16384.0f));
-            GameObject_s *source = Tag_Transfer[1].source;
             GameObject_s *target = Player[1];
+            GameObject_s *source = Tag_Transfer[1].source;
             const f32 height = Tag_Transfer[1].height[2];
             NUVEC from = source->apiobj.collision_position;
             NUVEC to = target->apiobj.collision_position;

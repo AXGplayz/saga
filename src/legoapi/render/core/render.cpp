@@ -122,13 +122,13 @@ extern "C" void LocaledbitsDrawSolidCircleXY(NUVEC *centre, f32 radius, f32 lowe
 extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
     f32 corners[4][2] = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
     NUMTX matrix = global_camera.mtx;
-    matrix.m30 = centre->x;
     matrix.m31 = centre->y;
+    matrix.m30 = centre->x;
     matrix.m32 = centre->z;
     for (i32 remaining = 4; remaining > 0; --remaining) {
         const i32 i = 4 - remaining;
-        NUVEC start;
         NUVEC end;
+        NUVEC start;
         if (i == 0) {
             start = NUVEC{-radius, -radius, 0.0f};
             end = NUVEC{radius, -radius, 0.0f};
@@ -563,8 +563,8 @@ void SetCameraZoom(f32 zoom) {
 }
 
 extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
-    NUDLDLISTSCENE *display_list = gscn->display_list;
     NUMTX *animation_matrix = gscn->instance_animation_matrices;
+    NUDLDLISTSCENE *display_list = gscn->display_list;
     if (gscn->instance_animation_data == NULL) {
         return;
     }
@@ -635,7 +635,15 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
 
                 frame = instance_animation->ltime;
                 const f32 interval_end = instance_animation->tinterval + end_frame;
-                if (frame >= interval_end) {
+                if (!(frame >= interval_end)) {
+                    if (frame > end_frame) {
+                        frame = end_frame;
+                    } else if (frame < 1.0f) {
+                        instance_animation->playing = 0;
+                        instance_animation->ltime = 1.0f;
+                        frame = 1.0f;
+                    }
+                } else {
                     if (instance_animation->repeating != 0) {
                         const f32 repeat_length = interval_end - 1.0f;
                         const f32 repeats = NuFloor((instance_animation->ltime - 1.0f) / repeat_length);
@@ -647,12 +655,6 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                         instance_animation->ltime = end_frame;
                         frame = end_frame;
                     }
-                } else if (frame > end_frame) {
-                    frame = end_frame;
-                } else if (frame < 1.0f) {
-                    instance_animation->playing = 0;
-                    instance_animation->ltime = 1.0f;
-                    frame = 1.0f;
                 }
 
                 if (instance_animation->backwards != 0) {
@@ -680,11 +682,11 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                         if (instance_animation->instance_ix != 0xffff) {
                             display_special = &static_cast<NUDISPLAYSPECIAL *>(
                                 display_list->specials)[instance_animation->instance_ix];
-                            if (state_value != 0) {
-                                display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
-                            } else {
+                            if (state_value == 0) {
                                 display_special->flags &= ~NUDISPLAYSPECIAL_FLAG_VISIBLE;
                                 animation = NULL;
+                            } else {
+                                display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
                             }
                         } else if (state_value == 0) {
                             animation = NULL;
@@ -825,6 +827,7 @@ extern f32 tow_length;
 extern NUMTL *SolidMtl3D;
 
 void DrawCables() {
+    NUVEC step;
     NURND_VERTEX3D vertices[2];
     NUVEC &start = vertices[0].position;
     NUVEC &end = vertices[1].position;
@@ -856,7 +859,22 @@ void DrawCables() {
         }
 
         f32 distance_along = 0.0f;
-        if (cable.slack != 0.0f) {
+        if (cable.slack == 0.0f) {
+            for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
+                const f32 start_fraction = NuFdiv(distance_along, cable.total_length);
+                start = cable.points[segment];
+                start.y = start_fraction * y_span + cable.points[0].y;
+                distance_along += cable.segment_lengths[segment];
+                const f32 end_fraction = NuFdiv(distance_along, cable.total_length);
+                end = cable.points[segment + 1];
+                end.y = y_span * end_fraction + cable.points[0].y;
+                if (solid_cable != 0) {
+                    DrawRopeSingle(&start, &end, 1.0f, ropemtl, end_fraction, end_fraction, 10.0f, 5.0f);
+                } else {
+                    NuRndrLine3d(vertices, SolidMtl3D, NULL);
+                }
+            }
+        } else {
             const f32 subdivision_scale = cable.total_length * nsegments_per_unit;
             NUVEC endpoint = cable.points[0];
             endpoint.y = y_span * 0.0f + cable.points[0].y;
@@ -873,7 +891,7 @@ void DrawCables() {
                 if (ground_end == 2000000.0f) {
                     ground_end = endpoint.y;
                 }
-                NUVEC step;
+
                 NuVecSub(&step, &endpoint, &previous);
                 const f32 segment_length = cable.segment_lengths[segment];
                 const f32 subdivisions = static_cast<f32>(
@@ -891,7 +909,11 @@ void DrawCables() {
                     const f32 start_fraction = NuFdiv(local_distance, cable.segment_lengths[segment]);
                     const f32 start_floor =
                         start_fraction * ground_end + (1.0f - start_fraction) * ground_start + 0.05f;
-                    start.y = start_floor > start.y ? start_floor : start.y;
+                    if (start_floor > start.y) {
+                        start.y = start_floor;
+                    } else {
+                        start.y = start.y;
+                    }
                     NuVecAdd(&cursor, &cursor, &step);
                     end = cursor;
                     const f32 phase = NuFdiv(global_distance + step_length, cable.total_length);
@@ -904,30 +926,15 @@ void DrawCables() {
                     if (end.y < end_floor) {
                         end.y = end_floor;
                     }
-                    if (solid_cable == 0) {
-                        NuRndrLine3d(vertices, SolidMtl3D, NULL);
-                    } else {
+                    if (solid_cable != 0) {
                         DrawRopeSingle(&start, &end, 1.0f, ropemtl, end_sag, end_sag, 10.0f, 5.0f);
+                    } else {
+                        NuRndrLine3d(vertices, SolidMtl3D, NULL);
                     }
                     ++nsegments_drawn;
                 }
                 distance_along += cable.segment_lengths[segment];
                 ground_start = ground_end;
-            }
-        } else {
-            for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
-                const f32 start_fraction = NuFdiv(distance_along, cable.total_length);
-                start = cable.points[segment];
-                start.y = start_fraction * y_span + cable.points[0].y;
-                distance_along += cable.segment_lengths[segment];
-                const f32 end_fraction = NuFdiv(distance_along, cable.total_length);
-                end = cable.points[segment + 1];
-                end.y = y_span * end_fraction + cable.points[0].y;
-                if (solid_cable == 0) {
-                    NuRndrLine3d(vertices, SolidMtl3D, NULL);
-                } else {
-                    DrawRopeSingle(&start, &end, 1.0f, ropemtl, end_fraction, end_fraction, 10.0f, 5.0f);
-                }
             }
         }
     }
@@ -1012,8 +1019,8 @@ void DrawLocator(nuvec_s *position, float radius, i32 rotation, i32 colour) {
     vertices[1].position.y = centre.y + radius;
     AiRndrLine3d(vertices, NULL, NULL);
     axis.x = 0.0f;
-    axis.y = 0.0f;
     axis.z = radius;
+    axis.y = 0.0f;
     NuVecRotateY(&axis, &axis, rotation);
     NuVecAdd(&vertices[0].position, &centre, &axis);
     NuVecSub(&vertices[1].position, &centre, &axis);
@@ -1446,6 +1453,26 @@ void DrawBonusTime(STATUSPACKET_s *packet, float position, i32 alpha) {
 void DrawCross_Now(_vuv_s *, float, i32, i32) {
 }
 
+void DrawPauseFade() {
+    if (editor_active != 0 || screendump != 0)
+        return;
+
+    f32 step = FRAMETIME * 2.0f;
+    i32 fade;
+    if (Paused == 0 && NetPaused == 0) {
+        fade = static_cast<i32>(pause_fade - step);
+        if (fade < 0)
+            fade = 0;
+    } else {
+        fade = static_cast<i32>(pause_fade + step);
+        if (fade > 0) {
+            pause_fade = 1.0f;
+            return;
+        }
+    }
+    pause_fade = static_cast<f32>(fade);
+}
+
 void DrawGameState(float x, float y, i32 highlight, i32 slot) {
     const f32 text_scale = MENUTEXTSCALE;
     char game_name[256];
@@ -1525,26 +1552,6 @@ void DrawGameState(float x, float y, i32 highlight, i32 slot) {
     }
 }
 
-void DrawPauseFade() {
-    if (editor_active != 0 || screendump != 0)
-        return;
-
-    f32 step = FRAMETIME * 2.0f;
-    i32 fade;
-    if (Paused == 0 && NetPaused == 0) {
-        fade = static_cast<i32>(pause_fade - step);
-        if (fade < 0)
-            fade = 0;
-    } else {
-        fade = static_cast<i32>(pause_fade + step);
-        if (fade > 0) {
-            pause_fade = 1.0f;
-            return;
-        }
-    }
-    pause_fade = static_cast<f32>(fade);
-}
-
 void DrawRippleSet(ripple_set_s *set) {
     if (set == NULL)
         return;
@@ -1593,8 +1600,8 @@ static inline u16 AlphaImageFloatToHalf(f32 value) {
     u32 bits;
     memcpy(&bits, &value, sizeof(bits));
     i32 mantissa = bits & 0x7fffff;
-    i32 sign = bits >> 31;
     i32 exponent = static_cast<i32>((bits >> 23) & 0xff) - 0x70;
+    i32 sign = bits >> 31;
     i32 half_exponent = 0;
     if (exponent >= 0) {
         half_exponent = 0x7c00;
@@ -1628,8 +1635,8 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
     f32 far_scale = parameters->far_scale * 128.0f;
     f32 near_angle = parameters->near_angle / 180.0f;
     f32 far_angle = parameters->far_angle / 180.0f;
-    f32 angle_delta = far_angle - near_angle;
     f32 scale_delta = far_scale - near_scale;
+    f32 angle_delta = far_angle - near_angle;
     NUVPREGION saved_region = g_NuVpRegion;
     NuVpResetRegions();
 
@@ -1685,10 +1692,7 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
 
             f32 brightness = direction.y;
             u32 colour;
-            if (cache_row > 0) {
-                colour = (static_cast<u32>(cacheValues[col]) << 24) | 0x808080;
-                NuRndrPrimSetColour(colour);
-            } else {
+            if (!(cache_row > 0)) {
                 brightness = brightness * 0.5f + 0.5f;
                 if (brightness <= near_angle)
                     brightness = near_scale * parameters->intensity;
@@ -1717,6 +1721,9 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                     }
                 }
                 colour = (static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)))) << 24) | 0x808080;
+                NuRndrPrimSetColour(colour);
+            } else {
+                colour = (static_cast<u32>(cacheValues[col]) << 24) | 0x808080;
                 NuRndrPrimSetColour(colour);
             }
             AlphaImagePrimUV(static_cast<f32>(row) * inv_row + pixelOffsetX,
@@ -1777,12 +1784,12 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
 void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_control, numtl_s *material, i32 colour) {
     static i32 bezier_draw_depth;
 
-    const f32 camera_x = global_camera.mtx.m30;
     const f32 camera_y = global_camera.mtx.m31;
+    const f32 camera_x = global_camera.mtx.m30;
     const f32 camera_z = global_camera.mtx.m32;
-    const f32 start_x = start.x - camera_x;
     const f32 start_y = start.y - camera_y;
     const f32 start_z = start.z - camera_z;
+    const f32 start_x = start.x - camera_x;
     const f32 start_distance = start_x * start_x + start_y * start_y + start_z * start_z;
     const f32 end_x = end.x - camera_x;
     const f32 end_y = end.y - camera_y;
@@ -1791,8 +1798,8 @@ void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_c
     const f32 distance = end_distance < start_distance ? end_distance : start_distance;
     const f32 threshold = distance < 5.5f ? 5.5f * 0.001f : distance * 0.001f;
 
-    const f32 chord_x = end.x - start.x;
     const f32 chord_y = end.y - start.y;
+    const f32 chord_x = end.x - start.x;
     const f32 chord_z = end.z - start.z;
     if (!(chord_x * chord_x + chord_y * chord_y + chord_z * chord_z > threshold) || bezier_draw_depth > 15) {
         EdDrawLineSegment(start, end, colour);
@@ -1800,9 +1807,9 @@ void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_c
     }
 
     ++bezier_draw_depth;
-    const f32 control_x = start_control.x;
     const f32 end_control_x = end_control.x;
     const f32 end_control_y = end_control.y;
+    const f32 control_x = start_control.x;
     const f32 end_control_z = end_control.z;
     VuVec second = {(control_x + end_control_x) * 0.5f, (end_control_y + start_control.y) * 0.5f,
                     (end_control_z + start_control.z) * 0.5f, 0.0f};
@@ -2153,8 +2160,8 @@ void DrawGameMessages() {
         if ((flags & 0x20) != 0) {
             scale += (message->target_scale - scale) * progress;
         }
-        position.x += message->field_0xc4;
         position.z += message->field_0xc8;
+        position.x += message->field_0xc4;
 
         if (message->draw_callback != NULL) {
             message->draw_callback(message, &position, scale);
@@ -2389,9 +2396,9 @@ void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_s
                 NuMtxScale(&matrix, &built_size);
             }
             if (i <= currentminikit) {
-                matrix.m30 += offset.x;
-                matrix.m31 += offset.y;
                 matrix.m32 += offset.z;
+                matrix.m31 += offset.y;
+                matrix.m30 += offset.x;
             }
 
             const NUANG rotation_y =
@@ -2447,9 +2454,9 @@ void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_s
             matrix.m31 = x3 * cx - matrix.m32 * sx;
             matrix.m32 = x3 * sx + matrix.m32 * cx;
 
-            matrix.m30 += x * PANEL3DMULX;
             matrix.m31 += y * PANEL3DMULY;
             matrix.m32 += z;
+            matrix.m30 += x * PANEL3DMULX;
 
             if (i < 10) {
                 KitPart[i].matrix = matrix;
@@ -2492,144 +2499,144 @@ void DrawSubItemMenu2D() {
     } else {
         return;
     }
-    if (!items)
-        return;
-    char title[128], subtitle[128];
-    char *name = items[ids[3]].name;
-    i32 buyable = 0;
-    i32 show_name = 0;
-    if (items[ids[3]].type == 1) {
-        if (items[ids[3]].unlocked == 1)
-            show_name = 1;
-        else if (CollectIDUnlocked(static_cast<u16>(items[ids[3]].item_id)))
-            buyable = show_name = 1;
-        else {
-            f32 scale = 0.7f * ShopLockedScale;
-            SmartTextEx(TTab[tLOCKED], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, scale, scale,
-                        scale, 0, 255, 0, 0, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-        }
-    } else if (items[ids[3]].type == 0) {
-        buyable = items[ids[3]].unlocked != 1 && items[ids[3]].price != 0;
-    } else if (items[ids[3]].type == 2) {
-        const i32 id = static_cast<u16>(items[ids[3]].item_id);
-        NuStrCpy(subtitle, TTab[Cheat[id].text_id ? *Cheat[id].text_id : tUNKNOWN]);
-        name = subtitle;
-        i8 area = static_cast<i8>(Cheat[id].area);
-        if (items[ids[3]].unlocked == 1)
-            show_name = 1;
-        else if (id <= 7 || area == -1 || Game.area_save[area].red_brick_collected)
-            buyable = show_name = 1;
-        else {
-            sprintf(title, "%s %i", TTab[tPOWERBRICK], id - 7);
-            f32 scale = 0.6f * ShopLockedScale;
+    if (items) {
+        char title[128], subtitle[128];
+        char *name = items[ids[3]].name;
+        i32 buyable = 0;
+        i32 show_name = 0;
+        if (items[ids[3]].type == 1) {
+            if (items[ids[3]].unlocked == 1)
+                show_name = 1;
+            else if (CollectIDUnlocked(static_cast<u16>(items[ids[3]].item_id)))
+                buyable = show_name = 1;
+            else {
+                f32 scale = 0.7f * ShopLockedScale;
+                SmartTextEx(TTab[tLOCKED], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, scale, scale,
+                            scale, 0, 255, 0, 0, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
+            }
+        } else if (items[ids[3]].type == 0) {
+            buyable = items[ids[3]].unlocked != 1 && items[ids[3]].price != 0;
+        } else if (items[ids[3]].type == 2) {
+            const i32 id = static_cast<u16>(items[ids[3]].item_id);
+            NuStrCpy(subtitle, TTab[Cheat[id].text_id ? *Cheat[id].text_id : tUNKNOWN]);
+            name = subtitle;
+            i8 area = static_cast<i8>(Cheat[id].area);
+            if (items[ids[3]].unlocked == 1)
+                show_name = 1;
+            else if (id <= 7 || area == -1 || Game.area_save[area].red_brick_collected)
+                buyable = show_name = 1;
+            else {
+                sprintf(title, "%s %i", TTab[tPOWERBRICK], id - 7);
+                f32 scale = 0.6f * ShopLockedScale;
+                SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                            static_cast<i32>(128.0f * ShopNameAlpha));
+                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
+            }
+        } else if (items[ids[3]].type == 4) {
+            const i32 id = static_cast<u16>(items[ids[3]].item_id);
+            sprintf(title, "%s %i", TTab[tGOLDBRICK], id + 1);
+            name = title;
+            if (items[ids[3]].unlocked == 1)
+                show_name = 1;
+            else if (!(static_cast<f32>(id * 3600) > Game.field30_0x7c2c))
+                buyable = show_name = 1;
+            else {
+                SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                            static_cast<i32>(128.0f * ShopNameAlpha));
+                f32 scale = 0.6f * ShopLockedScale;
+                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
+            }
+        } else if (items[ids[3]].type == 5) {
+            const i32 id = static_cast<u16>(items[ids[3]].item_id);
+            i32 available = CutScenePlayer_CanStart(id);
+            CutScenePlayer_GetText(id, title, subtitle, available);
             SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
                         static_cast<i32>(128.0f * ShopNameAlpha));
-            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-        }
-    } else if (items[ids[3]].type == 4) {
-        const i32 id = static_cast<u16>(items[ids[3]].item_id);
-        sprintf(title, "%s %i", TTab[tGOLDBRICK], id + 1);
-        name = title;
-        if (items[ids[3]].unlocked == 1)
-            show_name = 1;
-        else if (!(static_cast<f32>(id * 3600) > Game.field30_0x7c2c))
-            buyable = show_name = 1;
-        else {
-            SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
-                        static_cast<i32>(128.0f * ShopNameAlpha));
-            f32 scale = 0.6f * ShopLockedScale;
-            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-        }
-    } else if (items[ids[3]].type == 5) {
-        const i32 id = static_cast<u16>(items[ids[3]].item_id);
-        i32 available = CutScenePlayer_CanStart(id);
-        CutScenePlayer_GetText(id, title, subtitle, available);
-        SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
-                    static_cast<i32>(128.0f * ShopNameAlpha));
-        if (available && shopcutsceneplayer)
-            SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0, 1.7f, 1, NULL, 0,
-                        static_cast<i32>(128.0f * ShopNameAlpha));
-        else {
-            f32 scale = 0.6f * ShopLockedScale;
-            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-        }
-    }
-    i32 price;
-    switch (items[ids[3]].type) {
-        case 0:
-            price = items[HintShelfIds[3]].price;
-            break;
-        case 2:
-            price = items[ExtraShelfIds[3]].price;
-            break;
-        case 4:
-            price = items[BrickShelfIds[3]].price;
-            break;
-        case 5:
-            return;
-        case 1:
-            price = items[CharShelfIds[3]].price;
-            break;
-        default:
-            price = items[CharShelfIds[3]].price;
-            break;
-    }
-    if (subitemselected > 0) {
-        if (!buyable) {
-            ShopLockedScale = 1.5f;
-            GameAudio_PlaySfx(0x32, NULL, 0, 0);
-            subitemselected = 0;
-        } else if (Game.coins < price) {
-            CoinTotalScale = 1.5f;
-            PlaySfx("Shop_NotEnufMuny", &SubShelfPos[3]);
-            subitemselected = 0;
-        }
-    }
-    if (!(ShopNameAlpha > 0.0f))
-        return;
-    if (show_name) {
-        f32 y = buyable ? HUB_EPISODETITLEY : (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f;
-        f32 scale = buyable ? 0.6f : 0.8f;
-        SmartTextEx(name, 0.0f, y, 1.0f, scale, scale, scale, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
-                    static_cast<i32>(128.0f * ShopNameAlpha));
-    }
-    if (buyable)
-        CoinTotal_Draw(price, HUB_EPISODESUBTITLEY, 1.2f, 0, ShopNameAlpha, 255, 191, 0);
-    if (subitemselected == 2) {
-        f32 pulse = 1.0f;
-        if (!TestForController()) {
-            f32 since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
-            if (since_touch > 4.0f) {
-                i32 angle = static_cast<i32>(NuFmod(since_touch, 4.0f) * 0.25f * 65536.0f);
-                f32 value = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
-                if (!(value < 0.0f))
-                    pulse = value + 1.0f;
+            if (available && shopcutsceneplayer)
+                SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0, 1.7f, 1, NULL,
+                            0, static_cast<i32>(128.0f * ShopNameAlpha));
+            else {
+                f32 scale = 0.6f * ShopLockedScale;
+                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
             }
         }
-        f32 size = ICONSIZE * pulse;
-        DrawPanel3DObject(-0.3f, -0.3f, 1.0f, size, size, size, 0, 0, 0, &WORLD->lev_objs[165].special, 0,
-                          ShopNameAlpha);
-        DrawPanel3DObject(0.3f, -0.3f, 1.0f, size, size, size, 0, 0, 0, &WORLD->lev_objs[165].special, 0,
-                          ShopNameAlpha);
-        f32 text_size = pulse * 0.6f;
-        f32 alpha = static_cast<i32>(128.0f * ShopNameAlpha);
-        u8 text_alpha = static_cast<i32>(alpha);
-        Text3DEx("$", -0.3f, -0.3f, 1.0f, 1.3f * text_size, text_size, text_size, 0, 0, 255, 0, text_alpha);
-        Text3DEx("X", 0.3f, -0.31f, 1.0f, 1.3f * text_size, text_size, text_size, 0, 255, 0, 0, text_alpha);
-        MENU_s *menu = &GameMenu[GameMenuLevel];
-        menu->item_x[11] = -0.3f;
-        menu->item_y[11] = -0.3f;
-        menu->item_x[12] = 0.3f;
-        menu->item_y[12] = -0.3f;
-        menu->item_width[11] = size;
-        menu->item_column[11] = 0;
-        menu->item_row[11] = 2;
-        menu->item_column[12] = 1;
-        menu->item_width[12] = size;
-        menu->item_row[12] = 2;
+        i32 price;
+        switch (items[ids[3]].type) {
+            case 0:
+                price = items[HintShelfIds[3]].price;
+                break;
+            case 2:
+                price = items[ExtraShelfIds[3]].price;
+                break;
+            case 4:
+                price = items[BrickShelfIds[3]].price;
+                break;
+            case 5:
+                return;
+            case 1:
+                price = items[CharShelfIds[3]].price;
+                break;
+            default:
+                price = items[CharShelfIds[3]].price;
+                break;
+        }
+        if (subitemselected > 0) {
+            if (!buyable) {
+                ShopLockedScale = 1.5f;
+                GameAudio_PlaySfx(0x32, NULL, 0, 0);
+                subitemselected = 0;
+            } else if (Game.coins < price) {
+                CoinTotalScale = 1.5f;
+                PlaySfx("Shop_NotEnufMuny", &SubShelfPos[3]);
+                subitemselected = 0;
+            }
+        }
+        if (!(ShopNameAlpha > 0.0f))
+            return;
+        if (show_name) {
+            f32 y = buyable ? HUB_EPISODETITLEY : (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f;
+            f32 scale = buyable ? 0.6f : 0.8f;
+            SmartTextEx(name, 0.0f, y, 1.0f, scale, scale, scale, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                        static_cast<i32>(128.0f * ShopNameAlpha));
+        }
+        if (buyable)
+            CoinTotal_Draw(price, HUB_EPISODESUBTITLEY, 1.2f, 0, ShopNameAlpha, 255, 191, 0);
+        if (subitemselected == 2) {
+            f32 pulse = 1.0f;
+            if (!TestForController()) {
+                f32 since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
+                if (since_touch > 4.0f) {
+                    i32 angle = static_cast<i32>(NuFmod(since_touch, 4.0f) * 0.25f * 65536.0f);
+                    f32 value = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+                    if (!(value < 0.0f))
+                        pulse = value + 1.0f;
+                }
+            }
+            f32 size = ICONSIZE * pulse;
+            DrawPanel3DObject(-0.3f, -0.3f, 1.0f, size, size, size, 0, 0, 0, &WORLD->lev_objs[165].special, 0,
+                              ShopNameAlpha);
+            DrawPanel3DObject(0.3f, -0.3f, 1.0f, size, size, size, 0, 0, 0, &WORLD->lev_objs[165].special, 0,
+                              ShopNameAlpha);
+            f32 text_size = pulse * 0.6f;
+            f32 alpha = static_cast<i32>(128.0f * ShopNameAlpha);
+            u8 text_alpha = static_cast<i32>(alpha);
+            Text3DEx("$", -0.3f, -0.3f, 1.0f, 1.3f * text_size, text_size, text_size, 0, 0, 255, 0, text_alpha);
+            Text3DEx("X", 0.3f, -0.31f, 1.0f, 1.3f * text_size, text_size, text_size, 0, 255, 0, 0, text_alpha);
+            MENU_s *menu = &GameMenu[GameMenuLevel];
+            menu->item_x[11] = -0.3f;
+            menu->item_y[11] = -0.3f;
+            menu->item_x[12] = 0.3f;
+            menu->item_y[12] = -0.3f;
+            menu->item_width[11] = size;
+            menu->item_column[11] = 0;
+            menu->item_row[11] = 2;
+            menu->item_column[12] = 1;
+            menu->item_width[12] = size;
+            menu->item_row[12] = 2;
+        }
     }
 }
 
@@ -2780,12 +2787,11 @@ void DrawGameObjectsDraw(i32) {
             continue;
         }
 
-        CHARACTERMODEL_s *model = object->apiobj.character_model;
         NUMTX *tertiary_matrix = object->field_0x1088 != 0 ? &object->apiobj.field_0x138 : NULL;
         NUMTX *secondary_matrix = (object->field_0xefe & 2) != 0 ? &object->apiobj.field_0xf8 : NULL;
-        const u8 drawn = static_cast<u8>(
-            GameDrawCharacterModel(model, &object->apiobj.anim_packet, &object->apiobj.field_0xb8, secondary_matrix,
-                                   tertiary_matrix, &object->field_0x7f4, object, object->field_0x1054));
+        const u8 drawn = static_cast<u8>(GameDrawCharacterModel(
+            object->apiobj.character_model, &object->apiobj.anim_packet, &object->apiobj.field_0xb8, secondary_matrix,
+            tertiary_matrix, &object->field_0x7f4, object, object->field_0x1054));
 
         object->apiobj.model_draw_result = static_cast<u8>(drawn);
         object->field_0xe24 =
@@ -2877,8 +2883,8 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
     if (object != NULL) {
         id = object->id;
         model = object->apiobj.character_model;
-        axis = object->field_0x1087;
         hat = object->field_0x108e;
+        axis = object->field_0x1087;
         plane = object->field_0x1020;
     } else {
         id = dco_id;
@@ -3000,143 +3006,143 @@ i32 DrawGameObjectsProcess() {
             TELEPORT_s *teleport = static_cast<TELEPORT_s *>(object->field_0x788);
             if (object->field_0x7a3 == 1 && teleport != NULL && (teleport->flags & 4) == 0)
                 continue;
-        } else if (object->character_context == 0x39 || object->character_context == 0x3b) {
-            continue;
-        }
-        if (CharClipToBlobShadows != 0 && WORLD->area != KAMINO_ADATA && WORLD->area != HOTHBATTLE_ADATA &&
-            WORLD->area != DEATHSTARBATTLE2_ADATA && static_cast<i8>(object->field_0xf04) < 0 &&
-            object->apiobj.field_0x27c == -1 && (object->field_0xefb & 8) == 0 &&
-            object->ai_update_distance > static_cast<u8>(WORLD->current_level->blob_shadow_fade_far))
-            continue;
+        } else if (object->character_context != 0x39 && object->character_context != 0x3b) {
+            if (CharClipToBlobShadows != 0 && WORLD->area != KAMINO_ADATA && WORLD->area != HOTHBATTLE_ADATA &&
+                WORLD->area != DEATHSTARBATTLE2_ADATA && static_cast<i8>(object->field_0xf04) < 0 &&
+                object->apiobj.field_0x27c == -1 && (object->field_0xefb & 8) == 0 &&
+                object->ai_update_distance > static_cast<u8>(WORLD->current_level->blob_shadow_fade_far))
+                continue;
 
-        NUVEC scale;
-        NUVEC position;
-        position.x = object->apiobj.position.x;
-        position.y = object->apiobj.position.y;
-        if ((object->apiobj.field_0x1f4 & 0x100) != 0)
-            position.y += object->character_bottom * object->apiobj.field_0xa8;
-        position.z = object->apiobj.position.z;
-        NuVecAdd(&position, &position, &object->render_offset);
-        object->field_0xf01 = (object->field_0xf01 & ~1) | (object->apiobj.model_draw_result & 1);
-        object->apiobj.model_draw_result = 1;
-        scale.x = object->apiobj.field_0xa8;
-        const f32 drop_scale = DropInOutScale(object);
-        scale.x *= drop_scale;
-        scale.y = scale.z = scale.x;
-        NUMTX matrix __attribute__((aligned(16)));
-        NUMTX shadow __attribute__((aligned(16)));
-        NUMTX reflected __attribute__((aligned(16)));
-        NUMTX orientation __attribute__((aligned(16)));
-        NuMtxSetScale(&matrix, &scale);
-        switch (object->field_0x1086) {
-            case 0:
-                DrawSetRotationY(&orientation, NUANG_180DEG);
-                if (object->apiobj.pitch_angle != 0)
-                    ShopRotateX(&orientation, object->apiobj.pitch_angle);
-                if (object->apiobj.field_0x276 != 0)
-                    ShopRotateY(&orientation, object->apiobj.field_0x276);
-                if (object->apiobj.roll_angle != 0)
-                    ShopRotateZ(&orientation, object->apiobj.roll_angle);
-                NuMtxMulVU0(&matrix, &matrix, &orientation);
-                NuMtxTranslate(&matrix, &position);
-                break;
-            case 1:
-                DrawSetRotationY(&orientation, object->apiobj.field_0x276 + NUANG_180DEG);
-                if (object->apiobj.pitch_angle != 0)
-                    ShopRotateX(&orientation, object->apiobj.pitch_angle);
-                if (object->apiobj.roll_angle != 0)
-                    ShopRotateZ(&orientation, object->apiobj.roll_angle);
-                NuMtxMulVU0(&matrix, &matrix, &orientation);
-                NuMtxTranslate(&matrix, &position);
-                break;
-            default:
-            case 2:
-                DrawSetRotationY(&orientation, object->apiobj.field_0x276 + NUANG_180DEG);
-                if (object->apiobj.roll_angle != 0)
-                    ShopRotateZ(&orientation, object->apiobj.roll_angle);
-                if (object->apiobj.pitch_angle != 0)
-                    ShopRotateX(&orientation, object->apiobj.pitch_angle);
-                NuMtxMulVU0(&matrix, &matrix, &orientation);
-                NuMtxTranslate(&matrix, &position);
-                break;
-            case 3:
-                DrawSetRotationY(&orientation, NUANG_180DEG);
-                if (object->apiobj.roll_angle != 0)
-                    ShopRotateZ(&orientation, object->apiobj.roll_angle);
-                if (object->apiobj.pitch_angle != 0)
-                    ShopRotateX(&orientation, object->apiobj.pitch_angle);
-                if (object->apiobj.field_0x276 != 0)
-                    ShopRotateY(&orientation, object->apiobj.field_0x276);
-                NuMtxMulVU0(&matrix, &matrix, &orientation);
-                NuMtxTranslate(&matrix, &position);
-                break;
-            case 4:
-                matrix = object->vehicle_orientation;
-                NuMtxPreScale(&matrix, &scale);
-                NuMtxPreRotateY(&matrix, NUANG_180DEG);
-                NuMtxTranslate(&matrix, &position);
-                break;
-            case 5:
-                matrix = object->vehicle_orientation;
-                NuMtxPreScale(&matrix, &scale);
-                NuMtxPreRotateY(&matrix, NUANG_180DEG);
-                break;
-        }
-        if (object->movement_lean_angle != 0) {
-            i32 angle = object->movement_lean_angle;
-            if (PODSPRINT_ADATA != NULL && WORLD->area == PODSPRINT_ADATA)
-                angle = static_cast<i32>(angle * PodSprint_RollMul(object));
-            NuMtxPreRotateZ(&matrix, angle);
-        }
-        if (object->secondary_lean_angle != 0)
-            NuMtxPreRotateX(&matrix, object->secondary_lean_angle);
-        if (object->tertiary_lean_angle != 0)
-            NuMtxPreRotateY(&matrix, object->tertiary_lean_angle);
-        ApplyExtraRotation(object, &matrix);
-        if (object->field_0x1086 != 4 && (object->character_context == 0x23 || object->character_context == 0x24)) {
-            const f32 distance =
-                object->apiobj.character_data->collision_radius * object->apiobj.character_data->model_scale * 7.5f;
-            f32 offset = 1.0f - drop_scale;
-            if (object->character_context != 0x23)
-                offset = -offset;
-            offset *= distance;
-            NUVEC displacement;
-            NuVecMtxTransformVU0(&displacement, &v001, &orientation);
-            NuVecScale(&displacement, &displacement, offset);
-            NuVecAdd(reinterpret_cast<NUVEC *>(&matrix.m30), reinterpret_cast<NUVEC *>(&matrix.m30), &displacement);
-        }
-        if (object->use_model_origin <= 1 &&
-            (object->id == id_ATST || object->id == id_ATST_LOWRES || object->id == id_ATAT))
-            matrix.m31 += object->character_bottom * object->apiobj.field_0xa8;
-        object->apiobj.field_0xb8 = matrix;
-        if (((object->field_0xefa & 0x40) != 0 && WORLD->rooms_visible_ptr[object->room_id] == 0) ||
-            (scale.x == 0.0f && scale.y == 0.0f && scale.z == 0.0f)) {
-            object->apiobj.model_draw_result = 0;
-            continue;
-        }
-        object->apiobj.field_0x1f4 ^= 0x800;
-        object->field_0xefe &= ~2;
-        object->field_0x1088 = 0;
-        if (object->field_0x1087 != 0 && object->field_0x1020 != 2000000.0f &&
-            static_cast<u32>(static_cast<u8>(WORLD->current_level->reflection_range)) > object->ai_update_distance) {
-            object->field_0x1088 = MatrixReflection(&matrix, object->field_0x1087, object->field_0x1020,
-                                                    WORLD->current_level->unknown_0cc, &reflected);
-            object->apiobj.field_0x138 = reflected;
-        }
-        if (object->apiobj.field_0x287 == 0 && object->apiobj.field_0x218 != 2000000.0f &&
-            (object->apiobj.field_0x1f4 & 0x40) != 0 &&
-            object->apiobj.character_data->game_character->shadow_locators == 0) {
-            NuMtxSetIdentity(&shadow);
-            ShopRotateY(&shadow, object->apiobj.field_0x276 + NUANG_180DEG);
-            if (object->field_0x1060 != 0)
-                ShopRotateZ(&shadow, object->field_0x1060);
-            if (object->field_0x105e != 0)
-                ShopRotateX(&shadow, object->field_0x105e);
-            shadow.m30 = object->apiobj.position.x;
-            shadow.m31 = object->apiobj.field_0x218 + 0.005f;
-            shadow.m32 = object->apiobj.position.z;
-            object->apiobj.field_0xf8 = shadow;
-            object->field_0xefe |= 2;
+            NUVEC scale;
+            NUVEC position;
+            position.x = object->apiobj.position.x;
+            position.y = object->apiobj.position.y;
+            if ((object->apiobj.field_0x1f4 & 0x100) != 0)
+                position.y += object->character_bottom * object->apiobj.field_0xa8;
+            position.z = object->apiobj.position.z;
+            NuVecAdd(&position, &position, &object->render_offset);
+            object->field_0xf01 = (object->field_0xf01 & ~1) | (object->apiobj.model_draw_result & 1);
+            object->apiobj.model_draw_result = 1;
+            scale.x = object->apiobj.field_0xa8;
+            const f32 drop_scale = DropInOutScale(object);
+            scale.x *= drop_scale;
+            scale.y = scale.z = scale.x;
+            NUMTX matrix __attribute__((aligned(16)));
+            NUMTX shadow __attribute__((aligned(16)));
+            NUMTX reflected __attribute__((aligned(16)));
+            NUMTX orientation __attribute__((aligned(16)));
+            NuMtxSetScale(&matrix, &scale);
+            switch (object->field_0x1086) {
+                case 0:
+                    DrawSetRotationY(&orientation, NUANG_180DEG);
+                    if (object->apiobj.pitch_angle != 0)
+                        ShopRotateX(&orientation, object->apiobj.pitch_angle);
+                    if (object->apiobj.field_0x276 != 0)
+                        ShopRotateY(&orientation, object->apiobj.field_0x276);
+                    if (object->apiobj.roll_angle != 0)
+                        ShopRotateZ(&orientation, object->apiobj.roll_angle);
+                    NuMtxMulVU0(&matrix, &matrix, &orientation);
+                    NuMtxTranslate(&matrix, &position);
+                    break;
+                case 1:
+                    DrawSetRotationY(&orientation, object->apiobj.field_0x276 + NUANG_180DEG);
+                    if (object->apiobj.pitch_angle != 0)
+                        ShopRotateX(&orientation, object->apiobj.pitch_angle);
+                    if (object->apiobj.roll_angle != 0)
+                        ShopRotateZ(&orientation, object->apiobj.roll_angle);
+                    NuMtxMulVU0(&matrix, &matrix, &orientation);
+                    NuMtxTranslate(&matrix, &position);
+                    break;
+                default:
+                case 2:
+                    DrawSetRotationY(&orientation, object->apiobj.field_0x276 + NUANG_180DEG);
+                    if (object->apiobj.roll_angle != 0)
+                        ShopRotateZ(&orientation, object->apiobj.roll_angle);
+                    if (object->apiobj.pitch_angle != 0)
+                        ShopRotateX(&orientation, object->apiobj.pitch_angle);
+                    NuMtxMulVU0(&matrix, &matrix, &orientation);
+                    NuMtxTranslate(&matrix, &position);
+                    break;
+                case 3:
+                    DrawSetRotationY(&orientation, NUANG_180DEG);
+                    if (object->apiobj.roll_angle != 0)
+                        ShopRotateZ(&orientation, object->apiobj.roll_angle);
+                    if (object->apiobj.pitch_angle != 0)
+                        ShopRotateX(&orientation, object->apiobj.pitch_angle);
+                    if (object->apiobj.field_0x276 != 0)
+                        ShopRotateY(&orientation, object->apiobj.field_0x276);
+                    NuMtxMulVU0(&matrix, &matrix, &orientation);
+                    NuMtxTranslate(&matrix, &position);
+                    break;
+                case 4:
+                    matrix = object->vehicle_orientation;
+                    NuMtxPreScale(&matrix, &scale);
+                    NuMtxPreRotateY(&matrix, NUANG_180DEG);
+                    NuMtxTranslate(&matrix, &position);
+                    break;
+                case 5:
+                    matrix = object->vehicle_orientation;
+                    NuMtxPreScale(&matrix, &scale);
+                    NuMtxPreRotateY(&matrix, NUANG_180DEG);
+                    break;
+            }
+            if (object->movement_lean_angle != 0) {
+                i32 angle = object->movement_lean_angle;
+                if (PODSPRINT_ADATA != NULL && WORLD->area == PODSPRINT_ADATA)
+                    angle = static_cast<i32>(angle * PodSprint_RollMul(object));
+                NuMtxPreRotateZ(&matrix, angle);
+            }
+            if (object->secondary_lean_angle != 0)
+                NuMtxPreRotateX(&matrix, object->secondary_lean_angle);
+            if (object->tertiary_lean_angle != 0)
+                NuMtxPreRotateY(&matrix, object->tertiary_lean_angle);
+            ApplyExtraRotation(object, &matrix);
+            if (object->field_0x1086 != 4 && (object->character_context == 0x23 || object->character_context == 0x24)) {
+                const f32 distance =
+                    object->apiobj.character_data->collision_radius * object->apiobj.character_data->model_scale * 7.5f;
+                f32 offset = 1.0f - drop_scale;
+                if (object->character_context != 0x23)
+                    offset = -offset;
+                offset *= distance;
+                NUVEC displacement;
+                NuVecMtxTransformVU0(&displacement, &v001, &orientation);
+                NuVecScale(&displacement, &displacement, offset);
+                NuVecAdd(reinterpret_cast<NUVEC *>(&matrix.m30), reinterpret_cast<NUVEC *>(&matrix.m30), &displacement);
+            }
+            if (object->use_model_origin <= 1 &&
+                (object->id == id_ATST || object->id == id_ATST_LOWRES || object->id == id_ATAT))
+                matrix.m31 += object->character_bottom * object->apiobj.field_0xa8;
+            object->apiobj.field_0xb8 = matrix;
+            if (((object->field_0xefa & 0x40) != 0 && WORLD->rooms_visible_ptr[object->room_id] == 0) ||
+                (scale.x == 0.0f && scale.y == 0.0f && scale.z == 0.0f)) {
+                object->apiobj.model_draw_result = 0;
+                continue;
+            }
+            object->apiobj.field_0x1f4 ^= 0x800;
+            object->field_0xefe &= ~2;
+            object->field_0x1088 = 0;
+            if (object->field_0x1087 != 0 && object->field_0x1020 != 2000000.0f &&
+                static_cast<u32>(static_cast<u8>(WORLD->current_level->reflection_range)) >
+                    object->ai_update_distance) {
+                object->field_0x1088 = MatrixReflection(&matrix, object->field_0x1087, object->field_0x1020,
+                                                        WORLD->current_level->unknown_0cc, &reflected);
+                object->apiobj.field_0x138 = reflected;
+            }
+            if (object->apiobj.field_0x287 == 0 && object->apiobj.field_0x218 != 2000000.0f &&
+                (object->apiobj.field_0x1f4 & 0x40) != 0 &&
+                object->apiobj.character_data->game_character->shadow_locators == 0) {
+                NuMtxSetIdentity(&shadow);
+                ShopRotateY(&shadow, object->apiobj.field_0x276 + NUANG_180DEG);
+                if (object->field_0x1060 != 0)
+                    ShopRotateZ(&shadow, object->field_0x1060);
+                if (object->field_0x105e != 0)
+                    ShopRotateX(&shadow, object->field_0x105e);
+                shadow.m30 = object->apiobj.position.x;
+                shadow.m31 = object->apiobj.field_0x218 + 0.005f;
+                shadow.m32 = object->apiobj.position.z;
+                object->apiobj.field_0xf8 = shadow;
+                object->field_0xefe |= 2;
+            }
         }
     }
     return 0;
@@ -3381,8 +3387,8 @@ SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDeca
 
     width.Start(0.0f, target_width, 0.1f);
     width.value = 0.0f;
-    x = swipe_x;
     y = swipe_y;
+    x = swipe_x;
     angle = NuAtan2D(dx, dy);
     alpha.Start(0.02f, 1.0f, 0.1f);
     alpha.value = 0.02f;
@@ -3463,6 +3469,7 @@ static void DrawWeapon_SetSabreObjects(GameObject_s *object, i32 red, i32 green,
 }
 
 static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) {
+    NUVEC hilt_scale_vec;
     i32 models[4] = {-1, -1, -1, -1};
     i32 hilt = -1;
     i32 reflected_models[4] = {-1, -1, -1, -1};
@@ -3475,6 +3482,7 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
     }
     i32 sabre = 0;
     u16 rotation = 0;
+    auto f0x1020 = object->field_0x1020;
     for (i32 hand = 0; hand < 4; ++hand) {
         data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
         const i32 joint = data->weapon_joints[hand];
@@ -3561,7 +3569,7 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                 NUMTX hilt_matrix;
                 NUVEC scale = {weapon_scale, weapon_scale, weapon_scale};
                 if (hilt != -1) {
-                    NUVEC hilt_scale_vec;
+
                     hilt_scale_vec.x = weapon_scale + weapon_scale;
                     hilt_matrix = blade_matrix;
                     if (hilt_scale_vec.x > 1.0f) {
@@ -3579,27 +3587,26 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                 memcpy(saved_matrix, &blade_matrix, sizeof(blade_matrix));
                 for (i32 side = 0;; ++side) {
                     for (i32 part = 0; part < 4; ++part) {
-                        if ((side && models[part] == hilt) || models[part] == -1) {
-                            continue;
-                        }
-                        if (part == 3) {
-                            blade_matrix.m30 += object->weapon_trail_offset.x;
-                            blade_matrix.m31 += object->weapon_trail_offset.y;
-                            blade_matrix.m32 += object->weapon_trail_offset.z;
-                        }
-                        NUMTX *matrix = models[part] == hilt ? &hilt_matrix : &blade_matrix;
-                        Draw3DObjectMtx(NULL, models[part], matrix);
-                        if (reflection) {
-                            i32 model = reflected_models[part];
-                            if (model == -1 || !WORLD->lev_objs[model].active) {
-                                model = models[part];
+                        if (!(side && models[part] == hilt) && models[part] != -1) {
+                            if (part == 3) {
+                                blade_matrix.m30 += object->weapon_trail_offset.x;
+                                blade_matrix.m31 += object->weapon_trail_offset.y;
+                                blade_matrix.m32 += object->weapon_trail_offset.z;
                             }
-                            NUMTX reflected;
-                            if (MatrixReflection(matrix, object->field_0x1087, object->field_0x1020,
-                                                 WORLD->current_level->unknown_0cc, &reflected)) {
-                                NuRndrStartReflectionRender(0);
-                                Draw3DObjectMtx(NULL, model, &reflected);
-                                NuRndrEndReflectionRender();
+                            NUMTX *matrix = models[part] == hilt ? &hilt_matrix : &blade_matrix;
+                            Draw3DObjectMtx(NULL, models[part], matrix);
+                            if (reflection) {
+                                i32 model = reflected_models[part];
+                                if (model == -1 || !WORLD->lev_objs[model].active) {
+                                    model = models[part];
+                                }
+                                NUMTX reflected;
+                                if (MatrixReflection(matrix, object->field_0x1087, f0x1020,
+                                                     WORLD->current_level->unknown_0cc, &reflected)) {
+                                    NuRndrStartReflectionRender(0);
+                                    Draw3DObjectMtx(NULL, model, &reflected);
+                                    NuRndrEndReflectionRender();
+                                }
                             }
                         }
                     }
@@ -3658,8 +3665,8 @@ static void DrawCharacterAttachments(GameObject_s *object, NUMTX *joint_matrices
     if (model_index == -1)
         return;
     CHARACTERMODEL_s *attachment_model = &apicharsys->models[model_index];
-    NUMTX matrix = joint_matrices[locator];
     NUMTX reflected;
+    NUMTX matrix = joint_matrices[locator];
     NUMTX *reflection = NULL;
     if (object->field_0x1088 != 0 && object->field_0x1020 != 2000000.0f &&
         MatrixReflection(&matrix, object->field_0x1087, object->field_0x1020, WORLD->current_level->unknown_0cc,
@@ -3691,11 +3698,32 @@ static void DrawParaphernalia(GameObject_s *object) {
     NUMTX hand_matrix, hand_reflected;
     NUMTX attachment_matrices[16];
     GameObject_s *carried = object->field_0xcc0;
-    if (carried != NULL && object->field_0x7a5 != 0x3b &&
-        (object->apiobj.character_data->game_character->flags_098[0] & 0x40) == 0) {
+    if (!(carried != NULL && object->field_0x7a5 != 0x3b &&
+          (object->apiobj.character_data->game_character->flags_098[0] & 0x40) == 0)) {
+        if ((object->field_0xe24 & 1) && object->field_0x780 != NULL) {
+            GameObject_s *passenger = static_cast<GameObject_s *>(object->field_0x780);
+            i32 locator = object->apiobj.character_data->game_character->weapon_joints[0];
+            if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
+                matrix = object->joint_matrices[locator];
+            } else {
+                NUANGVEC rotation = {-0x4000, object->apiobj.field_0x276, 0};
+                NuMtxSetRotationXYVU0(&matrix, &rotation);
+                matrix.m30 = object->apiobj.position.x +
+                             NuTrigTable[object->apiobj.field_0x276 >> 1] * object->apiobj.field_0x1dc * 1.75f;
+                matrix.m31 = object->apiobj.collision_min.y +
+                             (object->apiobj.collision_max.y - object->apiobj.collision_min.y) * 0.6f;
+                matrix.m32 = object->apiobj.position.z +
+                             NuTrigTable[static_cast<u16>(object->apiobj.field_0x276 + 0x4000) >> 1] *
+                                 object->apiobj.field_0x1dc * 1.75f;
+            }
+            GameDrawCharacterModel(passenger->apiobj.character_model, &passenger->apiobj.anim_packet, &matrix, NULL,
+                                   NULL, NULL, NULL,
+                                   passenger->apiobj.character_data->game_character->layer_mask_medium);
+        }
+    } else {
         carried->field_0x1088 = object->field_0x1088;
-        carried->field_0x1020 = object->field_0x1020;
         carried->field_0x1087 = object->field_0x1087;
+        carried->field_0x1020 = object->field_0x1020;
         i32 locator = object->apiobj.character_data->game_character->ride_locator;
         if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
             matrix = object->joint_matrices[locator];
@@ -3734,24 +3762,6 @@ static void DrawParaphernalia(GameObject_s *object) {
             if (carried->id == id_WEIRDO1 || carried->id == id_WEIRDO2)
                 Customiser_DrawAccessories(CharacterCustomiser, carried, attachment_matrices);
         }
-    } else if ((object->field_0xe24 & 1) && object->field_0x780 != NULL) {
-        GameObject_s *passenger = static_cast<GameObject_s *>(object->field_0x780);
-        i32 locator = object->apiobj.character_data->game_character->weapon_joints[0];
-        if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
-            matrix = object->joint_matrices[locator];
-        } else {
-            NUANGVEC rotation = {-0x4000, object->apiobj.field_0x276, 0};
-            NuMtxSetRotationXYVU0(&matrix, &rotation);
-            matrix.m30 = object->apiobj.position.x +
-                         NuTrigTable[object->apiobj.field_0x276 >> 1] * object->apiobj.field_0x1dc * 1.75f;
-            matrix.m31 = object->apiobj.collision_min.y +
-                         (object->apiobj.collision_max.y - object->apiobj.collision_min.y) * 0.6f;
-            matrix.m32 =
-                object->apiobj.position.z + NuTrigTable[static_cast<u16>(object->apiobj.field_0x276 + 0x4000) >> 1] *
-                                                object->apiobj.field_0x1dc * 1.75f;
-        }
-        GameDrawCharacterModel(passenger->apiobj.character_model, &passenger->apiobj.anim_packet, &matrix, NULL, NULL,
-                               NULL, NULL, passenger->apiobj.character_data->game_character->layer_mask_medium);
     }
     GAMECHARACTERDATA_s *config = object->apiobj.character_data->game_character;
     NUMTX *joints = object->joint_matrices;
@@ -3810,8 +3820,8 @@ static void DrawParaphernalia(GameObject_s *object) {
     }
     if (object->field_0xd24 > 0.0f || object->timer_d28 > 0.0f) {
         ResetShadowMapRendering();
-        const u8 render_reflection = object->field_0x1088;
         GAMECHARACTERDATA_s *shield_config = object->apiobj.character_data->game_character;
+        const u8 render_reflection = object->field_0x1088;
         f32 scale;
         bool show;
         if (object->field_0xe37 != 0 || shield_config->field_0xf5 == 0 || !(object->timer_d28 > 0.0f)) {
@@ -3850,8 +3860,8 @@ static void DrawParaphernalia(GameObject_s *object) {
                 NUVEC scaling = {scale, scale, scale};
                 NuMtxSetScale(&communicate_matrix, &scaling);
                 NuMtxRotateY(&communicate_matrix, static_cast<u16>(object->apiobj.field_0x276 + 0x8000));
-                communicate_matrix.m30 = joints[locator].m30;
                 communicate_matrix.m31 = joints[locator].m31;
+                communicate_matrix.m30 = joints[locator].m30;
                 communicate_matrix.m32 = joints[locator].m32;
                 if (object->apiobj.field_0x27f == 9 && object->apiobj.water_height > communicate_matrix.m31)
                     communicate_matrix.m31 = object->apiobj.water_height;
@@ -3994,51 +4004,54 @@ static void DrawParaphernalia(GameObject_s *object) {
                 }
             }
         }
-    } else if (object->field_0x7a5 == 0x49) {
-        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
-            object->field_0x7a3 != 0) {
-            const u8 render_reflection = object->field_0x1088;
-            const i32 locator = object->apiobj.character_data->game_character->place_locator;
-            f32 *placement_time;
-            if (WORLD->lev_objs[0xec].active && locator != -1 &&
-                object->apiobj.character_model->points_of_interest[locator] != NULL &&
-                (placement_time = AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0)) != NULL) {
-                f32 animation_end =
-                    NuAnimEndFrame(object->apiobj.character_model->model_data_b[object->context_animation]);
-                f32 start = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
-                if (!(start >= animation_end)) {
-                    if (start < 1.0f)
-                        start = 1.0f;
-                    if (!(start > *placement_time)) {
-                        f32 finish = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
-                        if (!(start >= finish)) {
-                            f32 scale = 1.0f;
-                            f32 last = AnimListFrame(object->apiobj.character_model, object->context_animation, 2);
-                            if (last < finish)
-                                last = finish;
-                            f32 decay_start = animation_end < finish ? animation_end : finish;
-                            f32 decay_end = animation_end < last ? animation_end : last;
-                            bool show = true;
-                            if (!(decay_start >= *placement_time)) {
-                                if (decay_end > *placement_time && decay_end > decay_start)
-                                    scale = 1.0f - (*placement_time - decay_start) / (decay_end - decay_start);
-                                else
-                                    show = false;
-                            }
-                            if (show) {
-                                NUVEC scaling = {scale, scale, scale};
-                                removal_matrix = joints[locator];
-                                NuMtxPreRotateY(&removal_matrix, object->takeover_start_angle);
-                                NuMtxPreScale(&removal_matrix, &scaling);
-                                NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &removal_matrix);
-                                if (WORLD->lev_objs[0xed].active)
-                                    NuSpecialDrawAt(&WORLD->lev_objs[0xed].special, &removal_matrix);
-                                if (render_reflection &&
-                                    MatrixReflection(&removal_matrix, object->field_0x1087, object->field_0x1020,
-                                                     WORLD->current_level->unknown_0cc, &removal_reflected)) {
-                                    NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &removal_reflected);
+    } else {
+        if (object->field_0x7a5 == 0x49) {
+            if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
+                object->field_0x7a3 != 0) {
+                const u8 render_reflection = object->field_0x1088;
+                const i32 locator = object->apiobj.character_data->game_character->place_locator;
+                f32 *placement_time;
+                if (WORLD->lev_objs[0xec].active && locator != -1 &&
+                    object->apiobj.character_model->points_of_interest[locator] != NULL &&
+                    (placement_time = AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0)) !=
+                        NULL) {
+                    f32 animation_end =
+                        NuAnimEndFrame(object->apiobj.character_model->model_data_b[object->context_animation]);
+                    f32 start = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
+                    if (!(start >= animation_end)) {
+                        if (start < 1.0f)
+                            start = 1.0f;
+                        if (!(start > *placement_time)) {
+                            f32 finish = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
+                            if (!(start >= finish)) {
+                                f32 scale = 1.0f;
+                                f32 last = AnimListFrame(object->apiobj.character_model, object->context_animation, 2);
+                                if (last < finish)
+                                    last = finish;
+                                f32 decay_start = animation_end < finish ? animation_end : finish;
+                                f32 decay_end = animation_end < last ? animation_end : last;
+                                bool show = true;
+                                if (!(decay_start >= *placement_time)) {
+                                    if (decay_end > *placement_time && decay_end > decay_start)
+                                        scale = 1.0f - (*placement_time - decay_start) / (decay_end - decay_start);
+                                    else
+                                        show = false;
+                                }
+                                if (show) {
+                                    NUVEC scaling = {scale, scale, scale};
+                                    removal_matrix = joints[locator];
+                                    NuMtxPreRotateY(&removal_matrix, object->takeover_start_angle);
+                                    NuMtxPreScale(&removal_matrix, &scaling);
+                                    NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &removal_matrix);
                                     if (WORLD->lev_objs[0xed].active)
                                         NuSpecialDrawAt(&WORLD->lev_objs[0xed].special, &removal_matrix);
+                                    if (render_reflection &&
+                                        MatrixReflection(&removal_matrix, object->field_0x1087, object->field_0x1020,
+                                                         WORLD->current_level->unknown_0cc, &removal_reflected)) {
+                                        NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &removal_reflected);
+                                        if (WORLD->lev_objs[0xed].active)
+                                            NuSpecialDrawAt(&WORLD->lev_objs[0xed].special, &removal_matrix);
+                                    }
                                 }
                             }
                         }
@@ -4049,8 +4062,8 @@ static void DrawParaphernalia(GameObject_s *object) {
     }
     if (object->field_0xe22 & 0x40) {
         dco_prerotatez = 0x4000;
-        const u8 render_reflection = object->field_0x1088;
         const u32 layers = object->field_0x1054;
+        const u8 render_reflection = object->field_0x1088;
         const i32 locator = object->apiobj.character_data->game_character->throw_locator;
         const i32 model_id = Batarang_GetObjectFromCharID(object->id);
         DrawObjectOnCharacter(WORLD, object, model_id, NULL, locator, -1, joints, render_reflection, layers, NULL, NULL,
@@ -4161,9 +4174,9 @@ static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s *scene) {
             continue;
         for (u32 bit = 0; bit < 8; ++bit) {
             const i32 index = static_cast<i32>(material_index + bit);
+            u32 enabled = (bits >> bit) & 1;
             NUDISPLAYLIST *list = lists[index];
             NUMTL *material = scene->mtls[list->mtl_id];
-            u32 enabled = (bits >> bit) & 1;
             if (enabled && material != NULL &&
                 *reinterpret_cast<const u32 *>(reinterpret_cast<const u8 *>(material) + 0xb0) != 0)
                 enabled = *reinterpret_cast<const u8 *>(reinterpret_cast<const u8 *>(material) + 0xf8) != 0xff;

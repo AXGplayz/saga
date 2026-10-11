@@ -251,6 +251,7 @@ increment_index:
 }
 
 void HeadMovement(GameObject_s *object) {
+    f32 previous;
     NUVEC direction;
     if (CInfo[object->character_context].flags & 0x200000) {
         return;
@@ -322,7 +323,7 @@ void HeadMovement(GameObject_s *object) {
             object->joint_modifiers[object->field_0x1089].joint_index = character->game_character->head_joint;
             object->joint_modifiers[object->field_0x1089].flags = static_cast<NUJOINTANIM_FLAGS>(0);
             f32 blend = character->game_character->field_0x58 * FRAMETIME;
-            f32 previous;
+
             if (blend > 1.0f) {
                 blend = 1.0f;
                 previous = 0.0f;
@@ -620,12 +621,13 @@ CHARACTERDATA *CDataFromName(char *name) {
 i32 RedirectAnim(char *path, ANIMREDIRECT *redirects, ANIMLIST_s *animation_list, char *directory) {
     CHARACTERANIM_s *animation = reinterpret_cast<CHARACTERANIM_s *>(animation_list);
     for (ANIMREDIRECT *redirect = redirects; redirect->name != NULL; ++redirect) {
-        if (redirect->animation_id == animation->animation_id && NuStrICmp(redirect->name, animation->name) == 0) {
-            NuStrCpy(path, directory);
-            NuStrCat(path, animation->name);
-            animation->flags &= ~CHARACTER_ANIMATION_FLAG_BSA;
-            return 1;
+        if (!(redirect->animation_id == animation->animation_id && NuStrICmp(redirect->name, animation->name) == 0)) {
+            continue;
         }
+        NuStrCpy(path, directory);
+        NuStrCat(path, animation->name);
+        animation->flags &= ~CHARACTER_ANIMATION_FLAG_BSA;
+        return 1;
     }
     return 0;
 }
@@ -737,6 +739,26 @@ void InitSurfaceInfo(GameObject_s *);
 i32 SetObjOnSurface(GameObject_s *, i32);
 extern NUVEC plr_lastpos;
 
+void FinishWeirdoNames(i32 which) {
+    if (which != 1) {
+        NuStrUpr(Game.customizer[0].name, Game.customizer[0].name);
+        i32 length = NuStrLen(Game.customizer[0].name);
+        for (; length <= 14; length++) {
+            Game.customizer[0].name[length] = ' ';
+        }
+        Game.customizer[0].name[15] = '\0';
+        if (which == 0) {
+            return;
+        }
+    }
+    NuStrUpr(Game.customizer[1].name, Game.customizer[1].name);
+    i32 length = NuStrLen(Game.customizer[1].name);
+    for (; length <= 14; length++) {
+        Game.customizer[1].name[length] = ' ';
+    }
+    Game.customizer[1].name[15] = '\0';
+}
+
 GameObject_s *ActivateCharacter(char *name, nuvec_s *position, i32 angle) {
     if (Mission_Active(NULL) != NULL || name == NULL)
         return NULL;
@@ -769,26 +791,6 @@ GameObject_s *ActivateCharacter(char *name, nuvec_s *position, i32 angle) {
     }
     LightGameObject(object, WORLD->rtl_set);
     return object;
-}
-
-void FinishWeirdoNames(i32 which) {
-    if (which != 1) {
-        NuStrUpr(Game.customizer[0].name, Game.customizer[0].name);
-        i32 length = NuStrLen(Game.customizer[0].name);
-        for (; length <= 14; length++) {
-            Game.customizer[0].name[length] = ' ';
-        }
-        Game.customizer[0].name[15] = '\0';
-        if (which == 0) {
-            return;
-        }
-    }
-    NuStrUpr(Game.customizer[1].name, Game.customizer[1].name);
-    i32 length = NuStrLen(Game.customizer[1].name);
-    for (; length <= 14; length++) {
-        Game.customizer[1].name[length] = ' ';
-    }
-    Game.customizer[1].name[15] = '\0';
 }
 
 extern i32 addcreature_override_id_check;
@@ -856,10 +858,10 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     obj->apiobj.field_0x27c = -1;
 
     NUVEC *start_position = Player_StartPos(obj);
-    if (param == 0) {
-        obj->apiobj.field_0x1f4 |= 2;
-    } else {
+    if (param != 0) {
         obj->apiobj.field_0x1f4 |= 0x4002;
+    } else {
+        obj->apiobj.field_0x1f4 |= 2;
     }
     if ((WORLD->current_level->flags & 0x40000) == 0) {
         obj->apiobj.field_0x1f4 |= 0x40;
@@ -884,11 +886,11 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     SetGameObjectCharacterData(obj);
 
     obj->apiobj.start_position = *start_position;
-    obj->apiobj.initial_position = *start_position;
-    obj->apiobj.position = *start_position;
-    obj->apiobj.pos_x = start_position->x;
     obj->apiobj.pos_y = start_position->y;
+    obj->apiobj.pos_x = start_position->x;
     obj->apiobj.pos_z = start_position->z;
+    obj->apiobj.position = *start_position;
+    obj->apiobj.initial_position = *start_position;
     obj->field_0x1018 = 0.5f;
 
     GetTopBot(obj);
@@ -975,8 +977,8 @@ i32 NewPlayerCharacter(GameObject_s *object, i32 id, i32 old_id, i32) {
     LoseHelmet(object, 0, 1);
     DestroySnakeBody(object);
     object->id = id;
-    NUVEC velocity = object->apiobj.velocity;
     u8 health = object->current_hp;
+    NUVEC velocity = object->apiobj.velocity;
     u8 hitpoints = object->hitpoints;
     u8 saved_flags = (object->apiobj.flags_high >> 5) & 1;
     object->apiobj.character_model = &apicharsys->models[apicharsys->playermodelids[id]];
@@ -1178,17 +1180,18 @@ static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
     if (candidate_count == 1) {
         animation = candidates[0];
     } else {
+        auto object_previous_idle_animation = object->previous_idle_animation;
         do {
             const i32 bucket_size = 0xffff / candidate_count + 1;
             animation = candidates[qrand() / bucket_size];
             object->idle_animation = static_cast<i16>(animation);
-        } while (animation == object->previous_idle_animation);
+        } while (animation == object_previous_idle_animation);
     }
     object->idle_animation = static_cast<i16>(animation);
 
     CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-    i32 repetitions = static_cast<u8>(info->minimum_repetitions);
     const u8 maximum = static_cast<u8>(info->maximum_repetitions);
+    i32 repetitions = static_cast<u8>(info->minimum_repetitions);
     if (repetitions == 0) {
         repetitions = 1;
     } else if (maximum > repetitions) {
@@ -1272,8 +1275,33 @@ void UpdateCharacterIDs() {
         COLLECTID *collect = ShopCollection.list;
         shopitem_s *item = CharItems;
         for (i32 i = 0; i < count; ++i, ++item, ++collect) {
-            item->item_id = collect->id;
             item->price = collect->field3_0x4;
+            item->item_id = collect->id;
+        }
+    }
+}
+
+void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_u buf_end) {
+    char path[128];
+    if (CharScene_Area == NULL || apicharsys->loaded_model_count == 0) {
+        return;
+    }
+
+    for (i32 i = 0; i < apicharsys->loaded_model_count; ++i) {
+        const i32 model_id = apicharsys->models[i].model_id;
+        CHARSCENE_s &entry = CharScene_Area[model_id];
+        if (entry.scene == NULL && (CDataList[model_id].flags & 1) != 0) {
+
+            i32 list_index;
+            if (InModelList(list, model_id, &list_index) == 0 || list[list_index].count == 0) {
+                continue;
+            }
+
+            sprintf(path, "chars\\%s\\%s.gsc", CDataList[model_id].dir, CDataList[model_id].file);
+            entry.scene = NuGScnRead(buf, buf_end, path);
+            if (entry.scene != NULL) {
+                NuSpecialFind(entry.scene, &entry.special_scene, CDataList[model_id].file, 1);
+            }
         }
     }
 }
@@ -1288,32 +1316,6 @@ void CharScenes_AreaDump() {
             NuGScnRemove(entry.scene);
         }
         entry.scene = NULL;
-    }
-}
-
-void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_u buf_end) {
-    if (CharScene_Area == NULL || apicharsys->loaded_model_count == 0) {
-        return;
-    }
-
-    for (i32 i = 0; i < apicharsys->loaded_model_count; ++i) {
-        const i32 model_id = apicharsys->models[i].model_id;
-        CHARSCENE_s &entry = CharScene_Area[model_id];
-        if (entry.scene != NULL || (CDataList[model_id].flags & 1) == 0) {
-            continue;
-        }
-
-        i32 list_index;
-        if (InModelList(list, model_id, &list_index) == 0 || list[list_index].count == 0) {
-            continue;
-        }
-
-        char path[128];
-        sprintf(path, "chars\\%s\\%s.gsc", CDataList[model_id].dir, CDataList[model_id].file);
-        entry.scene = NuGScnRead(buf, buf_end, path);
-        if (entry.scene != NULL) {
-            NuSpecialFind(entry.scene, &entry.special_scene, CDataList[model_id].file, 1);
-        }
     }
 }
 
@@ -1361,6 +1363,23 @@ void LoadSingleCharacter(bgprocinfo_s *) {
     hub_character_ready = waiting_for_character;
     waiting_for_character = -1;
     g_loadingCharacterInHub = 0;
+}
+
+void CharScenes_LevelDump(WORLDINFO_s *world) {
+    CHARSCENE_s *scenes = world->minikit.character_scenes;
+    if (scenes != NULL && CHARCOUNT > 0) {
+        i32 i = 0;
+        do {
+            CHARSCENE_s *entry = &scenes[i];
+            if (entry->scene != NULL) {
+                NuGScnRemove(entry->scene);
+                scenes = world->minikit.character_scenes;
+                entry = &scenes[i];
+            }
+            ++i;
+            entry->scene = NULL;
+        } while (CHARCOUNT > i);
+    }
 }
 
 void UpdateCharacterLoad() {
@@ -1472,23 +1491,6 @@ queue_character:
     bgPostRequest(LoadSingleCharacter, NULL, NULL, 0);
 }
 
-void CharScenes_LevelDump(WORLDINFO_s *world) {
-    CHARSCENE_s *scenes = world->minikit.character_scenes;
-    if (scenes != NULL && CHARCOUNT > 0) {
-        i32 i = 0;
-        do {
-            CHARSCENE_s *entry = &scenes[i];
-            if (entry->scene != NULL) {
-                NuGScnRemove(entry->scene);
-                scenes = world->minikit.character_scenes;
-                entry = &scenes[i];
-            }
-            ++i;
-            entry->scene = NULL;
-        } while (CHARCOUNT > i);
-    }
-}
-
 extern VARIPTR characterbuffer_base;
 extern i32 CHARACTERBUFFERSIZE;
 extern i32 Area;
@@ -1588,6 +1590,65 @@ void CollectCharcters_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
     NextStatusStage(packet);
 }
 
+nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id) {
+    CHARSCENE_s *scene;
+    if (CharScene_Area != NULL && CharScene_Area[character_id].scene != NULL) {
+        scene = &CharScene_Area[character_id];
+    } else {
+        scene = &world->minikit.character_scenes[character_id];
+        if (scene->scene == NULL) {
+            scene = NULL;
+        }
+    }
+    if (scene != NULL && NuSpecialExistsFn(&scene->special_scene) == 0) {
+        scene = NULL;
+    }
+    return scene == NULL ? NULL : &scene->special_scene;
+}
+
+void PostAnimate_ASTROMECH(GameObject_s *object) {
+    const i8 context = object->character_context;
+    if (object->apiobj.field_0x287 == 0 && context == 0 && object->apiobj.model_draw_result != 0 &&
+        object->apiobj.field_0x288 != 0) {
+        if (object->field_0xe31 != 3 || (object->pad_gamepad->buttons_held & GAMEPAD_JUMP) != 0) {
+            const i32 count = ParticlesPerFrame(object->field_0xe31 == 3 ? 0.25f : 1.0f, FRAMETIME);
+            if (count > 0) {
+                const i32 effect = object->id == id_R2Q5 ? 12 : 11;
+                if (object->apiobj.character_model->points_of_interest[2] != NULL) {
+                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[2], 3), count,
+                                     0x71c7, object->apiobj.facing_angle);
+                }
+                if (object->apiobj.character_model->points_of_interest[3] != NULL) {
+                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[3], 3), count,
+                                     0x8e38, object->apiobj.facing_angle);
+                }
+            }
+            PlaySfxAndSetVolume(const_cast<char *>("R2Thrust"), &object->apiobj.collision_position,
+                                object->field_0xe31 == 3 ? 0.5f : 1.0f);
+        }
+    } else if (context == -1 && object->pad_gamepad->input_magnitude > 0.0f && !(object->communicate_blend > 0.0f) &&
+               object->apiobj.field_0x27d != 0) {
+        PlaySfx(const_cast<char *>("R2Move"), &object->apiobj.upper_position);
+    }
+
+    if (object->communicate_blend > 0.0f && object->communicate_blend < 1.0f) {
+        const i32 effect = WORLD->debris_sys->entries[object->id == id_R2Q5 ? 1 : 3].effect;
+        if (effect != -1) {
+            const i32 count = ParticlesPerSecond(100.0f, FRAMETIME);
+            if (count > 0) {
+                const i32 locator = object->apiobj.character_data->game_character->thingy_locator;
+                if (locator != -1) {
+                    NUVEC_ALIGNED16 position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[locator], 3);
+                    if (object->apiobj.field_0x27f == 9 && object->apiobj.water_height > position.y) {
+                        position.y = object->apiobj.water_height;
+                    }
+                    AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
+                }
+            }
+        }
+    }
+}
+
 AILOCATOR_s *LocalGetRandomLocator(AILOCATOR_s **locators, i32 count, f32 clip_radius, NUVEC *position,
                                    f32 max_distance, i32 outside_camera, f32 max_delta_y, f32 min_delta_y) {
     i32 candidates[64] __attribute__((aligned(16)));
@@ -1643,65 +1704,6 @@ AILOCATOR_s *LocalGetRandomLocator(AILOCATOR_s **locators, i32 count, f32 clip_r
     return result;
 }
 
-void PostAnimate_ASTROMECH(GameObject_s *object) {
-    const i8 context = object->character_context;
-    if (object->apiobj.field_0x287 == 0 && context == 0 && object->apiobj.model_draw_result != 0 &&
-        object->apiobj.field_0x288 != 0) {
-        if (object->field_0xe31 != 3 || (object->pad_gamepad->buttons_held & GAMEPAD_JUMP) != 0) {
-            const i32 count = ParticlesPerFrame(object->field_0xe31 == 3 ? 0.25f : 1.0f, FRAMETIME);
-            if (count > 0) {
-                const i32 effect = object->id == id_R2Q5 ? 12 : 11;
-                if (object->apiobj.character_model->points_of_interest[2] != NULL) {
-                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[2], 3), count,
-                                     0x71c7, object->apiobj.facing_angle);
-                }
-                if (object->apiobj.character_model->points_of_interest[3] != NULL) {
-                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[3], 3), count,
-                                     0x8e38, object->apiobj.facing_angle);
-                }
-            }
-            PlaySfxAndSetVolume(const_cast<char *>("R2Thrust"), &object->apiobj.collision_position,
-                                object->field_0xe31 == 3 ? 0.5f : 1.0f);
-        }
-    } else if (context == -1 && object->pad_gamepad->input_magnitude > 0.0f && !(object->communicate_blend > 0.0f) &&
-               object->apiobj.field_0x27d != 0) {
-        PlaySfx(const_cast<char *>("R2Move"), &object->apiobj.upper_position);
-    }
-
-    if (object->communicate_blend > 0.0f && object->communicate_blend < 1.0f) {
-        const i32 effect = WORLD->debris_sys->entries[object->id == id_R2Q5 ? 1 : 3].effect;
-        if (effect != -1) {
-            const i32 count = ParticlesPerSecond(100.0f, FRAMETIME);
-            if (count > 0) {
-                const i32 locator = object->apiobj.character_data->game_character->thingy_locator;
-                if (locator != -1) {
-                    NUVEC_ALIGNED16 position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[locator], 3);
-                    if (object->apiobj.field_0x27f == 9 && object->apiobj.water_height > position.y) {
-                        position.y = object->apiobj.water_height;
-                    }
-                    AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
-                }
-            }
-        }
-    }
-}
-
-nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id) {
-    CHARSCENE_s *scene;
-    if (CharScene_Area != NULL && CharScene_Area[character_id].scene != NULL) {
-        scene = &CharScene_Area[character_id];
-    } else {
-        scene = &world->minikit.character_scenes[character_id];
-        if (scene->scene == NULL) {
-            scene = NULL;
-        }
-    }
-    if (scene != NULL && NuSpecialExistsFn(&scene->special_scene) == 0) {
-        scene = NULL;
-    }
-    return scene == NULL ? NULL : &scene->special_scene;
-}
-
 AILOCATOR_s *LocalGetNearestLocator(AILOCATOR_s **locators, i32 count, f32 clip_radius, NUVEC *position,
                                     f32 max_distance, i32 outside_camera, f32 max_delta_y, f32 min_delta_y) {
     f32 nearest_distance = max_distance == 1000000000.0f ? max_distance : max_distance * max_distance;
@@ -1734,10 +1736,11 @@ AILOCATOR_s *LocalGetNearestLocator(AILOCATOR_s **locators, i32 count, f32 clip_
         if (max_delta_y != 1000000000.0f && delta.y > max_delta_y) {
             continue;
         }
-        if (nearest_distance > distance) {
-            nearest_distance = distance;
-            nearest = i;
+        if (!(nearest_distance > distance)) {
+            continue;
         }
+        nearest_distance = distance;
+        nearest = i;
     }
     if (nearest == -1) {
         return NULL;
@@ -1755,17 +1758,16 @@ i32 newCharactersCollected(STATUSPACKET_s *) {
         while (previous < count && StatusCollectList.ids[previous] != id) {
             ++previous;
         }
-        if (previous != count) {
-            continue;
-        }
-        if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0) {
-            continue;
-        }
-        const i32 index = InCollectList_Index(id, MasterCollection.list, MasterCollection.count_y);
-        if (index != -1 && MasterCollection.list[index].can_buy == 0) {
-            StatusCollectList.ids[count++] = *player_id;
-            if (MasterCollection.list[index].field5_0x9 != 0) {
-                AddToCompletionPoints(POINTS_PER_CHARACTER);
+        if (previous == count) {
+            if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0) {
+                continue;
+            }
+            const i32 index = InCollectList_Index(id, MasterCollection.list, MasterCollection.count_y);
+            if (index != -1 && MasterCollection.list[index].can_buy == 0) {
+                StatusCollectList.ids[count++] = *player_id;
+                if (MasterCollection.list[index].field5_0x9 != 0) {
+                    AddToCompletionPoints(POINTS_PER_CHARACTER);
+                }
             }
         }
     }

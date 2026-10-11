@@ -294,7 +294,8 @@ static void ZipUps_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
         return;
     }
 
-    for (i32 index = 0; index < world->zipup_count && index < 32; ++index) {
+    auto world_zipup_count = world->zipup_count;
+    for (i32 index = 0; index < world_zipup_count && index < 32; ++index) {
         const u32 mask = 1u << index;
         if ((world->zipups[index].flags & ZIPUP_FLAG_VISIBLE) == 0) {
             progress->visible_mask &= ~mask;
@@ -340,8 +341,8 @@ void ZipUps_Reset(void *world_ptr, void *, void *progress_ptr) {
             zipup->facing_angle = static_cast<u16>(NuAtan2D(zipup->upper_position.x - zipup->lower_position.x,
                                                             zipup->upper_position.z - zipup->lower_position.z));
             zipup->runtime_flags &= ~ZIPUP_RUNTIME_FLAG_OCCUPIED;
-            zipup->occupant = NULL;
             zipup->flags |= ZIPUP_FLAG_ACTIVE | ZIPUP_FLAG_VISIBLE;
+            zipup->occupant = NULL;
 
             if (progress != NULL && index <= 31) {
                 const u32 bit = 1u << index;
@@ -573,9 +574,10 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
                 api.field_0x276 = api.facing_angle = api.movement_facing_angle = angle;
                 f32 speed =
                     NuVecXZDist(&api.position, destination, NULL) / api.character_data->game_character->jump_duration;
+                const u16 velocity_angle = api.movement_facing_angle;
                 object->airborne_action_timer = speed;
-                api.velocity.x = NU_SIN_LUT(angle) * speed;
-                api.velocity.z = NU_COS_LUT(angle) * speed;
+                api.velocity.x = NU_SIN_LUT(velocity_angle) * speed;
+                api.velocity.z = speed * NU_COS_LUT(velocity_angle);
                 object->context_flags &= ~0x20;
                 static_cast<ZIPUP *>(object->field_0x788)->runtime_flags &= ~1;
                 object->field_0x788 = NULL;
@@ -634,122 +636,133 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
         NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
         f32 old_time = object->context_animation_timer;
         object->context_animation_timer += FRAMETIME;
-        if (!(old_time >= 0.55f) && !(object->context_animation_timer < 0.55f))
+        if (old_time < 0.55f && object->context_animation_timer >= 0.55f)
             PlaySfx("GrapSwing", &api.collision_position);
         return;
     }
     if (!ObjLandReady(object) && !objInNetWaitContext(object, 0x47))
         return;
-    if ((api.flags_low & 0x80) != 0) {
+    if ((api.flags_low & 0x80) == 0) {
+        if (object->use_action == 4 && (api.character_data->model_flags & 0x100000) != 0) {
+            i32 endpoint;
+            ZIPUP *zipup =
+                ZipUp_FindNearest(WORLD, &api.lower_position, api.collision_radius, NULL, &endpoint, object, false);
+            if (objInNetWaitContext(object, 0x47)) {
+                object->context_animation_timer -= FRAMETIME;
+                if (object->context_animation_timer <= 0.0f)
+                    object->character_context = -1;
+            }
+            if (zipup == NULL)
+                return;
+            if ((special_pressed == 0 && !objInNetWaitContext(object, 0x47)) ||
+                ((zipup->flags & 1) != 0 && (zipup->runtime_flags & 1) != 0)) {
+                SetHeadTarget(object, &zipup->hook_origin, 4, 2.0f, 1.0f, 2.0f);
+                return;
+            }
+            if ((api.character_data->model_flags & 0x100000) == 0) {
+                NUVEC *destination = endpoint == 0 ? &zipup->upper_position : &zipup->lower_position;
+                if (StartBigJump(object, destination, 0, 0.5f, 1.0f, 0, 0))
+                    object->context_variant_flags |= 1;
+                return;
+            }
+            if ((api.flags_low & 0x80) != 0)
+                Hint_SetComplete(0x262);
+            object->field_0x788 = zipup;
+            object->character_context = 0x47;
+            zipup->occupant = object;
+            object->context_flags |= 0x20;
+            static_cast<ZIPUP *>(object->field_0x788)->runtime_flags |= 1;
+            if ((api.character_data->game_character->flags_094[3] & 0x20) != 0) {
+                object->action_movement_state = 1;
+                SetWeaponIn(object);
+                GameAudio_PlaySfx(0x4c, &api.collision_position, GameAudio_GetPlrSfxBits(object), 0);
+                object->field_0x7a3 = 0;
+                object->context_animation_timer = 0.0f;
+                object->context_animation = LEGOACT_WHIP_SWING_START;
+                f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 0);
+                object->airborne_action_duration = duration;
+                if (duration <= 0.0f)
+                    object->airborne_action_duration = 0.5f;
+                object->zipup_entry_position = api.position;
+                ZIPUP *current = static_cast<ZIPUP *>(object->field_0x788);
+                if (endpoint != 0) {
+                    object->zipup_start_position = current->upper_position;
+                } else {
+                    object->zipup_start_position = current->lower_position;
+                }
+                object->zipup_landing_position = endpoint == 0 ? current->upper_position : current->lower_position;
+                object->zipup_landing_position.y =
+                    endpoint == 0 ? zipup->upper_ground_height : zipup->lower_ground_height;
+                NUVEC offset;
+                NuVecSub(&offset, &object->zipup_landing_position, &object->zipup_start_position);
+                offset.y = 0.0f;
+                NuVecNorm(&offset, &offset);
+                NuVecScale(&offset, &offset, 1.923615932464599609375f);
+                NuVecAdd(&object->zipup_swing_position, &object->zipup_start_position, &offset);
+                object->zipup_swing_position.y += 0.25150299072265625f;
+                api.movement_facing_angle = NuAtan2D(object->zipup_landing_position.x - object->zipup_start_position.x,
+                                                     object->zipup_landing_position.z - object->zipup_start_position.z);
+                api.field_0x27d = 0;
+                return;
+            }
+            zipup = static_cast<ZIPUP *>(object->field_0x788);
+            object->action_movement_state = 0;
+            object->context_animation = 0x2a;
+            NUVEC *hook = &zipup->hook_origin;
+            NUVEC *start = endpoint == 0 ? &zipup->lower_position : &zipup->upper_position;
+            NUVEC *destination = endpoint == 0 ? &zipup->upper_position : &zipup->lower_position;
+            if (endpoint == 0) {
+                object->field_0x7a3 = 0;
+            } else {
+                object->field_0x7a3 = 1;
+            }
+            NUVEC *heading = start->x == hook->x && start->z == hook->z ? destination : hook;
+            api.movement_facing_angle = NuAtan2D(heading->x - start->x, heading->z - start->z);
+            api.velocity.y = 0.0f;
+            if (api.character_data->game_character->field275_0x116 == 2)
+                FastWeaponOut(object, 1);
+            object->context_animation_timer = 0.0f;
+            PlaySfx("GrapAttach", &api.upper_position);
+            FastWeaponOut(object, 0);
+            object->field_0xe31 = 0;
+            f32 dx = hook->x - start->x, dz = hook->z - start->z;
+            i32 angle = NuAtan2D(hook->y - start->y, NuFsqrt(dx * dx + dz * dz));
+            i32 pitch = 0x4000 - (angle < 0 ? -angle : angle);
+            object->magnet_surface_angle = angle < 0 ? -pitch : pitch;
+            zipup = static_cast<ZIPUP *>(object->field_0x788);
+            if ((zipup->flags & 1) == 0)
+                return;
+            NuVecSub(&zipup->rider_start_offset, start, hook);
+            NUVEC end_offset;
+            NuVecSub(&end_offset, destination, hook);
+            end_offset.y += 0.5f;
+            zipup = static_cast<ZIPUP *>(object->field_0x788);
+            f32 rider_height = 0.5f * api.scaled_height;
+            zipup->rider_start_offset.x *= 0.9f;
+            zipup->rider_start_offset.y *= 0.9f;
+            zipup->rider_start_offset.y = rider_height + zipup->rider_start_offset.y;
+            zipup->rider_start_offset.z *= 0.9f;
+            i32 yaw = -static_cast<u16>(NuAtan2D(zipup->rider_start_offset.x, zipup->rider_start_offset.z));
+            zipup = static_cast<ZIPUP *>(object->field_0x788);
+            NUVEC start_offset = zipup->rider_start_offset;
+            NuVecRotateY(&start_offset, &start_offset, yaw);
+            NuVecRotateY(&end_offset, &end_offset, yaw);
+            NuVecNorm(&start_offset, &start_offset);
+            NuVecNorm(&end_offset, &end_offset);
+            // Retail inlines the same acos polynomial used by the exported NuACos.
+            static_cast<ZIPUP *>(object->field_0x788)->pitch_adjustment =
+                static_cast<i16>(0x4000 - NuASin(start_offset.y * end_offset.y + start_offset.z * end_offset.z));
+            zipup = static_cast<ZIPUP *>(object->field_0x788);
+            zipup->rider_target_position = zipup->rider_start_offset;
+            NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
+        }
+    } else {
         if ((api.character_data->model_flags & 0x100000) == 0 && !SuperWeirdo(object)) {
             if ((api.character_data->model_flags & 8) == 0 ||
                 (api.character_data->game_character->flags_094[1] & 0x80) != 0 || !Cheat_IsOn(13))
                 return;
         }
-    } else if (object->use_action != 4 || (api.character_data->model_flags & 0x100000) == 0) {
-        return;
     }
-    i32 endpoint;
-    ZIPUP *zipup = ZipUp_FindNearest(WORLD, &api.lower_position, api.collision_radius, NULL, &endpoint, object, false);
-    if (objInNetWaitContext(object, 0x47)) {
-        object->context_animation_timer -= FRAMETIME;
-        if (object->context_animation_timer <= 0.0f)
-            object->character_context = -1;
-    }
-    if (zipup == NULL)
-        return;
-    if ((special_pressed == 0 && !objInNetWaitContext(object, 0x47)) ||
-        ((zipup->flags & 1) != 0 && (zipup->runtime_flags & 1) != 0)) {
-        SetHeadTarget(object, &zipup->hook_origin, 4, 2.0f, 1.0f, 2.0f);
-        return;
-    }
-    if ((api.character_data->model_flags & 0x100000) == 0) {
-        NUVEC *destination = endpoint == 0 ? &zipup->upper_position : &zipup->lower_position;
-        if (StartBigJump(object, destination, 0, 0.5f, 1.0f, 0, 0))
-            object->context_variant_flags |= 1;
-        return;
-    }
-    if ((api.flags_low & 0x80) != 0)
-        Hint_SetComplete(0x262);
-    object->field_0x788 = zipup;
-    object->character_context = 0x47;
-    zipup->occupant = object;
-    object->context_flags |= 0x20;
-    static_cast<ZIPUP *>(object->field_0x788)->runtime_flags |= 1;
-    if ((api.character_data->game_character->flags_094[3] & 0x20) != 0) {
-        object->action_movement_state = 1;
-        SetWeaponIn(object);
-        GameAudio_PlaySfx(0x4c, &api.collision_position, GameAudio_GetPlrSfxBits(object), 0);
-        object->field_0x7a3 = 0;
-        object->context_animation_timer = 0.0f;
-        object->context_animation = LEGOACT_WHIP_SWING_START;
-        f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 0);
-        object->airborne_action_duration = duration;
-        if (duration <= 0.0f)
-            object->airborne_action_duration = 0.5f;
-        object->zipup_entry_position = api.position;
-        ZIPUP *current = static_cast<ZIPUP *>(object->field_0x788);
-        object->zipup_start_position = endpoint == 0 ? current->lower_position : current->upper_position;
-        object->zipup_landing_position = endpoint == 0 ? current->upper_position : current->lower_position;
-        object->zipup_landing_position.y = endpoint == 0 ? zipup->upper_ground_height : zipup->lower_ground_height;
-        NUVEC offset;
-        NuVecSub(&offset, &object->zipup_landing_position, &object->zipup_start_position);
-        offset.y = 0.0f;
-        NuVecNorm(&offset, &offset);
-        NuVecScale(&offset, &offset, 1.923615932464599609375f);
-        NuVecAdd(&object->zipup_swing_position, &object->zipup_start_position, &offset);
-        object->zipup_swing_position.y += 0.25150299072265625f;
-        api.movement_facing_angle = NuAtan2D(object->zipup_landing_position.x - object->zipup_start_position.x,
-                                             object->zipup_landing_position.z - object->zipup_start_position.z);
-        api.field_0x27d = 0;
-        return;
-    }
-    zipup = static_cast<ZIPUP *>(object->field_0x788);
-    object->action_movement_state = 0;
-    object->context_animation = 0x2a;
-    NUVEC *hook = &zipup->hook_origin;
-    NUVEC *start = endpoint == 0 ? &zipup->lower_position : &zipup->upper_position;
-    NUVEC *destination = endpoint == 0 ? &zipup->upper_position : &zipup->lower_position;
-    object->field_0x7a3 = endpoint == 0 ? 0 : 1;
-    NUVEC *heading = start->x == hook->x && start->z == hook->z ? destination : hook;
-    api.movement_facing_angle = NuAtan2D(heading->x - start->x, heading->z - start->z);
-    api.velocity.y = 0.0f;
-    if (api.character_data->game_character->field275_0x116 == 2)
-        FastWeaponOut(object, 1);
-    object->context_animation_timer = 0.0f;
-    PlaySfx("GrapAttach", &api.upper_position);
-    FastWeaponOut(object, 0);
-    object->field_0xe31 = 0;
-    f32 dx = hook->x - start->x, dz = hook->z - start->z;
-    i32 angle = NuAtan2D(hook->y - start->y, NuFsqrt(dx * dx + dz * dz));
-    i32 pitch = 0x4000 - (angle < 0 ? -angle : angle);
-    object->magnet_surface_angle = angle < 0 ? -pitch : pitch;
-    zipup = static_cast<ZIPUP *>(object->field_0x788);
-    if ((zipup->flags & 1) == 0)
-        return;
-    NuVecSub(&zipup->rider_start_offset, start, hook);
-    NUVEC end_offset;
-    NuVecSub(&end_offset, destination, hook);
-    end_offset.y += 0.5f;
-    zipup = static_cast<ZIPUP *>(object->field_0x788);
-    f32 rider_height = 0.5f * api.scaled_height;
-    zipup->rider_start_offset.x *= 0.9f;
-    zipup->rider_start_offset.y *= 0.9f;
-    zipup->rider_start_offset.y = rider_height + zipup->rider_start_offset.y;
-    zipup->rider_start_offset.z *= 0.9f;
-    i32 yaw = -static_cast<u16>(NuAtan2D(zipup->rider_start_offset.x, zipup->rider_start_offset.z));
-    zipup = static_cast<ZIPUP *>(object->field_0x788);
-    NUVEC start_offset = zipup->rider_start_offset;
-    NuVecRotateY(&start_offset, &start_offset, yaw);
-    NuVecRotateY(&end_offset, &end_offset, yaw);
-    NuVecNorm(&start_offset, &start_offset);
-    NuVecNorm(&end_offset, &end_offset);
-    // Retail inlines the same acos polynomial used by the exported NuACos.
-    static_cast<ZIPUP *>(object->field_0x788)->pitch_adjustment =
-        static_cast<i16>(0x4000 - NuASin(start_offset.y * end_offset.y + start_offset.z * end_offset.z));
-    zipup = static_cast<ZIPUP *>(object->field_0x788);
-    zipup->rider_target_position = zipup->rider_start_offset;
-    NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
 }
 
 static void ZipUp_GetStartPoint(GameObject_s *object, NUVEC *position) {
@@ -787,8 +800,8 @@ void InitRopeMtl(char *name, variptr_u *buffer, variptr_u *buffer_end) {
     }
     ropemtl = NuMtlCreate3D(1);
     ropemtl->opacity = 1.0f;
-    ropemtl->attribs.unknown_2_1_2 = 0;
     ropemtl->attribs.unknown_1_1_2 = 0;
+    ropemtl->attribs.unknown_2_1_2 = 0;
     ropemtl->attribs.unknown_1_4_8 = 0;
     ropemtl->attribs.z_mode = 0;
     ropemtl->attribs.alpha_mode = 0;
@@ -877,9 +890,9 @@ static inline void SetRopeVertex(NURND_VERTEX3D *vertex, f32 x, f32 y, f32 z, f3
     vertex->normal.x = normal_x;
     vertex->normal.y = 0.0f;
     vertex->normal.z = normal_z;
-    vertex->colour = colour;
     vertex->u = u;
     vertex->v = v;
+    vertex->colour = colour;
 }
 
 void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *material, float time, float grow_time,

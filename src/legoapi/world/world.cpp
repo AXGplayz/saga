@@ -130,66 +130,6 @@ void SetAreaPickupGravity(i32 area, i32 level) {
         AreaPickupGravity = -20.0f;
     }
 }
-void WorldInfo_Dump(WORLDINFO *world) {
-    if (world->mech_auto_jump_manager != NULL) {
-        delete world->mech_auto_jump_manager;
-        world->mech_auto_jump_manager = NULL;
-    }
-    MechSystems::Get()->ExitLevel(world);
-    Customiser_DumpAll(Game_Customiser, world);
-    if (world->cutscene_sys != NULL) {
-        for (i32 index = 0; index < world->cutscene_sys->count; ++index)
-            ClearLinkedCutSceneMusic(world->cutscene_sys->cuts[index]->instance);
-    }
-    CharacterMiniKits_Dump(world);
-    CharScenes_LevelDump(world);
-    CutScenes_Destroy(world->cutscene_sys);
-    if (world->icons_gscn != nullptr) {
-        NuGScnRemove(world->icons_gscn);
-        world->icons_gscn = nullptr;
-    }
-    if (world->page_pp != -1) {
-        edppStopPage(static_cast<i8>(world->page_pp));
-        edppClearPage(static_cast<i8>(world->page_pp));
-    }
-    if (world->page_part != -1) {
-        edpartStopPage(static_cast<i8>(world->page_part));
-        edpartClearPage(static_cast<i8>(world->page_part));
-    }
-    if (world->page_grass != -1) {
-        edgraStopPage(static_cast<i8>(world->page_grass));
-        edgraClearPage(static_cast<i8>(world->page_grass));
-    }
-    if (world->page_bridge != -1)
-        edbriClearPage(static_cast<i8>(world->page_bridge));
-    if (world->page_anim != -1) {
-        edanimStopPage(world->page_anim);
-        edanimClearPage(world->page_anim);
-    }
-    if (BGLOAD == 0) {
-        for (i32 page = 2; page < 8; ++page) {
-            if (edpp_page_on[page] != 0) {
-                edppStopPage(page);
-                edppClearPage(page);
-            }
-        }
-        for (i32 page = 1; page < 8; ++page) {
-            if (part_page_on[page] != 0) {
-                edpartStopPage(page);
-                edpartClearPage(page);
-            }
-        }
-    }
-    DestroyRippleMtls(world);
-    if (world->current_gscn != nullptr) {
-        NuGScnRemove(world->current_gscn);
-        world->current_gscn = nullptr;
-    }
-    if (world->scene != nullptr) {
-        NuGScnRemove(world->scene);
-        world->scene = nullptr;
-    }
-}
 void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
     if (progress == NULL || gscn == NULL)
         return;
@@ -256,10 +196,11 @@ void StoreLevelProgressFn(WORLDINFO_s *world, LEVEL_PROGRESS_s *progress, i32 ar
                     progress->scripts[j].params[k] = processor.processor.params[k];
                 break;
             }
-            if (NuStrICmp(progress->scripts[j].name, processor.name) == 0) {
-                memcpy(progress->scripts[j].params, processor.processor.params, 16);
-                break;
+            if (NuStrICmp(progress->scripts[j].name, processor.name) != 0) {
+                continue;
             }
+            memcpy(progress->scripts[j].params, processor.processor.params, 16);
+            break;
         }
     }
 store_flags:
@@ -268,6 +209,66 @@ store_flags:
             memmove(progress->disabled_effect_names, world->level_progress->disabled_effect_names, 0xc0);
         reinterpret_cast<u8 *>(&progress->flags)[0] =
             (reinterpret_cast<u8 *>(&progress->flags)[0] & ~4) | ((world->field_0x5174 & 1) << 2) | 2;
+    }
+}
+void WorldInfo_Dump(WORLDINFO *world) {
+    if (world->mech_auto_jump_manager != NULL) {
+        delete world->mech_auto_jump_manager;
+        world->mech_auto_jump_manager = NULL;
+    }
+    MechSystems::Get()->ExitLevel(world);
+    Customiser_DumpAll(Game_Customiser, world);
+    if (world->cutscene_sys != NULL) {
+        for (i32 index = 0; index < world->cutscene_sys->count; ++index)
+            ClearLinkedCutSceneMusic(world->cutscene_sys->cuts[index]->instance);
+    }
+    CharacterMiniKits_Dump(world);
+    CharScenes_LevelDump(world);
+    CutScenes_Destroy(world->cutscene_sys);
+    if (world->icons_gscn != nullptr) {
+        NuGScnRemove(world->icons_gscn);
+        world->icons_gscn = nullptr;
+    }
+    if (world->page_pp != -1) {
+        edppStopPage(static_cast<i8>(world->page_pp));
+        edppClearPage(static_cast<i8>(world->page_pp));
+    }
+    if (world->page_part != -1) {
+        edpartStopPage(static_cast<i8>(world->page_part));
+        edpartClearPage(static_cast<i8>(world->page_part));
+    }
+    if (world->page_grass != -1) {
+        edgraStopPage(static_cast<i8>(world->page_grass));
+        edgraClearPage(static_cast<i8>(world->page_grass));
+    }
+    if (world->page_bridge != -1)
+        edbriClearPage(static_cast<i8>(world->page_bridge));
+    if (world->page_anim != -1) {
+        edanimStopPage(world->page_anim);
+        edanimClearPage(world->page_anim);
+    }
+    if (BGLOAD == 0) {
+        for (i32 page = 2; page < 8; ++page) {
+            if (edpp_page_on[page] != 0) {
+                edppStopPage(page);
+                edppClearPage(page);
+            }
+        }
+        for (i32 page = 1; page < 8; ++page) {
+            if (part_page_on[page] != 0) {
+                edpartStopPage(page);
+                edpartClearPage(page);
+            }
+        }
+    }
+    DestroyRippleMtls(world);
+    if (world->current_gscn != nullptr) {
+        NuGScnRemove(world->current_gscn);
+        world->current_gscn = nullptr;
+    }
+    if (world->scene != nullptr) {
+        NuGScnRemove(world->scene);
+        world->scene = nullptr;
     }
 }
 
@@ -306,13 +307,13 @@ void CalculateWorldSize(WORLDINFO *world) {
     NUGSCN *scene = world->current_gscn;
     for (i32 i = 0; i < scene->portal_instance_count; ++i) {
         NUPORTALBOX *box = &scene->portal_boxes[i];
-        NUVEC box_minimum = box->first;
         NUVEC box_maximum = box->second;
+        NUVEC box_minimum = box->first;
         if (scene->display_list != NULL &&
             (scene->display_list->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
+            box_minimum.z = box->first.z - box->second.z;
             box_minimum.x = box->first.x - box->second.x;
             box_minimum.y = box->first.y - box->second.y;
-            box_minimum.z = box->first.z - box->second.z;
             box_maximum.x = box->first.x + box->second.x;
             box_maximum.y = box->first.y + box->second.y;
             box_maximum.z = box->first.z + box->second.z;
@@ -448,8 +449,8 @@ void WorldInfo_Init(WORLDINFO *world) {
     // Level progress copy
     LEVEL_PROGRESS_s *progress = (LEVEL_PROGRESS_s *)world->level_progress;
     if (NOSOUND == 0 && progress != NULL && (progress->flags & 1) == 0) {
-        progress->data = world->progress_data;
         progress->flags |= 1;
+        progress->data = world->progress_data;
     }
 
     Doors_Init(world);
@@ -1165,7 +1166,25 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
             ++FreePlayResidentCount;
         }
     }
-    if (data == NULL || (data->flags & 1) == 0) {
+    if (data != NULL && (data->flags & 1) != 0) {
+        if ((data->flags & 4) == 0) {
+            const i32 second = PlayerList[1];
+            if (second == -1 || (CDataList[second].model_flags & 0x2000) == 0 || Collection_Got(second) == 0)
+                PlayerList[1] = PlayerList[0];
+            const i32 count = VehicleCollection.count_y < 340 ? VehicleCollection.count_y : 340;
+            for (i32 i = 0; i < count; ++i)
+                ids[i] = VehicleCollection.list[i].id;
+            ids[count] = -1;
+            for (i16 *id = ids; *id != -1; ++id) {
+                if (World_AddFreePlayModel(*id) != 0)
+                    ++FreePlayBonusCount;
+            }
+        } else {
+            const i32 second = PlayerList[1];
+            if (second == -1 || (CDataList[second].model_flags & 0x4000000) == 0 || Collection_Got(second) == 0)
+                PlayerList[1] = PlayerList[0];
+        }
+    } else {
         i32 hats = InModelListDataFlags(FreePlayModelList, 0, 0, 1, 0);
         if (CharCategory != NULL) {
             for (i32 i = 0; i < CHARCATEGORYCOUNT; ++i) {
@@ -1187,10 +1206,11 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
             }
             bool imperial = false;
             for (APICHARACTERMODELLIST_s *model = FreePlayModelList; model->model_id != -1; ++model) {
-                if (Collection_Got(model->model_id) != 0 && World_FreePlayImperial(model->model_id)) {
-                    imperial = true;
-                    break;
+                if (!(Collection_Got(model->model_id) != 0 && World_FreePlayImperial(model->model_id))) {
+                    continue;
                 }
+                imperial = true;
+                break;
             }
             if (!imperial) {
                 i32 count = 0;
@@ -1210,22 +1230,6 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
                 }
             }
         }
-    } else if ((data->flags & 4) == 0) {
-        const i32 second = PlayerList[1];
-        if (second == -1 || (CDataList[second].model_flags & 0x2000) == 0 || Collection_Got(second) == 0)
-            PlayerList[1] = PlayerList[0];
-        const i32 count = VehicleCollection.count_y < 340 ? VehicleCollection.count_y : 340;
-        for (i32 i = 0; i < count; ++i)
-            ids[i] = VehicleCollection.list[i].id;
-        ids[count] = -1;
-        for (i16 *id = ids; *id != -1; ++id) {
-            if (World_AddFreePlayModel(*id) != 0)
-                ++FreePlayBonusCount;
-        }
-    } else {
-        const i32 second = PlayerList[1];
-        if (second == -1 || (CDataList[second].model_flags & 0x4000000) == 0 || Collection_Got(second) == 0)
-            PlayerList[1] = PlayerList[0];
     }
     for (EXTRAMODEL *extra = ExtraModelList; extra->model_list != NULL; ++extra) {
         const i32 source = *extra->model_list;

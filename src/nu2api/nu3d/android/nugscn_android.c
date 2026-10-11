@@ -210,26 +210,25 @@ i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR buf_end, i32 file) {
 }
 
 extern "C" void NuGScnFixupTIDsPS(NUGSCN *scene) {
-    if (scene->display_list == NULL) {
-        return;
-    }
+    if (scene->display_list != NULL) {
 
-    for (i32 i = 0; i < scene->display_list->nitems; ++i) {
-        NUDISPLAYLISTITEM *item = &scene->display_list->items[i];
-        if (item->type == 0xb0) {
-            i32 *packet = static_cast<i32 *>(item->next);
-            if (packet[0] == 2) {
-                packet[0] = 1;
-                for (i32 texture = 0; texture < 3; ++texture) {
-                    packet[texture + 2] = NuGScnFixupTID(scene, packet[texture + 2]);
+        for (i32 i = 0; i < scene->display_list->nitems; ++i) {
+            NUDISPLAYLISTITEM *item = &scene->display_list->items[i];
+            if (item->type == 0xb0) {
+                i32 *packet = static_cast<i32 *>(item->next);
+                if (packet[0] == 2) {
+                    packet[0] = 1;
+                    for (i32 texture = 0; texture < 3; ++texture) {
+                        packet[texture + 2] = NuGScnFixupTID(scene, packet[texture + 2]);
+                    }
                 }
-            }
-            packet[1] = NuGScnFixupTID(scene, packet[1]);
-        } else if (item->type == 0xae || item->type == 0xaf) {
-            i32 *packet = static_cast<i32 *>(item->next);
-            if (packet != NULL) {
-                for (i32 texture = 0; texture < 3; ++texture) {
-                    packet[texture] = NuGScnFixupTID(scene, packet[texture]);
+                packet[1] = NuGScnFixupTID(scene, packet[1]);
+            } else if (item->type == 0xae || item->type == 0xaf) {
+                i32 *packet = static_cast<i32 *>(item->next);
+                if (packet != NULL) {
+                    for (i32 texture = 0; texture < 3; ++texture) {
+                        packet[texture] = NuGScnFixupTID(scene, packet[texture]);
+                    }
                 }
             }
         }
@@ -237,25 +236,24 @@ extern "C" void NuGScnFixupTIDsPS(NUGSCN *scene) {
 }
 
 extern "C" void NuGScnRestoreTIDsPS(NUGSCN *scene) {
-    if (scene->display_list == NULL) {
-        return;
-    }
+    if (scene->display_list != NULL) {
 
-    for (i32 i = 0; i < scene->display_list->nitems; ++i) {
-        NUDISPLAYLISTITEM *item = &scene->display_list->items[i];
-        if (item->type == 0xb0) {
-            i32 *packet = static_cast<i32 *>(item->next);
-            if (packet[0] == 2) {
-                for (i32 texture = 0; texture < 3; ++texture) {
-                    packet[texture + 2] = NuGScnRestoreTID(scene, packet[texture + 2]);
+        for (i32 i = 0; i < scene->display_list->nitems; ++i) {
+            NUDISPLAYLISTITEM *item = &scene->display_list->items[i];
+            if (item->type == 0xb0) {
+                i32 *packet = static_cast<i32 *>(item->next);
+                if (packet[0] == 2) {
+                    for (i32 texture = 0; texture < 3; ++texture) {
+                        packet[texture + 2] = NuGScnRestoreTID(scene, packet[texture + 2]);
+                    }
                 }
-            }
-            packet[1] = NuGScnRestoreTID(scene, packet[1]);
-        } else if (item->type == 0xae || item->type == 0xaf) {
-            i32 *packet = static_cast<i32 *>(item->next);
-            if (packet != NULL) {
-                for (i32 texture = 0; texture < 3; ++texture) {
-                    packet[texture] = NuGScnRestoreTID(scene, packet[texture]);
+                packet[1] = NuGScnRestoreTID(scene, packet[1]);
+            } else if (item->type == 0xae || item->type == 0xaf) {
+                i32 *packet = static_cast<i32 *>(item->next);
+                if (packet != NULL) {
+                    for (i32 texture = 0; texture < 3; ++texture) {
+                        packet[texture] = NuGScnRestoreTID(scene, packet[texture]);
+                    }
                 }
             }
         }
@@ -265,27 +263,26 @@ extern "C" void NuGScnRestoreTIDsPS(NUGSCN *scene) {
 static void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *scene, nunativegscene_s *) {
     for (i32 clip_index = 0; clip_index < scene->nclip_objects; ++clip_index) {
         u8 *clip = reinterpret_cast<u8 *>(&scene->clip_objects[clip_index]);
-        u32 nitems = *reinterpret_cast<u32 *>(clip);
         u32 *materials = *reinterpret_cast<u32 **>(clip + 4);
+        u32 nitems = *reinterpret_cast<u32 *>(clip);
         i32 *items = *reinterpret_cast<i32 **>(clip + 8);
         for (u32 item_index = 0; item_index < nitems; ++item_index) {
             NUDISPLAYLISTITEM *item = &scene->items[items[item_index]];
-            if (item->type == 0x8f) {
-                continue;
-            }
-            g_boundMaterial = scene->mtls[materials[item_index]];
-            g_LastMtl = g_boundMaterial;
-            u8 vertex_flags = reinterpret_cast<u8 *>(&g_boundMaterial->shader_desc.vtx_desc)[2];
-            if ((vertex_flags & 0x10) == 0) {
-                if ((vertex_flags & 0x20) == 0) {
-                    NuIOS_SetVertexFormat(reinterpret_cast<usize>(g_boundMaterial->vertex_decl));
+            if (item->type != 0x8f) {
+                g_boundMaterial = scene->mtls[materials[item_index]];
+                g_LastMtl = g_boundMaterial;
+                u8 vertex_flags = reinterpret_cast<u8 *>(&g_boundMaterial->shader_desc.vtx_desc)[2];
+                if ((vertex_flags & 0x10) != 0) {
+                    g_boundVertexFormat = reinterpret_cast<usize>(g_nuDebrisVertexFormat);
                 } else {
-                    g_boundVertexFormat = reinterpret_cast<usize>(g_nuFaceOnVertexFormat);
+                    if ((vertex_flags & 0x20) == 0) {
+                        NuIOS_SetVertexFormat(reinterpret_cast<usize>(g_boundMaterial->vertex_decl));
+                    } else {
+                        g_boundVertexFormat = reinterpret_cast<usize>(g_nuFaceOnVertexFormat);
+                    }
                 }
-            } else {
-                g_boundVertexFormat = reinterpret_cast<usize>(g_nuDebrisVertexFormat);
+                NuIOSDLPreWarmGeomCallback(item->next);
             }
-            NuIOSDLPreWarmGeomCallback(item->next);
         }
     }
 }
@@ -356,8 +353,8 @@ SAGA_HOST_WEAK void NuGScnCreatePS(nugscn_s *scene, variptr_u *, variptr_u *) {
     if (g_VideoResHeader.texture_hashes == 0) {
         for (i32 i = 0; i < scene->ntextures; ++i) {
             NUNATIVETEX *texture = textures[i];
-            texture->image_data = nullptr;
             texture->size = 0;
+            texture->image_data = nullptr;
             texture->platform.gl_tex = g_VideoResHeader.textures[i];
         }
     } else {
@@ -367,8 +364,8 @@ SAGA_HOST_WEAK void NuGScnCreatePS(nugscn_s *scene, variptr_u *, variptr_u *) {
                 g_VideoResHeader.textures[i] = NuIOS_CreateGLTexFromHash(hash);
             }
             NUNATIVETEX *texture = textures[i];
-            texture->image_data = nullptr;
             texture->size = hash;
+            texture->image_data = nullptr;
             texture->platform.gl_tex = g_VideoResHeader.textures[i];
         }
     }

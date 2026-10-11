@@ -197,27 +197,9 @@ static EdFloatControl *make_spline_float_control(f32 minimum, f32 maximum) {
     EdFloatControl *control = new (theMemoryManager.AllocPool(sizeof(EdFloatControl), 1)) EdFloatControl;
     control->value_type = EdType_Float;
     control->format = const_cast<char *>("%.2f");
-    control->minimum = minimum;
     control->maximum = maximum;
+    control->minimum = minimum;
     return control;
-}
-
-f32 SplineLength(nugspline_s *spline, i32 closed) {
-    if (spline == NULL || spline->length < 2)
-        return 0.0f;
-    i32 segment_count = closed != 0 ? spline->length : spline->length - 1;
-    f32 length = 0.0f;
-    NUVEC *previous = spline->pts;
-    i32 segment = 0;
-    do {
-        NUVEC *next = &spline->pts[segment == spline->length - 1 ? 0 : segment + 1];
-        NUVEC difference;
-        NuVecSub(&difference, next, previous);
-        length += NuVecMag(&difference);
-        previous = next;
-        ++segment;
-    } while (segment < segment_count);
-    return length;
 }
 
 f32 KnotHelper::DistanceToObject(VuVec &origin, VuVec &direction, void *object, EdRef **reference) {
@@ -240,9 +222,27 @@ f32 KnotHelper::DistanceToObject(VuVec &origin, VuVec &direction, void *object, 
     return distance < 0.0f ? 0.0f : distance;
 }
 
+f32 SplineLength(nugspline_s *spline, i32 closed) {
+    if (spline == NULL || spline->length < 2)
+        return 0.0f;
+    i32 segment_count = closed != 0 ? spline->length : spline->length - 1;
+    f32 length = 0.0f;
+    NUVEC *previous = spline->pts;
+    i32 segment = 0;
+    do {
+        NUVEC *next = &spline->pts[segment == spline->length - 1 ? 0 : segment + 1];
+        NUVEC difference;
+        NuVecSub(&difference, next, previous);
+        length += NuVecMag(&difference);
+        previous = next;
+        ++segment;
+    } while (segment < segment_count);
+    return length;
+}
+
 void *KnotHelper::CreateObject(void *, i32, i32) {
-    SplineObject *spline = NULL;
     SplineKnot *selected_knot = NULL;
+    SplineObject *spline = NULL;
     for (ClassObjectListEntry *selected = theClassEditor.selected_objects.first; selected != NULL;
          selected = selected->next) {
         if (spline == NULL && selected->ed_class == theSplineHelper.object_class)
@@ -456,21 +456,21 @@ void SplineHelper::DestroyObject(void *object, i32) {
     theLevelEditor.destroying_objects = 1;
     SplineObject *spline = static_cast<SplineObject *>(object);
     for (SplineObject *current = first_object; current != NULL; current = current->next) {
-        if (current != spline || current->knots.count != 0)
-            continue;
-        if (current->previous != NULL)
-            current->previous->next = current->next;
-        else
-            first_object = current->next;
-        if (current->next != NULL)
-            current->next->previous = current->previous;
-        else
-            last_object = current->previous;
-        current->next = NULL;
-        current->previous = NULL;
-        --object_count;
-        delete current;
-        return;
+        if (current == spline && current->knots.count == 0) {
+            if (current->previous != NULL)
+                current->previous->next = current->next;
+            else
+                first_object = current->next;
+            if (current->next != NULL)
+                current->next->previous = current->previous;
+            else
+                last_object = current->previous;
+            current->next = NULL;
+            current->previous = NULL;
+            --object_count;
+            delete current;
+            return;
+        }
     }
 }
 
@@ -574,13 +574,13 @@ void SplineHelper::SerialiseObject(EdStream &stream, void *object) {
         stream.SerialiseBuffer(&knot_count, sizeof(knot_count), 1);
         for (i32 index = 0; index < knot_count; ++index) {
             SplineKnot *knot = static_cast<SplineKnot *>(theMemoryManager.AllocPool(sizeof(SplineKnot), 1));
-            knot->next = NULL;
             knot->previous = NULL;
+            knot->next = NULL;
             knot->led_file = Placeable::CurrentLedFile;
             theKnotHelper.object_class->SerialiseObject(stream, knot);
             knot->spline = spline;
-            knot->next = NULL;
             knot->previous = spline->knots.last;
+            knot->next = NULL;
             if (spline->knots.last != NULL)
                 spline->knots.last->next = knot;
             const bool had_first = spline->knots.first != NULL;
@@ -626,14 +626,13 @@ void SplineHelper::cbEdSplineSmoothKnot(eduimenu_s *, eduiitem_s *, u32) {
             continue;
         SplineKnot *knot = static_cast<SplineKnot *>(selected->object);
         knot->Smooth();
-        SplineObject *spline = knot->spline;
-        if (!theSplineHelper.auto_generate_points || spline == NULL)
+        if (!theSplineHelper.auto_generate_points || knot->spline == NULL)
             continue;
         i32 index = 0;
-        while (index < changed_count && changed_splines[index] != spline)
+        while (index < changed_count && changed_splines[index] != knot->spline)
             ++index;
         if (index == changed_count)
-            changed_splines[changed_count++] = spline;
+            changed_splines[changed_count++] = knot->spline;
     }
     for (i32 index = 0; index < changed_count; ++index)
         changed_splines[index]->GenPoints();
@@ -724,8 +723,8 @@ SplineObject *SplineObject::Clone() {
         knot->in_tangent.w = source->in_tangent.w;
         knot->out_tangent.x = source->out_tangent.x;
         knot->out_tangent.y = source->out_tangent.y;
-        knot->out_tangent.z = source->out_tangent.z;
         knot->out_tangent.w = source->out_tangent.w;
+        knot->out_tangent.z = source->out_tangent.z;
         source = source->next;
     }
     clone->step = step;
@@ -830,8 +829,8 @@ void SplineObject::GenPoints() {
 }
 
 void SplineObject::ReverseKnots() {
-    SplineKnot *knot = knots.last;
     SplineKnot *old_first = knots.first;
+    SplineKnot *knot = knots.last;
     knots.last = NULL;
     knots.first = NULL;
     knots.count = 0;

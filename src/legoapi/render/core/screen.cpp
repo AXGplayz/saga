@@ -153,8 +153,8 @@ SAGA_HOST_WEAK void InitStillRender(variptr_u *, variptr_u) {
     nativePauseTex.checksum[13] = 0;
     nativePauseTex.checksum[14] = 0;
     nativePauseTex.checksum[15] = 0;
-    nativePauseTex.width = g_backingWidth;
     nativePauseTex.height = g_backingHeight;
+    nativePauseTex.width = g_backingWidth;
 
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/legoapi.saga/screen.cpp", 0x561);
     glGenTextures(1, &nativePauseTex.platform.gl_tex);
@@ -189,26 +189,17 @@ void DrawPauseScreenWipe() {
     NuRndrBeginScene(-1);
 
     i32 x = 0;
-    i32 y = 0;
     i32 width = 0x2800;
+    i32 y = 0;
     i32 height = 0xe00;
     f32 u0 = 0.0f;
-    f32 v0 = 1.0f;
     f32 u1 = 1.0f;
     f32 v1 = 0.0f;
+    f32 v0 = 1.0f;
     u32 colours[4];
 
     if ((FadeSys.direction & 3) != 0) {
-        if ((FadeSys.direction & 1) == 0) {
-            const f32 fade = FadeSys.fade;
-            width = static_cast<i32>(fade * 10240.0f);
-            colours[0] = 0x80808080u;
-            colours[1] = 0x00808080u;
-            colours[2] = 0x80808080u;
-            colours[3] = 0x00808080u;
-            NuRndrGradRectUV2di(width, 0, 0x400, 0xe00, fade, 1.0f, fade + 0.1f, 0.0f, colours, pause_rndr_mtl);
-            u1 = fade;
-        } else {
+        if ((FadeSys.direction & 1) != 0) {
             const f32 fade = FadeSys.fade;
             u0 = 1.0f - fade;
             x = static_cast<i32>(u0 * 10240.0f);
@@ -218,19 +209,18 @@ void DrawPauseScreenWipe() {
             colours[2] = 0x00808080u;
             colours[3] = 0x80808080u;
             NuRndrGradRectUV2di(x - 0x400, 0, 0x400, 0xe00, u0 - 0.1f, 1.0f, u0, 0.0f, colours, pause_rndr_mtl);
+        } else {
+            const f32 fade = FadeSys.fade;
+            width = static_cast<i32>(fade * 10240.0f);
+            colours[0] = 0x80808080u;
+            colours[1] = 0x00808080u;
+            colours[2] = 0x80808080u;
+            colours[3] = 0x00808080u;
+            NuRndrGradRectUV2di(width, 0, 0x400, 0xe00, fade, 1.0f, fade + 0.1f, 0.0f, colours, pause_rndr_mtl);
+            u1 = fade;
         }
     } else if ((FadeSys.direction & 0xc) != 0) {
-        if ((FadeSys.direction & 4) == 0) {
-            const f32 fade = FadeSys.fade;
-            height = static_cast<i32>(fade * 3584.0f);
-            colours[0] = 0x80808080u;
-            colours[1] = 0x80808080u;
-            colours[2] = 0x00808080u;
-            colours[3] = 0x00808080u;
-            NuRndrGradRectUV2di(0, height, 0x2800, 0x166, 0.0f, 1.0f - fade, 1.0f, 1.0f - (fade + 0.1f), colours,
-                                pause_rndr_mtl);
-            v1 = 1.0f - fade;
-        } else {
+        if ((FadeSys.direction & 4) != 0) {
             const f32 fade = FadeSys.fade;
             const f32 edge = 1.0f - fade;
             y = static_cast<i32>(edge * 3584.0f);
@@ -242,6 +232,16 @@ void DrawPauseScreenWipe() {
             NuRndrGradRectUV2di(0, y - 0x166, 0x2800, 0x166, 0.0f, 1.0f - (edge - 0.1f), 1.0f, 1.0f - edge, colours,
                                 pause_rndr_mtl);
             v0 = 1.0f - edge;
+        } else {
+            const f32 fade = FadeSys.fade;
+            height = static_cast<i32>(fade * 3584.0f);
+            colours[0] = 0x80808080u;
+            colours[1] = 0x80808080u;
+            colours[2] = 0x00808080u;
+            colours[3] = 0x00808080u;
+            NuRndrGradRectUV2di(0, height, 0x2800, 0x166, 0.0f, 1.0f - fade, 1.0f, 1.0f - (fade + 0.1f), colours,
+                                pause_rndr_mtl);
+            v1 = 1.0f - fade;
         }
     }
 
@@ -273,12 +273,12 @@ void DrawStillScreen(i32 clear) {
     if (clear != 0) {
         NuRndrClear(0x500, 0, 1.0f);
     }
-    if (!(MainRenderTime < 1.0f)) {
-        NuRndrRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, 0x80808080u, pause_rndr_mtl);
-    } else {
+    if (MainRenderTime < 1.0f) {
         const u32 colour = (static_cast<i32>(MainRenderTime * 128.0f) << 24) | 0x00808080u;
         u32 colours[4] = {colour, colour, colour, colour};
         NuRndrGradRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, colours, pause_rndr_mtl);
+    } else {
+        NuRndrRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, 0x80808080u, pause_rndr_mtl);
     }
     NuRndrEndScene();
 }
@@ -331,14 +331,16 @@ void HandleStillRender() {
     }
     old_pause_state = Paused;
 
-    if ((waiting_for_level == -1 ||
-         (gone_through_door_to_new_level == 0 && cut_waiting_for_new_level == 0 && waiting_for_new_level == 0)) &&
-        (NewLData != CREDITS_LDATA || LastLData != STATUS_LDATA) &&
-        (NewLData != STATUS_LDATA ||
-         ((WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) && GAMEDEMO == 0)) &&
-        NewLData != CREDITS_LDATA &&
-        (NewLData != HUB_LDATA || WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) &&
-        !(MainRenderTime > 0.0f && MainRenderTime < 1.0f)) {
+    if (!((waiting_for_level == -1 ||
+           (gone_through_door_to_new_level == 0 && cut_waiting_for_new_level == 0 && waiting_for_new_level == 0)) &&
+          (NewLData != CREDITS_LDATA || LastLData != STATUS_LDATA) &&
+          (NewLData != STATUS_LDATA ||
+           ((WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) && GAMEDEMO == 0)) &&
+          NewLData != CREDITS_LDATA &&
+          (NewLData != HUB_LDATA || WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) &&
+          !(MainRenderTime > 0.0f && MainRenderTime < 1.0f))) {
+        pause_rndr_on = 1;
+    } else {
         if (Paused == 0 || IsGrabbingScreen() != 0) {
             pause_rndr_on = static_cast<u32>(grab_screen_image) > 1;
         } else if (PauseRenderOffFn != NULL && PauseRenderOffFn() != 0) {
@@ -346,8 +348,6 @@ void HandleStillRender() {
         } else {
             pause_rndr_on = 1;
         }
-    } else {
-        pause_rndr_on = 1;
     }
 
     if (screendump != 0) {

@@ -107,7 +107,7 @@ void InitAICreatures(AISYS_s *system) {
             continue;
         }
 
-        i32 count = creature.count;
+        u8 count = creature.count;
         if (count == 0) {
             continue;
         }
@@ -187,33 +187,35 @@ void ResetAICreature(GameObject_s *object, AISYS_s *system) {
     object->ai.field_0x1e6 &= ~4u;
     object->ai.field_0x1e4 = static_cast<u8>((object->ai.field_0x1e4 & 0x7f) |
                                              ((creature.flags & AI_CREATURE_FLAG_FORMATION_REVERSED) << 7));
-    object->apiobj.viewdistance = creature.view_distance;
     object->apiobj.heardistance = creature.hear_distance;
     object->apiobj.maxviewheight = creature.max_view_height;
     object->apiobj.minviewheight = creature.min_view_height;
+    object->apiobj.viewdistance = creature.view_distance;
 
     const u8 column = object->ai.group_column;
     const u8 row = object->ai.group_row;
-    NUVEC offset = {
-        static_cast<f32>((column + 1) / 2) * creature.x_spacing * ((column & 1) != 0 ? -1.0f : 1.0f),
-        0.0f,
-        -static_cast<f32>(row) * creature.z_spacing,
-    };
+    NUVEC offset;
+    offset.x = static_cast<f32>((column + 1) / 2) * creature.x_spacing;
+    if ((column & 1) != 0) {
+        offset.x = -offset.x;
+    }
+    offset.y = 0.0f;
+    offset.z = -creature.z_spacing * static_cast<f32>(row);
 
     i32 angle;
     AIPATHINFO *path_info;
-    if (object->ai_respawn_count != 0 && object->ai.respawn_locator != NULL) {
-        AILOCATOR *locator = object->ai.respawn_locator;
-        angle = locator->flags;
-        NuVecRotateY(&offset, &offset, angle);
-        NuVecAdd(&object->apiobj.position, &offset, &locator->position);
-        path_info = &locator->path_info;
-        object->ai.respawn_locator = NULL;
-    } else {
+    if (!(object->ai_respawn_count != 0 && object->ai.respawn_locator != NULL)) {
         angle = creature.y_rot;
         NuVecRotateY(&offset, &offset, angle);
         NuVecAdd(&object->apiobj.position, &offset, &creature.pos);
         path_info = &creature.path_info;
+    } else {
+        angle = object->ai.respawn_locator->flags;
+        NuVecRotateY(&offset, &offset, angle);
+        NuVecAdd(&object->apiobj.position, &offset, &object->ai.respawn_locator->position);
+        AILOCATOR *locator = object->ai.respawn_locator;
+        object->ai.respawn_locator = NULL;
+        path_info = &locator->path_info;
     }
 
     object->apiobj.pos_x = object->apiobj.position.x;
@@ -240,8 +242,8 @@ void ResetAICreature(GameObject_s *object, AISYS_s *system) {
     AISCRIPTPROCESS *processor = &object->ai.script_process;
     AIScriptProcessorInit(WORLD->ai_sys, packet, processor, &creature, creature.script_name, NULL, 1, NULL, NULL);
     object->ai.field_0x138 = 0xff;
-    object->ai.field_0x139 = 0;
     object->ai.field_0x124 = -1;
+    object->ai.field_0x139 = 0;
     AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, packet, 0xff, static_cast<i8>(object->apiobj.field_0x27d));
 
     ResetAnimPacket(&object->apiobj.anim_packet, 1);
@@ -309,10 +311,9 @@ void ResetAICreatures(AISYS_s *system) {
         }
 
         object.apiobj.flags_high &= static_cast<u8>(~APIOBJECT_HIGH_FLAG_CHARACTER);
-        LEVEL_PROGRESS_s *progress = WORLD->level_progress;
         const bool permanently_removed =
-            progress != NULL && object_index < 64 &&
-            (progress->disabled_ai_object_mask[object_index / 32] & (1u << (object_index & 31))) != 0;
+            WORLD->level_progress != NULL && object_index < 64 &&
+            (WORLD->level_progress->disabled_ai_object_mask[object_index / 32] & (1u << (object_index & 31))) != 0;
         if (permanently_removed) {
             object.ai.reset_mode = AI_CREATURE_RESET_DISABLED;
             object.apiobj.field_0x287 = 1;
@@ -339,11 +340,14 @@ void ResetAICreatures(AISYS_s *system) {
             object.ai.reset_mode = AI_CREATURE_RESET_DISABLED;
             continue;
         }
-        if (creature.count > 1 && creature.start_stagger > 0.0f && object.ai.group_member_index != 0) {
-            object.ai.reset_mode = AI_CREATURE_RESET_STAGGERED;
-            object.ai_spawn_delay =
-                static_cast<f32>(static_cast<u32>(object.ai.group_member_index)) * creature.start_stagger;
-            continue;
+        if (creature.count > 1) {
+            const f32 start_stagger = creature.start_stagger;
+            if (start_stagger > 0.0f && object.ai.group_member_index != 0) {
+                object.ai.reset_mode = AI_CREATURE_RESET_STAGGERED;
+                object.ai_spawn_delay =
+                    static_cast<f32>(static_cast<u32>(object.ai.group_member_index)) * start_stagger;
+                continue;
+            }
         }
 
         ResetAICreature(&object, system);

@@ -217,13 +217,14 @@ NuMemoryPool::NuMemoryPool(IEventHandler *handler, u32 size, const char *debug_n
 }
 
 void *NuMemoryPool::PageAlloc(u32 size, const char *name) {
+    Page *candidate;
     pthread_mutex_lock(&mutex);
     page_list_stable = false;
 
     Page *page = pages;
     if (page != NULL && size > page->size - page->offset) {
         Page *previous = page;
-        Page *candidate = page->next;
+        candidate = page->next;
         while (candidate != NULL) {
             // The original rotates the first later page that is also full;
             // usable later pages are left in place.
@@ -268,121 +269,6 @@ void NuMemoryPool::ReleaseAllPages() {
     }
     pages = NULL;
     memset(free_lists, 0, sizeof(free_lists));
-    page_list_stable = true;
-    pthread_mutex_unlock(&mutex);
-}
-
-void NuMemoryPool::ReleaseUnreferencedPages() {
-    pthread_mutex_lock(&mutex);
-    page_list_stable = false;
-
-    u32 page_count = 0;
-    for (Page *page = pages; page != NULL; page = page->next) {
-        ++page_count;
-    }
-    if (page_count > 1) {
-        pages = MergeSort(pages, page_count);
-    }
-
-    for (u32 i = 0; i < 256; ++i) {
-        u32 block_count = 0;
-        for (FreeBlock volatile *block = free_lists[i]; block != NULL; block = block->next) {
-            ++block_count;
-        }
-        if (block_count > 1) {
-            free_lists[i] = MergeSort(free_lists[i], block_count);
-        }
-    }
-
-    FreeBlock volatile *cursors[256];
-    memcpy(cursors, free_lists, sizeof(cursors));
-
-    Page *previous = NULL;
-    Page *recycled = NULL;
-    u32 visited_count = 0;
-    u32 released_count = 0;
-    u32 recycled_count = 0;
-    for (Page *page = pages; page != NULL;) {
-        ++visited_count;
-        u32 free_block_count = 0;
-        for (u32 i = 0; i < 256; ++i) {
-            FreeBlock volatile *block = cursors[i];
-            if (block != NULL) {
-                const usize cursor_page_end = reinterpret_cast<usize>(page->ptr) + page->size;
-                while (reinterpret_cast<usize>(block) < cursor_page_end) {
-                    block = block->next;
-                    ++free_block_count;
-                    if (block == NULL) {
-                        break;
-                    }
-                }
-            }
-            cursors[i] = block;
-        }
-
-        if (free_block_count != page->allocation_count) {
-            previous = page;
-            page = page->next;
-            continue;
-        }
-
-        const usize page_begin = reinterpret_cast<usize>(page->ptr);
-        for (u32 i = 0; i < 256; ++i) {
-            FreeBlock volatile *block = free_lists[i];
-            FreeBlock volatile *previous_block = NULL;
-            if (block != NULL) {
-                const usize list_page_end = page_begin + page->size;
-                while (reinterpret_cast<usize>(block) < list_page_end) {
-                    if (reinterpret_cast<usize>(block) >= page_begin) {
-                        if (previous_block != NULL) {
-                            previous_block->next = block->next;
-                        } else {
-                            free_lists[i] = block->next;
-                        }
-                    } else {
-                        previous_block = block;
-                    }
-                    block = block->next;
-                    if (block == NULL) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        Page *next_page = page->next;
-        if (previous != NULL) {
-            previous->next = next_page;
-        } else {
-            pages = next_page;
-        }
-        if (event_handler->ReleasePage(this, page->ptr)) {
-            InterlockedSub(&free_bytes, page->size);
-            NU_FREE(page);
-            ++released_count;
-        } else {
-            page->allocation_count = 0;
-            page->offset = 0;
-            page->next = recycled;
-            recycled = page;
-            ++recycled_count;
-        }
-        page = next_page;
-    }
-
-    while (recycled != NULL) {
-        Page *next_page = recycled->next;
-        recycled->next = pages;
-        pages = recycled;
-        recycled = next_page;
-    }
-
-    visited_page_count = visited_count;
-    released_page_count = released_count;
-    recycled_page_count = recycled_count;
-    unknown_0x434 = 0;
-    unknown_0x438 = 0;
-    unknown_0x43c = 0;
     page_list_stable = true;
     pthread_mutex_unlock(&mutex);
 }
@@ -458,6 +344,122 @@ void NuMemoryPool::ReleaseUnreferencedPages_OLD() {
 
     unknown_0x438 = released_count;
     unknown_0x43c = recycled_count;
+}
+
+void NuMemoryPool::ReleaseUnreferencedPages() {
+    pthread_mutex_lock(&mutex);
+    page_list_stable = false;
+
+    u32 page_count = 0;
+    for (Page *page = pages; page != NULL; page = page->next) {
+        ++page_count;
+    }
+    if (page_count > 1) {
+        pages = MergeSort(pages, page_count);
+    }
+
+    for (u32 i = 0; i < 256; ++i) {
+        u32 block_count = 0;
+        for (FreeBlock volatile *block = free_lists[i]; block != NULL; block = block->next) {
+            ++block_count;
+        }
+        if (block_count > 1) {
+            free_lists[i] = MergeSort(free_lists[i], block_count);
+        }
+    }
+
+    FreeBlock volatile *cursors[256];
+    memcpy(cursors, free_lists, sizeof(cursors));
+
+    Page *previous = NULL;
+    u32 visited_count = 0;
+    u32 released_count = 0;
+    u32 recycled_count = 0;
+    Page *recycled = NULL;
+    for (Page *page = pages; page != NULL;) {
+        ++visited_count;
+        u32 free_block_count = 0;
+        for (u32 i = 0; i < 256; ++i) {
+            FreeBlock volatile *block = cursors[i];
+            if (block != NULL) {
+                const usize cursor_page_end = reinterpret_cast<usize>(page->ptr) + page->size;
+                while (reinterpret_cast<usize>(block) < cursor_page_end) {
+                    block = block->next;
+                    ++free_block_count;
+                    if (block != NULL) {
+                        continue;
+                    }
+                    break;
+                }
+            }
+            cursors[i] = block;
+        }
+
+        if (free_block_count != page->allocation_count) {
+            previous = page;
+            page = page->next;
+            continue;
+        }
+
+        const usize page_begin = reinterpret_cast<usize>(page->ptr);
+        for (u32 i = 0; i < 256; ++i) {
+            FreeBlock volatile *block = free_lists[i];
+            FreeBlock volatile *previous_block = NULL;
+            if (block != NULL) {
+                const usize list_page_end = page_begin + page->size;
+                while (reinterpret_cast<usize>(block) < list_page_end) {
+                    if (reinterpret_cast<usize>(block) >= page_begin) {
+                        if (previous_block != NULL) {
+                            previous_block->next = block->next;
+                        } else {
+                            free_lists[i] = block->next;
+                        }
+                    } else {
+                        previous_block = block;
+                    }
+                    block = block->next;
+                    if (block == NULL) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        Page *next_page = page->next;
+        if (previous != NULL) {
+            previous->next = next_page;
+        } else {
+            pages = next_page;
+        }
+        if (event_handler->ReleasePage(this, page->ptr)) {
+            InterlockedSub(&free_bytes, page->size);
+            NU_FREE(page);
+            ++released_count;
+        } else {
+            page->allocation_count = 0;
+            page->next = recycled;
+            page->offset = 0;
+            recycled = page;
+            ++recycled_count;
+        }
+        page = next_page;
+    }
+
+    while (recycled != NULL) {
+        Page *next_page = recycled->next;
+        recycled->next = pages;
+        pages = recycled;
+        recycled = next_page;
+    }
+
+    visited_page_count = visited_count;
+    released_page_count = released_count;
+    recycled_page_count = recycled_count;
+    unknown_0x434 = 0;
+    unknown_0x438 = 0;
+    unknown_0x43c = 0;
+    page_list_stable = true;
+    pthread_mutex_unlock(&mutex);
 }
 
 void NuMemoryPool::VisitPools(IVisitor *visitor) {

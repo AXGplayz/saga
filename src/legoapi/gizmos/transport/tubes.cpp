@@ -192,7 +192,8 @@ static void Tubes_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
         return;
     }
 
-    for (i32 index = 0; index < world->tube_count && index < 32; ++index) {
+    auto world_tube_count = world->tube_count;
+    for (i32 index = 0; index < world_tube_count && index < 32; ++index) {
         const u32 tube_bit = 1U << index;
         if ((world->tubes[index].flags & TUBE_FLAG_VISIBLE) == 0) {
             progress->visible_mask &= ~tube_bit;
@@ -348,17 +349,19 @@ static void Tubes_Update(void *world_ptr, void *, float frame_time) {
                         continue;
                     if (!(DIRECTIONAL_TUBE_ENTRY_RADIUS_SQUARED > horizontal_distance_squared))
                         continue;
-                    if (NuTrigTable[DIRECTIONAL_TUBE_MAX_NORMAL_Y_ANGLE] > NuFabs(object->contact_normal.y)) {
-                        const f32 inverse_distance = 1.0f / NuFsqrt(horizontal_distance_squared);
-                        const f32 entry_alignment = delta_x * inverse_distance * object->contact_normal.x +
-                                                    delta_z * inverse_distance * object->contact_normal.z;
-
-                        if (-NuTrigTable[DIRECTIONAL_TUBE_MIN_ALIGNMENT_ANGLE] > entry_alignment) {
-                            GameAudio_PlaySfx(TUBE_AUDIO_EVENT, &object->apiobj.collision_position,
-                                              GameAudio_GetPlrSfxBits(object), 0);
-                            Tube_SetObjBit(tube, object->apiobj.field_0x289);
-                        }
+                    if (!(NuTrigTable[DIRECTIONAL_TUBE_MAX_NORMAL_Y_ANGLE] > NuFabs(object->contact_normal.y))) {
+                        continue;
                     }
+                    const f32 inverse_distance = 1.0f / NuFsqrt(horizontal_distance_squared);
+                    const f32 entry_alignment = delta_x * inverse_distance * object->contact_normal.x +
+                                                delta_z * inverse_distance * object->contact_normal.z;
+
+                    if (!(-NuTrigTable[DIRECTIONAL_TUBE_MIN_ALIGNMENT_ANGLE] > entry_alignment)) {
+                        continue;
+                    }
+                    GameAudio_PlaySfx(TUBE_AUDIO_EVENT, &object->apiobj.collision_position,
+                                      GameAudio_GetPlrSfxBits(object), 0);
+                    Tube_SetObjBit(tube, object->apiobj.field_0x289);
                 }
             }
         }
@@ -391,23 +394,22 @@ void Tube_MoveCode(GameObject_s *object, WORLDINFO_s *world) {
             (TUBE_FLAG_ACTIVE | TUBE_FLAG_VISIBLE)) {
             continue;
         }
-        if (Tube_InCylinder(object, tube, NULL, 0) == 0 &&
-            (object->tube_entry_state != 5 || object->tube_entry_data == NULL)) {
-            continue;
-        }
+        if (!(Tube_InCylinder(object, tube, NULL, 0) == 0 &&
+              (object->tube_entry_state != 5 || object->tube_entry_data == NULL))) {
 
-        if (LEGOCONTEXT_GLIDE != -1 && object->character_context == LEGOCONTEXT_GLIDE) {
+            if (LEGOCONTEXT_GLIDE != -1 && object->character_context == LEGOCONTEXT_GLIDE) {
+                object->field_0x788 = tube;
+                return;
+            }
             object->field_0x788 = tube;
+            object->field_0xe31 = 0;
+            object->character_context = LEGOCONTEXT_TUBE;
+            if (static_cast<i8>(object->apiobj.flags_low) < 0 && tube->audio_cooldown == 0.0f) {
+                tube->audio_cooldown = 4.0f;
+                GameAudio_PlaySfx(6, &object->apiobj.collision_position, 0, 0);
+            }
             return;
         }
-        object->field_0x788 = tube;
-        object->field_0xe31 = 0;
-        object->character_context = LEGOCONTEXT_TUBE;
-        if (static_cast<i8>(object->apiobj.flags_low) < 0 && tube->audio_cooldown == 0.0f) {
-            tube->audio_cooldown = 4.0f;
-            GameAudio_PlaySfx(6, &object->apiobj.collision_position, 0, 0);
-        }
-        return;
     }
 }
 

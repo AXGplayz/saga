@@ -33,8 +33,8 @@ extern "C" void NuTexAnimSetMask(i32 mask) {
 
 extern "C" void NuTexAnimSetSignals(u32 signals) {
     const u32 previous_signals = nta_sig_old;
-    nta_sig_off = (previous_signals | signals) ^ signals;
     nta_sig_on = ~previous_signals & signals;
+    nta_sig_off = (previous_signals | signals) ^ signals;
     nta_sig_old = signals;
 }
 
@@ -401,8 +401,8 @@ extern "C" void NuTexAnimAddList(nutexanim_s *anim) {
             NuSevereWarning("Ran out of texture anim slots!");
         ntal_free = node->next;
         node->previous = NULL;
-        node->first = anim;
         node->next = ntal_first;
+        node->first = anim;
         if (ntal_first != NULL)
             ntal_first->previous = node;
         ntal_first = node;
@@ -422,8 +422,8 @@ extern "C" nutexanim_s *NuTexAnimCreate(VARIPTR *buffer, nutexanimprog_s *progra
     }
     animation->texture_count = texture_count;
     animation->material = material;
-    animation->previous = NULL;
     animation->next = NULL;
+    animation->previous = NULL;
     animation->name = NULL;
     animation->texture_ids = reinterpret_cast<u16 *>(animation + 1);
     memcpy(animation->texture_ids, texture_ids, texture_count * sizeof(u16));
@@ -482,8 +482,8 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
     if (signals != 0) {
         for (i32 i = 0; i < 32; ++i) {
             if ((signals & (1u << i)) != 0) {
-                env->wait_remaining = 0;
                 env->instruction_index = program->off_signal[i];
+                env->wait_remaining = 0;
                 env->call_depth = 0;
                 env->loop_depth = 0;
                 break;
@@ -636,13 +636,13 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
                 }
                 continue;
             case 15:
-                if (TextureCondition(instruction[1], env->texture_index, instruction[2]) ||
-                    env->loop_counts[env->loop_depth - 1] == 0) {
-                    --env->loop_depth;
-                    env->instruction_index += 3;
-                } else {
+                if (!(TextureCondition(instruction[1], env->texture_index, instruction[2])) &&
+                    env->loop_counts[env->loop_depth - 1] != 0) {
                     --env->loop_counts[env->loop_depth - 1];
                     env->instruction_index = env->loop_starts[env->loop_depth - 1];
+                } else {
+                    --env->loop_depth;
+                    env->instruction_index += 3;
                 }
                 continue;
             case 16:
@@ -801,9 +801,10 @@ extern "C" nutexanimprog_s *NuTexAnimProgRead(VARIPTR *buffer, char *path) {
 }
 
 extern "C" void NuTexAnimProgReadCFG(char *path, VARIPTR *buffer, VARIPTR end) {
-    char filename[128];
+
     VARIPTR cursor;
     if (nutexanim_usepakfile != 0) {
+        char filename[128];
         NuStrCpy(filename, path);
         char *extension = NuStrRChr(filename, '.');
         if (extension != NULL)
@@ -836,12 +837,13 @@ extern "C" void NuTexAnimProgReadCFG(char *path, VARIPTR *buffer, VARIPTR end) {
                 nufpar_s *parser = NuFParOpen(file);
                 if (parser != NULL) {
                     *--list.char_ptr = '\0';
+                    auto parser_word_buf = parser->word_buf;
                     while (NuFParGetLine(parser)) {
                         NuFParGetWord(parser);
-                        name = NuStrRChr(parser->word_buf, '/');
+                        name = NuStrRChr(parser_word_buf, '/');
                         if (name == NULL)
-                            name = NuStrRChr(parser->word_buf, '\\');
-                        name = name != NULL ? name + 1 : parser->word_buf;
+                            name = NuStrRChr(parser_word_buf, '\\');
+                        name = name != NULL ? name + 1 : parser_word_buf;
                         list.char_ptr -= NuStrLen(name) + 1;
                         NuStrCpy(list.char_ptr, name);
                     }
@@ -920,17 +922,17 @@ extern "C" void NuTexAnimProgWrite(char *path, nutexanimprog_s *program) {
 extern "C" void NuTexAnimRemoveList(void *anim) {
     NuThreadCriticalSectionBegin(g_texAnimCriticalSection);
     for (nutexanimlist_s *node = ntal_first; node != NULL; node = node->next) {
-        if (node->first != anim)
-            continue;
-        if (node->next != NULL)
-            node->next->previous = node->previous;
-        if (node->previous != NULL)
-            node->previous->next = node->next;
-        else
-            ntal_first = node->next;
-        node->next = ntal_free;
-        ntal_free = node;
-        break;
+        if (node->first == anim) {
+            if (node->next != NULL)
+                node->next->previous = node->previous;
+            if (node->previous != NULL)
+                node->previous->next = node->next;
+            else
+                ntal_first = node->next;
+            node->next = ntal_free;
+            ntal_free = node;
+            break;
+        }
     }
     NuThreadCriticalSectionEnd(g_texAnimCriticalSection);
 }

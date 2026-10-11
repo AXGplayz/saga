@@ -284,6 +284,7 @@ static void GizForce_RemoveFromGroup(GIZFORCE_s *force) {
 }
 
 static void GizForces_Update(void *world_ptr, void *data, float) {
+    NUVEC offset;
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     GIZFORCESYS_s *force_sys = static_cast<GIZFORCESYS_s *>(data);
     if (force_sys == NULL || world == NULL) {
@@ -296,8 +297,8 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
     for (i32 i = 0; i < 8; ++i) {
         force_sys->groups[i].field_0x24 &= static_cast<u8>(~GIZFORCE_GROUP_ACTIVE);
     }
-    force_sys->visible_force_count = 0;
     force_sys->hit_test_gizmo_count = 0;
+    force_sys->visible_force_count = 0;
     GIZMOSET *set = &gizmo_sys->sets[force_gizmotype_id];
     GIZMO *gizmo = set->gizmos;
     for (i32 index = 0; index < set->count; ++index, ++gizmo) {
@@ -322,9 +323,11 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
         if ((force->runtime_flags & GIZFORCE_RUNTIME_OFFSET_APPLIED) != 0 && force->field_0x50 == 0.0f) {
             NUVEC offset;
             offset.x = 0.0f;
-            offset.y = (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0
-                           ? GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height
-                           : 0.0f;
+            if ((force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0) {
+                offset.y = 0.0f;
+            } else {
+                offset.y = GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height;
+            }
             offset.z = 0.0f;
             GameAnimSet_SetOffset(force->anim_set, &offset);
             force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_OFFSET_APPLIED);
@@ -366,34 +369,7 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
             force->animation_speed = SeekValF(force->animation_speed, 1.0f, 5.0f);
             playing_forwards = being_used || (force->runtime_flags & GIZFORCE_RUNTIME_PENDING_COMPLETION) != 0;
         }
-        if (playing_forwards) {
-            force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_COMPLETION_RELEASED);
-            GizForce_PlayForwards(force);
-            if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) == 0) {
-                force->field_0x48 = force->force_strength;
-                if (force->force_range > 0.0f && (force->runtime_flags & GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE) == 0 &&
-                    force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
-                    started_shaking = force->field_0x50 == 0.0f;
-                    force->field_0x50 += FRAMETIME;
-                    if (force->field_0x50 >= force->force_range) {
-                        force->field_0x50 = 0.0f;
-                        force->runtime_flags |= GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE;
-                    }
-                } else {
-                    force->field_0x50 = 0.0f;
-                }
-                if ((force->config_flags & 0x40) != 0 && (force->runtime_flags & 8) == 0 &&
-                    GizForce_AnimComplete(force) &&
-                    (force->force_range == 0.0f ||
-                     (force->runtime_flags & GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE) != 0)) {
-                    GameAnimSet_SetVisibility(force->anim_set, 0);
-                    force->runtime_flags |= 8;
-                }
-            } else {
-                force->field_0x48 = 0.0f;
-                force->field_0x50 = 0.0f;
-            }
-        } else {
+        if (!playing_forwards) {
             force->field_0x50 = 0.0f;
             if (!GizForce_AnimComplete(force)) {
                 GizForce_PlayBackwards(force);
@@ -411,21 +387,52 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                     force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE);
                 }
             }
+        } else {
+            force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_COMPLETION_RELEASED);
+            GizForce_PlayForwards(force);
+            if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) == 0) {
+                force->field_0x48 = force->force_strength;
+                if (force->force_range > 0.0f && (force->runtime_flags & GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE) == 0 &&
+                    force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
+                    started_shaking = force->field_0x50 == 0.0f;
+                    force->field_0x50 += FRAMETIME;
+                    if (force->field_0x50 >= force->force_range) {
+                        force->runtime_flags |= GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE;
+                        force->field_0x50 = 0.0f;
+                    }
+                } else {
+                    force->field_0x50 = 0.0f;
+                }
+                if ((force->config_flags & 0x40) != 0 && (force->runtime_flags & 8) == 0 &&
+                    GizForce_AnimComplete(force) &&
+                    (force->force_range == 0.0f ||
+                     (force->runtime_flags & GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE) != 0)) {
+                    GameAnimSet_SetVisibility(force->anim_set, 0);
+                    force->runtime_flags |= 8;
+                }
+            } else {
+                force->field_0x48 = 0.0f;
+                force->field_0x50 = 0.0f;
+            }
         }
         if (force->field_0x50 > 0.0f) {
-            NUVEC offset;
+
             offset.x = qrand() * (1.0f / 65535.0f) * 0.05f - 0.025f;
-            offset.y = (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0
-                           ? GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height
-                           : 0.0f;
+            if ((force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0) {
+                offset.y = 0.0f;
+            } else {
+                offset.y = GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height;
+            }
             offset.y += qrand() * (1.0f / 65535.0f) * 0.05f - 0.025f;
             offset.z = qrand() * (1.0f / 65535.0f) * 0.05f - 0.025f;
             GameAnimSet_SetOffset(force->anim_set, &offset);
             force->runtime_flags |= GIZFORCE_RUNTIME_OFFSET_APPLIED;
             if (force->start_sfx_id == -1) {
                 PlaySfx("LegShakeL", &force->position);
-            } else if (started_shaking || IsSfxLooping(force->start_sfx_id)) {
-                GameAudio_PlaySfxById(force->start_sfx_id, &force->position, 0, 0);
+            } else {
+                if (started_shaking || IsSfxLooping(force->start_sfx_id)) {
+                    GameAudio_PlaySfxById(force->start_sfx_id, &force->position, 0, 0);
+                }
             }
         }
 
@@ -441,18 +448,22 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
             force->radius = 1.0f;
             force->position = force->file_position;
             GameAnimSet_GetCentreAndRadius(force->anim_set, &force->position, &force->radius, 2, 1, 1);
-            if (was_moving) {
+            if (!was_moving) {
+                if ((force->anim_set->flags & 5) != 0 && force->field_0x50 == 0.0f && playing_forwards) {
+                    if (force->start_sfx_id == -1) {
+                        PlaySfx("LegoForm", &force->position);
+                    } else {
+                        if (force->anim_set->state == GAMEANIMSET_STATE_AT_START || IsSfxLooping(force->start_sfx_id)) {
+                            GameAudio_PlaySfxById(force->start_sfx_id, &force->position, 0, 0);
+                        }
+                    }
+                }
+            } else {
                 if (GizForce_AnimComplete(force)) {
                     if (force->loop_sfx_id != -1)
                         GameAudio_PlaySfxById(force->loop_sfx_id, &force->position, 0, 0);
                 } else if (force->anim_set->state != 4 && force->stop_sfx_id != -1) {
                     GameAudio_PlaySfxById(force->stop_sfx_id, &force->position, 0, 0);
-                }
-            } else if ((force->anim_set->flags & 5) != 0 && force->field_0x50 == 0.0f && playing_forwards) {
-                if (force->start_sfx_id == -1) {
-                    PlaySfx("LegoForm", &force->position);
-                } else if (force->anim_set->state == GAMEANIMSET_STATE_AT_START || IsSfxLooping(force->start_sfx_id)) {
-                    GameAudio_PlaySfxById(force->start_sfx_id, &force->position, 0, 0);
                 }
             }
             if ((force->config_flags & 0x2000) == 0) {
@@ -483,22 +494,22 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                         (force->config_flags & 0x40) != 0) &&
                        (force->runtime_flags & GIZFORCE_RUNTIME_COMPLETION_RELEASED) == 0) {
                 if (force->blowup_type != -1) {
-                    if ((force->config_flags & 0x20) != 0) {
+                    if ((force->config_flags & 0x20) == 0) {
+                        GizmoBlowUpTypeBlowUp(world, force->blowup_type, &force->position);
+                    } else {
                         for (GAMEANIMOBJ_s *object = force->anim_set->objects; object != NULL; object = object->next) {
                             NUVEC *position = NuSpecialGetDrawPos(&object->special);
                             if (position != NULL)
                                 GizmoBlowUpTypeBlowUp(world, force->blowup_type, position);
                         }
-                    } else {
-                        GizmoBlowUpTypeBlowUp(world, force->blowup_type, &force->position);
                     }
                     GameAnimSet_SetVisibility(force->anim_set, 0);
                     force->field_0xaa |= GIZFORCE_STATE_DESTROYED_OR_THROWN;
                 }
                 if (force->pickup_count != 0 && (force->runtime_flags & 2) == 0) {
                     i32 hearts = ReleaseHearts();
-                    NUVEC position;
                     NUVEC direction;
+                    NUVEC position;
                     NuVecAdd(&position, &force->position, &force->effect_position);
                     NuVecRotateX(&direction, &v010, force->pickup_rotation_x);
                     NuVecRotateY(&direction, &direction, force->pickup_rotation_y);
@@ -537,7 +548,28 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
             force_sys->hit_test_gizmos[force_sys->hit_test_gizmo_count++] = gizmo;
         }
         if ((force->progress_flags & GIZFORCE_PROGRESS_DRAW_ACTIVE) != 0 && !GizForce_Complete(force)) {
-            if ((force->config_flags & 0x400) != 0) {
+            if ((force->config_flags & 0x400) == 0) {
+                if ((force->field_0xaa & 2) == 0) {
+                    NUVEC centre;
+                    f32 radius = 0.0f;
+                    GameAnimSet_GetCentreAndRadius(force->anim_set, &centre, &radius, 2, 1, 1);
+                    radius = 1.2f * force->horizontal_range * radius;
+                    NUVEC offset = {0.0f, 0.0f, 0.0f};
+                    if (radius != 0.0f)
+                        offset.y = qrand() / (65535.0f / (0.5f * radius) + 1.0f);
+                    NuVecRotateZ(&offset, &offset, qrand());
+                    NuVecRotateY(&offset, &offset, qrand() & 0xffff);
+                    NuVecAdd(&centre, &centre, &offset);
+                    if ((force->config_flags & 0x10) != 0) {
+                        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[110].effect, &centre,
+                                                          static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
+                    } else {
+                        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[109].effect, &centre,
+                                                          static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
+                    }
+                }
+            } else {
+                auto force_horizontal_range = force->horizontal_range;
                 for (GAMEANIMOBJ_s *object = force->anim_set->objects; object != NULL; object = object->next) {
                     GIZFORCEANIMDATA_s *object_data = static_cast<GIZFORCEANIMDATA_s *>(object->object_data);
                     if (object_data->force_glow_active || !NuSpecialExistsFn(&object->special))
@@ -545,7 +577,7 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                     NUVEC centre;
                     f32 radius = 0.0f;
                     NuSpecialGetRadius(&object->special, &centre, &radius);
-                    radius = 1.2f * force->horizontal_range * radius;
+                    radius = 1.2f * force_horizontal_range * radius;
                     NuVecMtxTransformVU0(&centre, &centre, NuSpecialGetDrawMtx(&object->special));
                     NUVEC offset = {0.0f, 0.0f, 0.0f};
                     if (radius != 0.0f)
@@ -562,24 +594,6 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                                                               static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
                         }
                     }
-                }
-            } else if ((force->field_0xaa & 2) == 0) {
-                NUVEC centre;
-                f32 radius = 0.0f;
-                GameAnimSet_GetCentreAndRadius(force->anim_set, &centre, &radius, 2, 1, 1);
-                radius = 1.2f * force->horizontal_range * radius;
-                NUVEC offset = {0.0f, 0.0f, 0.0f};
-                if (radius != 0.0f)
-                    offset.y = qrand() / (65535.0f / (0.5f * radius) + 1.0f);
-                NuVecRotateZ(&offset, &offset, qrand());
-                NuVecRotateY(&offset, &offset, qrand() & 0xffff);
-                NuVecAdd(&centre, &centre, &offset);
-                if ((force->config_flags & 0x10) != 0) {
-                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[110].effect, &centre,
-                                                      static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
-                } else {
-                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[109].effect, &centre,
-                                                      static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
                 }
             }
         }
@@ -600,7 +614,8 @@ static void GizForces_Draw(void *world_ptr, void *data, float) {
     }
 
     GIZFORCE_s *force = force_sys->forces;
-    for (i32 index = 0; index < force_sys->count; ++index, ++force) {
+    auto force_sys_count = force_sys->count;
+    for (i32 index = 0; index < force_sys_count; ++index, ++force) {
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0 || static_cast<i8>(force->progress_flags) >= 0 ||
             (force->room_id >= 0 && world->rooms_visible_ptr[force->room_id] == 0)) {
             continue;
@@ -613,22 +628,25 @@ static void GizForces_Draw(void *world_ptr, void *data, float) {
         if ((force->config_flags & GIZFORCE_CONFIG_CAST_SHADOW) == 0) {
             EnableShadowMapRendering(0);
         }
-        if ((force->config_flags & GIZFORCE_CONFIG_ALONG_SOCKET) == 0) {
-            continue;
-        }
-        if ((force->runtime_flags & GIZFORCE_RUNTIME_ALONG_SOCKET_HIDDEN) == 0) {
-            continue;
-        }
+        if ((force->config_flags & GIZFORCE_CONFIG_ALONG_SOCKET) != 0) {
+            if ((force->runtime_flags & GIZFORCE_RUNTIME_ALONG_SOCKET_HIDDEN) == 0) {
+                continue;
+            }
 
-        NUMTX *draw_matrix = NuSpecialGetDrawMtx(&force->anim_set->objects->special);
-        NuSpecialDrawAt(&force->along_socket, draw_matrix);
-        if ((force->config_flags & GIZFORCE_CONFIG_DRAW_REFLECTION) != 0) {
-            NUMTX reflection_matrix;
-            if (MatrixReflection(draw_matrix, 2, draw_matrix->m31 + force->vertical_range,
-                                 WORLD->current_level->unknown_0cc, &reflection_matrix) != 0) {
-                NuRndrStartReflectionRender(0);
-                NuSpecialDrawAt(&force->along_socket, &reflection_matrix);
-                NuRndrEndReflectionRender();
+            GAMEANIMOBJ_s *anim_object = force->anim_set->objects;
+            if (anim_object == NULL) {
+                continue;
+            }
+            NUMTX *draw_matrix = NuSpecialGetDrawMtx(&anim_object->special);
+            NuSpecialDrawAt(&force->along_socket, draw_matrix);
+            if ((force->config_flags & GIZFORCE_CONFIG_DRAW_REFLECTION) != 0) {
+                NUMTX reflection_matrix;
+                if (MatrixReflection(draw_matrix, 2, draw_matrix->m31 + force->vertical_range,
+                                     WORLD->current_level->unknown_0cc, &reflection_matrix) != 0) {
+                    NuRndrStartReflectionRender(0);
+                    NuSpecialDrawAt(&force->along_socket, &reflection_matrix);
+                    NuRndrEndReflectionRender();
+                }
             }
         }
     }
@@ -818,6 +836,7 @@ static i32 GizForces_BoltHitPlat(void *world_ptr, void *data, BOLT *bolt, unsign
     if (force_sys == NULL || force_sys->hit_test_gizmo_count == 0) {
         return 0;
     }
+    auto bolt_hit_platform = bolt->hit_platform;
     for (i32 index = 0; index < force_sys->hit_test_gizmo_count; ++index) {
         GIZFORCE_s *force = static_cast<GIZFORCE_s *>(force_sys->hit_test_gizmos[index]->object);
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0 ||
@@ -828,13 +847,12 @@ static i32 GizForces_BoltHitPlat(void *world_ptr, void *data, BOLT *bolt, unsign
         }
         for (GAMEANIMOBJ_s *object = force->anim_set->objects; object != NULL; object = object->next) {
             GIZFORCEANIMDATA_s *object_data = static_cast<GIZFORCEANIMDATA_s *>(object->object_data);
-            if (object_data->platform_id != bolt->hit_platform) {
-                continue;
+            if (object_data->platform_id == bolt_hit_platform) {
+                i32 damage = BoltType_FindByID(bolt->type_id, static_cast<WORLDINFO_s *>(world_ptr))->field_3c;
+                i32 player_index = bolt->owner != NULL ? static_cast<i8>(bolt->owner->apiobj.field_0x27c) : -1;
+                GizForces_Hit(world_ptr, force, &bolt->position, damage, player_index);
+                return 1;
             }
-            i32 damage = BoltType_FindByID(bolt->type_id, static_cast<WORLDINFO_s *>(world_ptr))->field_3c;
-            i32 player_index = bolt->owner != NULL ? static_cast<i8>(bolt->owner->apiobj.field_0x27c) : -1;
-            GizForces_Hit(world_ptr, force, &bolt->position, damage, player_index);
-            return 1;
         }
     }
     return 0;
@@ -859,9 +877,9 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
 
     NUVEC aim = *direction;
     const float min_x = position->x - radius;
-    const float max_x = position->x + radius;
     const float min_z = position->z - radius;
     const float max_z = position->z + radius;
+    const float max_x = position->x + radius;
     if (directional != 0 && (bolt_type->field_60 & 0x20000) != 0) {
         aim.y = 0.0f;
         NuVecNorm(&aim, &aim);
@@ -928,9 +946,9 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
     if (best != NULL) {
         *result_position = *best_position;
         *result_distance = nearest_distance;
-        result_velocity->x = 0.0f;
         result_velocity->y = 0.0f;
         result_velocity->z = 0.0f;
+        result_velocity->x = 0.0f;
         return reinterpret_cast<i32 *>(best);
     }
     if (previous == NULL) {
@@ -954,6 +972,8 @@ static i32 GizForces_BoltHit(void *world_ptr, void *data, void *object_ptr, NUVE
     GameObject_s *object = static_cast<GameObject_s *>(object_ptr);
     GIZFORCE_s *nearest = NULL;
     f32 nearest_distance = 1000000000.0f;
+    auto maximum_x = maximum->x;
+    auto maximum_z = maximum->z;
     for (i32 index = 0; index < force_sys->hit_test_gizmo_count; ++index) {
         GIZFORCE_s *force = static_cast<GIZFORCE_s *>(force_sys->hit_test_gizmos[index]->object);
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0 ||
@@ -963,20 +983,21 @@ static i32 GizForces_BoltHit(void *world_ptr, void *data, void *object_ptr, NUVE
         }
         const NUVEC &position = force->position;
         const f32 extent = force->radius;
-        if (position.x - extent > maximum->x || minimum->x > position.x + extent || position.z - extent > maximum->z ||
+        if (position.x - extent > maximum_x || minimum->x > position.x + extent || position.z - extent > maximum_z ||
             minimum->z > position.z + extent || position.y - extent > maximum->y || minimum->y > position.y + extent) {
             continue;
         }
         for (i32 point = point_count - 1; point >= 0; --point) {
-            if (SphereSphereOverlap(&force->position, extent, &points[point], radius)) {
-                NUVEC *origin = object != NULL ? &object->apiobj.collision_position : &points[point];
-                f32 distance = NuVecDistSqr(origin, &force->position, NULL);
-                if (distance < nearest_distance) {
-                    nearest_distance = distance;
-                    nearest = force;
-                }
-                break;
+            if (!(SphereSphereOverlap(&force->position, extent, &points[point], radius))) {
+                continue;
             }
+            NUVEC *origin = object != NULL ? &object->apiobj.collision_position : &points[point];
+            f32 distance = NuVecDistSqr(origin, &force->position, NULL);
+            if (distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = force;
+            }
+            break;
         }
     }
     if (nearest == NULL) {
@@ -1148,8 +1169,8 @@ static void GizForces_Reset(void *world_ptr, void *data, void *progress_ptr) {
         }
 
         if (progress != NULL && index < GIZFORCE_PROGRESS_CAPACITY) {
-            const u32 word = static_cast<u32>(index) >> 5;
             const u32 bit = 1u << (index & 31);
+            const u32 word = static_cast<u32>(index) >> 5;
             force->progress_flags =
                 static_cast<u8>((force->progress_flags & ~GIZFORCE_PROGRESS_VISIBLE) |
                                 ((progress->progress_flag_1[word] & bit) != 0 ? GIZFORCE_PROGRESS_VISIBLE : 0));
@@ -1181,51 +1202,50 @@ static void GizForces_Reset(void *world_ptr, void *data, void *progress_ptr) {
         }
     }
 
-    if (progress == NULL) {
-        return;
-    }
-    for (i32 group_index = 0; group_index < 8; ++group_index) {
-        for (i32 member = 0; member < 8; ++member) {
-            const u8 force_index = static_cast<u8>(progress->group_members[group_index][member]);
-            if (force_index >= force_sys->count) {
-                continue;
-            }
-
-            GIZFORCE_s &force = force_sys->forces[force_index];
-            GIZFORCEGROUP_s *group = force.group;
-            if ((force.progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0) {
-                if (group == NULL || group->count >= 8) {
+    if (progress != NULL) {
+        for (i32 group_index = 0; group_index < 8; ++group_index) {
+            for (i32 member = 0; member < 8; ++member) {
+                const u8 force_index = static_cast<u8>(progress->group_members[group_index][member]);
+                if (force_index >= force_sys->count) {
                     continue;
                 }
-                if (group->count != 0) {
-                    GIZFORCE_s *previous = group->forces[group->count - 1];
-                    f32 minimum_y = 1.0e9f;
-                    f32 maximum_y = -1.0e9f;
-                    if (previous != NULL && previous->anim_set != NULL) {
-                        for (GAMEANIMOBJ_s *object = previous->anim_set->objects; object != NULL;
-                             object = object->next) {
-                            NUVEC minimum;
-                            NUVEC maximum;
-                            NuSpecialGetBounds(&object->special, &minimum, &maximum);
-                            if (minimum.y < minimum_y) {
-                                minimum_y = minimum.y;
-                            }
-                            if (maximum.y > maximum_y) {
-                                maximum_y = maximum.y;
+
+                GIZFORCE_s &force = force_sys->forces[force_index];
+                if ((force.progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0) {
+                    if (force.group == NULL || force.group->count >= 8) {
+                        continue;
+                    }
+                    if (force.group->count != 0) {
+                        GIZFORCE_s *previous = force.group->forces[force.group->count - 1];
+                        f32 minimum_y = 1.0e9f;
+                        f32 maximum_y = -1.0e9f;
+                        if (previous != NULL && previous->anim_set != NULL) {
+                            for (GAMEANIMOBJ_s *object = previous->anim_set->objects; object != NULL;
+                                 object = object->next) {
+                                NUVEC minimum;
+                                NUVEC maximum;
+                                NuSpecialGetBounds(&object->special, &minimum, &maximum);
+                                if (minimum.y < minimum_y) {
+                                    minimum_y = minimum.y;
+                                }
+                                if (maximum.y > maximum_y) {
+                                    maximum_y = maximum.y;
+                                }
                             }
                         }
+                        force.group->combined_height += maximum_y - minimum_y;
                     }
-                    group->combined_height += maximum_y - minimum_y;
+                    force.group->forces[force.group->count++] = &force;
+                    force.progress_flags |= GIZFORCE_PROGRESS_GROUP_MEMBER;
                 }
-                group->forces[group->count++] = &force;
-                force.progress_flags |= GIZFORCE_PROGRESS_GROUP_MEMBER;
-            }
 
-            NUVEC offset = {0.0f, GameAnimSet_GetCompletionRatio(force.anim_set) * group->combined_height, 0.0f};
-            GameAnimSet_SetOffset(force.anim_set, &offset);
-            force.radius = 1.0f;
-            force.position = force.file_position;
-            GameAnimSet_GetCentreAndRadius(force.anim_set, &force.position, &force.radius, 2, 1, 1);
+                NUVEC offset = {0.0f, GameAnimSet_GetCompletionRatio(force.anim_set) * force.group->combined_height,
+                                0.0f};
+                GameAnimSet_SetOffset(force.anim_set, &offset);
+                force.radius = 1.0f;
+                force.position = force.file_position;
+                GameAnimSet_GetCentreAndRadius(force.anim_set, &force.position, &force.radius, 2, 1, 1);
+            }
         }
     }
 }
@@ -1348,11 +1368,11 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
             EdFileReadNuVec(&force.effect_position);
         }
 
-        if (version > 9) {
-            force.activation_radius = EdFileReadFloat();
-        } else {
+        if (!(version > 9)) {
             force.activation_radius =
                 world->area != NULL && (world->area->flags & AREAFLAG_VEHICLE_AREA) != 0 ? 12.0f : 1.75f;
+        } else {
+            force.activation_radius = EdFileReadFloat();
         }
 
         force.start_sfx_id = -1;
@@ -1393,9 +1413,10 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
                     ++name_pos;
                 }
                 NuStrCat(along_socket_name, const_cast<char *>("AlongSock"));
-                if (NuSpecialFind(object->special.scene, &force.along_socket, along_socket_name, 1) != 0) {
-                    break;
+                if (NuSpecialFind(object->special.scene, &force.along_socket, along_socket_name, 1) == 0) {
+                    continue;
                 }
+                break;
             }
         }
     }
@@ -1536,6 +1557,16 @@ void GizForce_ResetLOS(GameObject_s *object) {
     }
 }
 
+i32 GizForce_UpdateHint(HINT_s *) {
+    for (i32 i = 0; i < 2; ++i) {
+        GameObject_s *object = Player[i];
+        if (object != NULL && (object->apiobj.flags_low & 0x80) != 0 && object->field_0xd80 > 0.0f &&
+            object->force_glow_object != NULL && object->force_glow_kind == 0)
+            return 1;
+    }
+    return 0;
+}
+
 GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *force_sys, char *name) {
     GIZFORCE_s *force = NULL;
     if (name == NULL || force_sys == NULL) {
@@ -1550,16 +1581,6 @@ GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *force_sys, char *name) {
     return force;
 }
 
-i32 GizForce_UpdateHint(HINT_s *) {
-    for (i32 i = 0; i < 2; ++i) {
-        GameObject_s *object = Player[i];
-        if (object != NULL && (object->apiobj.flags_low & 0x80) != 0 && object->field_0xd80 > 0.0f &&
-            object->force_glow_object != NULL && object->force_glow_kind == 0)
-            return 1;
-    }
-    return 0;
-}
-
 GIZFORCE_s *GizForces_FindForce(WORLDINFO_s *world, char *name) {
     GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, name);
     return gizmo != NULL ? static_cast<GIZFORCE_s *>(gizmo->object) : NULL;
@@ -1567,12 +1588,14 @@ GIZFORCE_s *GizForces_FindForce(WORLDINFO_s *world, char *name) {
 
 i32 GizForce_AnimComplete(GIZFORCE_s *force) {
     if (force != NULL && force->anim_set != NULL) {
-        if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) == 0) {
+        if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) != 0) {
+            if (force->anim_set->state == GAMEANIMSET_STATE_AT_START) {
+                return 1;
+            }
+        } else {
             if (force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
                 return 1;
             }
-        } else if (force->anim_set->state == GAMEANIMSET_STATE_AT_START) {
-            return 1;
         }
         return 0;
     }
@@ -1595,7 +1618,7 @@ void GizForce_PlayForwards(GIZFORCE_s *force) {
     }
     GameAnimSet_SetRepeating(force->anim_set, 0);
     f32 speed = -force->animation_speed;
-    if (force->animation_speed >= 0.0f) {
+    if (!(force->animation_speed < 0.0f)) {
         GameAnimSet_Play(force->anim_set, speed * force->end_frame, 0);
         return;
     }
@@ -1634,7 +1657,7 @@ void GizForce_PlayBackwards(GIZFORCE_s *force) {
     }
     GameAnimSet_SetRepeating(force->anim_set, 0);
     f32 speed = force->animation_speed;
-    if (speed >= 0.0f) {
+    if (!(speed < 0.0f)) {
         GameAnimSet_Play(force->anim_set, speed * force->start_frame, 0);
         return;
     }
@@ -1658,6 +1681,7 @@ i32 GizForce_GameObjUsingForce(GameObject_s *object, GIZFORCE_s *force) {
 }
 
 i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object) {
+    NUVEC direction;
     struct ForceTarget {
         GIZFORCE_s *force;
         GAMEANIMOBJ_s *animation;
@@ -1738,7 +1762,8 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
         ForceTarget *oldest = NULL;
         f32 oldest_time = 1.0e9f;
         for (i32 i = 0; i < count; ++i) {
-            f32 time = static_cast<f32>(los->words[possible_forcetargets[i].index + 12]);
+            const u32 timestamp = los->words[possible_forcetargets[i].index + 12];
+            const f32 time = static_cast<f32>(timestamp >> 16) * 65536.0f + static_cast<f32>(timestamp & 0xffff);
             if (time < oldest_time) {
                 oldest_time = time;
                 oldest = &possible_forcetargets[i];
@@ -1747,11 +1772,9 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
         if (oldest != NULL) {
             i32 index = oldest->index;
             los->words[index + 12] = LevelTimer.update_count;
-            if ((oldest->force->config_flags & 0x800) == 0) {
-                los->words[index >> 5] |= 1u << (index & 31);
-            } else {
+            if ((oldest->force->config_flags & 0x800) != 0) {
                 los->words[index >> 5] &= ~(1u << (index & 31));
-                NUVEC direction;
+
                 i32 clear = 0;
                 if (oldest->animation != NULL) {
                     NuVecSub(&direction, NuSpecialGetDrawPos(&oldest->animation->special),
@@ -1776,11 +1799,13 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
                 }
                 if (clear)
                     object->gizforce_los_info->words[index >> 5] |= 1u << (index & 31);
+            } else {
+                los->words[index >> 5] |= 1u << (index & 31);
             }
         }
     }
-    ForceTarget *best = NULL;
     f32 best_distance = 1.0e9f;
+    ForceTarget *best = NULL;
     los = object->gizforce_los_info;
     for (i32 i = 0; i < count; ++i) {
         ForceTarget *target = &possible_forcetargets[i];

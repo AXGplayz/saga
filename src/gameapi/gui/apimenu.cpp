@@ -962,27 +962,32 @@ static __used__ void MenuDrawPauseExit(MENU *menu) {
     char *title;
     f32 spacing;
     if (save_level != NULL) {
-        warning = TTab[tALLLEVELPROGRESSWILLBELOST];
         title = TTab[tEXITTOMAP];
+        warning = TTab[tALLLEVELPROGRESSWILLBELOST];
         spacing = 2.0f;
     } else {
         spacing = 1.5f;
-        if (GAMEDEMO != 0) {
-            warning = TTab[tALLLEVELPROGRESSWILLBELOST];
-            title = TTab[tRESTARTDEMO2];
-        } else if (WORLD->current_level == HUB_LDATA) {
-            warning = TTab[tGAMEPROGRESSWILLBELOST];
-            title = TTab[tQUITGAME];
-        } else {
-            title = TTab[tEXITTOMAP];
-            if (Arcade != 0) {
-                warning = pause_i_pad != -1 ? TTab[tARCADE_NOWIN] : NULL;
-            } else if (SuperStory != 0) {
-                warning = TTab[tALLSUPERSTORYPROGRESSWILLBELOST];
+        if (GAMEDEMO == 0) {
+            if (WORLD->current_level == HUB_LDATA) {
+                title = TTab[tQUITGAME];
+                warning = TTab[tGAMEPROGRESSWILLBELOST];
             } else {
-                warning =
-                    WORLD->area != NULL && WORLD->area == VEHICLES_ADATA ? NULL : TTab[tALLLEVELPROGRESSWILLBELOST];
+                title = TTab[tEXITTOMAP];
+                if (Arcade != 0) {
+                    warning = pause_i_pad != -1 ? TTab[tARCADE_NOWIN] : NULL;
+                } else {
+                    if (SuperStory != 0) {
+                        warning = TTab[tALLSUPERSTORYPROGRESSWILLBELOST];
+                    } else {
+                        warning = WORLD->area != NULL && WORLD->area == VEHICLES_ADATA
+                                      ? NULL
+                                      : TTab[tALLLEVELPROGRESSWILLBELOST];
+                    }
+                }
             }
+        } else {
+            title = TTab[tRESTARTDEMO2];
+            warning = TTab[tALLLEVELPROGRESSWILLBELOST];
         }
     }
     if (MenuStopDraw == 0) {
@@ -992,8 +997,8 @@ static __used__ void MenuDrawPauseExit(MENU *menu) {
             const u16 angle = static_cast<u16>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
             const f32 blend = NuTrigTable[angle >> 1] * 0.5f + 0.5f;
             const u8 r = static_cast<u8>(MENULOSTR1 + (MENULOSTR2 - MENULOSTR1) * blend);
-            const u8 g = static_cast<u8>(MENULOSTG1 + (MENULOSTG2 - MENULOSTG1) * blend);
             const u8 b = static_cast<u8>(MENULOSTB1 + (MENULOSTB2 - MENULOSTB1) * blend);
+            const u8 g = static_cast<u8>(MENULOSTG1 + (MENULOSTG2 - MENULOSTG1) * blend);
             const i32 a = static_cast<i32>(static_cast<i32>(MENULOSTA1 + (MENULOSTA2 - MENULOSTA1) * blend) *
                                            (static_cast<f32>(MenuA) * 0.0078125f));
             SmartTextEx(warning, PauseMenus_X,
@@ -1010,7 +1015,7 @@ static __used__ void MenuDrawPauseExit(MENU *menu) {
         GameDrawMenuEntry(menu, TTab[tNO]);
     }
 }
-static __used__ void MenuDrawPauseMain(MENU *menu) {
+static inline __used__ void MenuDrawPauseMain(MENU *menu) {
     const i32 both_players_active = Players_BothActive();
 
     dme_r = 0;
@@ -1039,12 +1044,14 @@ static __used__ void MenuDrawPauseMain(MENU *menu) {
         GameDrawMenuEntry(menu, TTab[tDROPOUT]);
     }
 
-    if (WORLD->current_level == HUB_LDATA) {
-        GameDrawMenuEntry(menu, TTab[tQUIT]);
-    } else if (GAMEDEMO != 0) {
-        GameDrawMenuEntry(menu, TTab[tRESTARTDEMO]);
+    if (WORLD->current_level != HUB_LDATA) {
+        if (GAMEDEMO != 0) {
+            GameDrawMenuEntry(menu, TTab[tRESTARTDEMO]);
+        } else {
+            GameDrawMenuEntry(menu, TTab[tMAP]);
+        }
     } else {
-        GameDrawMenuEntry(menu, TTab[tMAP]);
+        GameDrawMenuEntry(menu, TTab[tQUIT]);
     }
 }
 static __used__ void MenuExitHowToPlay(MENU *) {
@@ -1069,52 +1076,33 @@ static __used__ void MenuUpdatePauseCut(MENU *menu) {
         return;
     }
     if (menu->confirm_pressed != 0 && menu->selected_item == 1) {
-        if (CutScenePlayer_Active() != 0) {
+        if (CutScenePlayer_Active() == 0) {
+            if (pausecut_skip_to_level != -1) {
+                cutskip_dontplaylevelintro = 1;
+                NewLData = &LDataList[pausecut_skip_to_level];
+                music_man.StopTrack(0x10, 0);
+            } else if (pausecut_skip_to_gameplay != 0) {
+                CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
+                instNuGCutSceneEnd(static_cast<instNUGCUTSCENE_s *>(cut->instance));
+                if ((cut->flags & 0x400) != 0) {
+                    NewMode = 1;
+                }
+                CutStopInfo = NULL;
+                CUTSTOPGAME = 0;
+                GameCam_Reset(GameCam);
+                const FADETYPE fade = {FADE_TYPE_STILL_WIPE};
+                FadeSys.SetFade(fade, 0);
+                FadeSys.SetStage(1);
+                GameAudio_PlaySfx(0x2d, NULL, 0, 0);
+                ResumeGame(0, 0);
+                music_man.StopTrack(0x10, 0);
+            } else {
+                GameAudio_PlaySfx(0x32, NULL, 0, 0);
+            }
+        } else {
             NewLevelFromMenu(HUB_LDATA, -1, -1, 1);
             hub_from_cutsceneplayer = 1;
-        } else if (pausecut_skip_to_level != -1) {
-            NewLData = &LDataList[pausecut_skip_to_level];
-            cutskip_dontplaylevelintro = 1;
-            music_man.StopTrack(0x10, 0);
-        } else if (pausecut_skip_to_gameplay != 0) {
-            CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
-            instNuGCutSceneEnd(static_cast<instNUGCUTSCENE_s *>(cut->instance));
-            if ((cut->flags & 0x400) != 0) {
-                NewMode = 1;
-            }
-            CutStopInfo = NULL;
-            CUTSTOPGAME = 0;
-            GameCam_Reset(GameCam);
-            const FADETYPE fade = {FADE_TYPE_STILL_WIPE};
-            FadeSys.SetFade(fade, 0);
-            FadeSys.SetStage(1);
-            GameAudio_PlaySfx(0x2d, NULL, 0, 0);
-            ResumeGame(0, 0);
-            music_man.StopTrack(0x10, 0);
-        } else {
-            GameAudio_PlaySfx(0x32, NULL, 0, 0);
         }
-    }
-}
-static __used__ void MenuUpdateHowToPlay(MENU *menu) {
-    if (menu->cancel_pressed != 0) {
-        BackupMenu();
-        return;
-    }
-    if (menu->confirm_pressed == 0) {
-        return;
-    }
-
-    switch (menu->selected_item) {
-        case 0:
-            SuperOptions.music_enabled = SuperOptions.music_enabled == 0;
-            MenuSFX = GameAudio_GetSfxId(0x30);
-            break;
-        case 1:
-            NewMenu(26, -1, -1);
-            MenuSFX = GameAudio_GetSfxId(0x30);
-            NuIOS_RecordFlurryEvent("menu_howtoplay");
-            break;
     }
 }
 static __used__ void MenuUpdatePauseExit(MENU *menu) {
@@ -1160,6 +1148,27 @@ static __used__ void MenuUpdatePauseExit(MENU *menu) {
     } else if (menu->cancel_pressed != 0) {
         BackupMenu();
         MenuSFX = GameAudio_GetSfxId(0x31);
+    }
+}
+static __used__ void MenuUpdateHowToPlay(MENU *menu) {
+    if (menu->cancel_pressed != 0) {
+        BackupMenu();
+        return;
+    }
+    if (menu->confirm_pressed == 0) {
+        return;
+    }
+
+    switch (menu->selected_item) {
+        case 0:
+            SuperOptions.music_enabled = SuperOptions.music_enabled == 0;
+            MenuSFX = GameAudio_GetSfxId(0x30);
+            break;
+        case 1:
+            NewMenu(26, -1, -1);
+            MenuSFX = GameAudio_GetSfxId(0x30);
+            NuIOS_RecordFlurryEvent("menu_howtoplay");
+            break;
     }
 }
 static __used__ void MenuUpdatePauseMain(MENU *menu) {
@@ -1253,8 +1262,8 @@ static __used__ void MenuUpdatePauseRestart(MENU *menu) {
         Door_Reset();
         Players_InitPositions(WORLD);
         NewGameMode();
-        reset_restart = 1;
         ResetBits |= 0x21;
+        reset_restart = 1;
         MenuSFX = GameAudio_GetSfxId(0x30);
     } else if (menu->cancel_pressed != 0 || menu->confirm_pressed != 0) {
         BackupMenu();

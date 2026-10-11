@@ -168,14 +168,16 @@ void UpdatePushBlocks(void *world_ptr, void *, float) {
                 p->target_velocity.x = p->velocity.x = p->target_velocity.z = p->velocity.z = 0;
             p->velocity.x = SeekValF(p->velocity.x, p->target_velocity.x, 1.0f);
             p->velocity.z = SeekValF(p->velocity.z, p->target_velocity.z, 1.0f);
-            if (p->velocity.x != 0) {
+            if (p->velocity.x == 0) {
+                if (fabsf(p->velocity.z) <= 0.0001f) {
+                    p->runtime_flags_0c8 &= 0x3f;
+                    p->velocity.z = p->target_velocity.z = 0;
+                }
+            } else {
                 if (fabsf(p->velocity.x) <= 0.0001f) {
                     p->runtime_flags_0c8 &= 0x3f;
                     p->velocity.x = p->target_velocity.x = 0;
                 }
-            } else if (fabsf(p->velocity.z) <= 0.0001f) {
-                p->runtime_flags_0c8 &= 0x3f;
-                p->velocity.z = p->target_velocity.z = 0;
             }
         }
         if (p->runtime_flags_0c8 & 8) {
@@ -523,13 +525,20 @@ static void Push_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
 
         NUMTX *matrix =
             NuSpecialExistsFn(&push_block->special) != 0 ? NuSpecialGetInstanceMtx(&push_block->special) : NULL;
-        progress->positions[index] = matrix != NULL ? *reinterpret_cast<NUVEC *>(&matrix->m30) : v000;
+        if (matrix == NULL) {
+            progress->positions[index] = v000;
+        } else {
+            progress->positions[index] = *reinterpret_cast<NUVEC *>(&matrix->m30);
+        }
 
         for (i32 end_index = 0; end_index < push_block->end_position_count; ++end_index) {
             nuhspecial_s *special = &push_block->end_position_specials[end_index];
             matrix = NuSpecialExistsFn(special) != 0 ? NuSpecialGetInstanceMtx(special) : NULL;
-            progress->end_positions[end_index][index] =
-                matrix != NULL ? *reinterpret_cast<NUVEC *>(&matrix->m30) : v000;
+            if (matrix != NULL) {
+                progress->end_positions[end_index][index] = *reinterpret_cast<NUVEC *>(&matrix->m30);
+            } else {
+                progress->end_positions[end_index][index] = v000;
+            }
         }
         position_masks[mask_index] |= mask;
     }

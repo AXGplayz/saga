@@ -1121,12 +1121,13 @@ static void edpartFileLoadEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     }
     u32 colours[4] = {0x8000c000, 0x80ff0000, 0x80808080, 0x80404040};
     edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
-    if (edpart_message_menu != NULL) {
-        eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Loaded OK"));
-        eduiMenuAttach(parent, edpart_message_menu);
-        edpart_message_menu->x = parent->x + 10;
-        edpart_message_menu->y = parent->y + 40;
+    if (edpart_message_menu == NULL) {
+        return;
     }
+    eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Loaded OK"));
+    eduiMenuAttach(parent, edpart_message_menu);
+    edpart_message_menu->x = parent->x + 10;
+    edpart_message_menu->y = parent->y + 40;
 }
 static inline void edpartSavePath(char *path, char *backup, bool level) {
     char directory[256], name[256], extension[256];
@@ -1808,7 +1809,7 @@ static void edpartPartIndexMenu(eduimenu_s *menu, eduiitem_s *, u32) {
                                 current_type ? 0 : 1, current_type ? NULL : edpartChangePartIndex, type->name);
         eduiMenuAddItem(edpart_partindex_menu, item);
         if (index == selected)
-            edpart_partindex_menu->selected = item;
+            edpart_partindex_menu->selected = edui_last_item;
     }
     eduiMenuAttach(menu, edpart_partindex_menu);
     edpart_partindex_menu->x = menu->x + 10;
@@ -1889,42 +1890,45 @@ static void edpartInstanceOrphansMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edpart_which_scene = 1;
     edpart_instanceorphans_menu =
         eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelInstanceOrphansMenu, "Instance Orphans/Dupes");
-    if (edpart_instanceorphans_menu == NULL || edpart_nearest_type == NULL)
-        return;
-    i32 group = 1;
-    char effect_name[20];
-    char label[38];
+    if (edpart_instanceorphans_menu != NULL && edpart_nearest_type != NULL) {
+        i32 group = 1;
+        char effect_name[20];
+        char label[38];
 #define EDPART_ORPHAN_ITEM(index)                                                                                      \
     if (edpart_nearest_type->effect_ids[index] == 9998) {                                                              \
         NuStrNCpy(effect_name, edpart_nearest_type->object_names[index], 17);                                          \
         sprintf(label, "Remove - %s", effect_name);                                                                    \
         eduiMenuAddItem(edpart_instanceorphans_menu,                                                                   \
-                        eduiItemSelCreate(index, edblack, 0, group++, edpartDeleteInstanceOrphan, label));             \
+                        eduiItemSelCreate(index, edblack, 0, group, edpartDeleteInstanceOrphan, label));               \
+        ++group;                                                                                                       \
     }
-    EDPART_ORPHAN_ITEM(0)
-    EDPART_ORPHAN_ITEM(1)
-    EDPART_ORPHAN_ITEM(2)
-    EDPART_ORPHAN_ITEM(3)
-    EDPART_ORPHAN_ITEM(4)
-    EDPART_ORPHAN_ITEM(5)
-    EDPART_ORPHAN_ITEM(6)
-    EDPART_ORPHAN_ITEM(7)
+        EDPART_ORPHAN_ITEM(0)
+        EDPART_ORPHAN_ITEM(1)
+        EDPART_ORPHAN_ITEM(2)
+        EDPART_ORPHAN_ITEM(3)
+        EDPART_ORPHAN_ITEM(4)
+        EDPART_ORPHAN_ITEM(5)
+        EDPART_ORPHAN_ITEM(6)
+        EDPART_ORPHAN_ITEM(7)
 #undef EDPART_ORPHAN_ITEM
-    if (edpart_nearest_orphans) {
-        eduiMenuAddItem(edpart_instanceorphans_menu,
-                        eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceOrphans, "Remove All Orphans"));
-    } else {
-        eduiMenuAddItem(edpart_instanceorphans_menu, eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove All Orphans"));
+        if (edpart_nearest_orphans) {
+            eduiMenuAddItem(edpart_instanceorphans_menu,
+                            eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceOrphans, "Remove All Orphans"));
+        } else {
+            eduiMenuAddItem(edpart_instanceorphans_menu,
+                            eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove All Orphans"));
+        }
+        if (edpart_nearest_duplicates) {
+            eduiMenuAddItem(
+                edpart_instanceorphans_menu,
+                eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceDuplicates, "Remove Duplicates"));
+        } else {
+            eduiMenuAddItem(edpart_instanceorphans_menu, eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove Duplicates"));
+        }
+        eduiMenuAttach(parent, edpart_instanceorphans_menu);
+        edpart_instanceorphans_menu->x = parent->x + 10;
+        edpart_instanceorphans_menu->y = parent->y + 40;
     }
-    if (edpart_nearest_duplicates) {
-        eduiMenuAddItem(edpart_instanceorphans_menu,
-                        eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceDuplicates, "Remove Duplicates"));
-    } else {
-        eduiMenuAddItem(edpart_instanceorphans_menu, eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove Duplicates"));
-    }
-    eduiMenuAttach(parent, edpart_instanceorphans_menu);
-    edpart_instanceorphans_menu->x = parent->x + 10;
-    edpart_instanceorphans_menu->y = parent->y + 40;
 }
 
 static void edpartCancelChangeNameMenu(eduimenu_s *, eduimenu_s *) {
@@ -1977,8 +1981,8 @@ static void edpartFileSaveEffectsLevel(eduimenu_s *parent, eduiitem_s *, u32) {
         if (edpart_message_menu != NULL) {
             eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Save Failed"));
             eduiMenuAttach(parent, edpart_message_menu);
-            edpart_message_menu->x = parent->x + 10;
             edpart_message_menu->y = parent->y + 40;
+            edpart_message_menu->x = parent->x + 10;
         }
     } else if (!backed_up) {
         u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
@@ -2059,7 +2063,7 @@ static void edpartDebrisIndexMenu(eduimenu_s *menu, eduiitem_s *, u32) {
             eduiItemCheckCreate(index, edblack, index == selected, 1, edpartChangeDebrisIndex, type->name);
         eduiMenuAddItem(edpart_debrisindex_menu, item);
         if (index == selected) {
-            edpart_debrisindex_menu->selected = item;
+            edpart_debrisindex_menu->selected = edui_last_item;
             found_selected = true;
         }
     }
@@ -2124,8 +2128,8 @@ static void edpartFileSaveEffectsGeneral(eduimenu_s *parent, eduiitem_s *, u32) 
         if (edpart_message_menu != NULL) {
             eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Save Failed"));
             eduiMenuAttach(parent, edpart_message_menu);
-            edpart_message_menu->x = parent->x + 10;
             edpart_message_menu->y = parent->y + 40;
+            edpart_message_menu->x = parent->x + 10;
         }
     } else if (!backed_up) {
         u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
@@ -2290,8 +2294,8 @@ void edpartDoInput(nupad_s *pad) {
             edcamSetPos(&emit->position);
             emit = &part_emits[edpart_nearest];
             const i16 *reference_rotation = reinterpret_cast<const i16 *>(&emit->trailing_state_words[0]);
-            edpart_rotz = reference_rotation[0];
             edpart_roty = reference_rotation[1];
+            edpart_rotz = reference_rotation[0];
             edpart_emitrotz = emit->rotation_2c;
             edpart_emitroty = emit->rotation_2e;
             edpart_emitrotx = emit->rotation_30;
@@ -2439,8 +2443,8 @@ void edpartDoInput(nupad_s *pad) {
     if (edpart_nearest_emit->effect_id != -1)
         edpart_nearest_type = &part_types[edpart_nearest_emit->effect_id];
     edpart_nearest_duplicates = 0;
-    i32 orphans = 0;
     i32 duplicates = 0;
+    i32 orphans = 0;
     for (i32 variant = 0; variant < 8; ++variant) {
         i16 effect = edpart_nearest_type->effect_ids[variant];
         if (effect == 9999 || effect == -1)
@@ -2449,10 +2453,11 @@ void edpartDoInput(nupad_s *pad) {
             ++orphans;
         else {
             for (i32 previous = 0; previous < variant; ++previous) {
-                if (effect == edpart_nearest_type->effect_ids[previous]) {
-                    ++duplicates;
-                    break;
+                if (effect != edpart_nearest_type->effect_ids[previous]) {
+                    continue;
                 }
+                ++duplicates;
+                break;
             }
         }
     }

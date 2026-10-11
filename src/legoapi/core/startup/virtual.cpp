@@ -18,15 +18,15 @@ void VirtualControlDPad::Process(float elapsed) {
 
     const f32 timer = MechInputTouchVirtualConsoleController::s_noInputTimer;
     if (timer >= 0.0f && owner != NULL) {
+        alpha_elapsed = alpha_duration;
         alpha = 0.75f;
         alpha_to = 0.75f;
-        alpha_elapsed = alpha_duration;
         disabled = 0;
     } else {
         if (timer >= 0.0f && (SuperOptions.dpad_locked == 0 || GetMenuID() == 25)) {
+            alpha_elapsed = alpha_duration;
             alpha = 0.4f;
             alpha_to = 0.4f;
-            alpha_elapsed = alpha_duration;
         }
         disabled = SuperOptions.dpad_locked != 0 && GetMenuID() != 25;
     }
@@ -242,8 +242,8 @@ void VirtualControlDPad_LockButton::Process(float) {
     const f32 button_radius_x = radius_x;
     const f32 button_radius_y = radius_y;
     position = dpad->position;
-    const f32 desired_x = dpad->position.z * 0.75f + button_radius_x + dpad->position.x;
     const f32 desired_y = dpad->position.y - (dpad->position.w * 0.75f + button_radius_y);
+    const f32 desired_x = dpad->position.z * 0.75f + button_radius_x + dpad->position.x;
     position.x = MAX(button_radius_x - 0.975f, MIN(desired_x, 0.1f));
     position.y = MAX(button_radius_y - 0.975f, MIN(desired_y, 1.0f - button_radius_y));
     alpha = alpha_to = hovered != 0 ? 1.0f : 0.4f;

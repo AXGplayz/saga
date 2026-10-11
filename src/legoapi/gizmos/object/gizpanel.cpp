@@ -164,12 +164,14 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
             FindAnglesXY(&player_direction, &target_x_rotation, &target_y_rotation);
             target_y_rotation = static_cast<u16>(target_y_rotation - panel.y_rotation);
 
-            if (previous_y_rotation <= 0x4000) {
+            if (!(previous_y_rotation <= 0x4000)) {
+                if (previous_y_rotation >= 0xc000 && target_y_rotation <= 0xbfff && target_y_rotation >= 0x4001) {
+                    target_y_rotation = 0xc000;
+                }
+            } else {
                 if (target_y_rotation > 0x4000 && target_y_rotation < 0xc000) {
                     target_y_rotation = 0x4000;
                 }
-            } else if (previous_y_rotation >= 0xc000 && target_y_rotation <= 0xbfff && target_y_rotation >= 0x4001) {
-                target_y_rotation = 0xc000;
             }
             if (previous_x_rotation <= 0x4000) {
                 if (target_x_rotation > 0x4000 && target_x_rotation < 0xc000) {
@@ -198,12 +200,12 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
 static void GizPanel_Draw(void *world_ptr, void *, float) {
     struct PANEL_MODELS {
         i32 base;
-        i32 animated;
         i32 animated_transition;
+        i32 animated;
         i32 state_off;
-        i32 state_on;
         i32 target;
         i32 arm;
+        i32 state_on;
         NUVEC arm_offset;
     };
 
@@ -234,10 +236,10 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NuSpecialConstTint(1, &special_tint);
         }
 
-        if ((panel.draw_flags & GIZPANEL_DRAW_FLAG_NO_SHADOW_RESET) != 0) {
-            ResetShadowMapRendering();
-        } else {
+        if ((panel.draw_flags & GIZPANEL_DRAW_FLAG_NO_SHADOW_RESET) == 0) {
             EnableShadowMapRendering(0);
+        } else {
+            ResetShadowMapRendering();
         }
 
         PANEL_MODELS models = {-1, -1, -1, -1, -1, -1, -1, {0.0f, 0.0f, 0.0f}};
@@ -451,9 +453,10 @@ static void GizPanels_StoreProgress(void *world_ptr, void *, void *progress_ptr)
     if (world != NULL && (panel_sys = world->giz_panel_sys) != NULL && (panel = panel_sys->panels) != NULL &&
         panel_sys->count > 0) {
         i32 index = 0;
+        auto panel_sys_count = panel_sys->count;
         do {
-            const u32 bit = 1u << (index & 31);
             const i32 word_index = index >> 5;
+            const u32 bit = 1u << (index & 31);
             u8 flags = panel->flags;
             if ((flags & GIZPANEL_FLAG_STATE) != 0) {
                 reinterpret_cast<u32 *>(&progress->state)[word_index] |= bit;
@@ -468,7 +471,7 @@ static void GizPanels_StoreProgress(void *world_ptr, void *, void *progress_ptr)
             }
             ++index;
             ++panel;
-        } while (index != panel_sys->count && index != 32);
+        } while (index != panel_sys_count && index != 32);
     }
 }
 

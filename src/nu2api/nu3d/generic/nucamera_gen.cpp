@@ -162,10 +162,10 @@ void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v) {
     m->m33 = 1.0f;
     m->m23 = 0.0f;
     m->m13 = 0.0f;
-    m->m03 = 0.0f;
     m->m30 = v->x;
     m->m31 = v->y;
     m->m32 = v->z;
+    m->m03 = 0.0f;
 }
 
 void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
@@ -194,10 +194,10 @@ void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
     m->m33 = 1.0f;
     m->m23 = 0.0f;
     m->m13 = 0.0f;
-    m->m03 = 0.0f;
     m->m30 = v->x;
     m->m31 = v->y;
     m->m32 = v->z;
+    m->m03 = 0.0f;
 }
 
 void NuCameraGetClipMtx(NUMTX *viewport, NUMTX *scissor) {
@@ -256,8 +256,8 @@ void NuMtxCalcCheapFaceY(NUMTX *m, NUVEC *v) {
     up.x = 0.0f;
     up.y = 1.0f;
     up.z = 0.0f;
-    m->m11 = up.y;
     m->m10 = up.x;
+    m->m11 = up.y;
     m->m12 = up.z;
 
     NUVEC forward = {-view->m02, 0.0f, -view->m22};
@@ -287,9 +287,9 @@ void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v) {
     m->m12 = view->m21;
     m->m22 = -view->m22;
     m->m03 = 0.0f;
-    m->m13 = 0.0f;
     m->m23 = 0.0f;
     m->m30 = v->x;
+    m->m13 = 0.0f;
     m->m31 = v->y;
     m->m32 = v->z;
     m->m33 = 1.0f;

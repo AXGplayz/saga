@@ -93,8 +93,8 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
 
         if (Game.episode_save[SuperStoryEpisode].superstory_score_target != 0) {
             if (hide_super_story_target == 0) {
-                char target[64];
                 char text[64];
+                char target[64];
                 Text_MakeScore(static_cast<u32>(Game.episode_save[SuperStoryEpisode].superstory_score_target), target);
                 NuStrCpy(text, const_cast<char *>("("));
                 NuStrCat(text, target);
@@ -143,8 +143,8 @@ i32 Tag_UpdateHint(HINT_s *hint) {
             }
             if (VehicleArea != 0 || WORLD->current_level == HUB_LDATA)
                 return 0;
-            GameObject_s *first = player;
             GameObject_s *second = player2;
+            GameObject_s *first = player;
             if (first != NULL && static_cast<i8>(first->apiobj.flags_low) < 0 && first->field_0xcc0 != NULL)
                 return 0;
             if (second != NULL && static_cast<i8>(second->apiobj.flags_low) < 0 && second->field_0xcc0 != NULL)
@@ -787,25 +787,27 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
                     meleeTarg_flashTime[i] = 0.01f;
                 meleeTarg_flashTime[i] += FRAMETIME;
 
-                if (meleeTarg_flashTime[i] < 0.375f) {
+                if (!(meleeTarg_flashTime[i] < 0.375f)) {
+                    if (meleeTarg_flashTime[i] < 0.625f) {
+                        meleeTarg_localCount[i] = counts[i];
+                        red = 0;
+                        green = 255;
+                    } else if (meleeTarg_flashTime[i] < 1.0f) {
+                        const f32 phase = (meleeTarg_flashTime[i] - 0.5f) * 2.0f * 255.0f;
+                        red = static_cast<i32>(phase);
+                        green = static_cast<i32>(255.0f - phase);
+                        meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
+                    } else {
+                        meleeTarg_flashTime[i] = 0.0f;
+                        meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
+                        red = 255;
+                        green = 0;
+                    }
+                } else {
                     const f32 phase = meleeTarg_flashTime[i] / 0.375f * 255.0f;
                     green = static_cast<i32>(phase);
                     red = static_cast<i32>(255.0f - phase);
                     meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.0f, 0.1f);
-                } else if (meleeTarg_flashTime[i] < 0.625f) {
-                    meleeTarg_localCount[i] = counts[i];
-                    red = 0;
-                    green = 255;
-                } else if (meleeTarg_flashTime[i] < 1.0f) {
-                    const f32 phase = (meleeTarg_flashTime[i] - 0.5f) * 2.0f * 255.0f;
-                    red = static_cast<i32>(phase);
-                    green = static_cast<i32>(255.0f - phase);
-                    meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
-                } else {
-                    meleeTarg_flashTime[i] = 0.0f;
-                    meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
-                    red = 255;
-                    green = 0;
                 }
             }
 
@@ -875,6 +877,7 @@ void InitPanel(i32) {
 }
 
 void DrawPanel() {
+    NUVEC target_point;
     NUVEC coordinate_positions[8];
     const i32 menu = GetMenuID();
     SetQFont2D();
@@ -1025,14 +1028,14 @@ void DrawPanel() {
                                 (object->field_0xdec >= 3.0f ||
                                  PickupFlickerFrame % PickUpFlickerFrames < PickUpFlickerTest)) {
                                 nuhspecial_s *special = &WORLD->lev_objs[0xd0].special;
-                                u16 angle = PowerUp_PanelYRot[0];
                                 f32 scale = POWERUPOBJSIZE;
+                                u16 angle = PowerUp_PanelYRot[0];
                                 f32 y = PowerUp_GetPanelY(0);
                                 DrawPanel3DObject(-ICONX, y + status_y, 1.0f, scale, scale, scale, 0, angle, 0, special,
                                                   0, 1.0f);
-                                special = &WORLD->lev_objs[0xd1].special;
                                 angle = PowerUp_PanelYRot[0];
                                 scale = POWERUPOBJSIZE;
+                                special = &WORLD->lev_objs[0xd1].special;
                                 y = PowerUp_GetPanelY(0);
                                 DrawPanel3DObject(-ICONX, y + status_y, 1.0f, scale, scale, scale, 0, angle, 0, special,
                                                   0, 1.0f);
@@ -1241,7 +1244,7 @@ void DrawPanel() {
                         f32 alpha =
                             0.8f + 0.2f * NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) *
                                                                       2.0f * 65536.0f));
-                        NUVEC target_point = v000;
+                        target_point = v000;
                         NUVEC *position = &target->apiobj.collision_position;
                         bool hide_target = false;
                         if (target->id == id_QUIGONJINN &&

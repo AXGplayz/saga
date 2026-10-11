@@ -62,8 +62,7 @@ extern "C" void NuMtlInitOverride(i32 count, VARIPTR *buffer, VARIPTR *end) {
 }
 
 static NUMTL *FindOverrideMaterial(NUMTL *original, const NUVERTEXDESCRIPTOR &descriptor, NUMTL *fallback = NULL) {
-    for (NULNKHDR *node = NuLstGetNext(g_overrideList, NULL); node != NULL;
-         node = NuLstGetNext(g_overrideList, node)) {
+    for (NULNKHDR *node = NuLstGetNext(g_overrideList, NULL); node != NULL; node = NuLstGetNext(g_overrideList, node)) {
         MTL_OVERRIDE_RECORD *entry = reinterpret_cast<MTL_OVERRIDE_RECORD *>(node);
         if (entry->original == original && entry->material->shader_desc.vtx_desc.flags == descriptor.flags) {
             return entry->material;
@@ -95,8 +94,7 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
         return material;
     }
     NuMtlRegisterForOverride(original, &source->shader_desc.vtx_desc, 1);
-    NUVERTEXDESCRIPTOR descriptor = source->shader_desc.vtx_desc;
-    return FindOverrideMaterial(original, descriptor);
+    return FindOverrideMaterial(original, source->shader_desc.vtx_desc);
 }
 
 extern "C" NUMTL *NuMtlFindVariantMtlFromDesc(NUMTL *original, NUVERTEXDESCRIPTOR descriptor) {
@@ -143,8 +141,8 @@ void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
     desc2d.flags = 0x1000;
     desc2d.diffuse_color[0] = 0xffffffff;
     desc2d.unknown_24 = 1.0f;
-    desc2d.vtx_desc.has_position = 1;
     desc2d.vtx_desc.has_diffuse = 1;
+    desc2d.vtx_desc.has_position = 1;
     desc2d.vtx_desc.has_no_transform = 1;
     NUSHADERMTLDESC desc3d;
     memset(&desc3d, 0, sizeof(desc3d));
@@ -159,24 +157,28 @@ void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
 
     char package_path[512];
     i32 package = AndroidOBBUtils::LookupPackagePath(package_path, NuFileDeviceAndroidOBBType::MAIN);
-    if (package == 1) {
-        NuDatSet(NuDatOpen(package_path, buf, NULL));
-    } else if (package == 2) {
-        if (g_apkFileDevice == NULL) {
-            NuFile::InitData init = {};
-            g_apkFileDevice = new NuFileDeviceAndroidAPK("apk:", init);
-            NuDatSet(NuDatOpen(package_path, buf, NULL));
+    if (package != 1) {
+        if (package == 2) {
+            if (g_apkFileDevice == NULL) {
+                NuFile::InitData init = {};
+                g_apkFileDevice = new NuFileDeviceAndroidAPK("apk:", init);
+                NuDatSet(NuDatOpen(package_path, buf, NULL));
+            }
         }
+    } else {
+        NuDatSet(NuDatOpen(package_path, buf, NULL));
     }
     package = AndroidOBBUtils::LookupPackagePath(package_path, NuFileDeviceAndroidOBBType::PATCH);
-    if (package == 1) {
-        NuDatSet(NuDatOpen(package_path, buf, NULL));
-    } else if (package == 2) {
-        if (g_apkFileDevice == NULL) {
-            NuFile::InitData init = {};
-            g_apkFileDevice = new NuFileDeviceAndroidAPK("apk:", init);
-            NuDatSet(NuDatOpen(package_path, buf, NULL));
+    if (package != 1) {
+        if (package == 2) {
+            if (g_apkFileDevice == NULL) {
+                NuFile::InitData init = {};
+                g_apkFileDevice = new NuFileDeviceAndroidAPK("apk:", init);
+                NuDatSet(NuDatOpen(package_path, buf, NULL));
+            }
         }
+    } else {
+        NuDatSet(NuDatOpen(package_path, buf, NULL));
     }
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/numtl_gen.c", 0xd5);
     NuTexInitExPS(buf);
@@ -305,9 +307,9 @@ extern "C" NUMTL *NuMtlCreate3D(i32 count) {
 
         DefaultMtl(mtl);
 
+        mtl->renderplane = numtl_renderplane;
         mtl->is_used = true;
         mtl->unknown_0_4 = true;
-        mtl->renderplane = numtl_renderplane;
         // NB: no unknown_6_128 here — original Create3D leaves byte6 clear.
 
         mtl->next = next;
@@ -411,19 +413,21 @@ void NuMtlUpdatePS(numtl_s *mtl) {
         NuShaderManagerReleaseShader(NuShaderManagerGetShaderById(mtl->shader_desc.shader_variant_id));
     }
 
-    if (((char *)&mtl->attribs)[6] < 0 && mtl->display_list == NULL) {
+    if (!(((char *)&mtl->attribs)[6] < 0 && mtl->display_list == NULL)) {
+        if (mtl->shader_desc.blend_op2 != 0xff) {
+            void *shader = NuShaderManagerRetrieveShaderVariant(&mtl->shader_desc, mtl, 0x10);
+            if (shader != NULL) {
+                mtl->shader_desc.shader_variant_id = -1;
+                mtl->shader_desc.shader_id = *(i16 *)shader;
+            }
+        }
+    } else {
         if (mtl->shader_desc.blend_op2 != 0xff) {
             ((u8 *)&mtl->shader_desc.vtx_desc)[2] |= 4;
             void *shader = NuShaderManagerRetrieveShader(&mtl->shader_desc, mtl);
             if (shader != NULL) {
                 mtl->shader_desc.shader_id = *(i16 *)shader;
             }
-        }
-    } else if (mtl->shader_desc.blend_op2 != 0xff) {
-        void *shader = NuShaderManagerRetrieveShaderVariant(&mtl->shader_desc, mtl, 0x10);
-        if (shader != NULL) {
-            mtl->shader_desc.shader_variant_id = -1;
-            mtl->shader_desc.shader_id = *(i16 *)shader;
         }
     }
 

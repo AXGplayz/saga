@@ -69,7 +69,8 @@ void ResetGizAIMessageSys(GIZAIMESSAGESYS_s *sys) {
     sys->active_list.head = NULL;
     sys->active_list.tail = NULL;
     memset(sys->messages, 0, (usize)sys->count * sizeof(GIZAIMESSAGE_s));
-    for (i32 i = 0; i < sys->count; i++) {
+    auto sys_count = sys->count;
+    for (i32 i = 0; i < sys_count; i++) {
         NuLinkedListAppend(&sys->free_list, &sys->messages[i].links);
     }
 }
@@ -118,9 +119,10 @@ GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *sys, char const *name, GIZA
 
             for (NULISTLNK *node = NuLinkedListGetHead(&sys->active_list); node != NULL;
                  node = NuLinkedListGetNext(&sys->active_list, node)) {
-                if (NuStrNICmp(local, ((const GIZAIMESSAGE_s *)node)->name, 0x20) == 0) {
-                    return (GIZAIMESSAGE_s *)node;
+                if (NuStrNICmp(local, ((const GIZAIMESSAGE_s *)node)->name, 0x20) != 0) {
+                    continue;
                 }
+                return (GIZAIMESSAGE_s *)node;
             }
 
             NULISTLNK *node = NuLinkedListGetHead(&sys->free_list);

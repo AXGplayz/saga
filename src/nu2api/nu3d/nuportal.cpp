@@ -31,8 +31,8 @@ static NUFRUSTRUM *allocateFrustrum(i16 plane_count, i16 room_id) {
     NUFRUSTRUM *frustum = reinterpret_cast<NUFRUSTRUM *>(ALIGN(fstack_top.addr, 16));
     frustum->planes = reinterpret_cast<NUPLANE *>(reinterpret_cast<u8 *>(frustum) + sizeof(NUFRUSTRUM));
     fstack_top.addr = reinterpret_cast<usize>(frustum->planes + plane_count);
-    frustum->plane_count = plane_count;
     frustum->room_id = room_id;
+    frustum->plane_count = plane_count;
     frustra[*nfrustra] = frustum;
     ++*nfrustra;
     return frustum;
@@ -42,8 +42,8 @@ static void transposeClipPlanes(NUFRUSTRUM *frustum) {
     f32 cam_a = cam_plane.a;
     frustum->transposed_planes[3] = cam_a;
     f32 cam_d = cam_plane.d;
-    f32 cam_b = cam_plane.b;
     f32 cam_c = cam_plane.c;
+    f32 cam_b = cam_plane.b;
     NUPLANE *planes = frustum->planes;
     frustum->transposed_planes[7] = cam_b;
     frustum->transposed_planes[11] = cam_c;
@@ -216,9 +216,10 @@ static NUFRUSTRUM *copyFrustrum(NUFRUSTRUM *source, i16 room_id) {
 static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth) {
     if (depth >= 2) {
         for (i32 i = 0; i < depth - 1; ++i) {
-            if (rooms_visited[i] == room_id) {
-                return;
+            if (rooms_visited[i] != room_id) {
+                continue;
             }
+            return;
         }
     }
     if (depth >= 16) {
@@ -227,16 +228,17 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
 
     NUROOM *room = &scene->rooms[room_id];
     rooms_visited[depth] = room_id;
-    if (room_id == camera_roomid) {
-        FlagRoomInstancesAsVisible(room, scene);
-    } else {
+    if (room_id != camera_roomid) {
         clipRoomAgainstFrustrum(scene, room, frustum);
+    } else {
+        FlagRoomInstancesAsVisible(room, scene);
     }
     room->flags |= NUROOM_FLAG_VISITED;
     if (depth >= scene->portal_depth || room->portal_count == 0) {
         return;
     }
 
+    auto room_priority = room->priority;
     for (i32 portal_index = 0; portal_index < room->portal_count; ++portal_index) {
         NUPORTAL *portal = &scene->portals[room->portal_indices[portal_index]];
         i16 next_room = portal->front_room == room_id ? portal->back_room : portal->front_room;
@@ -246,8 +248,8 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
 
         NUROOM *next = &scene->rooms[next_room];
         const f32 camera_side = planeDistance(portal->plane, world_campos);
-        if (next->priority > room->priority && ((room_id == portal->back_room && camera_side < 0.0f) ||
-                                                (room_id == portal->front_room && camera_side > 0.0f))) {
+        if (next->priority > room_priority && ((room_id == portal->back_room && camera_side < 0.0f) ||
+                                               (room_id == portal->front_room && camera_side > 0.0f))) {
             continue;
         }
 
@@ -256,10 +258,10 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
         for (i32 plane_index = 0; plane_index < frustum->plane_count; ++plane_index) {
             i32 outside_vertices = 0;
             for (i32 vertex_index = 0; vertex_index < portal->vertex_count; ++vertex_index) {
-                if (!(planeDistance(frustum->planes[plane_index], portal->vertices[vertex_index]) >= 0.0f)) {
-                    ++outside_vertices;
-                } else {
+                if (planeDistance(frustum->planes[plane_index], portal->vertices[vertex_index]) >= 0.0f) {
                     ++inside_tests;
+                } else {
+                    ++outside_vertices;
                 }
             }
             if (outside_vertices == portal->vertex_count) {
@@ -272,7 +274,33 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
         }
 
         NUFRUSTRUM *next_frustum = NULL;
-        if (inside_tests == frustum->plane_count * portal->vertex_count) {
+        if (inside_tests != frustum->plane_count * portal->vertex_count) {
+            i32 in_front = 0;
+            for (i32 i = 0; i < portal->vertex_count; ++i) {
+                if (planeDistance(cam_plane, portal->vertices[i]) > 0.0f) {
+                    ++in_front;
+                }
+            }
+            if (in_front == 0) {
+                continue;
+            }
+            if (in_front != portal->vertex_count) {
+                next_frustum = copyFrustrum(frustum, next_room);
+            } else {
+                NUVEC portal_minimum;
+                NUVEC portal_maximum;
+                computePortalExtents(portal, &portal_minimum, &portal_maximum);
+                if (frustum->minimum.x >= portal_maximum.x || frustum->minimum.y >= portal_maximum.y ||
+                    portal_minimum.x >= frustum->maximum.x || portal_minimum.y >= frustum->maximum.y) {
+                    continue;
+                }
+                portal_minimum.x = MAX(portal_minimum.x, frustum->minimum.x);
+                portal_minimum.y = MAX(portal_minimum.y, frustum->minimum.y);
+                portal_maximum.x = MIN(portal_maximum.x, frustum->maximum.x);
+                portal_maximum.y = MIN(portal_maximum.y, frustum->maximum.y);
+                next_frustum = buildFrustrum(&portal_minimum, &portal_maximum, next_room);
+            }
+        } else {
             if (draw_portals != 0) {
                 NuCameraUnlock();
                 NUVEC direction;
@@ -303,32 +331,6 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
                 NuCameraRelock();
             }
             next_frustum = buildPortalFrustrum(portal, next_room);
-        } else {
-            i32 in_front = 0;
-            for (i32 i = 0; i < portal->vertex_count; ++i) {
-                if (planeDistance(cam_plane, portal->vertices[i]) > 0.0f) {
-                    ++in_front;
-                }
-            }
-            if (in_front == 0) {
-                continue;
-            }
-            if (in_front == portal->vertex_count) {
-                NUVEC portal_minimum;
-                NUVEC portal_maximum;
-                computePortalExtents(portal, &portal_minimum, &portal_maximum);
-                if (frustum->minimum.x >= portal_maximum.x || frustum->minimum.y >= portal_maximum.y ||
-                    portal_minimum.x >= frustum->maximum.x || portal_minimum.y >= frustum->maximum.y) {
-                    continue;
-                }
-                portal_minimum.x = MAX(portal_minimum.x, frustum->minimum.x);
-                portal_minimum.y = MAX(portal_minimum.y, frustum->minimum.y);
-                portal_maximum.x = MIN(portal_maximum.x, frustum->maximum.x);
-                portal_maximum.y = MIN(portal_maximum.y, frustum->maximum.y);
-                next_frustum = buildFrustrum(&portal_minimum, &portal_maximum, next_room);
-            } else {
-                next_frustum = copyFrustrum(frustum, next_room);
-            }
         }
         roomRecursive(scene, next_frustum, next_room, room_id, depth + 1);
     }

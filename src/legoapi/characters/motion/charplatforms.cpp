@@ -31,10 +31,10 @@ void SkinPlatform(terrsitu_s *terrain_group, unsigned char *buffer, PLATSKININFO
     TERRAIN_SHAPE_BATCH *input = static_cast<TERRAIN_SHAPE_BATCH *>(group->data);
     TERRAIN_SHAPE_BATCH *output = reinterpret_cast<TERRAIN_SHAPE_BATCH *>(buffer);
     while (input->marker >= 0) {
-        output->marker = input->marker;
         output->shape_count = input->shape_count;
-        TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(input + 1);
+        output->marker = input->marker;
         TERRAIN_SHAPE *destination = reinterpret_cast<TERRAIN_SHAPE *>(output + 1);
+        TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(input + 1);
         f32 min_x = 123456792.0f, min_z = 123456792.0f;
         f32 max_x = -123456792.0f, max_z = -123456792.0f;
         TERRAIN_SHAPE *const first_shape = source;
@@ -67,8 +67,8 @@ void SkinPlatform(terrsitu_s *terrain_group, unsigned char *buffer, PLATSKININFO
             destination->min_y = shape_min_y - 0.05f;
             destination->min_z = shape_min_z - 0.05f;
             destination->max_x = shape_max_x + 0.05f;
-            destination->max_y = shape_max_y + 0.05f;
             destination->max_z = shape_max_z + 0.05f;
+            destination->max_y = shape_max_y + 0.05f;
             if (source->normals[1].y < 65535.0f) {
                 NUVEC a, b;
                 a.x = destination->vectors[1].x - destination->vectors[3].x;
@@ -103,8 +103,8 @@ void SkinPlatform(terrsitu_s *terrain_group, unsigned char *buffer, PLATSKININFO
             }
         }
         if (source != first_shape) {
-            min_x -= 0.05f;
             min_z -= 0.05f;
+            min_x -= 0.05f;
             max_x += 0.05f;
             max_z += 0.05f;
         }
@@ -146,6 +146,34 @@ void CharPlatforms_Reset(CHARPLATFORMSYS_s *system) {
     }
 }
 
+void CharPlatforms_Update(CHARPLATFORMSYS_s *system) {
+    if (system == NULL)
+        return;
+    for (i32 i = 0; i < system->platform_count; ++i) {
+        if (system->platforms[i].object_id == -1)
+            continue;
+        i32 visible = 0;
+        GameObject_s *object = Obj;
+        for (i32 j = 0; j < HIGHGAMEOBJECT; ++j, ++object) {
+            if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->apiobj.field_0x287 == 0 &&
+                object->field_0x107c == system->platforms[i].platform_id) {
+                nuhspecial_s *special = &system->platforms[i].special;
+                NUMTX *matrix = NuSpecialGetDrawMtx(special);
+                if (matrix != NULL) {
+                    *matrix = object->apiobj.field_0xb8;
+                    if (GameTimer.time_elapsed * 2.0f < 1.0f) {
+                        matrix->m31 -= 1.0f - GameTimer.time_elapsed * 2.0f;
+                    }
+                    NuSpecialUpdate(special);
+                }
+                visible = 1;
+                break;
+            }
+        }
+        NuSpecialSetVisibility(&system->platforms[i].special, visible);
+    }
+}
+
 void CharPlatforms_Configure(WORLDINFO_s *world, char *config) {
     world->char_platform_sys = NULL;
     if (world->current_gscn == NULL) {
@@ -167,24 +195,23 @@ void CharPlatforms_Configure(WORLDINFO_s *world, char *config) {
         if (NuFParGetWord(parser) == 0) {
             break;
         }
-        if (NuStrICmp(parser->word_buf, const_cast<char *>("char_platform")) != 0 || NuFParGetWord(parser) == 0) {
-            continue;
-        }
+        if (NuStrICmp(parser->word_buf, const_cast<char *>("char_platform")) == 0 && NuFParGetWord(parser) != 0) {
 
-        system = world->char_platform_sys;
-        CHARPLATFORM_s *platform = &system->platforms[system->platform_count];
-        platform->object_id = CharIDFromName(parser->word_buf);
-        if (platform->object_id == -1 || NuFParGetWord(parser) == 0) {
-            continue;
-        }
-        if (NuSpecialFind(world->current_gscn, &platform->special, parser->word_buf, 1) == 0) {
-            continue;
-        }
+            system = world->char_platform_sys;
+            CHARPLATFORM_s *platform = &system->platforms[system->platform_count];
+            platform->object_id = CharIDFromName(parser->word_buf);
+            if (platform->object_id == -1 || NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            if (NuSpecialFind(world->current_gscn, &platform->special, parser->word_buf, 1) == 0) {
+                continue;
+            }
 
-        system = world->char_platform_sys;
-        platform->platform_id = -1;
-        platform->object = NULL;
-        ++system->platform_count;
+            system = world->char_platform_sys;
+            platform->object = NULL;
+            platform->platform_id = -1;
+            ++system->platform_count;
+        }
     }
 
     NuFParDestroy(parser);
@@ -193,34 +220,6 @@ void CharPlatforms_Configure(WORLDINFO_s *world, char *config) {
         world->giz_buffer.addr = ALIGN(reinterpret_cast<usize>(&system->platforms[system->platform_count]), 4);
     } else {
         world->char_platform_sys = NULL;
-    }
-}
-
-void CharPlatforms_Update(CHARPLATFORMSYS_s *system) {
-    if (system == NULL)
-        return;
-    for (i32 i = 0; i < system->platform_count; ++i) {
-        if (system->platforms[i].object_id == -1)
-            continue;
-        i32 visible = 0;
-        GameObject_s *object = Obj;
-        for (i32 j = 0; j < HIGHGAMEOBJECT; ++j, ++object) {
-            if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
-                object->field_0x107c != system->platforms[i].platform_id)
-                continue;
-            nuhspecial_s *special = &system->platforms[i].special;
-            NUMTX *matrix = NuSpecialGetDrawMtx(special);
-            if (matrix != NULL) {
-                *matrix = object->apiobj.field_0xb8;
-                if (GameTimer.time_elapsed * 2.0f < 1.0f) {
-                    matrix->m31 -= 1.0f - GameTimer.time_elapsed * 2.0f;
-                }
-                NuSpecialUpdate(special);
-            }
-            visible = 1;
-            break;
-        }
-        NuSpecialSetVisibility(&system->platforms[i].special, visible);
     }
 }
 

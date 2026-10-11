@@ -253,10 +253,12 @@ void CatchUpCode(GameObject_s *object, f32 divisor, f32 maximum, i32 mode) {
         (mode == 0 || static_cast<i8>(other->apiobj.field_0x1f8) < 0)) {
         f32 distance = object->sock_position.normalized_distance - other->sock_position.normalized_distance;
         if (looping) {
-            if (distance >= 0.5f) {
+            if (!(distance >= 0.5f)) {
+                if (-0.5f >= distance) {
+                    distance += 1.0f;
+                }
+            } else {
                 distance -= 1.0f;
-            } else if (-0.5f >= distance) {
-                distance += 1.0f;
             }
         }
         if (distance < 0.0f) {
@@ -365,8 +367,8 @@ void AddSlamDebris(GameObject_s *object) {
     FindSlamOrigin(object, &position, NULL);
     f32 radius = 0.6f;
     f32 strength = 0.3f;
-    i32 flags = 0x17;
     i32 damage = 1;
+    i32 flags = 0x17;
     if ((object->apiobj.flags_low & 0x80) != 0 && Cheat_IsOn(0x16)) {
         radius = 1.0f;
         strength = 0.5f;
@@ -390,8 +392,8 @@ void CloakMovement(GameObject_s *object) {
     u8 *state = reinterpret_cast<u8 *>(object) + index * 0x34;
     f32 &value = *reinterpret_cast<f32 *>(state + 0xf50);
     f32 phase = NuFsqrt((value - character->field_0x60) / (character->field_0x5c - character->field_0x60));
-    f32 high_weight;
     f32 low_weight;
+    f32 high_weight;
     if (LEGOACT_FALL != -1) {
         i16 animation;
         if (object->apiobj.anim_packet.blending == 0) {
@@ -430,9 +432,7 @@ apply_weights:
     const f32 interpolated_value =
         high_weight * current_character->field_0x5c + low_weight * current_character->field_0x60;
     *reinterpret_cast<f32 *>(state + 0xf50) = interpolated_value;
-    if (interpolated_value == 0.0f) {
-        state[0xf79] = 0;
-    } else {
+    if (interpolated_value != 0.0f) {
         state[0xf79] = 0x21;
         if (current_character->field_0x60 <= current_character->field_0x5c) {
             *reinterpret_cast<i16 *>(state + 0xf70) = static_cast<i16>(current_character->field_0x5c * 32768.0f);
@@ -441,6 +441,8 @@ apply_weights:
             *reinterpret_cast<i16 *>(state + 0xf70) = static_cast<i16>(current_character->field_0x60 * 32768.0f);
             *reinterpret_cast<i16 *>(state + 0xf76) = static_cast<i16>(current_character->field_0x5c * 32768.0f);
         }
+    } else {
+        state[0xf79] = 0;
     }
     object->field_0x1089 = current_index + 1;
 }
@@ -448,32 +450,23 @@ apply_weights:
 static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
     VARIPTR *stream = g_NuPrim_StreamBufferPtr;
     TexQuadVertex *vertex = static_cast<TexQuadVertex *>(stream->void_ptr);
-    if (g_NuPrim_NeedsOverbrightening != 0) {
-        vertex->colour = colour;
-    } else {
+    if (g_NuPrim_NeedsOverbrightening == 0) {
         vertex->colour = ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000);
-    }
-    if (g_NuPrim_NeedsHalfUVs != 0) {
-        vertex->half_uv[0] = u != 0 ? 0x3c00 : 0;
-        vertex->half_uv[1] = v != 0 ? 0x3c00 : 0;
     } else {
+        vertex->colour = colour;
+    }
+    if (g_NuPrim_NeedsHalfUVs == 0) {
         vertex->uv[0] = static_cast<f32>(u);
         vertex->uv[1] = static_cast<f32>(v);
+    } else {
+        vertex->half_uv[0] = u != 0 ? 0x3c00 : 0;
+        vertex->half_uv[1] = v != 0 ? 0x3c00 : 0;
     }
     vertex->x = x;
     vertex->y = y;
     vertex->z = 0.0f;
     stream->u8_ptr += sizeof(TexQuadVertex);
     ++g_NuPrim_VertexCount;
-}
-
-void RndrTexQuad3D(VuMtx const &matrix, i32 colour, numtl_s *material) {
-    NuPrim3DBegin(1, 7, material, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(&matrix)));
-    TexQuadSubmit3D(-0.5f, -0.5f, colour, 0, 0);
-    TexQuadSubmit3D(0.5f, -0.5f, colour, 1, 0);
-    TexQuadSubmit3D(-0.5f, 0.5f, colour, 0, 1);
-    TexQuadSubmit3D(0.5f, 0.5f, colour, 1, 1);
-    NuPrim3DEnd();
 }
 
 void CheckResetBits() {
@@ -591,23 +584,24 @@ void CheckResetBits() {
         ReStoreStatusTakeOverObjectSys(1);
         AIScriptInitConditions(WORLD->ai_sys);
 
+        auto WORLD_ai_sys = WORLD->ai_sys;
         for (i32 player_index = 0; player_index < 8; ++player_index) {
             if (Player[player_index] == NULL)
                 continue;
             InitPlayerAI(Player[player_index]);
             char script_name[32];
             if (FreePlay != 0) {
-                if (AIScriptFind(WORLD->ai_sys, const_cast<char *>("Freeplay"), 0, 1, 0) != NULL)
+                if (AIScriptFind(WORLD_ai_sys, const_cast<char *>("Freeplay"), 0, 1, 0) != NULL)
                     strcpy(script_name, "Freeplay");
                 else
                     goto party_script;
             } else if (Mission_Active(NULL) != NULL) {
-                if (AIScriptFind(WORLD->ai_sys, const_cast<char *>("Mission"), 0, 1, 0) != NULL)
+                if (AIScriptFind(WORLD_ai_sys, const_cast<char *>("Mission"), 0, 1, 0) != NULL)
                     strcpy(script_name, "Mission");
                 else
                     goto party_script;
             } else {
-                if (AIScriptFind(WORLD->ai_sys, Player[player_index]->apiobj.character_data->file, 0, 1, 0) != NULL) {
+                if (AIScriptFind(WORLD_ai_sys, Player[player_index]->apiobj.character_data->file, 0, 1, 0) != NULL) {
                     sprintf(script_name, Player[player_index]->apiobj.character_data->file);
                 } else {
                     if ((Player[player_index]->apiobj.character_data->model_flags & 8) != 0)
@@ -616,16 +610,16 @@ void CheckResetBits() {
                         strcpy(script_name, "Blaster");
                     else
                         strcpy(script_name, "NoWeapon");
-                    if (AIScriptFind(WORLD->ai_sys, script_name, 0, 1, 0) == NULL) {
+                    if (AIScriptFind(WORLD_ai_sys, script_name, 0, 1, 0) == NULL) {
                     party_script:
-                        if (AIScriptFind(WORLD->ai_sys, const_cast<char *>("party"), 0, 1, 0) != NULL)
+                        if (AIScriptFind(WORLD_ai_sys, const_cast<char *>("party"), 0, 1, 0) != NULL)
                             strcpy(script_name, "party");
                         else
                             strcpy(script_name, "GeneralParty");
                     }
                 }
             }
-            AIScriptProcessorInit(WORLD->ai_sys, &Player[player_index]->ai,
+            AIScriptProcessorInit(WORLD_ai_sys, &Player[player_index]->ai,
                                   reinterpret_cast<AISCRIPTPROCESS *>(&Player[player_index]->ai), NULL, script_name,
                                   NULL, 1, NULL, NULL);
             if (FreePlay == 0 && Mission_Active(NULL) == NULL && Player[player_index]->field_0xcc0 == NULL &&
@@ -742,7 +736,11 @@ void CheckResetBits() {
     } else {
         Tag_SetMode(1);
     }
-    WeaponInOut_NoAIJediSfx = WORLD->area != NULL && WORLD->area == JEDI_ADATA ? 1 : 0;
+    if (WORLD->area != NULL && WORLD->area == JEDI_ADATA) {
+        WeaponInOut_NoAIJediSfx = 1;
+    } else {
+        WeaponInOut_NoAIJediSfx = 0;
+    }
     bonusmodearcade = 0;
     if (WORLD->area != NULL && (WORLD->area->flags & 0x10) != 0) {
         if (AreaGlobals.values.field_0x14 < AreaGlobals.values.field_0x0c) {
@@ -750,6 +748,15 @@ void CheckResetBits() {
         }
     }
     arcade_placed_stud_total = ((GizmoPickups_TotalScore(WORLD) * 85u) / 100u) / 1000u * 1000u;
+}
+
+void RndrTexQuad3D(VuMtx const &matrix, i32 colour, numtl_s *material) {
+    NuPrim3DBegin(1, 7, material, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(&matrix)));
+    TexQuadSubmit3D(-0.5f, -0.5f, colour, 0, 0);
+    TexQuadSubmit3D(0.5f, -0.5f, colour, 1, 0);
+    TexQuadSubmit3D(-0.5f, 0.5f, colour, 0, 1);
+    TexQuadSubmit3D(0.5f, 0.5f, colour, 1, 1);
+    NuPrim3DEnd();
 }
 
 void bgProcAbortAll() {
@@ -764,6 +771,13 @@ extern AREADATA_s *GUNSHIP_ADATA;
 extern i16 id_LANDSPEEDER;
 void PodDust(WORLDINFO_s *, GameObject_s *);
 extern "C" void AddVariableShotDebrisEffect(i32, NUVEC *, i32, i16, i16);
+
+i32 bgprocIsFreezing() {
+    i32 freezing = 1;
+    if (bgproc_frozen == 0)
+        freezing = bgproc_freeze != 0;
+    return freezing;
+}
 
 void AddSurfaceDebris(GameObject_s *object) {
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
@@ -780,9 +794,9 @@ void AddSurfaceDebris(GameObject_s *object) {
         return;
     }
     i32 effect;
+    f32 height;
     f32 rate;
     f32 minimum_rate;
-    f32 height;
     if (object->id == id_LANDSPEEDER) {
         effect = 102;
         rate = 20.0f;
@@ -837,13 +851,6 @@ void AddSurfaceDebris(GameObject_s *object) {
                           previous.z + delta.z * fraction};
         AddVariableShotDebrisEffect(world->debris_sys->entries[effect].effect, &position, 1, 0, 0);
     } while (--count != 0);
-}
-
-i32 bgprocIsFreezing() {
-    i32 freezing = 1;
-    if (bgproc_frozen == 0)
-        freezing = bgproc_freeze != 0;
-    return freezing;
 }
 
 extern "C" void DebFree(i32 *);
@@ -1063,9 +1070,10 @@ extern "C" void NuHtmlBitmap(char *filename, i32 width, i32 height, char *captio
         NuHtmlWrite(caption);
     }
     NuHtmlWrite("<BR CLEAR=\"all\"> <P>&nbsp;<P>");
-    if (source != NULL && NuStrCmp(filename, source) != 0) {
-        NuFileCopy(filename, source);
+    if (!(source != NULL && NuStrCmp(filename, source) != 0)) {
+        return;
     }
+    NuFileCopy(filename, source);
 }
 
 void NuHtmlGraphArray(char **strings) {
@@ -1077,15 +1085,15 @@ void NuHtmlGraphArray(char **strings) {
 }
 
 void AddChunkToRenderStack(particlechunkrendertype_s *chunk, particlechunkrendertype_s **stack) {
-    chunk->previous = NULL;
     chunk->next = NULL;
+    chunk->previous = NULL;
 
     particlechunkrendertype_s *current = *stack;
     if (current != NULL) {
         const u16 priority = static_cast<u16>(chunk->render_priority);
         const u16 current_priority = static_cast<u16>(current->render_priority);
         if (priority <= current_priority &&
-            (priority != current_priority || current->effect->particle_type < chunk->effect->particle_type)) {
+            (priority != current_priority || chunk->effect->particle_type > current->effect->particle_type)) {
             particlechunkrendertype_s *next = current->next;
             while (next != NULL) {
                 const u16 next_priority = static_cast<u16>(next->render_priority);
@@ -1167,7 +1175,11 @@ void DebFreeChunksInstantly(i32 *handle) {
         control->active = effect->particle_type == 7 ? 9 : 2;
         control->owner = NULL;
         const bool panel_time = effect->time_group == 4;
-        control->expiry_time = panel_time ? panelglobaltime : globaltime;
+        if (panel_time) {
+            control->expiry_time = panelglobaltime;
+        } else {
+            control->expiry_time = globaltime;
+        }
         AddChunkControlToStack(control, &debris_chunk_control_stack[panel_time ? 1 : 0]);
         ++freechunkcontrolsptr;
     }
@@ -1280,7 +1292,7 @@ void DebrisProcessControlChunks(i32 panel_time) {
             const f32 time = control->collision_time;
             const f32 old_y = particle->momentum.y;
             const f32 gravity_velocity = 2.0f * (time * effect->field_0a0);
-            const f32 new_y = -control->restitution * (old_y + gravity_velocity) - gravity_velocity;
+            const f32 new_y = -control->restitution * (gravity_velocity + old_y) - gravity_velocity;
             particle->momentum.y = new_y;
             particle->position.y -= time * new_y - time * old_y;
             f32 first, second;
@@ -1415,7 +1427,15 @@ void DebrisProcessControlChunks(i32 panel_time) {
             --key->controlled_chunk_count;
             --key->allocated_chunk_count;
 
-            if (key->allocated_chunk_count <= 0) {
+            if (!(key->allocated_chunk_count <= 0)) {
+                const i32 particles_per_chunk = effect->particle_type == 7 ? 12 : 32;
+                key->particle_count -= static_cast<i16>(particles_per_chunk);
+                key->previous_particle_count -= static_cast<i16>(particles_per_chunk);
+                if (key->field_18a > (chunk_index + 1) * particles_per_chunk) {
+                    key->field_18a -= static_cast<i16>(particles_per_chunk);
+                }
+                LinkDmaParticalSets(key->particle_chunks, key->allocated_chunk_count);
+            } else {
                 key->particle_count = 0;
                 key->previous_particle_count = 0;
                 {
@@ -1499,14 +1519,6 @@ void DebrisProcessControlChunks(i32 panel_time) {
                     }
                 }
                 key->particle_chunks[0] = NULL;
-            } else {
-                const i32 particles_per_chunk = effect->particle_type == 7 ? 12 : 32;
-                key->particle_count -= static_cast<i16>(particles_per_chunk);
-                key->previous_particle_count -= static_cast<i16>(particles_per_chunk);
-                if ((chunk_index + 1) * particles_per_chunk < key->field_18a) {
-                    key->field_18a -= static_cast<i16>(particles_per_chunk);
-                }
-                LinkDmaParticalSets(key->particle_chunks, key->allocated_chunk_count);
             }
 
             if (chunk_index == 0) {
@@ -1559,10 +1571,6 @@ void DebrisCleanUpDmaDebTypeTables() {
     }
 }
 
-void DebrisReleaseControlStackLock() {
-    control_stack_lock = 0;
-}
-
 void xxxNuDisplayListUpdateSpecial(nuhspecial_s *special) {
     NUDLDLISTSCENE *scene = special->scene->display_list;
     NUDISPLAYSPECIAL *display = special->display_special;
@@ -1605,8 +1613,8 @@ void xxxNuDisplayListUpdateSpecial(nuhspecial_s *special) {
 
     if ((scene->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
         NUVEC extent;
-        extent.x = (maximum.x - minimum.x) * 0.5f;
         extent.y = (maximum.y - minimum.y) * 0.5f;
+        extent.x = (maximum.x - minimum.x) * 0.5f;
         extent.z = (maximum.z - minimum.z) * 0.5f;
         const f32 radius = NuFsqrt(extent.x + extent.y + extent.z);
         NUCLIPBOUNDS *bounds = &scene->clip_bounds[display->instance_ix];
@@ -1624,6 +1632,10 @@ void xxxNuDisplayListUpdateSpecial(nuhspecial_s *special) {
         // as the active NuDisplayListUpdateSpecial implementation does.
     }
     DisplayListUpdateSpecialTransformPS(special, &matrix);
+}
+
+void DebrisReleaseControlStackLock() {
+    control_stack_lock = 0;
 }
 
 static inline __attribute__((always_inline)) f32 DebrisInterpolateFloatKeys(const debris_float_key_s *keys, f32 time) {
@@ -1778,19 +1790,21 @@ void TBOPENFN(char *name, i32 type) {
             return;
         }
     }
-    if (*count < 12) {
-        char label[256];
-        NuStrCpy(label, name);
-        i32 length = NuStrLen(label);
-        if (length > 0) {
-            if (length > 10)
-                label[10] = '\0';
-            NuStrCpy(labels[*count].name, label);
-            labels[*count].type = static_cast<u8>(type);
-            TBSTART(*count, type);
-            ++*count;
-        }
+    if (!(*count < 12)) {
+        return;
     }
+    char label[256];
+    NuStrCpy(label, name);
+    i32 length = NuStrLen(label);
+    if (!(length > 0)) {
+        return;
+    }
+    if (length > 10)
+        label[10] = '\0';
+    NuStrCpy(labels[*count].name, label);
+    labels[*count].type = static_cast<u8>(type);
+    TBSTART(*count, type);
+    ++*count;
 }
 
 void RndrArrow(float x, float y, float scale, i32 angle, i32 colour) {

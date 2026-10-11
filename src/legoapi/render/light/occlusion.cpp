@@ -94,8 +94,8 @@ bool OccluderSet::IsOccludedOBB(nuvec_s const *minimum, nuvec_s const *maximum, 
         min_x = v.x < min_x ? v.x : min_x;
         min_y = v.y < min_y ? v.y : min_y;
         max_x = v.x > max_x ? v.x : max_x;
-        max_y = v.y > max_y ? v.y : max_y;
         min_depth = v.w < min_depth ? v.w : min_depth;
+        max_y = v.y > max_y ? v.y : max_y;
     }
     i32 limit = static_cast<i32>(count) < 100 ? static_cast<i32>(count) : 100;
     for (i32 i = 0; i != limit; ++i) {
@@ -218,8 +218,8 @@ void OccluderSet::PrepareForQueries(numtx_s const *query, numtx_s const *project
             v.x /= v.w;
             v.y /= v.w;
             v.z /= v.w;
-            record.min_x = v.x < record.min_x ? v.x : record.min_x;
             record.max_x = v.x > record.max_x ? v.x : record.max_x;
+            record.min_x = v.x < record.min_x ? v.x : record.min_x;
             record.min_y = v.y < record.min_y ? v.y : record.min_y;
             record.max_y = v.y > record.max_y ? v.y : record.max_y;
             record.min_depth = v.w < record.min_depth ? v.w : record.min_depth;
@@ -229,7 +229,11 @@ void OccluderSet::PrepareForQueries(numtx_s const *query, numtx_s const *project
                       record.max_y < -1.0f || record.min_y > 1.0f)) {
             valid = false;
         }
-        indices[index] = valid ? index : 0xffffffffu;
+        if (!valid) {
+            indices[index] = 0xffffffffu;
+        } else {
+            indices[index] = index;
+        }
     }
     qsort(indices, count, sizeof(*indices), SortByDepth);
     queries_prepared = true;
@@ -418,10 +422,10 @@ void OcclusionManager::AddOccluder(nuvec_s const *a, nuvec_s const *b, nuvec_s c
         NuVec4MtxTransform(&projected[1], const_cast<NUVEC *>(b), NuCameraGetVPMtx());
         NuVec4MtxTransform(&projected[2], const_cast<NUVEC *>(c), NuCameraGetVPMtx());
         if (unknown_158 > 0.0f) {
-            NUVEC ab = {projected[1].x - projected[0].x, projected[1].y - projected[0].y,
-                        projected[1].z - projected[0].z};
             NUVEC ac = {projected[2].x - projected[0].x, projected[2].y - projected[0].y,
                         projected[2].z - projected[0].z};
+            NUVEC ab = {projected[1].x - projected[0].x, projected[1].y - projected[0].y,
+                        projected[1].z - projected[0].z};
             NUVEC normal = {ac.z * ab.y - ac.y * ab.z, ab.z * ac.x - ac.z * ab.x, ab.x * ac.y - ab.y * ac.x};
             NuVecNorm(&normal, &normal);
             if (unknown_158 > fabsf(normal.z))

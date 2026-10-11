@@ -52,6 +52,7 @@ extern i32 TERRAINMASK_NONWEAPON;
 extern f32 brickimpactwait;
 
 void ThermalDetonator_Throw(GameObject_s *object) {
+    NUVEC movement;
     ADDPART_s params = Default_ADDPART;
     if (!(object == NULL || WORLD == NULL || WORLD->lev_objs == NULL || WORLD->lev_objs[0xe9].active == 0)) {
         if (object->apiobj.player_controlled) {
@@ -86,7 +87,7 @@ void ThermalDetonator_Throw(GameObject_s *object) {
                     object->apiobj.collision_min.y,
                 object->apiobj.collision_position.z,
             };
-            NUVEC movement;
+
             NuVecSub(&movement, NUMTX_GET_ROW_VEC(&matrix, 3), &origin);
             blocked = GameRayCast(&origin, &movement, 0.0f, TERRAINMASK_NONWEAPON | 0x1f) != 0;
         }
@@ -102,8 +103,8 @@ void ThermalDetonator_Throw(GameObject_s *object) {
             const VuVec arc = TouchHacks::CalculateXZVelForArcToHitPoint(origin, target, 2.0f, -5.0f);
             NextThermalTarget.Reset();
             // The retail path clamps only X; Z retains the calculated arc velocity.
-            velocity.x = arc.x < 3.0f ? (arc.x < -3.0f ? -3.0f : arc.x) : 3.0f;
             velocity.z = arc.z;
+            velocity.x = arc.x < 3.0f ? (arc.x < -3.0f ? -3.0f : arc.x) : 3.0f;
         }
         velocity.y = 2.0f;
         if (blocked) {
@@ -127,8 +128,8 @@ void ThermalDetonator_Throw(GameObject_s *object) {
         params.special = &WORLD->lev_objs[0xe9].special;
         params.flags = 0x08000292;
         params.field_40 = PartCollide_3D;
-        params.field_3c = PartImpact_ThermalDetonator;
         params.field_44 = PartKill_ThermalDetonator;
+        params.field_3c = PartImpact_ThermalDetonator;
         params.stop_fn = PartStop_Flickerer;
         params.draw_fn = PartDraw_ThermalDetonator;
         params.time_step = FRAMETIME;
@@ -234,10 +235,11 @@ i32 ThermalDetonator_MoveCode(GameObject_s *object) {
             ResetAnimPacket(&object->apiobj.anim_packet, -1);
         }
         object->context_flags &= ~0x40;
-        object->context_animation_timer =
-            object->apiobj.character_model->model_data_b[object->context_animation] != NULL
-                ? AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1)
-                : 1.0f;
+        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL) {
+            object->context_animation_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
+        } else {
+            object->context_animation_timer = 1.0f;
+        }
         return 0;
     }
 
@@ -271,6 +273,7 @@ i32 ThermalDetonator_MoveCode(GameObject_s *object) {
 }
 
 void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
+    NUVEC movement;
     ADDPART_s params = Default_ADDPART;
     if (!(object == NULL || WORLD == NULL || WORLD->lev_objs == NULL || WORLD->lev_objs[0xe9].active == 0)) {
         // This entry point creates the thrown part with supplied momentum; it
@@ -301,7 +304,7 @@ void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
                     object->apiobj.collision_min.y,
                 object->apiobj.collision_position.z,
             };
-            NUVEC movement;
+
             NuVecSub(&movement, NUMTX_GET_ROW_VEC(&matrix, 3), &origin);
             GameRayCast(&origin, &movement, 0.0f, TERRAINMASK_NONWEAPON | 0x1f);
         }
@@ -321,8 +324,8 @@ void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
         params.field_44 = PartKill_ThermalDetonator;
         params.stop_fn = PartStop_Flickerer;
         params.draw_fn = PartDraw_ThermalDetonator;
-        params.time_step = FRAMETIME;
         params.field_a4 = 10.0f;
+        params.time_step = FRAMETIME;
 
         PART_s *part = AddPart(&params);
         if (part != NULL) {
@@ -330,8 +333,8 @@ void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
             part->force_player_mask = 0;
             part->field_1c4 = PartUpdate_ThermalDetonator;
             part->reflection_height = 2000000.0f;
-            part->render_flags &= ~0x80;
             part->reflection_flags &= ~3;
+            part->render_flags &= ~0x80;
         }
         PlaySfx(const_cast<char *>("ThrowDet"), &object->apiobj.collision_position);
         if (object->pad_gamepad != NULL) {
@@ -404,7 +407,8 @@ void PartUpdate_ThermalDetonator(PART_s *part) {
     if (part == NULL) {
         return;
     }
-    if ((part->active & 2) != 0 && (part->render_flags & 0x40) == 0) {
+    const u16 flags = static_cast<u16>(part->active) | (static_cast<u16>(part->render_flags) << 8);
+    if ((flags & 0x4002) == 2) {
         if (part->field_100 > 0.0f && part->field_100 < 1.0f) {
             PlaySfx(const_cast<char *>("ThermalDet_Beep"), &part->position);
             part->render_flags |= 0x40;
@@ -454,8 +458,8 @@ EXPLOSION *Detonate(nuvec_s *position, u16 flags) {
     AddPartDebris(WORLD->part_debris_sys, 2, position);
     NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
     PlaySfx((char *)"exp_thermalDet", position);
-    f32 amount_a;
     f32 amount_b;
+    f32 amount_a;
     if ((flags & 0x1000) != 0) {
         f32 amount = qrand() < 0x8000 ? -2.0f : 2.0f;
         GameCam_Judder(GameCam, amount, 2, position);

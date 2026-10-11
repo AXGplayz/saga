@@ -29,11 +29,19 @@ static inline void Teleport_GetSegment(GameObject_s *object, TELEPORT_s *telepor
         *start = forwards ? 0 : 3;
         *end = forwards ? 3 : 0;
     } else if (forwards) {
-        *start = object->field_0x7a4 == 0 ? 0 : 2;
+        if (object->field_0x7a4 == 0) {
+            *start = 0;
+        } else {
+            *start = 2;
+        }
         *end = object->field_0x7a4 == 0 ? 1 : 3;
     } else {
         *start = object->field_0x7a4 == 0 ? 3 : 1;
-        *end = object->field_0x7a4 == 0 ? 2 : 0;
+        if (object->field_0x7a4 == 0) {
+            *end = 2;
+        } else {
+            *end = 0;
+        }
     }
 }
 
@@ -55,6 +63,22 @@ static inline void Teleport_SetFacing(GameObject_s *object, NUVEC *start, NUVEC 
     if (all_angles) {
         object->apiobj.facing_angle = facing;
         object->apiobj.field_0x276 = facing;
+    }
+}
+
+void Teleports_Reset(WORLDINFO_s *world) {
+    if (world->teleports == NULL || WORLD->teleport_count <= 0) {
+        return;
+    }
+
+    TELEPORT_s *teleport = world->teleports;
+    for (i32 i = 0; i < WORLD->teleport_count; ++i, ++teleport) {
+        teleport->active = 0;
+        teleport->enabled = 1;
+        teleport->field_78 = 0;
+        teleport->field_74 = 0;
+        teleport->field_7a = 0;
+        teleport->field_76 = 0;
     }
 }
 
@@ -113,22 +137,6 @@ TELEPORT_s *Teleport_Find(GameObject_s *object, float range_squared, VuVec *posi
         }
     }
     return nearest == -1 ? NULL : &WORLD->teleports[nearest];
-}
-
-void Teleports_Reset(WORLDINFO_s *world) {
-    if (world->teleports == NULL || WORLD->teleport_count <= 0) {
-        return;
-    }
-
-    TELEPORT_s *teleport = world->teleports;
-    for (i32 i = 0; i < WORLD->teleport_count; ++i, ++teleport) {
-        teleport->active = 0;
-        teleport->enabled = 1;
-        teleport->field_78 = 0;
-        teleport->field_74 = 0;
-        teleport->field_7a = 0;
-        teleport->field_76 = 0;
-    }
 }
 
 void Teleport_MoveCode(GameObject_s *object, i32 start_immediately) {
@@ -319,8 +327,8 @@ void Teleport_MoveCode(GameObject_s *object, i32 start_immediately) {
         return;
     }
 
-    object->field_0x7a4 = 1;
     object->field_0x7a5 = 15;
+    object->field_0x7a4 = 1;
     object->field_0x7a3 = 1;
     object->context_animation_timer = 2.0f;
     NUVEC *points = teleport->path->pts;
@@ -374,6 +382,7 @@ i32 Teleport_UpdateHints(HINT_s *hint) {
 }
 
 void Teleports_UpdateAfterGameObjects(WORLDINFO_s *world) {
+    NUMTX matrix;
     if (world->teleports == NULL || WORLD->teleport_count <= 0)
         return;
 
@@ -381,7 +390,7 @@ void Teleports_UpdateAfterGameObjects(WORLDINFO_s *world) {
     for (i32 i = 0; i < WORLD->teleport_count; ++i, ++teleport) {
         teleport->field_74 = SeekRot(teleport->field_74, teleport->field_78, 5.0f);
         if (NuSpecialExistsFn(&teleport->flap1_special)) {
-            NUMTX matrix = teleport->flap1_matrix;
+            matrix = teleport->flap1_matrix;
             if ((teleport->flags & 8) != 0)
                 NuMtxPreRotateX(&matrix, -teleport->field_74);
             else

@@ -88,8 +88,8 @@ void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject
         DrawBuildUpTime = COINMSGTIME + 1.0f;
         for (i32 i = 0; i < 4; ++i) {
             const i32 type_index = CoinTab[i];
-            const i32 count = counts[type_index];
             GIZMO_PICKUP_TYPE *type = &GizmoPickupType[type_index];
+            const i32 count = counts[type_index];
             i32 base_model = static_cast<i16>(type->first_model_id);
             for (i32 j = 0; j < count; ++j) {
                 i32 model = base_model;
@@ -103,8 +103,8 @@ void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject
                 message.target_scale = target_scale;
                 message.icon = model;
                 message.extra_position = reinterpret_cast<NUVEC *>(&world->lev_objs[message.icon]);
-                message.score = type->score;
                 message.end_fn = EndScoreMessage;
+                message.score = type->score;
                 message.player_index = player;
                 message.field_0x4d = 1;
                 message.field_0x20 = AddCoinDelay[player];
@@ -131,7 +131,14 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
     if ((arcade_flags & 0x40) != 0)
         coins = torpedoes = 0;
     i32 to_panel;
-    if ((world->current_level->flags & LEVEL_PICKUPS_TO_PANEL) != 0) {
+    if ((world->current_level->flags & LEVEL_PICKUPS_TO_PANEL) == 0) {
+        if (world->area != NULL && (world->area->flags & 0x100) != 0) {
+            player_id = qrand() / 32768;
+            to_panel = 1;
+        } else {
+            to_panel = player_id == -1 ? 0 : panel;
+        }
+    } else {
         to_panel = 1;
         if (player_id == -1) {
             if (player2 != NULL)
@@ -141,11 +148,6 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
             else
                 player_id = 1;
         }
-    } else if (world->area != NULL && (world->area->flags & 0x100) != 0) {
-        player_id = qrand() / 32768;
-        to_panel = 1;
-    } else {
-        to_panel = player_id == -1 ? 0 : panel;
     }
     coins = ChallengeMode != 0 || Mission_Active(NULL) != NULL ? 0 : coins;
     if (speed == 1.0f)
@@ -237,8 +239,11 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
                         toward_player.z * toward_player.z >
                     1.0f)
                     NuVecNorm(&toward_player, &toward_player);
-                toward_player.y =
-                    AreaPickupGravity == 0.0f ? 0.0f : static_cast<f32>(qrand()) * (1.0f / 65535.0f) + 1.0f;
+                if (AreaPickupGravity == 0.0f) {
+                    toward_player.y = 0.0f;
+                } else {
+                    toward_player.y = static_cast<f32>(qrand()) * (1.0f / 65535.0f) + 1.0f;
+                }
                 velocity = toward_player;
             } else
                 MakePartVector(&velocity, direction, speed);
@@ -262,11 +267,12 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
         MakePartVector(&velocity, direction, speed);
         AddTorpedoAsPart(position, &velocity, scale, lifetime);
     }
-    if ((world->current_level->flags & LEVEL_PICKUPS_TO_PANEL) == 0) {
-        for (i32 i = 0; i < powerups; ++i) {
-            MakePartVector(&velocity, direction, speed);
-            PowerUp_AddPart(position, &velocity, scale, lifetime);
-        }
+    if ((world->current_level->flags & LEVEL_PICKUPS_TO_PANEL) != 0) {
+        return;
+    }
+    for (i32 i = 0; i < powerups; ++i) {
+        MakePartVector(&velocity, direction, speed);
+        PowerUp_AddPart(position, &velocity, scale, lifetime);
     }
 }
 

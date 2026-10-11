@@ -11,6 +11,9 @@
 
 #include "decomp.h"
 
+// The original unit constructs its six homogeneous vectors.
+#include "nu2api/nucore/nuvuvec.hpp"
+
 #define HEADER_MGR_HI_MASK 0xf8000000
 #define ALLOC_MASK 0x78000000
 #define BLOCK_SIZE_MASK ~ALLOC_MASK
@@ -252,8 +255,8 @@ void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const 
     const usize fragment_begin = (usize)fragment;
     const usize fragment_end = fragment_begin + BLOCK_SIZE(fragment->block_header.value);
     const usize allocated_begin = (usize)allocated;
-    const u32 prefix_size = allocated_begin - fragment_begin;
     u32 suffix_size = fragment_end - (allocated_begin + allocated_size);
+    const u32 prefix_size = allocated_begin - fragment_begin;
 
     BinUnlink(fragment);
 
@@ -292,8 +295,8 @@ void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 
     align_mask = -(CountLeadingZeros(alignment >> 2) << 0x1b);
     header_value = header->block_header.value & BLOCK_SIZE_MASK;
 
-    manager_idx = this->idx;
     aligned = header_value | align_mask;
+    manager_idx = this->idx;
 
     header->block_header.value = aligned;
 
@@ -426,13 +429,15 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
         end_tag = END_TAG(header, BLOCK_SIZE(header->value));
 
         tag_value = *end_tag >> 0x1b;
-        if (tag_value != 0x1f) {
-            manager_idx = tag_value - 1;
-        } else {
+        if (tag_value == 0x1f) {
             manager_idx = end_tag[-1];
+        } else {
+            manager_idx = tag_value - 1;
         }
 
-        if (manager->idx == manager_idx) {
+        if (manager->idx != manager_idx) {
+            manager = m_memoryManagers[manager_idx];
+        } else {
             u32 header_value;
             Header *right;
             u32 left_end;
@@ -481,8 +486,6 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
 
             pthread_mutex_unlock(&manager->mutex);
             return;
-        } else {
-            manager = m_memoryManagers[manager_idx];
         }
     }
 }
@@ -503,10 +506,10 @@ void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 fla
 
     u32 *end_tag = (u32 *)((usize)header + BLOCK_SIZE(header->value) - 4);
     u32 manager_index = *end_tag >> 27;
-    if (manager_index == 31) {
-        manager_index = *(end_tag - 1);
-    } else {
+    if (manager_index != 31) {
         --manager_index;
+    } else {
+        manager_index = *(end_tag - 1);
     }
     if (this->idx != manager_index) {
         return m_memoryManagers[manager_index]->_BlockReAlloc(ptr, size, alignment, flags, name, category);
@@ -567,9 +570,9 @@ void NuMemoryManager::AddPage(void *ptr, u32 size, bool _unknown) {
     memset(page, 0, sizeof(Page));
 
     page->original_ptr = ptr;
+    page->end = (u32 *)(allocation_end - 4);
     page->size = size;
     page->first_header = (Header *)((usize)page + 0x20);
-    page->end = (u32 *)(allocation_end - 4);
     page->is_external = _unknown;
 
     // Fence flags prevent coalescing beyond the page while preserving the other bits.
@@ -586,13 +589,15 @@ void NuMemoryManager::AddPage(void *ptr, u32 size, bool _unknown) {
     u32 value = free_block->block_header.value;
     u32 manager_index = this->idx;
     u32 *end_tag = (u32 *)END_TAG(free_block, BLOCK_SIZE(value));
-    if ((value & 0x38000000) == 0) {
-        *end_tag = value & BLOCK_SIZE_MASK;
-    } else if (manager_index <= 29) {
-        *end_tag = ((manager_index + 1) << 27) | (value & BLOCK_SIZE_MASK);
+    if ((value & 0x38000000) != 0) {
+        if (!(manager_index <= 29)) {
+            *end_tag = value | HEADER_MGR_HI_MASK;
+            *(end_tag - 1) = manager_index;
+        } else {
+            *end_tag = ((manager_index + 1) << 27) | (value & BLOCK_SIZE_MASK);
+        }
     } else {
-        *end_tag = value | HEADER_MGR_HI_MASK;
-        *(end_tag - 1) = manager_index;
+        *end_tag = value & BLOCK_SIZE_MASK;
     }
 
     this->stats.unknown_00 += BLOCK_SIZE(free_block->block_header.value);
@@ -630,22 +635,22 @@ void NuMemoryManager::ReleaseUnreferencedPages() {
     Page *page = this->pages;
     while (page != NULL) {
         Header *header = page->first_header;
-        Page *next = page->next;
         Page *prev = page->prev;
+        Page *next = page->next;
         if ((header->value & ALLOC_MASK) == 0 &&
             reinterpret_cast<u8 *>(header) + BLOCK_SIZE(header->value) == reinterpret_cast<u8 *>(page->end) &&
             !page->is_external) {
             FreeHeader *free_header = reinterpret_cast<FreeHeader *>(header);
             BinUnlink(free_header);
-            if (event_handler->ReleasePage(this, page->original_ptr, page->size)) {
+            if (!(event_handler->ReleasePage(this, page->original_ptr, page->size))) {
+                BinLink(free_header, true);
+            } else {
                 if (next != NULL)
                     next->prev = prev;
                 if (prev != NULL)
                     prev->next = next;
                 else
                     this->pages = next;
-            } else {
-                BinLink(free_header, true);
             }
         }
         page = next;
@@ -778,7 +783,7 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
     u32 stranded_block_count;
     u32 stranded_bytes_count;
     u32 leak_count;
-    u32 _unknown;
+
     Header *largest_stranded;
     Context *top_ctx;
 
@@ -795,14 +800,8 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
 
     stranded_bytes_count = 0;
 
-    if ((m_flags & MEM_MANAGER_DEBUG) == 0) {
-        leak_count = 0;
-
-        if (this->stats.used_block_count > this->cur_ctx->used_block_count) {
-            leak_count = this->stats.used_block_count - this->cur_ctx->used_block_count;
-            strcpy(ctx_name, this->cur_ctx->name);
-        }
-    } else {
+    if ((m_flags & MEM_MANAGER_DEBUG) != 0) {
+        u32 _unknown;
         leak_count = 0;
         _unknown = 0;
         largest_stranded = NULL;
@@ -878,6 +877,13 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
             }
 
             leak_count = 0;
+        }
+    } else {
+        leak_count = 0;
+
+        if (this->stats.used_block_count > this->cur_ctx->used_block_count) {
+            leak_count = this->stats.used_block_count - this->cur_ctx->used_block_count;
+            strcpy(ctx_name, this->cur_ctx->name);
         }
     }
 
@@ -1012,43 +1018,43 @@ void NuMemoryManager::ValidateBlockFlags(Header *header, u32 flags, const char *
     DebugHeader *debug_header = reinterpret_cast<DebugHeader *>(header);
     const u32 requested_flags = flags & 0xe;
     const u32 allocated_flags = debug_header->flags.alloc_flags & 0xe;
-    if (requested_flags == allocated_flags)
-        return;
+    if (requested_flags != allocated_flags) {
 
-    char address[19];
-    char requested[64];
-    char allocated[64];
-    u8 *data = reinterpret_cast<u8 *>(header) + m_headerSize;
-    const u32 block_size = BLOCK_SIZE(header->value);
-    const u32 allocation_size = block_size - m_headerSize - 4;
-    NuStrFormatAddress(address, sizeof(address), data);
+        char address[19];
+        char requested[64];
+        char allocated[64];
+        u8 *data = reinterpret_cast<u8 *>(header) + m_headerSize;
+        const u32 block_size = BLOCK_SIZE(header->value);
+        const u32 allocation_size = block_size - m_headerSize - 4;
+        NuStrFormatAddress(address, sizeof(address), data);
 
-    requested[0] = '\0';
+        requested[0] = '\0';
 
-    if ((requested_flags & MEM_ALLOC_ARRAY) != 0)
-        strcat(requested, "[ARRAY]");
-    if ((requested_flags & MEM_ALLOC_UNKNOWN_4) != 0)
-        strcat(requested, "[STRING]");
-    if ((requested_flags & 8) != 0)
-        strcat(requested, "[CONST]");
+        if ((requested_flags & MEM_ALLOC_ARRAY) != 0)
+            strcat(requested, "[ARRAY]");
+        if ((requested_flags & MEM_ALLOC_UNKNOWN_4) != 0)
+            strcat(requested, "[STRING]");
+        if ((requested_flags & 8) != 0)
+            strcat(requested, "[CONST]");
 
-    allocated[0] = '\0';
-    if ((allocated_flags & MEM_ALLOC_ARRAY) != 0)
-        strcat(allocated, "[ARRAY]");
-    if ((allocated_flags & MEM_ALLOC_UNKNOWN_4) != 0)
-        strcat(allocated, "[STRING]");
-    if ((allocated_flags & 8) != 0)
-        strcat(allocated, "[CONST]");
+        allocated[0] = '\0';
+        if ((allocated_flags & MEM_ALLOC_ARRAY) != 0)
+            strcat(allocated, "[ARRAY]");
+        if ((allocated_flags & MEM_ALLOC_UNKNOWN_4) != 0)
+            strcat(allocated, "[STRING]");
+        if ((allocated_flags & 8) != 0)
+            strcat(allocated, "[CONST]");
 
-    pthread_mutex_lock(&this->error_mutex);
-    m_flags |= MEM_MANAGER_IN_ERROR_STATE;
-    snprintf(this->error_msg, sizeof(this->error_msg),
-             "Mismatching alloc flags detected in %s\n(%s != %s)\nAllocation: %s, Size: %u\nBlockSize: "
-             "%u\n[%02X %02X %02X %02X %02X %02X %02X %02X ...]\n",
-             caller, requested, allocated, address, allocation_size, block_size, data[0], data[1], data[2], data[3],
-             data[4], data[5], data[6], data[7]);
-    this->error_handler->HandleError(this, MEM_ERROR_ALLOC_FLAG_MISMATCH, this->error_msg);
-    pthread_mutex_unlock(&this->error_mutex);
+        pthread_mutex_lock(&this->error_mutex);
+        m_flags |= MEM_MANAGER_IN_ERROR_STATE;
+        snprintf(this->error_msg, sizeof(this->error_msg),
+                 "Mismatching alloc flags detected in %s\n(%s != %s)\nAllocation: %s, Size: %u\nBlockSize: "
+                 "%u\n[%02X %02X %02X %02X %02X %02X %02X %02X ...]\n",
+                 caller, requested, allocated, address, allocation_size, block_size, data[0], data[1], data[2], data[3],
+                 data[4], data[5], data[6], data[7]);
+        this->error_handler->HandleError(this, MEM_ERROR_ALLOC_FLAG_MISMATCH, this->error_msg);
+        pthread_mutex_unlock(&this->error_mutex);
+    }
 }
 
 void NuMemoryManager::ValidateBlockIsAllocated(Header *header, const char *caller) {
@@ -1174,18 +1180,16 @@ NuMemoryManager::FreeHeader *NuMemoryManager::FindLargestFragment() {
     for (i32 i = 0xff; i >= 0; i--) {
         frag = this->small_bins[i].next;
 
-        if (frag != NULL) {
-            break;
+        if (frag == NULL) {
+            continue;
         }
+        break;
     }
 
 done:
     pthread_mutex_unlock(&this->mutex);
 
     return frag;
-}
-
-void NuMemoryManager::Dump(u32 _unknown, const char *filepath) {
 }
 
 void NuMemoryManager::StrandBlocksForContext(Context *ctx, u32 &stranded_block_count, u32 &_unknown,
@@ -1230,6 +1234,9 @@ void NuMemoryManager::StrandBlocksForContext(Context *ctx, u32 &stranded_block_c
     _unknown = total_stranded;
     largest_stranded = largest;
     stranded_bytes_count = stranded_bytes;
+}
+
+void NuMemoryManager::Dump(u32 _unknown, const char *filepath) {
 }
 
 void NuMemoryManager::FreeStrandedBlocks() {
@@ -1341,13 +1348,13 @@ u16 NuMemoryManager::DumpBlock(u32 dump_id, NuSymbolQuery *, Header *header, u32
             strcpy(category_text, "        ");
         }
         u8 *data = reinterpret_cast<u8 *>(header) + m_headerSize;
-        const char flag_a = (debug->flags.alloc_flags & 2) != 0 ? 'X' : '-';
-        const char flag_s = (debug->flags.alloc_flags & 4) != 0 ? 'X' : '-';
-        const char flag_c = (debug->flags.alloc_flags & 8) != 0 ? 'X' : '-';
+        const bool flag_a = (debug->flags.alloc_flags & 2) != 0;
+        const bool flag_s = (debug->flags.alloc_flags & 4) != 0;
+        const bool flag_c = (debug->flags.alloc_flags & 8) != 0;
 
         if (count > 1 && (flags & 2) == 0) {
             snprintf(line, sizeof(line), "| %s | %10u | %s | %c%c%c | %s | %s\r\n", address_text, count, size_text,
-                     flag_a, flag_s, flag_c, category_text, debug_name);
+                     flag_a ? 'X' : '-', flag_s ? 'X' : '-', flag_c ? 'X' : '-', category_text, debug_name);
         } else if ((debug->flags.alloc_flags & 4) != 0) {
             char value[257];
             block_size = BLOCK_SIZE(header->value);
@@ -1365,19 +1372,19 @@ u16 NuMemoryManager::DumpBlock(u32 dump_id, NuSymbolQuery *, Header *header, u32
             }
             value[length] = '\0';
             snprintf(line, sizeof(line), "| %s | %10u | %s | %c%c%c | %s | %s [%s]\r\n", address_text, count, size_text,
-                     flag_a, flag_s, flag_c, category_text, debug_name, value);
+                     flag_a ? 'X' : '-', flag_s ? 'X' : '-', flag_c ? 'X' : '-', category_text, debug_name, value);
         } else {
             snprintf(line, sizeof(line),
                      "| %s | %10u | %s | %c%c%c | %s | %s [%02X %02X %02X %02X %02X %02X %02X %02X ...]\r\n",
-                     address_text, count, size_text, flag_a, flag_s, flag_c, category_text, debug_name, data[0],
-                     data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+                     address_text, count, size_text, flag_a ? 'X' : '-', flag_s ? 'X' : '-', flag_c ? 'X' : '-',
+                     category_text, debug_name, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
         }
     }
     error_handler->Dump(this, dump_id, line);
     if ((m_flags & MEM_MANAGER_EXTENDED_DEBUG) != 0 && (flags & 0x20) != 0 &&
         reinterpret_cast<ExtendedDebugHeader *>(header)->backtrace_count == 0) {
-        error_handler->Dump(this, dump_id,
-                            "|            |            |               |     |           |   <NO BACKTRACE>\r\n");
+        strcpy(line, "|            |            |               |     |           |   <NO BACKTRACE>\r\n");
+        error_handler->Dump(this, dump_id, line);
     }
     return category;
 }
@@ -1404,6 +1411,7 @@ void NuMemoryManager::DumpBlocksForContext(u32 dump_id, NuSymbolQuery *query, Co
     u32 total_bytes = 0;
     u32 total_blocks = 0;
 
+    auto context_id = context->id;
     for (Page *page = pages; page != NULL; page = page->next) {
         Header *end = reinterpret_cast<Header *>(page->end);
         for (Header *header = page->first_header; header != end;) {
@@ -1417,7 +1425,7 @@ void NuMemoryManager::DumpBlocksForContext(u32 dump_id, NuSymbolQuery *query, Co
                     ++total_blocks;
                 } else {
                     DebugHeader *debug = reinterpret_cast<DebugHeader *>(header);
-                    if ((debug->flags.unknown & 1) == 0 && debug->flags.ctx_id == context->id &&
+                    if ((debug->flags.unknown & 1) == 0 && debug->flags.ctx_id == context_id &&
                         ((flags & 2) == 0 || (debug->flags.alloc_flags & 4) != 0)) {
                         u32 count = 1;
                         if ((flags & 0x10) != 0)
@@ -1425,8 +1433,8 @@ void NuMemoryManager::DumpBlocksForContext(u32 dump_id, NuSymbolQuery *query, Co
                         debug->flags.unknown |= 1;
                         u16 category = DumpBlock(dump_id, query, header, count, block_size, flags);
                         category_bytes[category] += block_size;
-                        total_bytes += block_size;
                         total_blocks += count;
+                        total_bytes += block_size;
                     }
                 }
             }
@@ -1460,16 +1468,17 @@ u32 NuMemoryManager::FindAndTouchMatchingBlocks(DebugHeader *reference, u32 *tot
     u32 match_count = 0;
     for (Page *page = pages; page != NULL; page = page->next) {
         Header *end = reinterpret_cast<Header *>(page->end);
-        for (Header *header = page->first_header; header != end;) {
+        auto page_first_header = page->first_header;
+        for (Header *header = page_first_header; header != end;) {
             if (header != &reference->block_header && (header->value & ALLOC_MASK) != 0) {
                 DebugHeader *candidate = reinterpret_cast<DebugHeader *>(header);
                 u32 block_size = BLOCK_SIZE(header->value);
-                u32 candidate_context = candidate->flags.ctx_id;
                 u32 reference_context = reference->flags.ctx_id;
                 u32 candidate_flags = candidate->flags.alloc_flags;
+                u32 candidate_context = candidate->flags.ctx_id;
                 u32 reference_flags = reference->flags.alloc_flags;
-                u16 candidate_category = candidate->category;
                 u16 reference_category = reference->category;
+                u16 candidate_category = candidate->category;
                 if (candidate->name != NULL && reference->name != NULL &&
                     strcmp(candidate->name, reference->name) == 0 && candidate_context == reference_context &&
                     candidate_flags == reference_flags && candidate_category == reference_category) {
@@ -1550,10 +1559,10 @@ SAGA_HOST_WEAK u32 NuMemoryManager::GetBlockSize(void *ptr) {
     u32 payload_size = total_size - m_headerSize;
     u32 *end_tag = (u32 *)((usize)header + total_size - 4);
     u32 manager_index = *end_tag >> 27;
-    if (manager_index == 0x1f) {
-        manager_index = *(end_tag - 1);
-    } else {
+    if (manager_index != 0x1f) {
         manager_index--;
+    } else {
+        manager_index = *(end_tag - 1);
     }
 
     u32 block_size = payload_size - 4;
@@ -1676,8 +1685,8 @@ void NuMemoryManager::PushContext(const char *name) {
         _BlockAlloc(strlen(name) + sizeof(Context) + 1, 4, 0,
                     "i:/SagaTouch-Android_9176564/nu2api.2013/numemory/NuMemoryManager.cpp:1627", 0));
     context->used_block_count = stats.used_block_count;
-    context->next = cur_ctx;
     context->id = cur_ctx->id + 1;
+    context->next = cur_ctx;
     context->name = reinterpret_cast<char *>(context + 1);
     strcpy(context->name, name);
     cur_ctx = context;

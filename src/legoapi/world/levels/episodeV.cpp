@@ -127,6 +127,23 @@ void DagobahC_Init(WORLDINFO_s *world) {
     }
 }
 
+void DagobahB_Reset(WORLDINFO_s *world) {
+    LevSafePlatID[1] = -1;
+    LevSafePlatID[0] = -1;
+
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[0], "pad_2_base_2", 1) != 0) {
+        if (world->terrain != NULL) {
+            LevSafePlatID[0] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[0]));
+        }
+    }
+
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[1], "pad_4_base_2", 1) != 0) {
+        if (world->terrain != NULL) {
+            LevSafePlatID[1] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[1]));
+        }
+    }
+}
+
 void DagobahE_Init(WORLDINFO_s *world) {
     GIZAIMESSAGE_s *completed = CheckGizAIMessage(gizaimessagesys, "CompletedTraining", NULL);
     if (FreePlay == 0 && completed != NULL && completed->value == 0.0f) {
@@ -152,23 +169,6 @@ void DagobahE_Init(WORLDINFO_s *world) {
     }
     SetGizAIMessage(gizaimessagesys, "DagobahTraining", static_cast<f32>(dagobah_training), NULL);
     SetGizAIMessage(gizaimessagesys, NULL, 1.0f, completed);
-}
-
-void DagobahB_Reset(WORLDINFO_s *world) {
-    LevSafePlatID[1] = -1;
-    LevSafePlatID[0] = -1;
-
-    if (NuSpecialFind(world->current_gscn, &LevHSpecial[0], "pad_2_base_2", 1) != 0) {
-        if (world->terrain != NULL) {
-            LevSafePlatID[0] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[0]));
-        }
-    }
-
-    if (NuSpecialFind(world->current_gscn, &LevHSpecial[1], "pad_4_base_2", 1) != 0) {
-        if (world->terrain != NULL) {
-            LevSafePlatID[1] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[1]));
-        }
-    }
 }
 
 void DagobahC_Panel(WORLDINFO_s *) {
@@ -374,17 +374,7 @@ void DagobahA_Update(WORLDINFO_s *world) {
                 node2->position.z = 14.54f;
             }
         } else if (selected == third) {
-            if (group->forces[1] == first) {
-                node0->position.x = -16.73f;
-                node0->position.y = 0.51f;
-                node0->position.z = 14.51f;
-                node1->position.x = -16.49f;
-                node1->position.y = 0.95f;
-                node1->position.z = 14.45f;
-                node2->position.x = -16.31f;
-                node2->position.y = 1.29f;
-                node2->position.z = 14.66f;
-            } else {
+            if (group->forces[1] != first) {
                 node0->position.x = -16.20f;
                 node0->position.y = 0.31f;
                 node0->position.z = 15.13f;
@@ -394,6 +384,16 @@ void DagobahA_Update(WORLDINFO_s *world) {
                 node2->position.x = -16.38f;
                 node2->position.y = 1.31f;
                 node2->position.z = 14.59f;
+            } else {
+                node0->position.x = -16.73f;
+                node0->position.y = 0.51f;
+                node0->position.z = 14.51f;
+                node1->position.x = -16.49f;
+                node1->position.y = 0.95f;
+                node1->position.z = 14.45f;
+                node2->position.x = -16.31f;
+                node2->position.y = 1.29f;
+                node2->position.z = 14.66f;
             }
         }
         if (world->ai_sys->path_sys != NULL && world->ai_sys->path_sys->active_path != NULL) {
@@ -691,10 +691,10 @@ void HothBattleE_Panel(WORLDINFO_s *) {
             break;
     }
     for (i32 index = 0; index < count; ++index) {
-        if (targets[index] != -1 && defeated[index] != 0) {
-            alpha[index] = SeekLinearF(alpha[index], 0.4f, 0.1f);
-        } else {
+        if (!(targets[index] != -1 && defeated[index] != 0)) {
             alpha[index] = 1.0f;
+        } else {
+            alpha[index] = SeekLinearF(alpha[index], 0.4f, 0.1f);
         }
     }
     DrawMeleeTargetsRows(targets, defeated, alpha, count);
@@ -858,26 +858,6 @@ void CloudCityEscapeC_Init(WORLDINFO_s *world) {
     NuSpecialFind(world->current_gscn, &LevHSpecial[2], "gas_3_animin", 1);
 }
 
-void CloudCityTrapA_Update(WORLDINFO_s *world) {
-    static NUVEC pos = {33.0f, -0.75f, -3.0f};
-    if (netclient == 0) {
-        ResetTrooperCannons(world, id_SNOWTROOPER);
-        UpdateTrooperCannons(world);
-    }
-    if (LevGameObject[0] == NULL)
-        LevGameObject[0] = FindGameObject(id_DARTHVADER, 1, 1, 1, 0);
-    if (netclient == 0) {
-        if (LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
-            DrawBossHitPoints(LevGameObject[0]);
-        else
-            DrawBossHitPoints(NULL);
-    }
-    GIZMO *gizmo = LevGizmo[0];
-    if (gizmo != NULL && gizmo->object != NULL &&
-        static_cast<GIZFORCE_s *>(gizmo->object)->anim_set->state == GAMEANIMSET_STATE_AT_END)
-        AIAntinodeCreateSingleFrame(&pos, 0.5f);
-}
-
 void CloudCityTrapB_Update(WORLDINFO_s *) {
     if (LevGameObject[0] == NULL)
         LevGameObject[0] = FindGameObject(id_DARTHVADER, 1, 1, 1, 0);
@@ -896,6 +876,26 @@ void CloudCityTrapB_Update(WORLDINFO_s *) {
         else if (CLOUDCITYTRAPOUTRO_LDATA != NULL)
             GoToNewLevel(CLOUDCITYTRAPOUTRO_LDATA->idx);
     }
+}
+
+void CloudCityTrapA_Update(WORLDINFO_s *world) {
+    static NUVEC pos = {33.0f, -0.75f, -3.0f};
+    if (netclient == 0) {
+        ResetTrooperCannons(world, id_SNOWTROOPER);
+        UpdateTrooperCannons(world);
+    }
+    if (LevGameObject[0] == NULL)
+        LevGameObject[0] = FindGameObject(id_DARTHVADER, 1, 1, 1, 0);
+    if (netclient == 0) {
+        if (LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
+            DrawBossHitPoints(LevGameObject[0]);
+        else
+            DrawBossHitPoints(NULL);
+    }
+    GIZMO *gizmo = LevGizmo[0];
+    if (gizmo != NULL && gizmo->object != NULL &&
+        static_cast<GIZFORCE_s *>(gizmo->object)->anim_set->state == GAMEANIMSET_STATE_AT_END)
+        AIAntinodeCreateSingleFrame(&pos, 0.5f);
 }
 
 void CloudCityTrapC_Update(WORLDINFO_s *) {
@@ -975,10 +975,10 @@ void HothBattleE_UpdateWave() {
             melee.wave_delay = 0.0f;
             HothBattle_ClearBackgroundObjects();
             char state[16];
-            if (g_lowEndLevelBehaviour != 0) {
-                sprintf(state, "CamCutLow_%d", melee.next_wave);
-            } else {
+            if (g_lowEndLevelBehaviour == 0) {
                 sprintf(state, "CamCut_%d", melee.next_wave);
+            } else {
+                sprintf(state, "CamCutLow_%d", melee.next_wave);
             }
             if (AIScriptSetBaseScriptStateByName(&WORLD->processors[0].processor, state) != 0) {
                 AIScriptProcess(WORLD->ai_sys, NULL, NULL, &WORLD->processors[0].processor, FRAMETIME);
@@ -1160,13 +1160,15 @@ i32 isHothBattleWaveCreature(GameObject_s *object) {
 }
 
 static inline void HothBattle_AssignSpawnLocator(GameObject_s *object, AILOCATOR_s *locator, AILOCATORSET_s *set) {
-    for (i32 index = 0; index < set->locator_count; ++index) {
+    auto set_locator_count = set->locator_count;
+    for (i32 index = 0; index < set_locator_count; ++index) {
         AILOCATOR_s *entry = &WORLD->ai_sys->locators[set->locator_entries[index]];
-        if (entry == locator) {
-            object->ai.locator = entry;
-            set->assigned[index] = object->apiobj.field_0x289;
-            break;
+        if (entry != locator) {
+            continue;
         }
+        object->ai.locator = entry;
+        set->assigned[index] = object->apiobj.field_0x289;
+        break;
     }
 }
 
@@ -1188,8 +1190,8 @@ void HothBattle_ManageBackgroundCreatures() {
             wave_types |= 8;
         }
     }
-    i32 atst_count = g_lowEndLevelBehaviour != 0 ? 2 : 6;
     i32 probe_count = g_lowEndLevelBehaviour != 0 ? 2 : 5;
+    i32 atst_count = g_lowEndLevelBehaviour != 0 ? 2 : 6;
     f32 radius = apicharsys->char_data[id_PROBEDROID].collision_radius;
     while (probe_count > aicreature_sets_alive[0] && (wave_types & 1) == 0) {
         AILOCATOR_s *spawn = getSpawnLocator(radius, "spawn");
@@ -1353,49 +1355,58 @@ static void Asteroid_AddParts(GIZMOBLOWUP_s *blowup) {
         params.field_18 = params.field_14;
         params.gravity = 0.0f;
         params.special = special;
-        params.flags = index == 0 ? 0x800019b : 0x8000193;
+        if (index != 0) {
+            params.flags = 0x8000193;
+        } else {
+            params.flags = 0x800019b;
+        }
+        params.time_step = FRAMETIME;
         params.field_40 = PartCollide_3D;
         params.field_44 = Asteroid_PartKill;
-        params.time_step = FRAMETIME;
         params.field_a4 = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 3.0f + 7.0f;
 
         PART_s *part = AddPart(&params);
-        if (part != NULL) {
-            part->force_player_mask = index == 0 ? 1 : 2;
+        if (part == NULL) {
+            continue;
         }
+        part->force_player_mask = index == 0 ? 1 : 2;
     }
 }
 
 static __used__ void Asteroids_Update() {
     ASTEROID_s *asteroid = asteroids;
     for (i32 index = 0; index < nasteroids; ++index, ++asteroid) {
-        GIZMOBLOWUP_s *blowup = asteroid->blowup;
-        if (blowup != NULL) {
-            if ((static_cast<u16>(blowup->status_flags) & 0x4001) == 0x4000) {
+        if (asteroid->blowup == NULL) {
+            if (NuSpecialGetVisibilityFn(&asteroid->special) != 0) {
                 asteroid->activated = 0;
-                blowup->field_0xf0 += static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_x) * FRAMETIME);
-                blowup->field_0xf2 += static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_y) * FRAMETIME);
-                blowup->state_flags |= 1;
-                blowup->field_0xf4 += static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_z) * FRAMETIME);
-                GizmoBlowupUpdateMatrix(blowup);
-                continue;
+                NUMTX *matrix = NuSpecialGetDrawMtx(&asteroid->special);
+                if (matrix != NULL) {
+                    NuMtxPreRotateX(matrix, static_cast<i32>(static_cast<f32>(asteroid->rotation_speed_x) * FRAMETIME));
+                    NuMtxPreRotateY(matrix, static_cast<i32>(static_cast<f32>(asteroid->rotation_speed_y) * FRAMETIME));
+                    NuSpecialUpdate(&asteroid->special);
+                    continue;
+                }
             }
-        } else if (NuSpecialGetVisibilityFn(&asteroid->special) != 0) {
-            asteroid->activated = 0;
-            NUMTX *matrix = NuSpecialGetDrawMtx(&asteroid->special);
-            if (matrix != NULL) {
-                NuMtxPreRotateX(matrix, static_cast<i32>(static_cast<f32>(asteroid->rotation_speed_x) * FRAMETIME));
-                NuMtxPreRotateY(matrix, static_cast<i32>(static_cast<f32>(asteroid->rotation_speed_y) * FRAMETIME));
-                NuSpecialUpdate(&asteroid->special);
+        } else {
+            if ((static_cast<u16>(asteroid->blowup->status_flags) & 0x4001) == 0x4000) {
+                asteroid->activated = 0;
+                asteroid->blowup->field_0xf0 +=
+                    static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_x) * FRAMETIME);
+                asteroid->blowup->field_0xf2 +=
+                    static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_y) * FRAMETIME);
+                asteroid->blowup->field_0xf4 +=
+                    static_cast<i16>(static_cast<f32>(asteroid->rotation_speed_z) * FRAMETIME);
+                asteroid->blowup->state_flags |= 1;
+                GizmoBlowupUpdateMatrix(asteroid->blowup);
                 continue;
             }
         }
 
         if (asteroid->activated == 0) {
             asteroid->activated = 1;
-            if (blowup != NULL) {
-                blowup->field_0xa8 = 0;
-                Asteroid_AddParts(blowup);
+            if (asteroid->blowup != NULL) {
+                asteroid->blowup->field_0xa8 = 0;
+                Asteroid_AddParts(asteroid->blowup);
             }
         }
     }
@@ -1729,10 +1740,10 @@ void AsteroidChaseD_Update(WORLDINFO_s *) {
     if (turretAliveCount == 0 && netclient == 0) {
         LevTime[0] += FRAMETIME;
         if (melee_waveDelay <= 0.0f && LevTime[0] >= 12.0f) {
-            if (FreePlay != 0) {
-                GoToNewLevel(ASTEROIDCHASEA_LDATA->idx);
-            } else {
+            if (FreePlay == 0) {
                 GoToNewLevel(ASTEROIDCHASEMITRO_LDATA->idx);
+            } else {
+                GoToNewLevel(ASTEROIDCHASEA_LDATA->idx);
             }
         }
     }

@@ -144,8 +144,9 @@ void InitHuffmanDefaults() {
 static void FillBits(DEFLATECONTEXT *ctx) {
     u32 byte;
 
+    auto ctx_read_buffer_end = ctx->read_buffer_end;
     do {
-        if (ctx->read_buffer < ctx->read_buffer_end) {
+        if (ctx->read_buffer < ctx_read_buffer_end) {
             byte = *ctx->read_buffer++;
         } else {
             byte = 0;
@@ -266,8 +267,8 @@ i32 DecodeUncompressedBlock(DEFLATECONTEXT *ctx) {
         buffered_bits >>= 8;
         available_bits -= 8;
     }
-    ctx->bit_buffer = buffered_bits;
     ctx->num_bits_available = available_bits;
+    ctx->bit_buffer = buffered_bits;
     while (count < 2) {
         bytes[count++] = ctx->read_buffer < ctx->read_buffer_end ? *ctx->read_buffer++ : 0;
     }

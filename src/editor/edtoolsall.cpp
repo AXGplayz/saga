@@ -107,24 +107,139 @@ i32 InModelListDataFlags(APICHARACTERMODELLIST_s *models, u32 model_flags, u32 g
     if (first_id == -1)
         return 0;
     const u32 reject_flag_80 = model_flags & 8;
-    if (require_hats != 0) {
-        if (reject_flag_80 != 0) {
-            if (reject_flag_40 != 0)
-                return FindModelListDataFlags<true, true, true>(models, model_flags, game_flags, first_id);
-            return FindModelListDataFlags<true, false, true>(models, model_flags, game_flags, first_id);
+    if (require_hats == 0) {
+        if (reject_flag_40 != 0) {
+            if (reject_flag_80 != 0) {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if ((game_data.flags_094[1] & 0x40) != 0)
+                        continue;
+                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            } else {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if ((game_data.flags_094[1] & 0x40) != 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            }
+        } else {
+            if (reject_flag_80 != 0) {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if (!(static_cast<i8>(game_data.flags_094[1]) < 0)) {
+                        return 1;
+                    }
+                }
+                return 0;
+            } else {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            }
         }
-        if (reject_flag_40 != 0)
-            return FindModelListDataFlags<true, true, false>(models, model_flags, game_flags, first_id);
-        return FindModelListDataFlags<true, false, false>(models, model_flags, game_flags, first_id);
+    } else {
+        if (reject_flag_80 == 0) {
+            if (reject_flag_40 != 0) {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if ((game_data.flags_094[1] & 0x40) != 0)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) != 0) {
+                        return 1;
+                    }
+                }
+                return 0;
+            } else {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) == 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            }
+        } else {
+            if (reject_flag_40 != 0) {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if ((game_data.flags_094[1] & 0x40) != 0)
+                        continue;
+                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) == 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            } else {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (Collection_Got(id) == 0)
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) == 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            }
+        }
     }
-    if (reject_flag_40 != 0) {
-        if (reject_flag_80 != 0)
-            return FindModelListDataFlags<false, true, true>(models, model_flags, game_flags, first_id);
-        return FindModelListDataFlags<false, true, false>(models, model_flags, game_flags, first_id);
-    }
-    if (reject_flag_80 != 0)
-        return FindModelListDataFlags<false, false, true>(models, model_flags, game_flags, first_id);
-    return FindModelListDataFlags<false, false, false>(models, model_flags, game_flags, first_id);
 }
 
 void antinodeEditor_Render(i32 x, i32 y, float xscale, float yscale) {
@@ -188,6 +303,8 @@ void antinodeEditor_Render(i32 x, i32 y, float xscale, float yscale) {
 }
 
 void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
+    char set_name[32];
+    nuvec_s displacement;
     if (GlobalCharacterRenderFn == nullptr)
         return;
     i32 count = NuLinkedListCheck(&aieditor->creatures);
@@ -200,7 +317,7 @@ void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
     if (display == nullptr)
         display = *reinterpret_cast<u8 **>(aieditor->unknown_3692c);
     if (display != nullptr) {
-        nuvec_s displacement;
+
         f32 distance =
             NuVecXZDist(reinterpret_cast<nuvec_s *>(display + 0x28), &aieditor->camera_position, &displacement);
         if (*reinterpret_cast<u32 *>(display + 0x68) & 0x20) {
@@ -210,7 +327,7 @@ void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
             NuQFntPrintEx(system_qfont, text_x, y * 8 + 120, 16, "\"%s\", xzrng=%.2f", display + 8, distance);
         }
         u8 set = display[0x5a];
-        char set_name[32];
+
         if (set != 0) {
             sprintf(set_name, "Set=%d", set);
         } else {

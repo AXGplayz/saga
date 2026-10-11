@@ -1840,13 +1840,14 @@ static APIOBJECT *GetNamedAPIObject(AISYS *system, char *name) {
                     return reinterpret_cast<APIOBJECT *>(result_address);
                 }
             }
-            if (NuStrICmp(Obj[index].apiobj.character_data->file, name) == 0) {
-                usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
-                if (result_address == 0) {
-                    break;
-                }
-                return reinterpret_cast<APIOBJECT *>(result_address);
+            if (NuStrICmp(Obj[index].apiobj.character_data->file, name) != 0) {
+                continue;
             }
+            usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
+            if (result_address == 0) {
+                break;
+            }
+            return reinterpret_cast<APIOBJECT *>(result_address);
         }
     }
 
@@ -1912,11 +1913,12 @@ static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *buffer, VA
 }
 
 static void GlobalCharacterRender(NUVEC *position, i16 angle, i32 character, i32, EDCREATURE_s *) {
+    i16 layers[32];
     if (character < CHARCOUNT) {
         i16 model_id = apicharsys->playermodelids[character];
         if (model_id != -1) {
             CHARACTERMODEL_s *model = &apicharsys->models[model_id];
-            i16 layers[32];
+
             i32 layer_count = GCDataList[model->model_id].make_layer_list(
                 model, layers, apicharsys->char_data[character].game_character->layer_mask);
             if (layer_count > 0) {
@@ -2039,16 +2041,18 @@ static u32 AIBigJumpToDestination(APIOBJECT *object, NUVEC *destination) {
     }
 
     GameObject_s *game_object = object->objptr;
-    if (game_object->field_0xcc0 != NULL) {
-        SnapCreaturePos(game_object, destination, 0, NULL, 0);
-    } else if ((object->character_data->model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
-        object->start_position = *destination;
-        object->position = *destination;
-        object->velocity = v000;
-        ResetPlayerMoves(game_object);
-        object->respawn_timer = 0.0f;
+    if (game_object->field_0xcc0 == NULL) {
+        if ((object->character_data->model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
+            object->start_position = *destination;
+            object->velocity = v000;
+            object->position = *destination;
+            ResetPlayerMoves(game_object);
+            object->respawn_timer = 0.0f;
+        } else {
+            StartBigJump(game_object, destination, 0, 0.5f, 1.0f, 0, 0);
+        }
     } else {
-        StartBigJump(game_object, destination, 0, 0.5f, 1.0f, 0, 0);
+        SnapCreaturePos(game_object, destination, 0, NULL, 0);
     }
 
     return 1;
@@ -2241,18 +2245,18 @@ void GameTiming(WORLDINFO_s *world, float *game_time) {
                         ResetTimer(&SuperStoryTimer, 36000.0f);
                 }
                 if (world->area != NULL && (world->area->flags & 0x10) != 0) {
-                    if (ChallengeMode != 1) {
+                    if (ChallengeMode == 1) {
+                        UpdateTimer(&ChallengeTimer);
+                        if (Game_AreaSave != NULL && world->level_sub_id >= 0 &&
+                            !(ChallengeTimer.time_elapsed < Game_AreaSave[world->level_sub_id].challenge_trial_time))
+                            EndChallenge(3, 1);
+                    } else {
                         if (Mission_CurrentState(NULL) == 1 && MissionSys != NULL && MissionSys->mission != NULL) {
                             const f32 time_limit = static_cast<f32>(MissionSys->mission->time);
                             UpdateTimer(&MissionSys->timer);
                             if (time_limit <= MissionSys->timer.time_elapsed && netclient == 0)
                                 EndMission(MissionSys, 3, 1);
                         }
-                    } else {
-                        UpdateTimer(&ChallengeTimer);
-                        if (Game_AreaSave != NULL && world->level_sub_id >= 0 &&
-                            !(ChallengeTimer.time_elapsed < Game_AreaSave[world->level_sub_id].challenge_trial_time))
-                            EndChallenge(3, 1);
                     }
                 }
             }
@@ -2382,10 +2386,10 @@ void GameAIProcess() {
         }
     }
     f32 follow_offset = 0.0f;
-    party_under_cover = 0;
     active_neutral_count = 0;
-    i32 cover_result = 0;
+    party_under_cover = 0;
     i32 all_under_cover = 1;
+    i32 cover_result = 0;
     GameObject_s **player_slots = Player;
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object = player_slots[index];
@@ -2801,8 +2805,8 @@ void GameAIProcess() {
                     if ((object->field_0xefc & 0x40) != 0) {
                         if (object->field_0xf14 != object->ai.frame_state) {
                             object->route_character_id = -1;
-                            object->route_suit_index = -1;
                             object->field_0xefc &= ~0x40;
+                            object->route_suit_index = -1;
                             object->field_0xf14 = 0;
                         }
                     } else if ((object->ai.frame_state & LEGO_AIPATHCNX_DONTTOGGLE) == 0) {
@@ -2813,8 +2817,8 @@ void GameAIProcess() {
                                 object->suit != NULL ? Suit_GetIndex(static_cast<SUIT_s *>(object->suit)) : -1;
                             object->input_toggle_hold_time = 0.0f;
                             object->field_0xf14 = object->ai.frame_state;
-                            object->route_start_index = object->ai.next_route;
                             object->route_search_index = object->ai.next_route;
+                            object->route_start_index = object->ai.next_route;
                         }
                         object->input_toggle_hold_time -= FRAMETIME;
                         if (object->input_toggle_hold_time <= 0.0f) {
@@ -2841,8 +2845,8 @@ void GameAIProcess() {
                     }
                 } else {
                     object->route_character_id = -1;
-                    object->route_suit_index = -1;
                     object->field_0xefc &= ~0x40;
+                    object->route_suit_index = -1;
                     object->field_0xf14 = 0;
                     object->route_search_index = 0;
                 }
@@ -3287,8 +3291,8 @@ void GameAISysReset(AISYS_s *system) {
         for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
             AIPATH *path = path_system->paths[path_index];
             AIPATHCNX *connection = path->connections;
-            for (i32 connection_index = 0; connection_index < path->connection_count;
-                 ++connection_index, ++connection) {
+            auto path_connection_count = path->connection_count;
+            for (i32 connection_index = 0; connection_index < path_connection_count; ++connection_index, ++connection) {
                 connection->node_a = connection->previous_node_a;
                 connection->node_b = connection->previous_node_b;
 
@@ -3319,8 +3323,8 @@ extern AREADATA *VADER_ADATA;
 void MakeBaddiesForgetAboutParty(i32 check_hostility) {
     GameObject_s *baddies[64];
     GameObject_s *party[64];
-    i32 party_count = 0;
     i32 baddie_count = 0;
+    i32 party_count = 0;
     GameObject_s *objects = Obj;
     i32 count = HIGHGAMEOBJECT;
     GameObject_s *object = objects;
@@ -3378,8 +3382,8 @@ void MakeBaddiesForgetAboutParty(i32 check_hostility) {
         object->field_0xecc = 0;
     }
     party_under_cover = 0;
-    alert_obj = NULL;
     alert_timer = 0.0f;
+    alert_obj = NULL;
     if (VADER_ADATA != NULL && WORLD->area == VADER_ADATA)
         return;
     if (party_cant_be_under_cover != 0)
@@ -3419,9 +3423,9 @@ void GameFog_Update(WORLDINFO_s *world) {
     }
 
     if (GameFogSnap == 0 && GameFogSet != previous) {
-        GameFogOld = GameFog;
         GameFogTime = 0.0f;
         GameFogDuration = 3.0f;
+        GameFogOld = GameFog;
     }
     if (GameFogSnap != 0 || GameFogSet != previous) {
         if (GameFogSet != NULL) {
@@ -3581,11 +3585,11 @@ void GameObjectOrigin(GameObject_s *object) {
                     predicted_vertical_displacement = api.previous_velocity.y * frame_time;
                     predicted_z = api.previous_velocity.z * frame_time;
                     const NUVEC &joint_position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[model_origin_joint], 3);
+                    api.collision_position.z = joint_position.z + predicted_z;
                     api.collision_position.x = joint_position.x + predicted_x;
                     api.collision_position.y = joint_position.y + predicted_vertical_displacement;
                     api.collision_position.y +=
                         (object->character_bottom + object->character_top) * api.field_0xa8 * 0.5f;
-                    api.collision_position.z = joint_position.z + predicted_z;
                 } else {
                     api.collision_position = {0.0f, -object->character_bottom, 0.0f};
                     NuVecMtxRotate(&api.collision_position, &api.collision_position, &api.field_0xb8);
@@ -3619,9 +3623,9 @@ void GameObjectOrigin(GameObject_s *object) {
     api.field_0x1f4 ^= 0x100u;
     predicted_vertical_displacement = api.previous_velocity.y * FRAMETIME;
     api.collision_position.x = api.position.x + api.previous_velocity.x * FRAMETIME;
+    api.collision_position.z = api.position.z + api.previous_velocity.z * FRAMETIME;
     api.collision_position.y = api.position.y + predicted_vertical_displacement;
     api.collision_position.y += (object->character_bottom + object->character_top) * api.field_0xa8 * 0.5f;
-    api.collision_position.z = api.position.z + api.previous_velocity.z * FRAMETIME;
     origin_x = api.collision_position.x;
     origin_z = api.collision_position.z;
 
@@ -3807,8 +3811,9 @@ void GameAnimSys_Update(GAMEANIMSYS_s *system) {
 
         if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != any_special_no_visibility_test) {
             object = set->objects;
+            auto set_flags = set->flags;
             while (object != NULL) {
-                NuSpecialSetNoVisiTest(&object->special, set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST);
+                NuSpecialSetNoVisiTest(&object->special, set_flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST);
                 object = object->next;
             }
         }
@@ -3877,13 +3882,13 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
         static NUVEC mower[4] = {
             {-0.1175f, 0, 0.155f}, {0.1175f, 0, 0.155f}, {0.1175f, 0, -0.155f}, {-0.1175f, 0, -0.155f}};
         static NUVEC standard[4] = {{-0.2f, 0, 0.2f}, {0.2f, 0, 0.2f}, {0.2f, 0, -0.2f}, {-0.2f, 0, -0.2f}};
+        const f32 dy = api.position.y - api.start_position.y;
+        const f32 vertical_speed = dy / FRAMETIME;
         NUVEC *offsets = object->id == id_BUGGY       ? buggy
                          : object->id == id_RADIOCAR  ? radio
                          : object->id == id_POLICECAR ? police
                          : object->id == id_MOWER     ? mower
                                                       : standard;
-        const f32 dy = api.position.y - api.start_position.y;
-        const f32 vertical_speed = dy / FRAMETIME;
         NUVEC points[4];
         for (i32 i = 0; i < 4; ++i) {
             NuVecRotateY(&points[i], &offsets[i], api.field_0x276);
@@ -3933,13 +3938,15 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
         flags = game->flags_090;
     }
     if ((api.field_0x1f8 & 4) == 0) {
-        if ((flags & 0x200000) != 0) {
-            FindAnglesZX(&object->suspension_normal, &object->field_0x1062, &object->field_0x1064);
-        } else if (object->surface_normal.x != 0.0f || object->surface_normal.y != 1.0f ||
-                   object->surface_normal.z != 0.0f) {
-            FindAnglesZX(&object->surface_normal, &object->field_0x1062, &object->field_0x1064);
+        if ((flags & 0x200000) == 0) {
+            if (object->surface_normal.x != 0.0f || object->surface_normal.y != 1.0f ||
+                object->surface_normal.z != 0.0f) {
+                FindAnglesZX(&object->surface_normal, &object->field_0x1062, &object->field_0x1064);
+            } else {
+                object->field_0x1062 = object->field_0x1064 = 0;
+            }
         } else {
-            object->field_0x1062 = object->field_0x1064 = 0;
+            FindAnglesZX(&object->suspension_normal, &object->field_0x1062, &object->field_0x1064);
         }
         game = api.character_data->game_character;
         flags = game->flags_090;
@@ -4023,23 +4030,25 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
             object->field_0x1060 = SeekRot(object->field_0x1060, z, 8.0f);
         if (object->field_0x1086 != 2)
             return;
-        if (magnet) {
+        if (!magnet) {
+            if (grapple) {
+                NUVEC direction;
+                NuVecSub(&direction, &static_cast<GRAPPLE_s *>(object->field_0x788)->hook_position,
+                         &api.collision_position);
+                FindAnglesZX(&direction, &x, &z);
+            } else if (reflection) {
+                z = object->field_0x106a;
+                x = object->field_0x1068;
+            } else if (alignment != 2 && (alignment == 0 || !(object->surface_normal.y > NuTrigTable[0x3000]))) {
+                x = z = 0;
+            }
+        } else {
             if (static_cast<u16>(object->context_animation - 5) <= 1) {
                 api.pitch_angle = api.roll_angle = x = z = 0;
             } else {
-                x = object->magnet_surface_angle;
                 z = object->grapple_swing_phase;
+                x = object->magnet_surface_angle;
             }
-        } else if (grapple) {
-            NUVEC direction;
-            NuVecSub(&direction, &static_cast<GRAPPLE_s *>(object->field_0x788)->hook_position,
-                     &api.collision_position);
-            FindAnglesZX(&direction, &x, &z);
-        } else if (reflection) {
-            x = object->field_0x1068;
-            z = object->field_0x106a;
-        } else if (alignment != 2 && (alignment == 0 || !(object->surface_normal.y > NuTrigTable[0x3000]))) {
-            x = z = 0;
         }
         const f32 speed = object->id == id_ATST && VehicleArea == 0 ? 3.0f : 8.0f;
         if (api.pitch_angle != x)
@@ -4145,10 +4154,12 @@ void GameAISysStartFrame(AISYS_s *system) {
             if (object->apiobj.field_0x27c != -1) {
                 area->runtime_flags |= AIAREA_RUNTIME_CHARACTER_SLOT_SEEN;
             }
-            if ((object->apiobj.field_0x1f4 & 1) != 0) {
+            if ((object->apiobj.field_0x1f4 & 1) == 0) {
+                if ((object->apiobj.field_0x1f4 & 4) == 0) {
+                    area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_CLEAR;
+                }
+            } else {
                 area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_SET;
-            } else if ((object->apiobj.field_0x1f4 & 4) == 0) {
-                area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_CLEAR;
             }
         }
 
@@ -4201,20 +4212,20 @@ void GameDisplaySettings(LEVELDATADISPLAY *display, i32 *background_colours) {
 
     BackDrop_UpdateColours(0);
 
+    i32 top_b = static_cast<i32>(backdrop_top_b);
     i32 top_g = static_cast<i32>(backdrop_top_g);
     i32 top_r = static_cast<i32>(backdrop_top_r);
-    i32 top_b = static_cast<i32>(backdrop_top_b);
     i32 bottom_r = static_cast<i32>(backdrop_bot_r);
-    i32 bottom_g = static_cast<i32>(backdrop_bot_g);
     i32 bottom_b = static_cast<i32>(backdrop_bot_b);
+    i32 bottom_g = static_cast<i32>(backdrop_bot_g);
 
     f32 alpha = 1.0f;
     if (BackDrop_AlphaFn != NULL) {
         BackDrop_AlphaFn(&alpha);
         if (alpha != 0.0f) {
             top_r = static_cast<i32>(static_cast<f32>(top_r) * alpha);
-            top_g = static_cast<i32>(static_cast<f32>(top_g) * alpha);
             top_b = static_cast<i32>(static_cast<f32>(top_b) * alpha);
+            top_g = static_cast<i32>(static_cast<f32>(top_g) * alpha);
             bottom_r = static_cast<i32>(static_cast<f32>(bottom_r) * alpha);
             bottom_g = static_cast<i32>(static_cast<f32>(bottom_g) * alpha);
             bottom_b = static_cast<i32>(static_cast<f32>(bottom_b) * alpha);
@@ -4228,16 +4239,17 @@ void GameDisplaySettings(LEVELDATADISPLAY *display, i32 *background_colours) {
 u8 grapple_attach_frames = 5;
 void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char action, unsigned char, float parameter) {
     object->can_use_object = target;
-    object->use_action_parameter = parameter;
     object->use_action = action;
+    object->use_action_parameter = parameter;
     object->use_action_frames = grapple_attach_frames;
 }
 
 CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
     CABLE_s *cable = cables;
+    auto cables_source = cables->source;
     for (i32 i = 0; i < 8; ++i, ++cable) {
         // The original checks the first cable's owner for the entire array.
-        if (cables->source == object && (cable->flags_1e9 & 1) != 0)
+        if (cables_source == object && (cable->flags_1e9 & 1) != 0)
             return cable;
     }
     return NULL;
@@ -4255,8 +4267,8 @@ void GameObjectDimensions(GameObject_s *object) {
         api.field_0x1dc = radius;
         api.field_0x1e0 = radius;
     } else {
-        api.field_0x1dc = api.collision_radius;
         api.field_0x1e0 = api.collision_height;
+        api.field_0x1dc = api.collision_radius;
     }
     GameObjectDimensionsExtra_LSW(object);
 }
@@ -4354,15 +4366,15 @@ i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUM
     if (TimingBarSet == 5)
         TBOPENFN("chrs", 5);
     i32 complex_shadow = 0;
-    if (object != NULL && (object->apiobj.character_data->model_flags & 0x10000) != 0 &&
-        (WORLD->area == NULL || WORLD->area != DOGFIGHT_ADATA)) {
+    if (!(object != NULL && (object->apiobj.character_data->model_flags & 0x10000) != 0 &&
+          (WORLD->area == NULL || WORLD->area != DOGFIGHT_ADATA))) {
+        model->hierarchy->suppress_shadow_surface_points = 1;
+    } else {
         model->hierarchy->suppress_shadow_surface_points = 0;
         if (reflection_matrix != NULL) {
             ConfigureComplexShadow(object);
             complex_shadow = 1;
         }
-    } else {
-        model->hierarchy->suppress_shadow_surface_points = 1;
     }
     drawcharactermodel_keepmergeaction = game_keepmergeaction;
     MakeLayerList = GCDataList[model->model_id].make_layer_list;
@@ -4546,272 +4558,284 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                                    APIOBJECT_s **goodies, i32 baddy_count, APIOBJECT_s **baddies, u64 awareness,
                                    float) {
     NUVEC difference = {0.0f, 0.0f, 0.0f};
-    if (system == NULL)
-        return;
-    if (goody_count == 0)
-        return;
-    f32 distance = 0.0f;
-    i32 complete = baddy_count == 0;
-    if (alert_obj != NULL && (alert_obj->apiobj.flags_high & 0x10) != 0 && (alert_obj->apiobj.field_0x1f4 & 5) == 0 &&
-        (static_cast<GAMECHARACTERDATA *>(alert_obj->apiobj.character_data->field11_0x24)->flags_090 & 0x8000) == 0) {
-        const u64 alert_mask = (u64)1 << alert_obj->apiobj.field_0x289;
-        for (i32 i = 0; i < baddy_count; ++i) {
-            APIOBJECT_s *object = baddies[i];
-            if ((object->ai_awareness_mask & alert_mask) != 0) {
-                object->objptr->alert_target_timer = 5.0f;
-                object->objptr->alert_target = &alert_obj->apiobj;
-            } else if (WORLD->rooms_visible_ptr[object->objptr->room_id] != 0) {
-                difference.x = alert_pos.x - object->collision_position.x;
-                if (object->heardistance > difference.x) {
-                    difference.z = alert_pos.z - object->collision_position.z;
-                    if (object->heardistance > difference.z) {
-                        difference.y = alert_pos.y - object->collision_position.y;
-                        if (object->maxviewheight > difference.y && difference.y > object->minviewheight) {
-                            distance = difference.x * difference.x + difference.z * difference.z;
-                            if (!(object->heardistance * object->heardistance > distance))
-                                continue;
-                            if ((WORLD->api_object_sys->line_of_sight[object->field_0x289] & alert_mask) == 0) {
-                                const f32 dx = alert_obj->apiobj.collision_position.x - object->collision_position.x;
-                                const f32 dz = alert_obj->apiobj.collision_position.z - object->collision_position.z;
-                                if (!(dx * dx + dz * dz > object->viewdistance * object->viewdistance))
+    if (system != NULL) {
+        if (goody_count == 0)
+            return;
+        f32 distance = 0.0f;
+        i32 complete = baddy_count == 0;
+        if (alert_obj != NULL && (alert_obj->apiobj.flags_high & 0x10) != 0 &&
+            (alert_obj->apiobj.field_0x1f4 & 5) == 0 &&
+            (static_cast<GAMECHARACTERDATA *>(alert_obj->apiobj.character_data->field11_0x24)->flags_090 & 0x8000) ==
+                0) {
+            const u64 alert_mask = (u64)1 << alert_obj->apiobj.field_0x289;
+            for (i32 i = 0; i < baddy_count; ++i) {
+                APIOBJECT_s *object = baddies[i];
+                if ((object->ai_awareness_mask & alert_mask) != 0) {
+                    object->objptr->alert_target_timer = 5.0f;
+                    object->objptr->alert_target = &alert_obj->apiobj;
+                } else if (WORLD->rooms_visible_ptr[object->objptr->room_id] != 0) {
+                    difference.x = alert_pos.x - object->collision_position.x;
+                    if (object->heardistance > difference.x) {
+                        difference.z = alert_pos.z - object->collision_position.z;
+                        if (object->heardistance > difference.z) {
+                            difference.y = alert_pos.y - object->collision_position.y;
+                            if (object->maxviewheight > difference.y && difference.y > object->minviewheight) {
+                                distance = difference.x * difference.x + difference.z * difference.z;
+                                if (!(object->heardistance * object->heardistance > distance))
                                     continue;
+                                if ((WORLD->api_object_sys->line_of_sight[object->field_0x289] & alert_mask) == 0) {
+                                    const f32 dx =
+                                        alert_obj->apiobj.collision_position.x - object->collision_position.x;
+                                    const f32 dz =
+                                        alert_obj->apiobj.collision_position.z - object->collision_position.z;
+                                    if (!(dx * dx + dz * dz > object->viewdistance * object->viewdistance))
+                                        continue;
+                                }
+                                object->objptr->alert_target = &alert_obj->apiobj;
+                                object->ai_awareness_mask |= alert_mask;
+                                awareness |= object->ai_awareness_mask;
+                                object->objptr->alert_target_timer = 5.0f;
                             }
-                            object->objptr->alert_target = &alert_obj->apiobj;
-                            object->ai_awareness_mask |= alert_mask;
-                            awareness |= object->ai_awareness_mask;
-                            object->objptr->alert_target_timer = 5.0f;
                         }
                     }
                 }
             }
+            alert_timer -= FRAMETIME;
+            if (alert_timer <= 0.0f)
+                alert_obj = NULL;
         }
-        alert_timer -= FRAMETIME;
-        if (alert_timer <= 0.0f)
-            alert_obj = NULL;
-    }
-    if (system->goody_idx >= goody_count)
-        system->goody_idx = 0;
-    i32 budget = 32;
-    // Pending choices survive budget exhaustion. Publish only after a pass
-    // finishes without changing the baddies' assignments.
-    while (!complete && budget > 0) {
-        complete = 0;
-        while (system->goody_idx < goody_count && budget > 0) {
-            APIOBJECT_s *goody = goodies[system->goody_idx];
-            f32 best_distance = 1.0e9f;
-            APIOBJECT_s *best_baddy = NULL;
-            for (i32 i = 0; i < baddy_count; ++i) {
-                APIOBJECT_s *baddy = baddies[i];
-                if (baddy == goody || baddy->ai->pending_opponent == goody)
-                    continue;
-                i32 have_distance = 0;
-                if (baddy->objptr->field_0xefc & 2) {
-                    goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
-                } else if ((goody->ai_awareness_mask >> baddy->field_0x289) & 1) {
-                    distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                    have_distance = 1;
-                    if (distance >= goody->viewdistance + baddy->visibility_range_extension)
+        if (system->goody_idx >= goody_count)
+            system->goody_idx = 0;
+        i32 budget = 32;
+        // Pending choices survive budget exhaustion. Publish only after a pass
+        // finishes without changing the baddies' assignments.
+        while (!complete && budget > 0) {
+            complete = 0;
+            while (system->goody_idx < goody_count && budget > 0) {
+                APIOBJECT_s *goody = goodies[system->goody_idx];
+                f32 best_distance = 1.0e9f;
+                APIOBJECT_s *best_baddy = NULL;
+                for (i32 i = 0; i < baddy_count; ++i) {
+                    APIOBJECT_s *baddy = baddies[i];
+                    if (baddy == goody || baddy->ai->pending_opponent == goody)
+                        continue;
+                    i32 have_distance = 0;
+                    if (baddy->objptr->field_0xefc & 2) {
                         goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
-                } else if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) {
-                    distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                    have_distance = 1;
-                    if ((!party_under_cover || ((goody->field_0x1f4 & 0x400) && (baddy->field_0x1f4 & 0x400))) &&
-                        (((awareness >> baddy->field_0x289) & 1) ||
-                         (((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) &&
-                          ((goody->flags_high & 8) ||
-                           difference.x * goody->objptr->facing_direction.x +
-                                   difference.z * goody->objptr->facing_direction.z >=
-                               0.0f ||
-                           (goody->heardistance > distance && (baddy->objptr->field_0xef9 & 8)))))) {
-                        goody->ai_awareness_mask |= (u64)1 << baddy->field_0x289;
-                        awareness |= goody->ai_awareness_mask;
+                    } else if ((goody->ai_awareness_mask >> baddy->field_0x289) & 1) {
+                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
+                        have_distance = 1;
+                        if (distance >= goody->viewdistance + baddy->visibility_range_extension)
+                            goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
+                    } else if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) {
+                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
+                        have_distance = 1;
+                        if ((!party_under_cover || ((goody->field_0x1f4 & 0x400) && (baddy->field_0x1f4 & 0x400))) &&
+                            (((awareness >> baddy->field_0x289) & 1) ||
+                             (((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) &&
+                              ((goody->flags_high & 8) ||
+                               difference.x * goody->objptr->facing_direction.x +
+                                       difference.z * goody->objptr->facing_direction.z >=
+                                   0.0f ||
+                               (goody->heardistance > distance && (baddy->objptr->field_0xef9 & 8)))))) {
+                            goody->ai_awareness_mask |= (u64)1 << baddy->field_0x289;
+                            awareness |= goody->ai_awareness_mask;
+                        }
                     }
-                }
-                if (goody->objptr->field_0xefc & 2) {
-                    baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
-                } else if (baddy->objptr->alert_target == goody) {
-                    baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
-                    awareness |= baddy->ai_awareness_mask;
-                } else if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                    if (!have_distance)
-                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                    have_distance = 1;
-                    if (distance >= baddy->viewdistance + goody->visibility_range_extension)
+                    if (goody->objptr->field_0xefc & 2) {
                         baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
-                } else if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) {
-                    if (!have_distance)
-                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                    have_distance = 1;
-                    if ((!party_under_cover || ((baddy->field_0x1f4 & 0x400) && (goody->field_0x1f4 & 0x400))) &&
-                        (((awareness >> goody->field_0x289) & 1) ||
-                         (((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) &&
-                          ((baddy->flags_high & 8) ||
-                           -difference.z * baddy->objptr->facing_direction.z -
-                                   difference.x * baddy->objptr->facing_direction.x >=
-                               0.0f ||
-                           (baddy->heardistance > distance && (goody->objptr->field_0xef9 & 8)))))) {
+                    } else if (baddy->objptr->alert_target == goody) {
                         baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
                         awareness |= baddy->ai_awareness_mask;
+                    } else if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
+                        if (!have_distance)
+                            distance = NuVecDist(&baddy->position, &goody->position, &difference);
+                        have_distance = 1;
+                        if (distance >= baddy->viewdistance + goody->visibility_range_extension)
+                            baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
+                    } else if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) {
+                        if (!have_distance)
+                            distance = NuVecDist(&baddy->position, &goody->position, &difference);
+                        have_distance = 1;
+                        if ((!party_under_cover || ((baddy->field_0x1f4 & 0x400) && (goody->field_0x1f4 & 0x400))) &&
+                            (((awareness >> goody->field_0x289) & 1) ||
+                             (((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) &&
+                              ((baddy->flags_high & 8) ||
+                               -difference.z * baddy->objptr->facing_direction.z -
+                                       difference.x * baddy->objptr->facing_direction.x >=
+                                   0.0f ||
+                               (baddy->heardistance > distance && (goody->objptr->field_0xef9 & 8)))))) {
+                            baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
+                            awareness |= baddy->ai_awareness_mask;
+                        }
                     }
-                }
-                if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
-                    !((baddy->ai_awareness_mask >> goody->field_0x289) & 1))
-                    continue;
-                if (!have_distance)
-                    distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                GameObject_s *baddy_object = baddy->objptr;
-                i16 baddy_id = baddy_object->id;
-                if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT) {
-                    if (!ZapTarget(goody->objptr))
-                        baddy->objptr->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                    baddy_object = baddy->objptr;
-                    baddy_id = baddy_object->id;
-                } else if (goody->character_data->model_flags & 0x80000) {
-                    baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                } else if ((baddy_object->field_0xefb & 1) && goody->objptr != player && goody->objptr != player2) {
-                    baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
-                    baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                }
-                GameObject_s *goody_object = goody->objptr;
-                if (!((baddy_object->ai_opponent_exclusion_mask >> goody->field_0x289) & 1)) {
-                    AIPACKET *packet = baddy->ai;
-                    if (packet->pending_nearest_metric > distance) {
-                        packet->pending_nearest_metric = distance;
-                        packet->pending_nearest_opponent = goody;
+                    if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
+                        !((baddy->ai_awareness_mask >> goody->field_0x289) & 1))
+                        continue;
+                    if (!have_distance)
+                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
+                    GameObject_s *baddy_object = baddy->objptr;
+                    i16 baddy_id = baddy_object->id;
+                    if (baddy_id != id_JAWA && baddy_id != id_UGNAUGHT) {
+                        if (!(goody->character_data->model_flags & 0x80000)) {
+                            if ((baddy_object->field_0xefb & 1) && goody->objptr != player &&
+                                goody->objptr != player2) {
+                                baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
+                            } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
+                                baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
+                            }
+                        } else {
+                            baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
+                        }
+                    } else {
+                        if (!ZapTarget(goody->objptr))
+                            baddy->objptr->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
+                        baddy_object = baddy->objptr;
+                        baddy_id = baddy_object->id;
                     }
-                    f32 metric = distance;
-                    if (packet->opponent_object == goody)
-                        metric -= 0.5f;
-                    if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                        if (packet->pending_opponent == NULL) {
-                            if (!(packet->runtime_flags & 2) ||
-                                ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) &
-                                 1) ||
-                                baddy_object->alert_target == goody) {
-                                if (best_distance > metric) {
+                    GameObject_s *goody_object = goody->objptr;
+                    if (!((baddy_object->ai_opponent_exclusion_mask >> goody->field_0x289) & 1)) {
+                        AIPACKET *packet = baddy->ai;
+                        if (packet->pending_nearest_metric > distance) {
+                            packet->pending_nearest_metric = distance;
+                            packet->pending_nearest_opponent = goody;
+                        }
+                        f32 metric = distance;
+                        if (packet->opponent_object == goody)
+                            metric -= 0.5f;
+                        if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
+                            if (packet->pending_opponent == NULL) {
+                                if (!(packet->runtime_flags & 2) ||
+                                    ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) &
+                                     1) ||
+                                    baddy_object->alert_target == goody) {
+                                    if (best_distance > metric) {
+                                        best_distance = distance;
+                                        best_baddy = baddy;
+                                    }
+                                }
+                            } else if ((goody->flags_low & 0x80) && (baddy_object->field_0xefb & 0x40)) {
+                                if (!(packet->pending_opponent->flags_low & 0x80) ||
+                                    packet->pending_opponent_metric > metric) {
                                     best_distance = distance;
                                     best_baddy = baddy;
                                 }
                             }
-                        } else if ((goody->flags_low & 0x80) && (baddy_object->field_0xefb & 0x40)) {
-                            if (!(packet->pending_opponent->flags_low & 0x80) ||
-                                packet->pending_opponent_metric > metric) {
-                                best_distance = distance;
-                                best_baddy = baddy;
+                        }
+                    }
+                    if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT ||
+                        (baddy->character_data->model_flags & 0x80000))
+                        goody_object->ai_opponent_exclusion_mask |= (u64)1 << baddy->field_0x289;
+                    if (!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1)) {
+                        AIPACKET *packet = goody->ai;
+                        if (packet->pending_nearest_metric > distance) {
+                            packet->pending_nearest_metric = distance;
+                            packet->pending_nearest_opponent = baddy;
+                        }
+                        f32 metric = distance;
+                        if (packet->opponent_object == baddy)
+                            metric -= 0.5f;
+                        if (((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
+                            (!(packet->runtime_flags & 2) ||
+                             ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1))) {
+                            if (packet->pending_opponent_metric > metric ||
+                                (packet->pending_opponent != NULL && packet->pending_opponent->objptr != NULL &&
+                                 packet->pending_opponent->objptr->character_context == 0x5a &&
+                                 baddy_object->character_context != 0x5a)) {
+                                packet->pending_opponent_metric = distance;
+                                packet->pending_opponent = baddy;
                             }
                         }
                     }
                 }
-                if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT || (baddy->character_data->model_flags & 0x80000))
-                    goody_object->ai_opponent_exclusion_mask |= (u64)1 << baddy->field_0x289;
-                if (!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1)) {
-                    AIPACKET *packet = goody->ai;
-                    if (packet->pending_nearest_metric > distance) {
-                        packet->pending_nearest_metric = distance;
-                        packet->pending_nearest_opponent = baddy;
-                    }
-                    f32 metric = distance;
-                    if (packet->opponent_object == baddy)
-                        metric -= 0.5f;
-                    if (((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
-                        (!(packet->runtime_flags & 2) ||
-                         ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1))) {
-                        if (packet->pending_opponent_metric > metric ||
-                            (packet->pending_opponent != NULL && packet->pending_opponent->objptr != NULL &&
-                             packet->pending_opponent->objptr->character_context == 0x5a &&
-                             baddy_object->character_context != 0x5a)) {
-                            packet->pending_opponent_metric = distance;
-                            packet->pending_opponent = baddy;
+                if (baddy_count > 0) {
+                    budget -= baddy_count;
+                    if (best_baddy != NULL && best_baddy->ai->pending_opponent != goody) {
+                        best_baddy->ai->pending_opponent = goody;
+                        best_baddy->ai->pending_opponent_metric = best_distance;
+                        system->unknown_flag_2 = 1;
+                        if (!((goody->objptr->ai_opponent_exclusion_mask >> best_baddy->field_0x289) & 1) &&
+                            ((goody->ai_awareness_mask >> best_baddy->field_0x289) & 1)) {
+                            AIPACKET *packet = goody->ai;
+                            if (!(packet->field_0x1e5 & 0x10) || packet->pending_opponent_metric > best_distance) {
+                                packet->pending_opponent = best_baddy;
+                                packet->pending_opponent_metric = best_distance;
+                                packet->field_0x1e5 |= 0x10;
+                            }
                         }
                     }
                 }
-            }
-            if (baddy_count > 0) {
-                budget -= baddy_count;
-                if (best_baddy != NULL && best_baddy->ai->pending_opponent != goody) {
-                    best_baddy->ai->pending_opponent = goody;
-                    best_baddy->ai->pending_opponent_metric = best_distance;
-                    system->unknown_flag_2 = 1;
-                    if (!((goody->objptr->ai_opponent_exclusion_mask >> best_baddy->field_0x289) & 1) &&
-                        ((goody->ai_awareness_mask >> best_baddy->field_0x289) & 1)) {
-                        AIPACKET *packet = goody->ai;
-                        if (!(packet->field_0x1e5 & 0x10) || packet->pending_opponent_metric > best_distance) {
-                            packet->pending_opponent = best_baddy;
-                            packet->pending_opponent_metric = best_distance;
-                            packet->field_0x1e5 |= 0x10;
-                        }
+                ++system->goody_idx;
+                if (system->goody_idx >= goody_count) {
+                    system->goody_idx = 0;
+                    if (system->unknown_flag_2) {
+                        system->unknown_flag_2 = 0;
+                        complete = 0;
+                    } else {
+                        complete = 1;
                     }
                 }
             }
-            ++system->goody_idx;
-            if (system->goody_idx >= goody_count) {
-                system->goody_idx = 0;
-                if (system->unknown_flag_2) {
-                    system->unknown_flag_2 = 0;
-                    complete = 0;
+        }
+        if (!complete)
+            return;
+        system->goody_idx = 0;
+        nbaddies_can_see_players = 0;
+        // Losing LOS alone does not erase the seen history; losing awareness does.
+        for (i32 i = 0; i < goody_count; ++i) {
+            APIOBJECT_s *goody = goodies[i];
+            for (i32 j = 0; j < baddy_count; ++j) {
+                APIOBJECT_s *baddy = baddies[j];
+                if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1)) {
+                    if ((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1) {
+                        goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
+                    }
                 } else {
-                    complete = 1;
+                    if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1)
+                        goody->objptr->ai_seen_mask |= (u64)1 << baddy->field_0x289;
+                }
+                if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
+                    if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1)
+                        baddy->objptr->ai_seen_mask |= (u64)1 << goody->field_0x289;
+                } else if ((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1) {
+                    baddy->objptr->ai_seen_mask &= ~((u64)1 << goody->field_0x289);
                 }
             }
         }
-    }
-    if (!complete)
-        return;
-    system->goody_idx = 0;
-    nbaddies_can_see_players = 0;
-    // Losing LOS alone does not erase the seen history; losing awareness does.
-    for (i32 i = 0; i < goody_count; ++i) {
-        APIOBJECT_s *goody = goodies[i];
-        for (i32 j = 0; j < baddy_count; ++j) {
-            APIOBJECT_s *baddy = baddies[j];
-            if ((goody->ai_awareness_mask >> baddy->field_0x289) & 1) {
-                if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1)
-                    goody->objptr->ai_seen_mask |= (u64)1 << baddy->field_0x289;
-            } else if ((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1) {
-                goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
-            }
-            if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1)
-                    baddy->objptr->ai_seen_mask |= (u64)1 << goody->field_0x289;
-            } else if ((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1) {
-                baddy->objptr->ai_seen_mask &= ~((u64)1 << goody->field_0x289);
-            }
-        }
-    }
-    for (i32 i = 0; i < count; ++i) {
-        APIOBJECT_s *object = objects[i];
-        AIPACKET *packet = object->ai;
-        packet->opponent_metric = packet->pending_opponent_metric;
-        packet->opponent_object = packet->pending_opponent;
-        packet->field_0x1e5 = (packet->field_0x1e5 & ~8) | ((packet->field_0x1e5 >> 1) & 8);
-        packet = object->ai;
-        packet->nearest_opponent_metric = packet->pending_nearest_metric;
-        packet->nearest_opponent_object = packet->pending_nearest_opponent;
-        packet->pending_opponent_metric = 1.0e9f;
-        packet->pending_nearest_metric = 1.0e9f;
-        packet->field_0x1e5 &= ~0x10;
-        packet->pending_nearest_opponent = NULL;
-        packet->pending_opponent = NULL;
-        if ((awareness >> object->field_0x289) & 1)
-            object->ai->field_0x1e5 |= 0x40;
-        else
-            object->ai->field_0x1e5 &= ~0x40;
-        object->objptr->field_0xef9 &= ~8;
-        GameObject_s *game_object = object->objptr;
-        game_object->ai_opponent_exclusion_mask = 0;
-        if ((player != NULL && ((game_object->ai_seen_mask >> player->apiobj.field_0x289) & 1)) ||
-            (player2 != NULL && ((game_object->ai_seen_mask >> player2->apiobj.field_0x289) & 1)))
-            ++nbaddies_can_see_players;
-        if (game_object->opponent != NULL) {
+        for (i32 i = 0; i < count; ++i) {
+            APIOBJECT_s *object = objects[i];
+            AIPACKET *packet = object->ai;
+            packet->opponent_metric = packet->pending_opponent_metric;
+            packet->opponent_object = packet->pending_opponent;
+            packet->field_0x1e5 = (packet->field_0x1e5 & ~8) | ((packet->field_0x1e5 >> 1) & 8);
             packet = object->ai;
-            packet->opponent_object = static_cast<APIOBJECT_s *>(game_object->opponent);
-            packet->opponent_metric = NuVecDist(&packet->opponent_object->position, &object->position, &difference);
-            packet = object->ai;
-            if (packet->opponent_object->ai->opponent_object == object)
-                packet->field_0x1e5 |= 8;
+            packet->nearest_opponent_metric = packet->pending_nearest_metric;
+            packet->nearest_opponent_object = packet->pending_nearest_opponent;
+            packet->pending_opponent_metric = 1.0e9f;
+            packet->pending_nearest_metric = 1.0e9f;
+            packet->field_0x1e5 &= ~0x10;
+            packet->pending_nearest_opponent = NULL;
+            packet->pending_opponent = NULL;
+            if ((awareness >> object->field_0x289) & 1)
+                object->ai->field_0x1e5 |= 0x40;
             else
-                packet->field_0x1e5 &= ~8;
+                object->ai->field_0x1e5 &= ~0x40;
+            object->objptr->field_0xef9 &= ~8;
+            GameObject_s *game_object = object->objptr;
+            game_object->ai_opponent_exclusion_mask = 0;
+            if ((player != NULL && ((game_object->ai_seen_mask >> player->apiobj.field_0x289) & 1)) ||
+                (player2 != NULL && ((game_object->ai_seen_mask >> player2->apiobj.field_0x289) & 1)))
+                ++nbaddies_can_see_players;
+            if (game_object->opponent != NULL) {
+                packet = object->ai;
+                packet->opponent_object = static_cast<APIOBJECT_s *>(game_object->opponent);
+                packet->opponent_metric = NuVecDist(&packet->opponent_object->position, &object->position, &difference);
+                packet = object->ai;
+                if (packet->opponent_object->ai->opponent_object == object)
+                    packet->field_0x1e5 |= 8;
+                else
+                    packet->field_0x1e5 &= ~8;
+            }
         }
     }
 }
@@ -4979,8 +5003,8 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
                         NuVecNorm(&difference, &difference);
                         target_data = static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
                         const f32 walk_speed = target_data->walk_speed;
-                        target->apiobj.movement_direction.x = difference.x * walk_speed + target->apiobj.velocity.x;
                         target->apiobj.movement_direction.z = walk_speed * difference.z + target->apiobj.velocity.z;
+                        target->apiobj.movement_direction.x = difference.x * walk_speed + target->apiobj.velocity.x;
                         const f32 speed = target_data->run_speed;
                         const f32 speed_squared =
                             target->apiobj.movement_direction.x * target->apiobj.movement_direction.x +
@@ -5244,7 +5268,11 @@ void GameObjectStuffAfterAnimation() {
             part.special = &WORLD->lev_objs[232].special;
             part.field_28 = 232;
             const bool player = object->apiobj.player_controlled;
-            part.flags = player ? 0xc11b : 0xc31b;
+            if (player) {
+                part.flags = 0xc11b;
+            } else {
+                part.flags = 0xc31b;
+            }
             part.owner = object;
             part.field_90 = static_cast<u8>(object->apiobj.field_0x289);
             part.field_44 = BobaRocket_Kill;
@@ -5253,7 +5281,11 @@ void GameObjectStuffAfterAnimation() {
             part.field_40 = PartCollide_3D;
             part.time_step = FRAMETIME;
             part.gravity = 0.0f;
-            part.field_a4 = player ? 4.0f + 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) : 10.0f;
+            if (player) {
+                part.field_a4 = 4.0f + 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f));
+            } else {
+                part.field_a4 = 10.0f;
+            }
             NUVEC direction;
             BoltSys->shoot_direction(object, &direction);
             f32 range = part.field_a4 * rocket_speed;
@@ -5568,10 +5600,10 @@ void ThingManager::EnableActions(i32 id, i32 flags, i32 invert) {
             continue;
         }
         if (thing->field_0x4 == (u32)id) {
-            if (invert == 0) {
-                thing->flags |= (u32)flags;
-            } else {
+            if (invert != 0) {
                 thing->flags &= ~(u32)flags;
+            } else {
+                thing->flags |= (u32)flags;
             }
             return;
         }
@@ -5752,15 +5784,19 @@ void ThingManager::cbEdTimingSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
         for (i32 i = 0; i < manager->count; ++i) {
             manager->things[i]->profiling_0xc = enabled;
         }
-        if (selection <= 1) {
-            eduiMenuDestroy(menu);
-            edTimingMenu = NULL;
-        } else {
+        if (!(selection <= 1)) {
             i32 index = 0;
             for (eduiitem_s *entry = menu->first; entry != NULL; entry = entry->next) {
-                entry->highlighted = index < 3 ? 0 : enabled;
+                if (index < 3) {
+                    entry->highlighted = 0;
+                } else {
+                    entry->highlighted = enabled;
+                }
                 ++index;
             }
+        } else {
+            eduiMenuDestroy(menu);
+            edTimingMenu = NULL;
         }
         NuTimeBarEnable(item->data != 0);
     } else {
@@ -5926,25 +5962,6 @@ GameThingManager::GameThingManager(i32 max_things) : ThingManager(max_things) {
 // GameThingManager D1 dtor @0x4e8a80 clears the global before destruction.
 GameThingManager::~GameThingManager() {
     theGameThings = NULL;
-}
-
-HashedKey CantPickupBombTimerAddon::s_hashId;
-
-CantPickupBombTimerAddon::CantPickupBombTimerAddon(MechObjectInterface &object, float duration)
-    : MechAddon(object, s_hashId.value), remaining_time(duration) {
-    GameObject_s *character = object.GetCharacterObject();
-    if (character != NULL) {
-        character->apiobj.velocity.x += character->apiobj.velocity.x;
-        character->apiobj.velocity.z += character->apiobj.velocity.z;
-    }
-}
-
-bool CantPickupBombTimerAddon::OnProcess(MechAddon::ProcessStage, float elapsed) {
-    remaining_time -= elapsed;
-    return remaining_time > 0.0f;
-}
-
-CantPickupBombTimerAddon::~CantPickupBombTimerAddon() {
 }
 
 // BaseThing::BaseThing @0x425840 zeroes the data fields after the vptr.
@@ -6151,8 +6168,8 @@ __attribute__((force_align_arg_pointer)) void TakeOverCode(GameObject_s *object,
         }
         if (api.collision_min.y > other.collision_max.y || other.collision_min.y > api.collision_max.y)
             continue;
-        const f32 dx = other.collision_position.x - api.collision_position.x;
         const f32 dz = other.collision_position.z - api.collision_position.z;
+        const f32 dx = other.collision_position.x - api.collision_position.x;
         const f32 range = (other.field_0x1dc + other.field_0x1dc) + api.field_0x1dc;
         const f32 distance = dx * dx + dz * dz;
         if (object->facing_direction.x * dx + object->facing_direction.z * dz > 0.0f && range * range > distance &&
@@ -6200,25 +6217,23 @@ GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_onl
                              i32 non_level_only) {
     for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
         GameObject_s *object = &Obj[index];
-        if ((object->apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0) {
-            continue;
+        if ((object->apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) != 0) {
+            if (!(vehicle_only != 0 && (object->apiobj.field_0x1f8 & 0x1000) == 0)) {
+                if (required_flags != 0 && (object->apiobj.field_0x1f4 & required_flags) != required_flags) {
+                    continue;
+                }
+                if (character_id != -1 && object->id != character_id) {
+                    continue;
+                }
+                if (alive_only != 0 && object->apiobj.field_0x287 != 0) {
+                    continue;
+                }
+                if (non_level_only != 0 && object->field_0x107c != -1) {
+                    continue;
+                }
+                return object;
+            }
         }
-        if (vehicle_only != 0 && (object->apiobj.field_0x1f8 & 0x1000) == 0) {
-            continue;
-        }
-        if (required_flags != 0 && (object->apiobj.field_0x1f4 & required_flags) != required_flags) {
-            continue;
-        }
-        if (character_id != -1 && object->id != character_id) {
-            continue;
-        }
-        if (alive_only != 0 && object->apiobj.field_0x287 != 0) {
-            continue;
-        }
-        if (non_level_only != 0 && object->field_0x107c != -1) {
-            continue;
-        }
-        return object;
     }
     return NULL;
 }
@@ -6425,18 +6440,7 @@ i32 KillGameObject(GameObject_s *object, i32 requested_reason, i32) {
         group = object->ai.group;
         if (group->leader == &object->apiobj) {
             group->leader = NULL;
-            if (group->is_reversed) {
-                for (i32 i = group->member_count - 1; i != -1; --i) {
-                    if (group->members[i] != NULL) {
-                        GameObject_s *candidate = group->members[i]->objptr;
-                        if (candidate != object && (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-                            candidate->apiobj.field_0x287 == 0) {
-                            group->leader = &candidate->apiobj;
-                            break;
-                        }
-                    }
-                }
-            } else {
+            if (!group->is_reversed) {
                 for (i32 i = 0; i < group->member_count; ++i) {
                     if (group->members[i] != NULL) {
                         GameObject_s *candidate = group->members[i]->objptr;
@@ -6449,12 +6453,23 @@ i32 KillGameObject(GameObject_s *object, i32 requested_reason, i32) {
                             group->members[i] = NULL;
                     }
                 }
+            } else {
+                for (i32 i = group->member_count - 1; i != -1; --i) {
+                    if (group->members[i] != NULL) {
+                        GameObject_s *candidate = group->members[i]->objptr;
+                        if (candidate != object && (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                            candidate->apiobj.field_0x287 == 0) {
+                            group->leader = &candidate->apiobj;
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
     object->ai.field_0x1e5 &= ~0x50;
-    object->ai.nearest_opponent = NULL;
     object->ai.pending_nearest_opponent = NULL;
+    object->ai.nearest_opponent = NULL;
     object->ai.pending_opponent = NULL;
     object->ai.pending_nearest_metric = 1000000000.0f;
     object->ai.pending_opponent_metric = 1000000000.0f;
@@ -6606,9 +6621,9 @@ void ReleaseTakeOver(GameObject_s *object, i32) {
     u8 rider_set = rider->ai.creature_set;
     memcpy(&object_script.process, &object->ai.script_process, sizeof(object_script.process));
     object_script.field_c8 = object->ai.field_0xc8;
-    u8 object_set = object->ai.creature_set;
     u16 rider_flag = rider->apiobj.field_0x1f8 & 0x100;
     u16 object_flag = object->apiobj.field_0x1f8 & 0x100;
+    u8 object_set = object->ai.creature_set;
     if ((rider->field_0xf00 & 2) == 0 && TagCode(rider, object, 1, 0, 0) == 0)
         return;
     memcpy(&rider->ai.script_process, &object_script.process, sizeof(object_script.process));
@@ -6695,9 +6710,11 @@ static void TakeOver_SetAction(GameObject_s *rider, GameObject_s *vehicle) {
     else if (vehicle->id == id_GYROCOPTER)
         action = 0x83;
     else if (static_cast<GAMECHARACTERDATA *>(vehicle->apiobj.character_data->field11_0x24)->field275_0x116 == 12) {
-        action = CurrentAnim(&vehicle->apiobj.anim_packet) == 3 || CurrentAnim(&vehicle->apiobj.anim_packet) == 0x17
-                     ? 0xc4
-                     : 0xc3;
+        if (CurrentAnim(&vehicle->apiobj.anim_packet) == 3 || CurrentAnim(&vehicle->apiobj.anim_packet) == 0x17) {
+            action = 0xc4;
+        } else {
+            action = 0xc3;
+        }
     } else if (vehicle->id == id_BANTHA || vehicle->id == id_BOMARRMONK)
         action = 0x70;
     else if (vehicle->id == id_DEWBACK)
@@ -6785,10 +6802,10 @@ i32 TagCode(GameObject_s *source, GameObject_s *destination, i32 takeover, i32 b
     if (CUTSKIPLOCK != 0)
         return 0;
     GAMEPAD_s *source_pad = source->pad_gamepad;
-    GAMEPAD_s *destination_pad = destination->pad_gamepad;
     f32 source_da8 = source->field_0xda8;
-    i8 source_hp = source->current_hp;
+    GAMEPAD_s *destination_pad = destination->pad_gamepad;
     i8 destination_hp = destination->current_hp;
+    i8 source_hp = source->current_hp;
     u8 source_player = source->apiobj.player_controlled;
     u8 destination_player = destination->apiobj.player_controlled;
     TAGSCRIPTSTATE source_script, destination_script;
@@ -7089,6 +7106,7 @@ purchases_unavailable:
 }
 
 void Tag_Check(GameObject_s *object) {
+    NUVEC difference;
     DECOMP_ASSERT(offsetof(GameObject_s, tag_player_index) == 0x7b4, "Tag player index ABI");
     DECOMP_ASSERT(offsetof(GameObject_s, tag_flags) == 0x7b5, "Tag flags ABI");
     DECOMP_ASSERT(offsetof(GameObject_s, pending_tag_target) == 0x7b8, "Pending tag target ABI");
@@ -7137,12 +7155,10 @@ void Tag_Check(GameObject_s *object) {
         goto draw_icon;
     }
     if (Arcade == 0 && Tag_Mode == 3 && GetMenuID() == -1) {
-        if (FindGameMsgsWithID(-1, 0, -1, NULL) != 0) {
-            Hint_CancelCurrent();
-        } else {
-            i32 pack_index = -1;
+        if (FindGameMsgsWithID(-1, 0, -1, NULL) == 0) {
             f32 nearest = 0.7f * 0.7f * 2.0f;
-            NUVEC difference;
+            i32 pack_index = -1;
+
             for (i32 i = 0; i < 11; ++i) {
                 if (!Store_IsPackUnlocked(i) && StorePack[i].id != NULL) {
                     f32 distance =
@@ -7158,18 +7174,20 @@ void Tag_Check(GameObject_s *object) {
                 NUVEC position = pack->custodian_position;
                 position.y += CDataList[*pack->id].field16_0x38 + 0.075f;
                 ADDGAMEMSG message = AddGameMsg_Default;
-                message.text = TTab[pack->message_text_index];
                 message.position = &position;
                 message.red = 255;
+                message.text = TTab[pack->message_text_index];
                 message.green = 191;
                 message.blue = 0;
                 message.flags = 0x1083;
-                message.field_0x44 = reinterpret_cast<void *>(DrawPackButton);
                 message.field_0x4e = pack_index;
+                message.field_0x44 = reinterpret_cast<void *>(DrawPackButton);
                 message.scale = 0.4f;
                 AddGameMsg(&message);
                 Hint_CancelCurrent();
             }
+        } else {
+            Hint_CancelCurrent();
         }
     }
     if ((object->pad_gamepad->buttons_pressed & GAMEPAD_TAG) == 0)
@@ -7256,8 +7274,8 @@ attempt_tag:
     result = TagCode(object, target, 0, 0, 1);
     if (result == 2) {
         object->pending_tag_target = target;
-        object->tag_flags = (object->tag_flags | 4) & ~8;
         object->tag_cooldown = 1.0f;
+        object->tag_flags = (object->tag_flags | 4) & ~8;
         goto draw_icon;
     }
     if (result != 1)
@@ -7487,8 +7505,8 @@ void ManageGameObjects() {
                     object->apiobj.field_0x287 = 0;
                     object->apiobj.field_0x1f8 = (object->apiobj.field_0x1f8 & ~0x2000) | saved_flags;
                     object->current_hp = object->hitpoints;
-                    object->field_0xe37 = object->apiobj.character_data->game_character->field_0xf5;
                     object->field_0xe38 = 4;
+                    object->field_0xe37 = object->apiobj.character_data->game_character->field_0xf5;
                     object->field_0xefc |= 0x80;
                     object->field_0x7a5 = 0xff;
                     if (object->apiobj.field_0x27c != -1)
@@ -7524,12 +7542,17 @@ void ManageGameObjects() {
                 Obj[j].ai_opponent_exclusion_mask &= object_mask;
             }
             if ((object->apiobj.field_0x1f4 & 0x4000) != 0) {
-                if ((object->apiobj.field_0x1f4 & 0x400) != 0) {
+                if ((object->apiobj.field_0x1f4 & 0x400) == 0) {
+                    object->field_0x101c = 2.0f;
+                } else {
                     AICREATURE *creature = &WORLD->ai_sys->creatures[object->ai.field_0x134];
                     if ((object->field_0xefa & 0x10) != 0) {
                         if ((object->field_0xefa & 0x20) == 0) {
-                            object->field_0x101c =
-                                object->id == id_STAP2 && WORLD->current_level == NEGOTIATIONSC_LDATA ? 5.0f : 1.0f;
+                            if (object->id == id_STAP2 && WORLD->current_level == NEGOTIATIONSC_LDATA) {
+                                object->field_0x101c = 5.0f;
+                            } else {
+                                object->field_0x101c = 1.0f;
+                            }
                             continue;
                         }
                     } else {
@@ -7550,8 +7573,6 @@ void ManageGameObjects() {
                     f32 blend = 1.0f - (static_cast<f32>(static_cast<u32>(Game.difficulty)) - 1.0f) / 9.0f;
                     object->ai_spawn_delay =
                         creature->max_respawn_time * blend + creature->min_respawn_time * (1.0f - blend);
-                } else {
-                    object->field_0x101c = 2.0f;
                 }
                 continue;
             }
@@ -7625,8 +7646,8 @@ void ManageGameObjects() {
                         if (member != NULL) {
                             GameObject_s *target = member->objptr;
                             target->ai_spawn_delay = 0.0f;
-                            target->ai.locator = locator;
                             target->ai.respawn_locator = respawn_locator;
+                            target->ai.locator = locator;
                             ResetAICreature(target, WORLD->ai_sys);
                             group = object->ai.group;
                             if (group->leader == NULL)
@@ -7638,11 +7659,11 @@ void ManageGameObjects() {
                     object->ai.group->is_reversed = 0;
                 } else {
                     object->ai_spawn_delay = 0.0f;
-                    if (object->id == id_PKDROID) {
+                    if (object->id != id_PKDROID) {
+                        ResetAICreature(object, WORLD->ai_sys);
+                    } else {
                         ResetAICreature(object, system);
                         SpawnCreatureFromCrate(object, 3.0f, 0.0f);
-                    } else {
-                        ResetAICreature(object, WORLD->ai_sys);
                     }
                 }
             }
@@ -7670,7 +7691,8 @@ void ManageGameObjects() {
                 group->rows[3].is_alive == 0) {
                 DestroyAIGroup(group);
             } else {
-                for (i32 j = 0; j < group->member_count; ++j) {
+                auto group_member_count = group->member_count;
+                for (i32 j = 0; j < group_member_count; ++j) {
                     if (group->members[j] == &object->apiobj)
                         group->members[j] = NULL;
                 }
@@ -7711,6 +7733,8 @@ void AddSurfaceDebris(GameObject_s *);
 void GameAntinode_Update(GAMEANTINODESYS_s *system);
 
 void UpdateGameObjects(WORLDINFO_s *world) {
+    NUVEC position;
+    NUVEC offset;
     // The three message paths reuse the same record in the original. Its
     // text scratch starts at esp+0xd0 in the 0x150-byte reference frame.
     char text[128];
@@ -7894,13 +7918,15 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         if ((object->apiobj.field_0x1f4 & 0x40000) != 0) {
             MovePlayer_NETWORK(object);
         } else {
-            if ((object->apiobj.flags_low & 0x80) != 0) {
+            if ((object->apiobj.flags_low & 0x80) == 0) {
+                if (FreePlay != 0) {
+                    Player_ToggleCharacter(object, 0, 0);
+                }
+            } else {
                 if (object->pad_gamepad->pad != NULL) {
                     UpdateRumble(&object->pad_gamepad->rumble_packet);
                     Player_ToggleCharacter(object, 0, 1);
                 }
-            } else if (FreePlay != 0) {
-                Player_ToggleCharacter(object, 0, 0);
             }
             if (TimingBarSet == 3)
                 TBOPENFN("Move", 3);
@@ -7946,7 +7972,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             object->ai_update_position = object->apiobj.position;
 
             const f32 vertical_displacement = object->apiobj.position.y - object->apiobj.start_position.y;
-            if (vertical_displacement == 0.0f || object->ai_elapsed_time == 0.0f) {
+            if (!(vertical_displacement != 0.0f && object->ai_elapsed_time != 0.0f)) {
                 object->vertical_velocity = 0.0f;
             } else {
                 object->vertical_velocity = vertical_displacement / object->ai_elapsed_time;
@@ -8022,9 +8048,11 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         TerrainPlayer(object);
         object->ai_update_position = object->apiobj.position;
         const f32 vertical_displacement = object->apiobj.position.y - object->apiobj.start_position.y;
-        object->vertical_velocity = vertical_displacement == 0.0f || object->ai_elapsed_time == 0.0f
-                                        ? 0.0f
-                                        : vertical_displacement / object->ai_elapsed_time;
+        if (vertical_displacement == 0.0f || object->ai_elapsed_time == 0.0f) {
+            object->vertical_velocity = 0.0f;
+        } else {
+            object->vertical_velocity = vertical_displacement / object->ai_elapsed_time;
+        }
         AnimatePlayer(object);
         object->context_target_position = NULL;
         if (TimingBarSet == 2)
@@ -8036,18 +8064,18 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         }
         if (object->oldpos != NULL)
             *object->oldpos = object->sock_position;
-        if (world->sock_sys != NULL &&
-            ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 || VehicleArea != 0)) {
-            ComplexSockPosition(world->sock_sys, &object->apiobj.position, static_cast<i8>(object->field_0x661),
-                                object->sock_segment, &object->sock_position);
-            ComplexSockAngles(&object->sock_angles);
-        } else {
+        if (!(world->sock_sys != NULL &&
+              ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 || VehicleArea != 0))) {
             object->sock_segment = -1;
             object->field_0x661 = 0xff;
             if (object->oldpos != NULL) {
                 object->oldpos->location.segment = -1;
                 object->oldpos->location.sock = -1;
             }
+        } else {
+            ComplexSockPosition(world->sock_sys, &object->apiobj.position, static_cast<i8>(object->field_0x661),
+                                object->sock_segment, &object->sock_position);
+            ComplexSockAngles(&object->sock_angles);
         }
         if (object == Player[0]) {
             if (object->field_0x661 != 0xff)
@@ -8082,11 +8110,11 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         }
         UpdateCoinPacket(object->coinpacket, static_cast<u8>(object->apiobj.flags_low) >> 7,
                          static_cast<i8>(object->apiobj.field_0x27c));
-        if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 && object->apiobj.field_0x287 == 0 &&
-            object->field_0x7a5 != 0x2b && !(object->field_0x7a5 == 0x0f && object->field_0x7a3 == 1)) {
-            GizmoPickups_Collide(world, object, 1);
-        } else {
+        if (!((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 && object->apiobj.field_0x287 == 0 &&
+              object->field_0x7a5 != 0x2b && !(object->field_0x7a5 == 0x0f && object->field_0x7a3 == 1))) {
             ResetCoinPacket(object->coinpacket);
+        } else {
+            GizmoPickups_Collide(world, object, 1);
         }
         AddSurfaceRipples(object);
         if ((object->apiobj.character_data->model_flags & 0x2000) != 0 && object->apiobj.field_0x287 == 0 &&
@@ -8112,7 +8140,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
         if (world->rooms_visible_ptr[object->room_id] != 0 &&
             (object->apiobj.field_0x1f8 & character_flags) == character_flags) {
-            NUVEC offset;
+
             i32 yoda_proximity = TakeOverYodaSeekDistanceHack(object, dagobah_luke, &offset);
             f32 target = (object->field_0xe23 & 0x80) != 0 || yoda_proximity != 0 ? 1.0f : 0.0f;
             object->interaction_arrow_blend =
@@ -8124,7 +8152,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             if (object->interaction_arrow_blend > 0.0f) {
                 GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
                 i32 locator = data->ride_locator;
-                NUVEC position;
+
                 if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
                     position.x = object->joint_matrices[locator].m30;
                     position.y = object->joint_matrices[locator].m31;
@@ -8167,7 +8195,20 @@ void UpdateGameObjects(WORLDINFO_s *world) {
     CollideGameObjects(world);
     if (TimingBarSet == 2)
         TBCLOSEFN("Coll", 2);
-    if (do_player_tag != 0) {
+    if (do_player_tag == 0) {
+        if (player_tag_timer > 0.0f) {
+            player_tag_timer -= FRAMETIME;
+            if (player_tag_timer < 0.0f || player_tag_to == NULL || player_tag_from == NULL ||
+                (player_tag_to->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player_tag_to->apiobj.field_0x287 != 0 ||
+                (player_tag_to->tag_flags & 2) != 0 || (player_tag_from->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
+                player_tag_from->apiobj.field_0x287 != 0 || (player_tag_from->tag_flags & 2) != 0) {
+                player_tag_to = NULL;
+                player_tag_timer = 0.0f;
+                player_tag_from = NULL;
+                do_player_tag = 0;
+            }
+        }
+    } else {
         i32 result = 0;
         if (player_tag_to != NULL && player_tag_from != NULL && player_tag_to != player_tag_from &&
             (player_tag_to->apiobj.field_0x1f8 & 0x1001) == 0x1001 && player_tag_to->apiobj.field_0x287 == 0 &&
@@ -8183,17 +8224,6 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             }
         }
         if (result != 2) {
-            player_tag_to = NULL;
-            player_tag_timer = 0.0f;
-            player_tag_from = NULL;
-            do_player_tag = 0;
-        }
-    } else if (player_tag_timer > 0.0f) {
-        player_tag_timer -= FRAMETIME;
-        if (player_tag_timer < 0.0f || player_tag_to == NULL || player_tag_from == NULL ||
-            (player_tag_to->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player_tag_to->apiobj.field_0x287 != 0 ||
-            (player_tag_to->tag_flags & 2) != 0 || (player_tag_from->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
-            player_tag_from->apiobj.field_0x287 != 0 || (player_tag_from->tag_flags & 2) != 0) {
             player_tag_to = NULL;
             player_tag_timer = 0.0f;
             player_tag_from = NULL;
@@ -8332,23 +8362,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->ai.antinode_timer = 0.0f;
     InitPlayerAI(object);
 
-    if (spline == NULL) {
-        object->apiobj.position = *position;
-        object->apiobj.facing_angle = static_cast<u16>(angle);
-        object->apiobj.movement_facing_angle = static_cast<u16>(angle);
-        object->apiobj.field_0x276 = static_cast<u16>(angle);
-        if (group != NULL) {
-            AddToAIGroup(group, &object->apiobj);
-            NUVEC offset;
-            offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
-            if (object->ai.group_column & 1)
-                offset.x = -offset.x;
-            offset.y = 0.0f;
-            offset.z = -group->z_spacing * object->ai.group_member;
-            NuVecRotateY(&offset, &offset, angle);
-            NuVecAdd(&object->apiobj.position, &object->apiobj.position, &offset);
-        }
-    } else {
+    if (spline != NULL) {
         SPLINEPOS_s *spline_position = reinterpret_cast<SPLINEPOS_s *>(&object->movement_spline);
         InitSplinePosition(spline_position, spline, 0.0f, spline_mode);
         SPLINEPOSITION_RUNTIME_s *runtime = reinterpret_cast<SPLINEPOSITION_RUNTIME_s *>(spline_position);
@@ -8356,8 +8370,8 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         u16 yaw = 0;
         u16 pitch = 0;
         PointAlongSpline(runtime->spline, runtime->normalized_position, &spline_point, &yaw, &pitch, runtime->looping);
-        object->apiobj.facing_angle = yaw;
         object->apiobj.movement_facing_angle = yaw;
+        object->apiobj.facing_angle = yaw;
         object->apiobj.field_0x276 = yaw;
         object->apiobj.pitch_angle = static_cast<u16>(-pitch);
 
@@ -8372,6 +8386,22 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
             }
         }
         object->apiobj.position = spline_point;
+    } else {
+        object->apiobj.position = *position;
+        object->apiobj.movement_facing_angle = static_cast<u16>(angle);
+        object->apiobj.facing_angle = static_cast<u16>(angle);
+        object->apiobj.field_0x276 = static_cast<u16>(angle);
+        if (group != NULL) {
+            AddToAIGroup(group, &object->apiobj);
+            NUVEC offset;
+            offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
+            if (object->ai.group_column & 1)
+                offset.x = -offset.x;
+            offset.z = -group->z_spacing * object->ai.group_member;
+            offset.y = 0.0f;
+            NuVecRotateY(&offset, &offset, angle);
+            NuVecAdd(&object->apiobj.position, &object->apiobj.position, &offset);
+        }
     }
 
     ResetPlayerMoves(object);
@@ -8413,9 +8443,9 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     if (reset_restart != 0) {
         GAMECHARACTERDATA *config = (GAMECHARACTERDATA *)object->apiobj.character_data->field11_0x24;
         object->hitpoints = config->hitpoints;
+        object->field_0xe38 = 4;
         object->current_hp = config->hitpoints;
         object->field_0xe37 = config->field_0xf5;
-        object->field_0xe38 = 4;
     }
 
     object->apiobj.field_0x1f4 &= ~0x100u;
@@ -8452,8 +8482,8 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         if (object->ai.group_column == 0) {
             row->pos = object->apiobj.position;
             row->path_info = object->ai.path_info;
-            row->y_rot = object->apiobj.field_0x276;
             row->next_connection = NULL;
+            row->y_rot = object->apiobj.field_0x276;
             row->is_turning = 0;
         }
     }

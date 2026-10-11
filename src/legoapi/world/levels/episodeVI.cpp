@@ -404,6 +404,7 @@ void SarlaccPitB_Reset(WORLDINFO_s *world) {
 }
 
 void SarlaccPitB_Update(WORLDINFO_s *world) {
+
     static NUVEC lumppos;
     static f32 enginetimer;
     if (netclient == 0) {
@@ -422,8 +423,8 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
             ready = 1;
         }
 
-        i32 candidates[16];
         switch (sarlaccdisco.phase) {
+            i32 candidates[16];
             case 0:
                 sarlaccb_netpacket->disco_active = 0;
                 if (NuSpecialExistsFn(&LevSpecial[0]) && ready &&
@@ -438,12 +439,20 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                     for (i32 index = 0; index < sarlaccdisco.count; ++index)
                         if (sarlaccdisco.panel_state[index] == 0)
                             candidates[count++] = index;
-                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    if (count != 0) {
+                        sarlaccdisco.first_panel = candidates[NuRand(NULL) % count];
+                    } else {
+                        sarlaccdisco.first_panel = -1;
+                    }
                     count = 0;
                     for (i32 index = 0; index < sarlaccdisco.count; ++index)
                         if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
                             candidates[count++] = index;
-                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    if (count != 0) {
+                        sarlaccdisco.second_panel = candidates[NuRand(NULL) % count];
+                    } else {
+                        sarlaccdisco.second_panel = -1;
+                    }
                     if (sarlaccdisco.first_panel != -1 && sarlaccdisco.second_panel != -1) {
                         sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
                         sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
@@ -507,29 +516,7 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                         NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.second_panel]), 3);
                     sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.second_panel;
                 }
-                if (first_occupied && second_occupied) {
-                    sarlaccdisco.timer = 0.0f;
-                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
-                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
-                    i32 count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
-                        sarlaccdisco.phase = 2;
-                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                            sarlaccdisco.panel_state[index] = 4;
-                    } else {
-                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
-                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
-                    }
-                } else {
+                if (!(first_occupied && second_occupied)) {
                     sarlaccdisco.timer += FRAMETIME;
                     if (sarlaccdisco.timer > 2.5f) {
                         sarlaccdisco.timer = 0.0f;
@@ -559,6 +546,28 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                                 LevelLocator->position.z = help_position->z;
                             }
                         }
+                    }
+                } else {
+                    sarlaccdisco.timer = 0.0f;
+                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
+                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
+                    i32 count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
+                        sarlaccdisco.phase = 2;
+                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                            sarlaccdisco.panel_state[index] = 4;
+                    } else {
+                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
+                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
                     }
                 }
                 break;
@@ -703,6 +712,73 @@ void SarlaccPitC_Init(WORLDINFO_s *) {
     target_shield[1] = 0;
 }
 
+void SarlaccPitC_Update(WORLDINFO_s *world) {
+    if (LevGameObject[0] != NULL && gizmoblowuptargetcount == 4) {
+        if (LevGameObject[0]->field_0xcc0 != NULL) {
+            world->field_50d0 = 4;
+            world->blowup_target_candidates = gizmoblowuptarget;
+            if (taken_over == 0)
+                taken_over = 1;
+        } else if (taken_over != 0) {
+            taken_over = 0;
+            world->field_50d0 = 0;
+            world->blowup_target_candidates = NULL;
+        }
+
+        if (power == 0) {
+            if ((LevGameObject[0]->field_0xef8 & 8) != 0)
+                LevGameObject[0]->field_0xef8 &= ~8;
+        } else if (static_cast<i8>(LevGameObject[0]->quick_shoot_bolt_id) >= 0) {
+            --power;
+            NuSpecialSetVisibility(&LevHSpecial[power], 1);
+            NuSpecialSetVisibility(&LevHSpecial[power + 8], 0);
+            GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(LevGizmo[0]->object);
+            if (panel->state)
+                panel->state = 0;
+        }
+
+        if (recharging == 0) {
+            if (static_cast<u32>(power) <= 7 && LevGizmo[0] != NULL &&
+                GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 0, 0) != 0) {
+                recharging = 1;
+                rechargetimer = 0.0f;
+            }
+        } else {
+            rechargetimer -= FRAMETIME;
+            if (rechargetimer <= 0.0f) {
+                LevGameObject[0]->field_0xef8 |= 8;
+                NuSpecialSetVisibility(&LevHSpecial[power], 0);
+                NuSpecialSetVisibility(&LevHSpecial[power + 8], 1);
+                PlaySfx("imp_c3po_magnet_drop", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
+                ++power;
+                if (power == 8) {
+                    recharging = 0;
+                    PlaySfx("env_magnet_on", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
+                } else {
+                    rechargetimer = 0.25f;
+                }
+            }
+        }
+    }
+
+    if (target_shield[0] == 0) {
+        if (gizmoblowuptarget[0] != NULL && (gizmoblowuptarget[0]->visibility_flags & 0x40) == 0) {
+            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[16]));
+            target_shield[0] = 1;
+        } else {
+            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[16]));
+        }
+    }
+    if (target_shield[1] == 0) {
+        if (gizmoblowuptarget[1] != NULL && (gizmoblowuptarget[1]->visibility_flags & 0x40) == 0) {
+            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[17]));
+            target_shield[1] = 1;
+        } else {
+            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[17]));
+        }
+    }
+}
+
 void SarlaccPitC_Reset(WORLDINFO_s *world) {
     char name[32];
     taken_over = 0;
@@ -784,73 +860,6 @@ void SarlaccPitC_Reset(WORLDINFO_s *world) {
 #undef RESET_SHOT
 }
 
-void SarlaccPitC_Update(WORLDINFO_s *world) {
-    if (LevGameObject[0] != NULL && gizmoblowuptargetcount == 4) {
-        if (LevGameObject[0]->field_0xcc0 != NULL) {
-            world->field_50d0 = 4;
-            world->blowup_target_candidates = gizmoblowuptarget;
-            if (taken_over == 0)
-                taken_over = 1;
-        } else if (taken_over != 0) {
-            taken_over = 0;
-            world->field_50d0 = 0;
-            world->blowup_target_candidates = NULL;
-        }
-
-        if (power == 0) {
-            if ((LevGameObject[0]->field_0xef8 & 8) != 0)
-                LevGameObject[0]->field_0xef8 &= ~8;
-        } else if (static_cast<i8>(LevGameObject[0]->quick_shoot_bolt_id) >= 0) {
-            --power;
-            NuSpecialSetVisibility(&LevHSpecial[power], 1);
-            NuSpecialSetVisibility(&LevHSpecial[power + 8], 0);
-            GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(LevGizmo[0]->object);
-            if (panel->state)
-                panel->state = 0;
-        }
-
-        if (recharging == 0) {
-            if (static_cast<u32>(power) <= 7 && LevGizmo[0] != NULL &&
-                GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 0, 0) != 0) {
-                recharging = 1;
-                rechargetimer = 0.0f;
-            }
-        } else {
-            rechargetimer -= FRAMETIME;
-            if (rechargetimer <= 0.0f) {
-                LevGameObject[0]->field_0xef8 |= 8;
-                NuSpecialSetVisibility(&LevHSpecial[power], 0);
-                NuSpecialSetVisibility(&LevHSpecial[power + 8], 1);
-                PlaySfx("imp_c3po_magnet_drop", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
-                ++power;
-                if (power == 8) {
-                    recharging = 0;
-                    PlaySfx("env_magnet_on", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
-                } else {
-                    rechargetimer = 0.25f;
-                }
-            }
-        }
-    }
-
-    if (target_shield[0] == 0) {
-        if (gizmoblowuptarget[0] != NULL && (gizmoblowuptarget[0]->visibility_flags & 0x40) == 0) {
-            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[16]));
-            target_shield[0] = 1;
-        } else {
-            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[16]));
-        }
-    }
-    if (target_shield[1] == 0) {
-        if (gizmoblowuptarget[1] != NULL && (gizmoblowuptarget[1]->visibility_flags & 0x40) == 0) {
-            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[17]));
-            target_shield[1] = 1;
-        } else {
-            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[17]));
-        }
-    }
-}
-
 i32 SarlaccPitDiscoActive(WORLDINFO_s *world) {
     return world->current_level == SARLACCPITB_LDATA && sarlaccb_netpacket->disco_active != 0;
 }
@@ -929,28 +938,30 @@ void LegoCity_Update(WORLDINFO_s *world) {
     u8 onTownCar = 0;
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object = Player[index];
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
-            object->field_0xcc0 != NULL && object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT) {
-            if (object->id == id_TRACTOR) {
-                onTractor = 0xff;
-                changedTractor = static_cast<u8>(~previousTractor);
-            } else if (object->id == id_TAUNTAUN) {
-                onTaunTaun = 0xff;
-                changedTaunTaun = static_cast<u8>(~previousTaunTaun);
-            } else if (object->id == id_MOONCAR) {
-                onMoonCar = 0xff;
-                changedMoonCar = static_cast<u8>(~previousMoonCar);
-            } else if (object->id == id_TOWNCAR) {
-                onTownCar = 0xff;
-                changedTownCar = static_cast<u8>(~previousTownCar);
-            }
+        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
+              object->field_0xcc0 != NULL &&
+              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
+            continue;
+        }
+        if (object->id == id_TRACTOR) {
+            onTractor = 0xff;
+            changedTractor = static_cast<u8>(~previousTractor);
+        } else if (object->id == id_TAUNTAUN) {
+            onTaunTaun = 0xff;
+            changedTaunTaun = static_cast<u8>(~previousTaunTaun);
+        } else if (object->id == id_MOONCAR) {
+            onMoonCar = 0xff;
+            changedMoonCar = static_cast<u8>(~previousMoonCar);
+        } else if (object->id == id_TOWNCAR) {
+            onTownCar = 0xff;
+            changedTownCar = static_cast<u8>(~previousTownCar);
         }
     }
     u8 changed = changedTractor | changedTaunTaun | changedMoonCar | changedTownCar;
     prevOnTractor = onTractor;
     prevOnTaunTaun = onTaunTaun;
-    prevOnMoonCar = onMoonCar;
     prevOnTownCar = onTownCar;
+    prevOnMoonCar = onMoonCar;
     if (changed == 0) {
         return;
     }
@@ -1027,7 +1038,8 @@ void NewTown_Reset(WORLDINFO_s *world) {
         return;
     if (world->pickup_sys->pickup_count <= 0)
         return;
-    for (i32 i = 0; pickup != NULL && i < world->pickup_sys->pickup_count; ++i, ++pickup) {
+    auto world_pickup_sys = world->pickup_sys;
+    for (i32 i = 0; pickup != NULL && i < world_pickup_sys->pickup_count; ++i, ++pickup) {
         if (!(pickup->runtime_flags & 8)) {
             switch (pickup->type_id) {
                 case 2:
@@ -1060,20 +1072,22 @@ void NewTown_Update(WORLDINFO_s *world) {
     u8 onLifeBoat = 0;
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object = Player[index];
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
-            object->field_0xcc0 != NULL && object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT) {
-            if (object->id == id_TAUNTAUN) {
-                onTaunTaun = 0xff;
-            } else if (object->id == id_FIRETRUCK) {
-                onFireTruck = 0xff;
-            } else if (object->id == id_LIFEBOAT) {
-                onLifeBoat = 0xff;
-            }
+        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
+              object->field_0xcc0 != NULL &&
+              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
+            continue;
+        }
+        if (object->id == id_TAUNTAUN) {
+            onTaunTaun = 0xff;
+        } else if (object->id == id_FIRETRUCK) {
+            onFireTruck = 0xff;
+        } else if (object->id == id_LIFEBOAT) {
+            onLifeBoat = 0xff;
         }
     }
     u8 changed = (onTaunTaun ^ previousTaunTaun) | (onFireTruck ^ previousFireTruck) | (onLifeBoat ^ previousLifeBoat);
-    prevOnTaunTaun = onTaunTaun;
     prevOnFireTruck = onFireTruck;
+    prevOnTaunTaun = onTaunTaun;
     prevOnLifeBoat = onLifeBoat;
     if (changed == 0) {
         return;
@@ -1233,12 +1247,12 @@ void DeathStar2BattleD_Update(WORLDINFO_s *) {
         rtlDynamicSetRadii((*player)->dynamic_light_id, radius, radius + 5.0f);
         qrand();
         colour.x = 0.0f;
-        if (qrand() > 0x7fff) {
+        if (!(qrand() > 0x7fff)) {
+            colour.z = 2.0f;
+            colour.y = 2.0f;
+        } else {
             colour.y = 0.25f;
             colour.z = 0.25f;
-        } else {
-            colour.y = 2.0f;
-            colour.z = 2.0f;
         }
         rtlDynamicSetColours((*player)->dynamic_light_id, &colour, NULL);
         position.x = (*player)->apiobj.collision_position.x + delta.x * 0.5f;
@@ -1550,12 +1564,13 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
         end.x += 0.2f - NuRandFloat() * 0.4f;
         end.z += 0.2f - NuRandFloat() * 0.4f;
         for (i32 i = 0; i < 2; ++i) {
-            if (hands[i].y != 1000000000.0f) {
-                f32 distance = NuVecDist(&end, &hands[i], &delta);
-                NuLgtLaser(lightning_type, lightning_sizew[0], lightning_sizel[0], lightning_sizewab[0], &hands[i],
-                           &delta, lightning_col[0], lightning_endw[0], distance);
-                PlaySfx("ForceLightningLp", &locator->position);
+            if (hands[i].y == 1000000000.0f) {
+                continue;
             }
+            f32 distance = NuVecDist(&end, &hands[i], &delta);
+            NuLgtLaser(lightning_type, lightning_sizew[0], lightning_sizel[0], lightning_sizewab[0], &hands[i], &delta,
+                       lightning_col[0], lightning_endw[0], distance);
+            PlaySfx("ForceLightningLp", &locator->position);
         }
         LevGameObject[0]->ai.movement_look_target = &locator->position;
         packet = emperorfighta_netpacket;
@@ -1568,6 +1583,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 continue;
             NUVEC *floor_position = NuSpecialGetDrawPos(&hspecial_efloor[floor]);
             floor_active = true;
+            auto floor_position_z = floor_position->z;
             for (i32 i = 0; i < 2; ++i) {
                 GameObject_s *player = Player[i];
                 if (player->apiobj.field_0x287 || !(player->field_0x101c <= 0.0f) ||
@@ -1581,7 +1597,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 f32 dx = player->apiobj.position.x - floor_position->x;
                 if (!(dx < 0.35f && dx > -0.35f))
                     continue;
-                f32 dz = player->apiobj.position.z - floor_position->z;
+                f32 dz = player->apiobj.position.z - floor_position_z;
                 if (!(dz < 0.35f && dz > -0.35f))
                     continue;
                 player->character_context = 0x42;
@@ -1608,10 +1624,10 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 floor_end.z = Player[i]->apiobj.collision_position.z;
                 random = NuRandFloat();
                 floor_end.z = (0.2f - (random + random) * 0.2f) + floor_end.z;
-                if (floor_end.z > floor_position->z + 0.35f)
-                    floor_end.z = floor_position->z + 0.35f;
-                else if (floor_position->z - 0.35f > floor_end.z)
-                    floor_end.z = floor_position->z - 0.35f;
+                if (floor_end.z > floor_position_z + 0.35f)
+                    floor_end.z = floor_position_z + 0.35f;
+                else if (floor_position_z - 0.35f > floor_end.z)
+                    floor_end.z = floor_position_z - 0.35f;
                 player = Player[i];
                 player_end.x = player->apiobj.collision_position.x;
                 f32 height = player->apiobj.upper_position.y - player->apiobj.lower_position.y;

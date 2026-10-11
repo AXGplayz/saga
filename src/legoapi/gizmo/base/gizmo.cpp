@@ -288,13 +288,14 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
             gizmo->buffer = pvVar3;
             if (pvVar3 != NULL && gizmotypes->unknown > 0) {
                 i = 0;
+                auto gizmo_buffer = gizmo->buffer;
                 while (1) {
                     void *pvVar5 = gizmo->fns.allocate_progress_data_fn(buffer, buffer_end);
                     pvVar3[i].void_ptr = pvVar5;
                     i = i + 1;
                     if (gizmotypes->unknown <= i)
                         break;
-                    pvVar3 = gizmo->buffer;
+                    pvVar3 = gizmo_buffer;
                 }
             }
         }
@@ -380,24 +381,6 @@ i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
     return gizmotypes->types[gizmo->type_id].fns.get_visibility_fn(gizmo);
 }
 
-void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count) {
-        return;
-    }
-
-    GIZMOTYPE *type = &gizmotypes->types[gizmo->type_id];
-    if (type->fns.activate_fn == NULL) {
-        return;
-    }
-
-    if (unknown1 != 0 && type->fns.set_visibility_fn != NULL) {
-        type->fns.set_visibility_fn(gizmo, 1);
-    }
-
-    type->fns.activate_fn(gizmo, unknown1);
-    LOG_INFO("gizmo activate type=%s gizmo=%p active=%d", type->name, (void *)gizmo, unknown1);
-}
-
 char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index) {
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
         return NULL;
@@ -420,6 +403,24 @@ i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2
     }
 
     return gizmotypes->types[gizmo->type_id].fns.get_output_fn(gizmo, unknown1, unknown2);
+}
+
+void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count) {
+        return;
+    }
+
+    GIZMOTYPE *type = &gizmotypes->types[gizmo->type_id];
+    if (type->fns.activate_fn == NULL) {
+        return;
+    }
+
+    if (unknown1 != 0 && type->fns.set_visibility_fn != NULL) {
+        type->fns.set_visibility_fn(gizmo, 1);
+    }
+
+    type->fns.activate_fn(gizmo, unknown1);
+    LOG_INFO("gizmo activate type=%s gizmo=%p active=%d", type->name, (void *)gizmo, unknown1);
 }
 
 void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) {
@@ -700,10 +701,12 @@ GizPanelObjectInterface::~GizPanelObjectInterface() {
 
 void TeleportObjectInterface::GetPos(VuVec &position, i32 direction) const {
     NUVEC *point;
-    if (direction != -1) {
-        point = teleport.path->pts;
-    } else if (index > 0 && (teleport.flags & 1) == 0) {
-        point = &teleport.path->pts[teleport.path->length - 1];
+    if (direction == -1) {
+        if (index > 0 && (teleport.flags & 1) == 0) {
+            point = &teleport.path->pts[teleport.path->length - 1];
+        } else {
+            point = teleport.path->pts;
+        }
     } else {
         point = teleport.path->pts;
     }
@@ -976,42 +979,6 @@ void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {
     }
 }
 
-GIZMO *GizmoFindByData(GIZMOSYS *gizmo_sys, i32 type_id, void *data) {
-    if (gizmotypes == NULL || data == NULL || gizmo_sys == NULL) {
-        return NULL;
-    }
-
-    if (type_id >= 0 && type_id <= gizmotypes->count) {
-        GIZMOTYPE &type = gizmotypes->types[type_id];
-        GIZMOSET &set = gizmo_sys->sets[type_id];
-        if (type.fns.get_gizmo_name_fn == NULL) {
-            return NULL;
-        }
-
-        GIZMO *gizmo = set.gizmos;
-        for (i32 i = 0; i < set.count; ++i, ++gizmo) {
-            if (gizmo->object == data) {
-                return gizmo;
-            }
-        }
-        return NULL;
-    }
-
-    GIZMOTYPE *type = gizmotypes->types;
-    GIZMOSET *set = gizmo_sys->sets;
-    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
-        if (type->fns.get_gizmo_name_fn != NULL) {
-            GIZMO *gizmo = set->gizmos;
-            for (i32 i = 0; i < set->count; ++i, ++gizmo) {
-                if (gizmo->object == data) {
-                    return gizmo;
-                }
-            }
-        }
-    }
-    return NULL;
-}
-
 GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
     if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL) {
         return NULL;
@@ -1048,6 +1015,42 @@ GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
         }
     }
 
+    return NULL;
+}
+
+GIZMO *GizmoFindByData(GIZMOSYS *gizmo_sys, i32 type_id, void *data) {
+    if (gizmotypes == NULL || data == NULL || gizmo_sys == NULL) {
+        return NULL;
+    }
+
+    if (type_id >= 0 && type_id <= gizmotypes->count) {
+        GIZMOTYPE &type = gizmotypes->types[type_id];
+        GIZMOSET &set = gizmo_sys->sets[type_id];
+        if (type.fns.get_gizmo_name_fn == NULL) {
+            return NULL;
+        }
+
+        GIZMO *gizmo = set.gizmos;
+        for (i32 i = 0; i < set.count; ++i, ++gizmo) {
+            if (gizmo->object == data) {
+                return gizmo;
+            }
+        }
+        return NULL;
+    }
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+        if (type->fns.get_gizmo_name_fn != NULL) {
+            GIZMO *gizmo = set->gizmos;
+            for (i32 i = 0; i < set->count; ++i, ++gizmo) {
+                if (gizmo->object == data) {
+                    return gizmo;
+                }
+            }
+        }
+    }
     return NULL;
 }
 
@@ -1189,26 +1192,32 @@ void UpdatePaintPuzzle(WORLDINFO_s *world) {
         }
         case 3: {
             GIZOBSTACLE_s *first = static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[0]]->object);
-            if (first->anim_set->state == GAMEANIMSET_STATE_AT_END &&
-                static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[1]]->object)->anim_set->state ==
+            if (!(first->anim_set->state == GAMEANIMSET_STATE_AT_END &&
+                  static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[1]]->object)->anim_set->state ==
+                      GAMEANIMSET_STATE_AT_END)) {
+                if (static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object)->anim_set->state ==
                     GAMEANIMSET_STATE_AT_END) {
+                    if (paintmixed == painttarget) {
+                        ++painttry;
+                        if (painttry != 3) {
+                            PAINTPUZZLESTAGE = 0;
+                        } else {
+                            PAINTPUZZLESTAGE = 4;
+                        }
+                    } else {
+                        randpaints[0] = qrand() / 21846;
+                        do {
+                            randpaints[1] = qrand() / 21846;
+                        } while (randpaints[1] == randpaints[0]);
+                        randpaints[2] = 3 - randpaints[0] - randpaints[1];
+                        PAINTPUZZLESTAGE = 0;
+                        painttry = 0;
+                    }
+                }
+            } else {
                 GizObstacle_PlayBackwards(first);
                 GizObstacle_PlayBackwards(static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[1]]->object));
                 GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object));
-            } else if (static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object)->anim_set->state ==
-                       GAMEANIMSET_STATE_AT_END) {
-                if (paintmixed == painttarget) {
-                    ++painttry;
-                    PAINTPUZZLESTAGE = painttry == 3 ? 4 : 0;
-                } else {
-                    randpaints[0] = qrand() / 21846;
-                    do {
-                        randpaints[1] = qrand() / 21846;
-                    } while (randpaints[1] == randpaints[0]);
-                    randpaints[2] = 3 - randpaints[0] - randpaints[1];
-                    PAINTPUZZLESTAGE = 0;
-                    painttry = 0;
-                }
             }
             break;
         }
@@ -1252,8 +1261,8 @@ i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
         return 1;
     }
 
-    GIZMOSET *set = gizmo_sys->sets;
     GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
     for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
         if (type->fns.get_gizmo_name_fn == NULL) {
             continue;
@@ -1271,6 +1280,8 @@ i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
 }
 
 i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
+    nuhspecial_s special;
+    GIZMO gizmo;
     if (gizmotypes == NULL) {
         return 0;
     }
@@ -1338,7 +1349,7 @@ i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
         if (length != 0) {
             EdFileWrite(special_type->prefix, length);
         }
-        GIZMO gizmo;
+
         gizmo.type_id = static_cast<u8>(gizspecial_gizmotype_id);
         i32 outputs = GizmoGetNumOutputs(gizmo_sys, &gizmo);
         EdFileWriteChar(static_cast<char>(outputs));
@@ -1359,7 +1370,7 @@ i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
     i32 special_count = NuGScnNumSpecials(scene);
     EdFileWriteInt(special_count);
     for (i32 special_index = 0; special_index < special_count; ++special_index) {
-        nuhspecial_s special;
+
         NuGScnGetSpecial(&special, scene, special_index);
         char *name = NuSpecialGetName(&special);
         i32 length = strlen(name) + 1;
@@ -1488,15 +1499,15 @@ i32 GizmoSys_SetBestBoltTarget(GIZMOSYS_s *system, void *, GameObject_s *object,
     if (best != NULL) {
         object->attack_target_position = best_position;
         object->attack_target_velocity = best_velocity;
-        object->field_0xe21 |= 8;
         object->attack_gizmo_target = VehicleArea != 0 ? NULL : best;
+        object->field_0xe21 |= 8;
         return 1;
     }
     if (previous != NULL) {
         object->attack_target_position = previous_position;
         object->attack_target_velocity = previous_velocity;
-        object->field_0xe21 |= 8;
         object->attack_gizmo_target = VehicleArea != 0 ? NULL : previous;
+        object->field_0xe21 |= 8;
         return 1;
     }
     return 0;

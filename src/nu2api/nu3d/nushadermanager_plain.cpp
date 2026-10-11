@@ -536,16 +536,6 @@ extern "C" void NuShaderManagerSetCurrentShader(NUSHADEROBJECT *slot) {
     static_cast<ShaderManagerOpenGL *>(g_shaderManager)->bound_slot = slot;
 }
 
-extern "C" void NuShaderManagerDestroyShaders(void) {
-    ShaderManagerOpenGL *manager = static_cast<ShaderManagerOpenGL *>(g_shaderManager);
-    for (i32 i = 0; i < nu2api::kSlotCount; ++i) {
-        NUSHADEROBJECT *slot = &manager->slots[i];
-        if (slot->glsl.base.field1 >= 0) {
-            NuShaderObjectUnInit(slot);
-        }
-    }
-}
-
 extern "C" void NuShaderManagerDestroy(void) {
     ShaderManagerOpenGL *manager = static_cast<ShaderManagerOpenGL *>(g_shaderManager);
     for (i32 i = 0; i < nu2api::kSlotCount; ++i) {
@@ -555,6 +545,16 @@ extern "C" void NuShaderManagerDestroy(void) {
         }
     }
     g_shaderManager = nullptr;
+}
+
+extern "C" void NuShaderManagerDestroyShaders(void) {
+    ShaderManagerOpenGL *manager = static_cast<ShaderManagerOpenGL *>(g_shaderManager);
+    for (i32 i = 0; i < nu2api::kSlotCount; ++i) {
+        NUSHADEROBJECT *slot = &manager->slots[i];
+        if (slot->glsl.base.field1 >= 0) {
+            NuShaderObjectUnInit(slot);
+        }
+    }
 }
 
 extern "C" void NuShaderManagerSetShaderSaveFolder(const char *folder) {
@@ -773,8 +773,11 @@ namespace nu2api {
         if (filter->variant == 0) {
             const u8 baseFlag = descBytes[0x1b8];
             block[0x15] = ((baseFlag & 1) || (baseFlag & 2)) ? descBytes[0xa9] : 0;
-            block[0x16] =
-                filter->texture_id_threshold < *reinterpret_cast<const i32 *>(descBytes + 0x48) ? descBytes[0xaa] : 0;
+            if (filter->texture_id_threshold < *reinterpret_cast<const i32 *>(descBytes + 0x48)) {
+                block[0x16] = descBytes[0xaa];
+            } else {
+                block[0x16] = 0;
+            }
         }
 
         // Diffuse-map presence + ids
@@ -807,7 +810,7 @@ namespace nu2api {
             const u8 baseFlag = descBytes[0x1b8];
 
             u8 v24 = 0;
-            if ((baseFlag & 1) == 0 || filter->texture_id_threshold >= thresholdB) {
+            if (!((baseFlag & 1) != 0 && !(filter->texture_id_threshold >= thresholdB))) {
                 if ((baseFlag & 2) != 0) {
                     v24 = filter->texture_id_threshold < thresholdB;
                 }
@@ -817,7 +820,11 @@ namespace nu2api {
             block[0x24] = v24;
 
             const u8 b2 = descBytes[0x1ba];
-            block[0x25] = (b2 & 0x10) ? static_cast<u8>((filter->texture_id_threshold < thresholdA) + 1) : 0;
+            if (!(b2 & 0x10)) {
+                block[0x25] = 0;
+            } else {
+                block[0x25] = static_cast<u8>((filter->texture_id_threshold < thresholdA) + 1);
+            }
         }
 
         block[0x26] = *reinterpret_cast<const i32 *>(descBytes + 0x1e4) > 0;
@@ -829,10 +836,10 @@ namespace nu2api {
         const u8 vtxType = mtlBytes[0x40] & 0xf;
 
         bool texcoordIsLong = false;
-        if (unitsLow == 3 || unitsLow == 5) {
-            texcoordIsLong = true;
-        } else {
+        if (unitsLow != 3 && unitsLow != 5) {
             texcoordIsLong = (vtxType == 10) || ((unitsLow & 3) == 2);
+        } else {
+            texcoordIsLong = true;
         }
         const u8 attribC0 = mtlBytes[0x41] & 0xc0;
         if (attribC0 == 0 || attribC0 == 0x80 || vtxType == 0 || vtxType == 10) {
@@ -1142,8 +1149,8 @@ void ShaderManagerOpenGL::adaptShaderMaterialForShaderVersion(NUSHADERMTLDESC *d
 
     if ((original_vtx_flags3 & 4) != 0) {
         mobile_flags3 |= 0x80;
-        desc->flags |= 0x200000;
         desc->flagsbits_1bb = mobile_flags3;
+        desc->flags |= 0x200000;
     }
 
     const u8 original_flags1 = desc->byte4;
@@ -1173,13 +1180,15 @@ void ShaderManagerOpenGL::adaptShaderMaterialForShaderVersion(NUSHADERMTLDESC *d
     desc->flags = original_shader_flags & 0xffff9ffc;
     desc->byte4 = mobile_flags1 & 0x9f;
 
-    if ((original_shader_flags & 0x10000) != 0) {
+    if ((original_shader_flags & 0x10000) == 0) {
+        if ((original_shader_flags & 0x20) != 0) {
+            mobile_flags0 &= 0xf4;
+            desc->flags = original_shader_flags & 0xffff9ff4;
+            desc->flagsbits_1b8 = mobile_flags0;
+        }
+    } else {
         mobile_flags0 &= 0xdc;
         desc->flags = original_shader_flags & 0xffff9fdc;
-        desc->flagsbits_1b8 = mobile_flags0;
-    } else if ((original_shader_flags & 0x20) != 0) {
-        mobile_flags0 &= 0xf4;
-        desc->flags = original_shader_flags & 0xffff9ff4;
         desc->flagsbits_1b8 = mobile_flags0;
     }
 
@@ -1188,19 +1197,18 @@ void ShaderManagerOpenGL::adaptShaderMaterialForShaderVersion(NUSHADERMTLDESC *d
     }
     desc->byte4 = mobile_flags1 & 0x9b;
 
-    const u32 filtered_shader_flags = desc->flags;
     desc->flagsbits_1b8 = mobile_flags0 & 0xfb;
     const u8 mobile_flags2 = original_flags2 & 0x48;
     desc->flagsbits_1ba = mobile_flags2;
-    desc->flags = filtered_shader_flags & 0xf916fffb;
     desc->flagsbits_1bb = mobile_flags3 & 0x27;
+    desc->flags = desc->flags & 0xf916fffb;
 
     if (::RemoveNormalMaps != 0 && ::RemoveDirectionalMaps != 0) {
         vtx_desc[3] = original_vtx_flags3 & 0xfc;
         desc->normal_map_tid = 0;
         vtx_desc[0] &= 0x0f;
         *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(desc) + 0x38) = 0;
-        desc->flags = filtered_shader_flags & 0xf916fffa;
+        desc->flags = desc->flags & 0xf916fffa;
         if ((mobile_flags3 & 4) != 0) {
             reinterpret_cast<u8 *>(&desc->field_1bc)[0] |= 8;
             desc->flagsbits_1ba = mobile_flags2 | 4;

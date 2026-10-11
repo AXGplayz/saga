@@ -146,9 +146,9 @@ void SuperCarry_GetObjectPos(GameObject_s *object, NUVEC *position, NUVEC *secon
         if (second != -1 && object->apiobj.character_model->points_of_interest[second] != NULL) {
             *position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[first], 3);
             NUVEC *other = NUMTX_GET_ROW_VEC(&object->joint_matrices[second], 3);
+            position->z += (other->z - position->z) * 0.5f;
             position->x += (other->x - position->x) * 0.5f;
             position->y += (other->y - position->y) * 0.5f;
-            position->z += (other->z - position->z) * 0.5f;
         }
     }
     if (SuperCarry_AlignObject != 0) {
@@ -164,6 +164,7 @@ void SuperCarry_GetObjectPos(GameObject_s *object, NUVEC *position, NUVEC *secon
 
 // Original 0x4fb1e0, 2147 bytes.
 void SuperCarry_Throw(GameObject_s *object, i32 mode) {
+    NUVEC offset;
     PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
     const i32 first = config->hand_joints[0];
     if (first == -1 || object->apiobj.character_model->points_of_interest[first] == NULL)
@@ -206,7 +207,7 @@ void SuperCarry_Throw(GameObject_s *object, i32 mode) {
         NuMtxMulR(&matrix, &basis, &matrix);
         *NUMTX_GET_ROW_VEC(&matrix, 3) = position;
     } else if (SuperCarry_AlignObject != 0) {
-        NUVEC offset;
+
         NuVecRotateY(&offset, &object->carried_object_basis[0], object->apiobj.field_0x276);
         NuMtxTranslate(&matrix, &offset);
     }
@@ -429,11 +430,11 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
         case 1: {
             bool event = false;
             if ((object->context_flags & 0x40) == 0) {
-                if (frame != NULL) {
+                if (frame == NULL) {
+                    event = SuperCarry_PutDownDrop != 0;
+                } else {
                     f32 marker = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
                     event = marker >= 1.0f && *frame >= marker;
-                } else {
-                    event = SuperCarry_PutDownDrop != 0;
                 }
             }
             object->context_animation_timer -= FRAMETIME;
@@ -737,10 +738,10 @@ i32 ObjLandReady(GameObject_s *object) {
     if (object == NULL) {
         return 0;
     }
-    const i32 context = object->character_context;
-    if ((CInfo[context].flags & 0x1004) != 0 &&
-        (LEGOCONTEXT_LAND_COMBATROLL == -1 || LEGOCONTEXT_LAND_COMBATROLL != context || object->field_0x7a3 != 0)) {
-        if (LEGOCONTEXT_WALLSHUFFLE != -1 && LEGOCONTEXT_WALLSHUFFLE == context) {
+    if ((CInfo[object->character_context].flags & 0x1004) != 0 &&
+        (LEGOCONTEXT_LAND_COMBATROLL == -1 || LEGOCONTEXT_LAND_COMBATROLL != object->character_context ||
+         object->field_0x7a3 != 0)) {
+        if (LEGOCONTEXT_WALLSHUFFLE != -1 && LEGOCONTEXT_WALLSHUFFLE == object->character_context) {
             return 0;
         }
         return 1;
@@ -791,7 +792,6 @@ i32 MovingBackwards(GameObject_s *object) {
         return 0;
     }
 
-    const u16 camera_yaw = GameCam->input_yaw;
-    const i32 difference = RotDiff(static_cast<u16>(pad->input_angle + camera_yaw), object->apiobj.field_0x276);
+    const i32 difference = RotDiff(static_cast<u16>(pad->input_angle + GameCam->input_yaw), object->apiobj.field_0x276);
     return static_cast<u32>(difference + 0x4000) > 0x8000;
 }

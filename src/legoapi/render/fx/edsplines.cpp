@@ -41,8 +41,8 @@ extern "C" {
 f32 BezierLineLength(VuVec &, VuVec &, VuVec &, VuVec &);
 
 i32 BezierLinePos(VuVec &result, VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control, f32 distance) {
-    f32 step = 0.25f;
     f32 t = 0.5f;
+    f32 step = 0.25f;
     for (i32 count = 256; count != 0; --count) {
         f32 complement = 1.0f - t;
         VuVec middle{second_control.x * complement + first_control.x * t,
@@ -87,10 +87,10 @@ void BezierLineEval(VuVec &result, VuVec &start, VuVec &first_control, VuVec &en
     const f32 first_weight = (along * 3.0f) * complement_squared;
     const f32 second_weight = (3.0f * squared) * complement;
     const f32 end_weight = along * squared;
-    const f32 y = end.y * end_weight +
-                  (second_control.y * second_weight + (first_control.y * first_weight + start.y * start_weight));
     const f32 z = end.z * end_weight +
                   ((first_control.z * first_weight + start.z * start_weight) + second_control.z * second_weight);
+    const f32 y = end.y * end_weight +
+                  (second_control.y * second_weight + (first_control.y * first_weight + start.y * start_weight));
     const f32 x = end_weight * end.x +
                   (second_weight * second_control.x + (first_weight * first_control.x + start_weight * start.x));
     result.w = 0.0f;
@@ -164,11 +164,11 @@ void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
                  ((before.y * 2.0f - current->y * 5.0f + next->y * 4.0f - after.y) * squared +
                   (current->y * 2.0f + (next->y - before.y) * fraction))) *
                 0.5f;
+    result->w = current->w + (next->w - current->w) * fraction;
     result->z = (((current->z - next->z) * 3.0f - before.z + after.z) * cubed +
                  ((before.z * 2.0f - current->z * 5.0f + next->z * 4.0f - after.z) * squared +
                   (current->z * 2.0f + (next->z - before.z) * fraction))) *
                 0.5f;
-    result->w = current->w + (next->w - current->w) * fraction;
 }
 
 f32 BezierLineLength(VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control) {
@@ -241,49 +241,6 @@ static void SplinePointAngles(NUGSPLINE *spline, i32 index, i32 looping, u16 *pi
         *pitch = NuAtan2D(direction.y, NuFsqrt(direction.x * direction.x + direction.z * direction.z));
     if (angle != NULL)
         *angle = NuAtan2D(direction.x, direction.z);
-}
-
-void PointAlongSpline(NUGSPLINE *spline, f32 along, NUVEC *position, u16 *angle, u16 *pitch, i32 looping) {
-    if (angle != NULL)
-        *angle = 0;
-    if (pitch != NULL)
-        *pitch = 0;
-    if (spline == NULL)
-        return;
-    if (along > 1.0f)
-        along = 1.0f;
-    else if (along < 0.0f)
-        along = 0.0f;
-    u32 extent = (u32)(looping ? spline->length : spline->length - 1) << 16;
-    u32 fixed = (i32)((f32)extent * along);
-    i32 index = fixed >> 16;
-    NUVEC *current = &spline->pts[index];
-    *position = *current;
-    if (pitch != NULL || angle != NULL)
-        SplinePointAngles(spline, index, looping, pitch, angle);
-    index++;
-    if (index >= spline->length) {
-        if (!looping)
-            return;
-        index = 0;
-    }
-    fixed &= 0xffff;
-    if (fixed == 0)
-        return;
-    f32 fraction = fixed * (1.0f / 65536.0f);
-    NUVEC *next = &spline->pts[index];
-    position->x += (next->x - current->x) * fraction;
-    position->y += (next->y - current->y) * fraction;
-    position->z += (next->z - current->z) * fraction;
-    if (angle != NULL || pitch != NULL) {
-        u16 next_angle, next_pitch;
-        SplinePointAngles(spline, index, looping, pitch != NULL ? &next_pitch : NULL,
-                          angle != NULL ? &next_angle : NULL);
-        if (angle != NULL)
-            *angle += (i32)(RotDiff(*angle, next_angle) * fraction);
-        if (pitch != NULL)
-            *pitch += (i32)(RotDiff(*pitch, next_pitch) * fraction);
-    }
 }
 
 void FlightSpline_Init(WORLDINFO_s *world, flightspline_s *splines, i32 capacity) {
@@ -380,6 +337,49 @@ void FlightSpline_Init(WORLDINFO_s *world, flightspline_s *splines, i32 capacity
     EdFileClose();
 }
 
+void PointAlongSpline(NUGSPLINE *spline, f32 along, NUVEC *position, u16 *angle, u16 *pitch, i32 looping) {
+    if (angle != NULL)
+        *angle = 0;
+    if (pitch != NULL)
+        *pitch = 0;
+    if (spline == NULL)
+        return;
+    if (along > 1.0f)
+        along = 1.0f;
+    else if (along < 0.0f)
+        along = 0.0f;
+    u32 extent = (u32)(looping ? spline->length : spline->length - 1) << 16;
+    u32 fixed = (i32)((f32)extent * along);
+    i32 index = fixed >> 16;
+    NUVEC *current = &spline->pts[index];
+    *position = *current;
+    if (pitch != NULL || angle != NULL)
+        SplinePointAngles(spline, index, looping, pitch, angle);
+    index++;
+    if (index >= spline->length) {
+        if (!looping)
+            return;
+        index = 0;
+    }
+    fixed &= 0xffff;
+    if (fixed == 0)
+        return;
+    NUVEC *next = &spline->pts[index];
+    f32 fraction = fixed * (1.0f / 65536.0f);
+    position->x += (next->x - current->x) * fraction;
+    position->y += (next->y - current->y) * fraction;
+    position->z += (next->z - current->z) * fraction;
+    if (angle != NULL || pitch != NULL) {
+        u16 next_angle, next_pitch;
+        SplinePointAngles(spline, index, looping, pitch != NULL ? &next_pitch : NULL,
+                          angle != NULL ? &next_angle : NULL);
+        if (angle != NULL)
+            *angle += (i32)(RotDiff(*angle, next_angle) * fraction);
+        if (pitch != NULL)
+            *pitch += (i32)(RotDiff(*pitch, next_pitch) * fraction);
+    }
+}
+
 i32 LineIntersectXY(NUVEC *, NUVEC *, NUVEC *, NUVEC *, NUVEC *, NUVEC *);
 
 i32 OutSideSplineArea(nuvec_s *position, nugspline_s *spline, nuvec_s *edge_end, nuvec_s *edge_start, i32 inside) {
@@ -405,9 +405,10 @@ i32 OutSideSplineArea(nuvec_s *position, nugspline_s *spline, nuvec_s *edge_end,
     i32 closest_index = 0;
     NUVEC closest = spline->pts[0];
     f32 best = 1000000000.0f;
+    auto position_z = position->z;
     for (i32 i = 0; i < spline->length - 1; ++i) {
         f32 dx = spline->pts[i].x - position->x;
-        f32 dz = spline->pts[i].z - position->z;
+        f32 dz = spline->pts[i].z - position_z;
         f32 distance = dx * dx + dz * dz;
         if (distance < best)
             closest_index = i;
@@ -421,8 +422,8 @@ i32 OutSideSplineArea(nuvec_s *position, nugspline_s *spline, nuvec_s *edge_end,
     NUVEC before = spline->pts[previous];
     NUVEC after = spline->pts[next];
     f32 ax = after.x - position->x;
-    f32 az = after.z - position->z;
     f32 bx = before.x - position->x;
+    f32 az = after.z - position->z;
     f32 bz = before.z - position->z;
     if (bx * bx + bz * bz > ax * ax + az * az) {
         if (edge_end != NULL)
@@ -464,6 +465,7 @@ void InitSplinePosition(SPLINEPOS_s *position, nugspline_s *spline, float distan
 
 void GetNearestSplinePos(NUVEC *origin, SPLINEPOS_s *result, NUGSPLINE *spline, i32 looping, i16 first_point,
                          i16 last_point) {
+    NUVEC offset;
     if (result == NULL)
         return;
     memset(result, 0, sizeof(*result));
@@ -482,7 +484,7 @@ void GetNearestSplinePos(NUVEC *origin, SPLINEPOS_s *result, NUGSPLINE *spline, 
             end = last_point;
         NUVEC *point = (NUVEC *)((u8 *)spline->pts + index * (i16)spline->pt_size);
         f32 nearest = 1000000000.0f;
-        NUVEC offset;
+
         do {
             f32 distance = NuVecDistSqr(origin, point, &offset);
             if (distance < nearest) {
@@ -550,8 +552,8 @@ void EvaluateSplineXZIntersection(nugspline_s *first, i32 first_looping, SPLINEP
     second_position->spline = second;
     second_position->looping = static_cast<i8>(second_looping);
     if (!(second == NULL || first == NULL || first->length == 0 || second->length == 0)) {
-        const i32 first_count = first_looping != 0 ? first->length + 1 : first->length;
         const i32 second_count = second_looping != 0 ? second->length + 1 : second->length;
+        const i32 first_count = first_looping != 0 ? first->length + 1 : first->length;
         f32 closest = 1000000000.0f;
         f32 first_fraction, second_fraction;
         for (i32 i = 0; i < first_count - 1; ++i) {
@@ -590,6 +592,7 @@ void EvaluateSplineXZIntersection(nugspline_s *first, i32 first_looping, SPLINEP
 }
 
 void LevelSplines_InitForLevel(WORLDINFO_s *world) {
+    char name[64];
     world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
     world->portal_places = reinterpret_cast<PORTALPOS **>(world->giz_buffer.void_ptr);
     world->giz_buffer.addr += LEVELSPLINECOUNT * sizeof(*world->portal_places);
@@ -625,7 +628,7 @@ void LevelSplines_InitForLevel(WORLDINFO_s *world) {
         }
 
         if (levspl_i_start >= 0 && levspl_i_start < LEVELSPLINECOUNT) {
-            char name[64];
+
             name[0] = '\0';
             if (Mission_Active(NULL) != NULL) {
                 NuStrCpy(name, "bounty_start");

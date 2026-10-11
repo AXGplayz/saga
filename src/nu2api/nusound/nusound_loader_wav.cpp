@@ -64,21 +64,21 @@ u32 NuSoundLoaderWAV::FindChunks(i32 file, NuSoundStreamDesc *desc, ChunkReadReq
         return 0;
     }
 
-    u32 end_mask = 1u << (count & 0x1f);
-    if (end_mask == 1) {
+    u32 end_mask = (1u << (count & 0x1f)) - 1;
+    if (end_mask == 0) {
         return 0;
     }
 
     u32 found_mask = 0;
-    u64 file_offset = 0xc;
     u32 scratch_index = 0;
+    u64 file_offset = 0xc;
 
     for (;;) {
         ChunkInfo *read_info = &requests[scratch_index].chunk_info;
         if (NuFileRead(file, read_info, sizeof(*read_info)) == 0) {
             return found_mask;
         }
-        file_offset += (u64)read_info->size + 8;
+        file_offset += (u64)(read_info->size + 8);
 
         for (u32 i = 0; i < count; i++) {
             u32 bit = 1u << (i & 0x1f);
@@ -97,7 +97,7 @@ u32 NuSoundLoaderWAV::FindChunks(i32 file, NuSoundStreamDesc *desc, ChunkReadReq
             }
         }
 
-        if (found_mask == end_mask - 1) {
+        if (found_mask == end_mask) {
             return found_mask;
         }
 
@@ -117,9 +117,10 @@ u32 NuSoundLoaderWAV::FindChunk(i32 file, u32 id, ChunkInfo &info) {
             if (info.id == id) {
                 return 1;
             }
-            if (NuFileSeek(file, info.size, NUFILE_SEEK_CURRENT) == 0) {
-                break;
+            if (NuFileSeek(file, info.size, NUFILE_SEEK_CURRENT) != 0) {
+                continue;
             }
+            break;
         }
     }
     return 0;

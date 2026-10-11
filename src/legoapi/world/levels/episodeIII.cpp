@@ -167,6 +167,15 @@ void CruiserCReset(WORLDINFO_s *) {
     cruiser_c.palpatine_locator = NULL;
 }
 
+void CruiserCPanel(WORLDINFO_s *) {
+    if (netclient == 0) {
+        if (cruiser_c.count_dooku != NULL && cruiser_c.dooku_fight != NULL && cruiser_c.dooku_fight->value == 1.0f)
+            DrawBossHitPoints(cruiser_c.count_dooku);
+        else
+            DrawBossHitPoints(NULL);
+    }
+}
+
 void CruiserCUpdate(WORLDINFO_s *) {
     if (cruiser_c.free_palpatine == NULL)
         cruiser_c.free_palpatine = CheckGizAIMessage(gizaimessagesys, "FreePalpatine", NULL);
@@ -189,19 +198,11 @@ void CruiserCUpdate(WORLDINFO_s *) {
     }
 }
 
-void CruiserCPanel(WORLDINFO_s *) {
-    if (netclient == 0) {
-        if (cruiser_c.count_dooku != NULL && cruiser_c.dooku_fight != NULL && cruiser_c.dooku_fight->value == 1.0f)
-            DrawBossHitPoints(cruiser_c.count_dooku);
-        else
-            DrawBossHitPoints(NULL);
-    }
-}
-
 void CruiserDInit(WORLDINFO_s *world) {
     if (world->area->level_count != 0) {
-        for (i32 i = 0; i < world->area->level_count; i++) {
-            if (static_cast<u16>(world->area->levels[i]) == static_cast<u16>(CRUISERE_LDATA->idx))
+        auto world_area = world->area;
+        for (i32 i = 0; i < world_area->level_count; i++) {
+            if (static_cast<u16>(world_area->levels[i]) == static_cast<u16>(CRUISERE_LDATA->idx))
                 CruiserE_ix = i;
         }
     }
@@ -232,32 +233,6 @@ void CruiserDInit(WORLDINFO_s *world) {
 #undef FIND_CRUISER_D_TUBE
 }
 
-void CruiserDReset(WORLDINFO_s *) {
-    CruiserD_LiftChase_msg = CheckGizAIMessage(gizaimessagesys, "LiftChase", NULL);
-    MiscTime = 0.0f;
-
-    if (NuSpecialExistsFn(&CruiserD_Lift) != 0 && CruiserD_LiftAnim != NULL) {
-        if ((*(u8 *)((u8 *)LevelProgressData + CruiserE_ix * 0x2e24 + 0x2800) & 1) == 0) {
-            CruiserD_frame = 1.0f;
-            CruiserD_direction = 1;
-            CruiserD_LiftAnim->playing = 1;
-            CruiserD_LiftAnim->ltime = 1.0f;
-            CruiserD_LiftAnim->tfactor = 0.1f;
-        } else if (CruiserD_direction < 0) {
-            CruiserD_LiftAnim->ltime = CruiserD_frame;
-            CruiserD_LiftAnim->playing = 1;
-            CruiserD_LiftAnim->tfactor = -0.1f;
-        } else {
-            f32 end_frame = *(f32 *)CruiserD_Lift.scene->instance_animation_data[CruiserD_LiftAnim->anim_ix];
-            CruiserD_LiftAnim->playing = 0;
-            CruiserD_LiftAnim->tfactor = 0.1f;
-            CruiserD_LiftAnim->ltime = end_frame;
-        }
-    }
-
-    CruiserD_LiftChase = 0;
-}
-
 void CruiserDUpdate(WORLDINFO_s *) {
     CruiserD_LiftChase = 0;
     if (!NuSpecialExistsFn(&CruiserD_Lift) || CruiserD_LiftAnim == NULL || CruiserD_LiftChase_msg == NULL)
@@ -268,8 +243,8 @@ void CruiserDUpdate(WORLDINFO_s *) {
         if (CruiserD_direction >= 0 && LevGizmo[0] != NULL && LevGizmo[0]->object != NULL &&
             (((u8 *)LevGizmo[0]->object)[0x68] & 2) != 0) {
             CruiserD_direction = -1;
-            CruiserD_LiftAnim->playing = 1;
             CruiserD_LiftAnim->tfactor = -0.1f;
+            CruiserD_LiftAnim->playing = 1;
         }
 
         if (!CruiserD_LiftAnim->playing) {
@@ -323,6 +298,34 @@ void CruiserDUpdate(WORLDINFO_s *) {
         CruiserD_LiftAnim->tfactor = cruiserd_netpacket->speed;
         CruiserD_LiftAnim->playing = (cruiserd_netpacket->flags & 1) != 0;
     }
+}
+
+void CruiserDReset(WORLDINFO_s *) {
+    CruiserD_LiftChase_msg = CheckGizAIMessage(gizaimessagesys, "LiftChase", NULL);
+    MiscTime = 0.0f;
+
+    if (NuSpecialExistsFn(&CruiserD_Lift) != 0 && CruiserD_LiftAnim != NULL) {
+        if ((*(u8 *)((u8 *)LevelProgressData + CruiserE_ix * 0x2e24 + 0x2800) & 1) != 0) {
+            if (CruiserD_direction < 0) {
+                CruiserD_LiftAnim->ltime = CruiserD_frame;
+                CruiserD_LiftAnim->playing = 1;
+                CruiserD_LiftAnim->tfactor = -0.1f;
+            } else {
+                f32 end_frame = *(f32 *)CruiserD_Lift.scene->instance_animation_data[CruiserD_LiftAnim->anim_ix];
+                CruiserD_LiftAnim->playing = 0;
+                CruiserD_LiftAnim->tfactor = 0.1f;
+                CruiserD_LiftAnim->ltime = end_frame;
+            }
+        } else {
+            CruiserD_frame = 1.0f;
+            CruiserD_direction = 1;
+            CruiserD_LiftAnim->playing = 1;
+            CruiserD_LiftAnim->ltime = 1.0f;
+            CruiserD_LiftAnim->tfactor = 0.1f;
+        }
+    }
+
+    CruiserD_LiftChase = 0;
 }
 
 // ===========================================================================
@@ -731,12 +734,12 @@ void VaderA_Update(WORLDINFO_s *) {
     VADERANETPACKET_s *packet = static_cast<VADERANETPACKET_s *>(vadera_netpacket);
     if (netclient == 0) {
         packet->count = vader_a.count;
-        packet->subtitle = vader_a.subtitle;
         packet->timer = vader_a.timer;
+        packet->subtitle = vader_a.subtitle;
     } else {
         vader_a.count = packet->count;
-        vader_a.subtitle = packet->subtitle;
         vader_a.timer = packet->timer;
+        vader_a.subtitle = packet->subtitle;
     }
 }
 
@@ -806,8 +809,8 @@ void VaderC_Update(WORLDINFO_s *world) {
     }
 
     if (vader_c.field_0x95 == 0) {
-        GameObject_s *first_player = Player[0];
         GameObject_s *second_player = Player[1];
+        GameObject_s *first_player = Player[0];
         if (((first_player != NULL && (first_player->apiobj.field_0x1f8 & 0x80) != 0 &&
               first_player->apiobj.field_0x287 != 0 && (first_player->apiobj.field_0x1f4 & 0x40000) == 0) ||
              (second_player != NULL && (second_player->apiobj.field_0x1f8 & 0x80) != 0 &&

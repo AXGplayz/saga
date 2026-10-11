@@ -93,8 +93,8 @@ void LoadGizmoSys(GIZMOSYS_s *gizmo_sys, void *world, char *config_file) {
 
             // File callbacks may replace or clear the registry before post-load dispatch.
             if (gizmotypes != NULL) {
-                GIZMOTYPE *type = gizmotypes->types;
                 GIZMOSET *set = gizmo_sys->sets;
+                GIZMOTYPE *type = gizmotypes->types;
                 for (i32 type_id = 0; type_id < gizmotypes->count; ++type_id, ++type, ++set) {
                     if (type->fns.post_load_fn != NULL) {
                         type->fns.post_load_fn(world, set->unknown);
@@ -163,8 +163,8 @@ void MiniKit_InitPieces(MINIKIT *minikit, i32 count, VARIPTR *buf, VARIPTR *buf_
     char name[76];
 
     buf->addr = ALIGN(buf->addr, 4);
-    minikit->field_0x4 = reinterpret_cast<void *>(buf->addr);
     minikit->field_0x8 = 0;
+    minikit->field_0x4 = reinterpret_cast<void *>(buf->addr);
 
     for (i32 index = 0; index < count; ++index) {
         for (u8 direction = 0; direction < 6; ++direction) {

@@ -92,154 +92,86 @@ i32 Collection_Got(i32 id) {
 }
 
 void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) {
-    byte bVar1;
-    ushort uVar2;
-    i16 sVar3;
-    COLLECTID *collect;
-    i32 iVar4;
-    AREADATA *pAVar5;
-    i32 i;
-    char *buf;
-
     nufpar_s *fp = NuFParCreate(file);
-    if (fp != NULL) {
-        CollectCount = 0;
-        collect = (COLLECTID *)ALIGN(bufferStart->addr, 4);
-        CollectList = collect;
-        bufferStart->void_ptr = collect;
-
-        COLLECTION_COMPLETIONCOUNT = 0;
-
-        while (NuFParGetLine(fp) != 0) {
-
-        LAB_004eb7f3:
-            if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "collect") == 0 && NuFParGetWord(fp) != 0) {
-                sVar3 = CharIDFromName(fp->word_buf);
-
-                LOG_DEBUG("Collection_Configure: Found collect id %s -> %d", fp->word_buf, sVar3);
-
-                collect->id = sVar3;
-
-                if (sVar3 != -1 && InCollectList_Index((i32)sVar3, CollectList, CollectCount) == -1) {
-                    collect->type = 0;
-                    collect->field2_0x3 = 0xff;
-                    collect->can_buy = 0;
-                    collect->field3_0x4 = 0;
-                    collect->field6_0xa = 0;
-                    collect->field5_0x9 = 0;
-                    collect->cheat_code[0] = '\0';
-
-                LAB_004eb886:
-                    iVar4 = NuFParGetWord(fp);
-
-                    do {
-                        if (iVar4 == 0) {
-                            bVar1 = collect->type;
-                            if (bVar1 == 0) {
-                                if (collect->can_buy != 0) {
-                                LAB_004eb8ce:
-                                    collect->field5_0x9 = 1;
-                                    COLLECTION_COMPLETIONCOUNT = COLLECTION_COMPLETIONCOUNT + 1;
-                                }
-                            } else if (bVar1 != 8 && bVar1 != 7)
-                                goto LAB_004eb8ce;
-
-                            CollectCount = CollectCount + 1;
-                            iVar4 = NuFParGetLine(fp);
-                            collect = collect + 1;
-
-                            if (iVar4 == 0)
-                                goto LAB_004eb900;
-
-                            goto LAB_004eb7f3;
-                        }
-
-                        iVar4 = NuStrICmp(fp->word_buf, "story");
-                        if (iVar4 != 0)
-                            goto LAB_004eb920;
-
-                        collect->type = 1;
-                        iVar4 = NuFParGetWord(fp);
-
-                    } while (true);
-                }
-            }
-        }
-
-    LAB_004eb900:
-        NuFParDestroy(fp);
-        if (CollectCount < 1) {
-            CollectList = NULL;
-            return;
-        }
-        bufferStart->void_ptr = collect;
-    }
-
-    return;
-
-LAB_004eb920:
-    iVar4 = NuStrICmp(fp->word_buf, "area_complete");
-    if (iVar4 == 0) {
-        iVar4 = NuFParGetWord(fp);
-        if (iVar4 != 0 && (pAVar5 = Area_FindByName(fp->word_buf, &i), pAVar5 != NULL)) {
-            collect->type = 2;
-            collect->field2_0x3 = (byte)i;
-        }
-    } else {
-        iVar4 = NuStrICmp(fp->word_buf, "all_episodes_complete");
-        if (iVar4 == 0) {
-            collect->type = 3;
-        } else {
-            iVar4 = NuStrICmp(fp->word_buf, "in_pack");
-            if (iVar4 == 0) {
-                iVar4 = NuFParGetWord(fp);
-                if ((iVar4 != 0) && (iVar4 = Store_FindPack(-1, fp->word_buf), iVar4 != -1)) {
-                    collect->type = 8;
-                    collect->field2_0x3 = (byte)iVar4;
-                }
-            } else {
-                iVar4 = NuStrICmp(fp->word_buf, "100_percent");
-                if (iVar4 == 0) {
-                    collect->type = 7;
-                } else {
-                    iVar4 = NuStrICmp(fp->word_buf, "gold_bricks");
-                    if (iVar4 == 0) {
-                        collect->type = 6;
-                        iVar4 = NuFParGetInt(fp);
-                        uVar2 = (ushort)(iVar4 >> 31);
-                        collect->field6_0xa = ((ushort)iVar4 ^ uVar2) - uVar2;
-                    } else {
-                        iVar4 = NuStrICmp(fp->word_buf, "all_minikits_complete");
-                        if (iVar4 == 0) {
-                            collect->type = 4;
-                        } else {
-                            iVar4 = NuStrICmp(fp->word_buf, "minikit");
-                            if (iVar4 == 0) {
-                                collect->type = 5;
-                            } else {
-                                iVar4 = NuStrICmp(fp->word_buf, "buy_in_shop");
-                                if (iVar4 == 0) {
-                                    collect->can_buy = 1;
-                                    iVar4 = NuFParGetInt(fp);
-                                    collect->field3_0x4 = iVar4;
-                                } else {
-                                    iVar4 = NuStrICmp(fp->word_buf, "cheat_code");
-                                    if (((iVar4 == 0) && (iVar4 = NuFParGetWord(fp), iVar4 != 0)) &&
-                                        (iVar4 = NuStrLen(fp->word_buf), iVar4 == 6)) {
-                                        buf = collect->cheat_code;
-                                        NuStrCpy(buf, fp->word_buf);
-                                        NuStrUpr(buf, buf);
-                                    }
-                                }
-                            }
+    if (fp == NULL)
+        return;
+    CollectCount = 0;
+    COLLECTID *collect = reinterpret_cast<COLLECTID *>(ALIGN(bufferStart->addr, 4));
+    CollectList = collect;
+    bufferStart->void_ptr = collect;
+    COLLECTION_COMPLETIONCOUNT = 0;
+    while (NuFParGetLine(fp) != 0) {
+    read_word:
+        if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "collect") == 0 && NuFParGetWord(fp) != 0) {
+            const i16 id = CharIDFromName(fp->word_buf);
+            LOG_DEBUG("Collection_Configure: Found collect id %s -> %d", fp->word_buf, id);
+            collect->id = id;
+            if (id == -1 || InCollectList_Index(id, CollectList, CollectCount) != -1)
+                continue;
+            collect->type = 0;
+            collect->field2_0x3 = 0xff;
+            collect->can_buy = 0;
+            collect->field3_0x4 = 0;
+            collect->field6_0xa = 0;
+            collect->field5_0x9 = 0;
+            collect->cheat_code[0] = '\0';
+            while (NuFParGetWord(fp) != 0) {
+                if (NuStrICmp(fp->word_buf, "story") == 0) {
+                    collect->type = 1;
+                } else if (NuStrICmp(fp->word_buf, "area_complete") == 0) {
+                    i32 area;
+                    if (NuFParGetWord(fp) != 0 && Area_FindByName(fp->word_buf, &area) != NULL) {
+                        collect->type = 2;
+                        collect->field2_0x3 = static_cast<u8>(area);
+                    }
+                } else if (NuStrICmp(fp->word_buf, "all_episodes_complete") == 0) {
+                    collect->type = 3;
+                } else if (NuStrICmp(fp->word_buf, "in_pack") == 0) {
+                    if (NuFParGetWord(fp) != 0) {
+                        i32 pack = Store_FindPack(-1, fp->word_buf);
+                        if (pack != -1) {
+                            collect->type = 8;
+                            collect->field2_0x3 = static_cast<u8>(pack);
                         }
                     }
+                } else if (NuStrICmp(fp->word_buf, "100_percent") == 0) {
+                    collect->type = 7;
+                } else if (NuStrICmp(fp->word_buf, "gold_bricks") == 0) {
+                    collect->type = 6;
+                    const i32 value = NuFParGetInt(fp);
+                    const u32 sign = static_cast<u32>(value >> 31);
+                    collect->field6_0xa = static_cast<u16>((static_cast<u32>(value) ^ sign) - sign);
+                } else if (NuStrICmp(fp->word_buf, "all_minikits_complete") == 0) {
+                    collect->type = 4;
+                } else if (NuStrICmp(fp->word_buf, "minikit") == 0) {
+                    collect->type = 5;
+                } else if (NuStrICmp(fp->word_buf, "buy_in_shop") == 0) {
+                    collect->can_buy = 1;
+                    collect->field3_0x4 = NuFParGetInt(fp);
+                } else if (NuStrICmp(fp->word_buf, "cheat_code") == 0 && NuFParGetWord(fp) != 0 &&
+                           NuStrLen(fp->word_buf) == 6) {
+                    char *code = collect->cheat_code;
+                    NuStrCpy(code, fp->word_buf);
+                    NuStrUpr(code, code);
                 }
             }
+            if (collect->type == 0 ? collect->can_buy != 0 : collect->type != 8 && collect->type != 7) {
+                collect->field5_0x9 = 1;
+                ++COLLECTION_COMPLETIONCOUNT;
+            }
+            ++CollectCount;
+            const i32 next_line = NuFParGetLine(fp);
+            ++collect;
+            if (next_line == 0)
+                break;
+            goto read_word;
         }
     }
-
-    goto LAB_004eb886;
+    NuFParDestroy(fp);
+    if (CollectCount < 1)
+        CollectList = NULL;
+    else
+        bufferStart->void_ptr = collect;
 }
 
 f32 COLLECTION_DX = 0.15f;
@@ -268,19 +200,21 @@ static inline u32 Collection_NeighbourFlags(i32 col, i32 row, i32 sx, i32 sy) {
 
 void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, APICHARACTERMODELLIST_s *models,
                      float alpha, i32 hide_selected) {
+    const f32 base_dx = COLLECTION_DX;
     const f32 base_dy = COLLECTION_DY;
+    const f32 base_size = COLLECTION_ICONSIZE;
     nuhspecial_s *special = collection_draw_hspecial;
     i32 (*valid)(COLLECTION_s *, i32) = collection_draw_IsValidFn;
-    collection_draw_hspecial = NULL;
     collection_draw_IsValidFn = NULL;
+    collection_draw_hspecial = NULL;
     if (collection->list == NULL || FadeSys.fade > 0.0f)
         return;
-    const i32 count = collection->count_y;
     const i32 columns = collection->count_x;
+    const i32 count = collection->count_y;
     if (count == 0 || columns == 0)
         return;
-    f32 dx = COLLECTION_DX * scale;
-    f32 size = COLLECTION_ICONSIZE * scale;
+    f32 dx = base_dx * scale;
+    f32 size = base_size * scale;
     const i32 rows = count / columns + (count % columns != 0);
     if (Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0) {
         dx *= 0.75f;
@@ -330,11 +264,11 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
                     continue;
                 opacity = 0.25f;
                 if (model_index == 0 || model_index == 1) {
-                    frame = model_index == 0 ? LEGOOBJ_ICON_FRAME_BLUE : LEGOOBJ_ICON_FRAME_GREEN;
                     opacity =
                         NuTrigTable[(static_cast<i32>(GlobalTimer.time_elapsed_mod_seconds * 65536.0f) >> 1) & 0x7fff] *
                             0.125f +
                         0.375f;
+                    frame = model_index == 0 ? LEGOOBJ_ICON_FRAME_BLUE : LEGOOBJ_ICON_FRAME_GREEN;
                 }
             }
             const i32 unlocked = valid != NULL ? valid(collection, index) : Collection_Got(id);
@@ -367,9 +301,8 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
 
 void Collection_GetPos(COLLECTION_s *collection, i32 id, float *x, float *y) {
     COLLECTID *list = collection->list;
-    i32 count = collection->count_y;
 
-    for (i32 i = 0; i < count; i++) {
+    for (i32 i = 0; i < collection->count_y; i++) {
         if (list[i].id == id) {
             float *f = (float *)&list[i].cheat_code[8];
             *x = f[0];
@@ -402,10 +335,12 @@ i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 requ
         ++result_count;
 
         if (first_id != NULL) {
-            if (*first_id == -1) {
-                *first_id = id;
-            } else if (second_id != NULL && *second_id == -1) {
-                *second_id = id;
+            i32 *selection = first_id;
+            if (*selection != -1) {
+                selection = second_id;
+            }
+            if (selection != NULL && *selection == -1) {
+                *selection = id;
             }
         }
     }
@@ -420,8 +355,8 @@ void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, 
     collection->list = CollectList;
     collection->count_x = (u16)param4;
     collection->count_y = (u16)CollectCount;
-    collection->field_8 = idlist;
     collection->field_c = file;
+    collection->field_8 = idlist;
     collection->field_10 = param5;
 }
 
@@ -454,12 +389,11 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
                     (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
                     continue;
                 }
-                if (required_model_flags != 0 &&
-                    (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
-                    continue;
+                if (!(required_model_flags != 0 &&
+                      (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
+                    collection->list[collection->count_y] = source;
+                    ++collection->count_y;
                 }
-                collection->list[collection->count_y] = source;
-                ++collection->count_y;
             }
         }
     } else {
@@ -470,14 +404,13 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
             if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
                 continue;
             }
-            if (required_model_flags != 0 &&
-                (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
-                continue;
+            if (!(required_model_flags != 0 &&
+                  (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
+                COLLECTID &entry = collection->list[collection->count_y];
+                memset(&entry, 0, sizeof(entry));
+                collection->list[collection->count_y].id = static_cast<i16>(id);
+                ++collection->count_y;
             }
-            COLLECTID &entry = collection->list[collection->count_y];
-            memset(&entry, 0, sizeof(entry));
-            collection->list[collection->count_y].id = static_cast<i16>(id);
-            ++collection->count_y;
         }
     }
 
@@ -652,14 +585,16 @@ void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index) {
     }
 
     packet->scale = SeekLinearF(packet->scale, 1.0f, 3.0f * FRAMETIME);
-    if (((DoubleScore >> player_index) & 1) == 0) {
-        packet->active = 1;
-        packet->double_score_timer = 0.0f;
-    } else if (packet->double_score_timer > 0.0f) {
-        packet->double_score_timer -= FRAMETIME;
-        if (packet->double_score_timer <= 0.0f) {
-            packet->active = 1;
+    if (((DoubleScore >> player_index) & 1) != 0) {
+        if (packet->double_score_timer > 0.0f) {
+            packet->double_score_timer -= FRAMETIME;
+            if (packet->double_score_timer <= 0.0f) {
+                packet->active = 1;
+            }
         }
+    } else {
+        packet->double_score_timer = 0.0f;
+        packet->active = 1;
     }
 }
 
@@ -721,8 +656,8 @@ extern i32 SHOPHINTCOUNT;
 extern i16 HintTab[24];
 
 void ReCalculateCompletionPoints() {
-    Game.completion = 0;
     Game.gold_bricks = 0;
+    Game.completion = 0;
     memset(CompletionPointInfo_ReCalculate, 0, sizeof(CompletionPointInfo_ReCalculate));
 
     for (i32 index = 0; index < MasterCollection.count_y; ++index) {
@@ -757,7 +692,8 @@ void ReCalculateCompletionPoints() {
 
         if ((area->flags & AREAFLAG_BONUS_AREA) != 0) {
             CompletionPointInfo_ReCalculate[1] += POINTS_PER_TIMETRIAL;
-            if (save->area_complete != 0 || save->challenge_trial_time < static_cast<f32>(area->challenge_trial_time)) {
+            if (save->area_complete != 0 ||
+                save->challenge_trial_time < static_cast<f32>(static_cast<i32>(area->challenge_trial_time))) {
                 AddToCompletionPoints(POINTS_PER_TIMETRIAL);
                 AddToGoldBricks();
             }

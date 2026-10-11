@@ -108,45 +108,44 @@ void MiniKit_GameMsg_End(GAMEMESSAGE_s *message);
 void Hint_SetHintFromId(i32, i32, i32);
 
 void CollectMinikit(nuvec_s *position, char *name, i32) {
-    if (WORLD->lev_objs[0xce].active == 0) {
-        return;
-    }
-    const i32 area_id = WORLD->level_sub_id;
-    NUVEC target_position = {KITPOSX, KITPOSY + PANEL_MINIKITY, 1.0f};
-    ADDGAMEMSG message = AddGameMsg_Default;
-    message.position = position;
-    message.target_position = &target_position;
-    message.scale = AreaPickupScale;
-    message.target_scale = PANEL_MINIKITSCALE;
-    message.flags = 0x2112d;
-    message.duration = 1.0f;
-    message.icon = 0xce;
-    message.special = &WORLD->lev_objs[0xce].special;
-    message.tick_fn = MiniKit_GameMsg_Update;
-    message.end_fn = MiniKit_GameMsg_End;
-    message.field_0x4d = 1;
-    AddGameMsg(&message);
-    DrawMiniKitTime = 2.0f;
+    if (WORLD->lev_objs[0xce].active != 0) {
+        NUVEC target_position = {KITPOSX, KITPOSY + PANEL_MINIKITY, 1.0f};
+        const i32 area_id = WORLD->level_sub_id;
+        ADDGAMEMSG message = AddGameMsg_Default;
+        message.position = position;
+        message.target_position = &target_position;
+        message.scale = AreaPickupScale;
+        message.target_scale = PANEL_MINIKITSCALE;
+        message.flags = 0x2112d;
+        message.duration = 1.0f;
+        message.icon = 0xce;
+        message.special = &WORLD->lev_objs[0xce].special;
+        message.tick_fn = MiniKit_GameMsg_Update;
+        message.end_fn = MiniKit_GameMsg_End;
+        message.field_0x4d = 1;
+        AddGameMsg(&message);
+        DrawMiniKitTime = 2.0f;
 
-    if (area_id != -1 && Game.area_save[area_id].minikit_count < 10) {
-        if (NuStrLen(name) <= 8) {
-            NuStrCpy(NewMiniPiece[AreaGlobals.values.field_0x10].name, name);
-        } else {
-            NewMiniPiece[AreaGlobals.values.field_0x10].name[0] = '\0';
-        }
-        NewMiniPiece[AreaGlobals.values.field_0x10].level = WORLD->level_idx;
-        ++AreaGlobals.values.field_0x10;
-        ++AreaGlobals.values.field_0x0c;
-        if (GAMEDEMO != 0) {
-            if (AreaGlobals.values.field_0x0c == 1) {
-                Hint_SetHintFromId(0x26d, 0, 0);
-            } else if (AreaGlobals.values.field_0x0c == 10) {
-                Hint_SetHintFromId(0x26e, 0, 0);
+        if (area_id != -1 && Game.area_save[area_id].minikit_count < 10) {
+            if (NuStrLen(name) <= 8) {
+                NuStrCpy(NewMiniPiece[AreaGlobals.values.field_0x10].name, name);
+            } else {
+                NewMiniPiece[AreaGlobals.values.field_0x10].name[0] = '\0';
+            }
+            NewMiniPiece[AreaGlobals.values.field_0x10].level = WORLD->level_idx;
+            ++AreaGlobals.values.field_0x10;
+            ++AreaGlobals.values.field_0x0c;
+            if (GAMEDEMO != 0) {
+                if (AreaGlobals.values.field_0x0c == 1) {
+                    Hint_SetHintFromId(0x26d, 0, 0);
+                } else if (AreaGlobals.values.field_0x0c == 10) {
+                    Hint_SetHintFromId(0x26e, 0, 0);
+                }
             }
         }
+        AddGameDebris(WORLD->debris_sys, 0x13, position);
+        GameAudio_PlaySfxById(GetSfxId(const_cast<char *>("MK-Pickup")), position, 3, 0);
     }
-    AddGameDebris(WORLD->debris_sys, 0x13, position);
-    GameAudio_PlaySfxById(GetSfxId(const_cast<char *>("MK-Pickup")), position, 3, 0);
 }
 
 i32 AllMiniKitsDone(AREASAVE_s *save) {
@@ -179,25 +178,30 @@ void MiniKitDetector(nuvec_s *position) {
 
 i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
 void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflection_plane, float reflection_height) {
+    NUMTX draw_matrix;
     if (Char_MiniKit == NULL)
         return;
     HUBMINIKITPIECES_s *kit = Char_MiniKit[id];
-    if (kit == NULL || kit->piece_count == 0)
-        return;
-    bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
-    for (i32 i = 0; i < kit->piece_count; ++i) {
-        HUBMINIKITPIECE_s *piece = &kit->pieces[i];
-        if (NuSpecialExistsFn(&piece->special) == 0)
-            continue;
-        NUMTX draw_matrix = piece->matrix;
-        NuMtxMul(&draw_matrix, &draw_matrix, matrix);
-        NuSpecialDrawAt(&piece->special, &draw_matrix);
-        if (reflection) {
-            NUMTX reflected;
-            if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) != 0) {
-                NuRndrStartReflectionRender(0);
-                NuSpecialDrawAt(&piece->special, &reflected);
-                NuRndrEndReflectionRender();
+    if (kit != NULL && kit->piece_count != 0) {
+        bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
+        for (i32 i = 0; i < kit->piece_count; ++i) {
+            HUBMINIKITPIECE_s *piece = &kit->pieces[i];
+            if (NuSpecialExistsFn(&piece->special) == 0)
+                continue;
+            piece = &kit->pieces[i];
+            draw_matrix = piece->matrix;
+            NuMtxMul(&draw_matrix, &draw_matrix, matrix);
+            piece = &kit->pieces[i];
+            NuSpecialDrawAt(&piece->special, &draw_matrix);
+            if (reflection) {
+                NUMTX reflected;
+                if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) !=
+                    0) {
+                    NuRndrStartReflectionRender(0);
+                    piece = &kit->pieces[i];
+                    NuSpecialDrawAt(&piece->special, &reflected);
+                    NuRndrEndReflectionRender();
+                }
             }
         }
     }
@@ -221,8 +225,32 @@ extern f32 STATUS_TITLE_Y;
 extern i16 tMINIKIT;
 
 void MiniKit_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
-    char text[60];
-    if (current != 0) {
+
+    if (current == 0) {
+        if (stage->field_0x12 == 0)
+            return;
+        const f32 alpha = getFinishedStatusAlpha(packet);
+        const i32 opacity = static_cast<i32>(alpha * 128.0f);
+        i32 angle = 0x2000;
+        if (!(GameTimer.time_elapsed_mod_seconds > 0.25f)) {
+            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
+        }
+        if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
+            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
+            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, static_cast<u8>(opacity));
+        } else if (alpha > 0.0f) {
+            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
+                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
+                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
+        }
+        if (packet->minikit_max == Game.area_save[packet->area->index].field_0x5[0]) {
+            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, static_cast<u8>(opacity));
+        } else {
+            char text[60];
+            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
+            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, static_cast<u8>(opacity));
+        }
+    } else {
         f32 title_alpha = 1.0f;
         switch (stage->field_0x14) {
             case 0:
@@ -315,29 +343,6 @@ void MiniKit_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current
         title_alpha = title_alpha < 0.0f ? 0.0f : title_alpha > 1.0f ? 1.0f : title_alpha;
         Text3DEx(TTab[tMINIKIT], 0.0f, STATUS_TITLE_Y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 255, 255,
                  static_cast<u8>(static_cast<i32>(title_alpha * 128.0f)));
-    } else {
-        if (stage->field_0x12 == 0)
-            return;
-        const f32 alpha = getFinishedStatusAlpha(packet);
-        const i32 opacity = static_cast<i32>(alpha * 128.0f);
-        i32 angle = 0x2000;
-        if (!(GameTimer.time_elapsed_mod_seconds > 0.25f)) {
-            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-        }
-        if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
-            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, static_cast<u8>(opacity));
-        } else if (alpha > 0.0f) {
-            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
-                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
-                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
-        }
-        if (packet->minikit_max == Game.area_save[packet->area->index].field_0x5[0]) {
-            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, static_cast<u8>(opacity));
-        } else {
-            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, static_cast<u8>(opacity));
-        }
     }
 }
 
@@ -346,6 +351,17 @@ void MiniKit_LSW_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
     if ((packet->field_0xb0 & 0x10) != 0 && (stage->field_0x14 != 6 || stage->field_0x18 < stage->field_0x1c))
         IncreaseScore(packet->score, 50000, 0);
     NextStatusStage(packet);
+}
+
+void CollectAllMiniKits(AREASAVE_s *save) {
+    if (save == NULL)
+        return;
+    for (i32 i = 0; i < AREACOUNT; ++i) {
+        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save[i].complete != SAVE_INCOMPLETE) {
+            save[i].minikit_count = 10;
+            save[i].minikit_complete = SAVE_COMPLETE;
+        }
+    }
 }
 
 i32 UpdateNewMiniKits(STATUSPACKET_s *, STATUS_STAGE_s *stage) {
@@ -361,17 +377,6 @@ i32 UpdateNewMiniKits(STATUSPACKET_s *, STATUS_STAGE_s *stage) {
         slideseek = ((stage->field_0x1c - stage->field_0x18) - jibberlen) / slidetime;
     }
     return 0;
-}
-
-void CollectAllMiniKits(AREASAVE_s *save) {
-    if (save == NULL)
-        return;
-    for (i32 i = 0; i < AREACOUNT; ++i) {
-        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save[i].complete != SAVE_INCOMPLETE) {
-            save[i].minikit_count = 10;
-            save[i].minikit_complete = SAVE_COMPLETE;
-        }
-    }
 }
 
 void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
@@ -449,16 +454,18 @@ void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float ela
             SetDrawGoldBrick(packet, packet->current_gold_brick);
             const f32 previous = stage->field_0x18;
             stage->field_0x18 += elapsed;
-            if (stage->field_0x18 < stage->field_0x1c) {
+            if (!(stage->field_0x18 < stage->field_0x1c)) {
+                if (previous < stage->field_0x1c) {
+                    AddStatusMiniKitParts();
+                    NewStatusRumbleBuzz(-1, 1.0f, 0.1f, 0);
+                    PlaySfx(const_cast<char *>("Explode1"), NULL);
+                } else if (FindGameMsgsWithID(1, 0, -1, NULL) == 0) {
+                    PlaySfx(const_cast<char *>("Shop_BuyCheat"), NULL);
+                    NextStatusStage(packet);
+                }
+            } else {
                 if (static_cast<u32>(GameTimer.update_count) % 6 < 3 && (GameTimer.update_count - 1U) % 6 > 2)
                     NewStatusRumbleBuzz(-1, 0.0f, 0.0f, 2);
-            } else if (previous < stage->field_0x1c) {
-                AddStatusMiniKitParts();
-                NewStatusRumbleBuzz(-1, 1.0f, 0.1f, 0);
-                PlaySfx(const_cast<char *>("Explode1"), NULL);
-            } else if (FindGameMsgsWithID(1, 0, -1, NULL) == 0) {
-                PlaySfx(const_cast<char *>("Shop_BuyCheat"), NULL);
-                NextStatusStage(packet);
             }
             break;
         }
@@ -496,7 +503,7 @@ extern i16 id_SLAVE1, tALLMINIKITSBUILT;
 extern i32 STATUS_R, STATUS_G, STATUS_B;
 
 void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
-    char text[60];
+
     if (current != 0) {
         if (stage->field_0x14 < 1)
             return;
@@ -510,8 +517,8 @@ void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 cur
             title_alpha = 1.0f;
         else if (time < 4.0f) {
             icon_alpha = (time - 3.5f) + (time - 3.5f);
-            title_alpha = 1.0f - icon_alpha;
             y = (1.0f - NuTrigTable[(static_cast<i32>(icon_alpha * 16384.0f) >> 1) & 0x7fff]) * -0.5f + 0.225f;
+            title_alpha = 1.0f - icon_alpha;
         } else if (time < 6.0f) {
             title_alpha = 0.0f;
             icon_alpha = 1.0f;
@@ -534,25 +541,27 @@ void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 cur
         }
         return;
     }
-    if (stage->field_0x12 == 0)
-        return;
-    const f32 alpha = getFinishedStatusAlpha(packet);
-    const u8 opacity = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
-    i32 angle = 0x2000;
-    if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
-        angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-    if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
-        const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-        Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, opacity);
-    } else {
-        DrawStatusMiniKit(-0.6f, -0.5f, 1.1f, NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f,
-                          1.0f, Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
-    }
-    if (Game.area_save[packet->area->index].field_0x5[0] == packet->minikit_max) {
-        Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, opacity);
-    } else {
-        sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-        Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, opacity);
+    if (stage->field_0x12 != 0) {
+        const f32 alpha = getFinishedStatusAlpha(packet);
+        const u8 opacity = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
+        i32 angle = 0x2000;
+        if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
+            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
+        if (Game.area_save[packet->area->index].field_0x5[0] != 0) {
+            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
+                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
+                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
+        } else {
+            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
+            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, opacity);
+        }
+        if (Game.area_save[packet->area->index].field_0x5[0] != packet->minikit_max) {
+            char text[60];
+            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
+            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, opacity);
+        } else {
+            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, opacity);
+        }
     }
 }
 
@@ -563,6 +572,24 @@ void AllMiniKits_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *packet) {
 rtldata_s KitPartRTL;
 extern NUCOLOUR3 panelcol[3], panelamb;
 extern NUVEC paneldir[3];
+
+void AllMiniKits_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
+    if (stage->field_0x14 == 0) {
+        stage->field_0x18 = 0.0f;
+        stage->field_0x1c = 6.5f;
+        stage->field_0x14 = 1;
+    } else if (stage->field_0x14 == 1) {
+        const f32 previous = stage->field_0x18;
+        stage->field_0x18 += elapsed;
+        if (stage->field_0x18 >= stage->field_0x1c)
+            NextStatusStage(packet);
+        else if (previous < 0.5f && stage->field_0x18 >= 0.5f) {
+            PlaySfx(const_cast<char *>("StatusAward"), NULL);
+            NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
+        } else if (previous < 4.0f && stage->field_0x18 >= 4.0f)
+            PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
+    }
+}
 
 void AddStatusMiniKitParts() {
     NUVEC target_position = {0.0f, STATSPOSY, 1.0f};
@@ -607,8 +634,8 @@ void AddStatusMiniKitParts() {
             message.duration = COINMSGTIME;
             message.score = GizmoPickupType[2].score;
             message.end_fn = EndScoreMessage;
-            message.update_fn = GameMsg_DrawAdjustNewPos_CoinToTotal;
             message.field_0x20 = delay;
+            message.update_fn = GameMsg_DrawAdjustNewPos_CoinToTotal;
             message.field_0x4e = 1;
             AddGameMsg(&message);
             if (delay == 0.0f) {
@@ -619,24 +646,6 @@ void AddStatusMiniKitParts() {
         }
     }
     SetPanelLights(1.0f);
-}
-
-void AllMiniKits_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    if (stage->field_0x14 == 0) {
-        stage->field_0x18 = 0.0f;
-        stage->field_0x1c = 6.5f;
-        stage->field_0x14 = 1;
-    } else if (stage->field_0x14 == 1) {
-        const f32 previous = stage->field_0x18;
-        stage->field_0x18 += elapsed;
-        if (stage->field_0x18 >= stage->field_0x1c)
-            NextStatusStage(packet);
-        else if (previous < 0.5f && stage->field_0x18 >= 0.5f) {
-            PlaySfx(const_cast<char *>("StatusAward"), NULL);
-            NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
-        } else if (previous < 4.0f && stage->field_0x18 >= 4.0f)
-            PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
-    }
 }
 
 void CharacterMiniKits_Dump(WORLDINFO_s *world) {
@@ -650,7 +659,19 @@ void CharacterMiniKits_Dump(WORLDINFO_s *world) {
         return;
     }
 
-    if (world->area == NULL || (world->area->flags & 5) != 5) {
+    if (world->area != NULL && (world->area->flags & 5) == 5) {
+        if (Char_MiniKit != NULL) {
+            for (i32 i = 0; i < CHARCOUNT; ++i) {
+                HUBMINIKITPIECES_s *entry = world->minikit_pieces_buf[i];
+                if (entry != NULL && entry->scene != NULL) {
+                    NuGScnRemove(entry->scene);
+                    world->minikit_pieces_buf[i]->scene = NULL;
+                }
+                Char_MiniKit[i] = 0;
+            }
+            characterbuffer_ptr = minikits_savecharacterbufferptr;
+        }
+    } else {
         for (i32 i = 0; i < AREACOUNT; ++i) {
             HUBMINIKITPIECES_s *entry = world->minikit_pieces_buf[i];
             if (entry != NULL && entry->scene != NULL) {
@@ -658,16 +679,6 @@ void CharacterMiniKits_Dump(WORLDINFO_s *world) {
                 world->minikit_pieces_buf[i]->scene = NULL;
             }
         }
-    } else if (Char_MiniKit != NULL) {
-        for (i32 i = 0; i < CHARCOUNT; ++i) {
-            HUBMINIKITPIECES_s *entry = world->minikit_pieces_buf[i];
-            if (entry != NULL && entry->scene != NULL) {
-                NuGScnRemove(entry->scene);
-                world->minikit_pieces_buf[i]->scene = NULL;
-            }
-            Char_MiniKit[i] = 0;
-        }
-        characterbuffer_ptr = minikits_savecharacterbufferptr;
     }
 }
 
@@ -711,47 +722,48 @@ void IncrementMinikitCounter(GameObject_s *) {
         return;
     }
     GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
-    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) != 0 ||
-        *counter >= 10) {
-        return;
-    }
-    ++*counter;
-    if (*counter == 10) {
-        if (gizmo_index == 0) {
-            NuVecRotateX(&camera, &camera, 0xf1c8);
-            NuVecRotateY(&camera, &camera, 0xe000);
-        } else {
-            NuVecRotateX(&camera, &camera, 0xeaab);
-            NuVecRotateY(&camera, &camera, 0x78e4);
+    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) == 0 &&
+        !(*counter >= 10)) {
+        ++*counter;
+        if (*counter == 10) {
+            if (gizmo_index == 0) {
+                NuVecRotateX(&camera, &camera, 0xf1c8);
+                NuVecRotateY(&camera, &camera, 0xe000);
+            } else {
+                NuVecRotateX(&camera, &camera, 0xeaab);
+                NuVecRotateY(&camera, &camera, 0x78e4);
+            }
+            NuVecAdd(&camera, &camera, &pickup->position);
+            GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
+            GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
         }
-        NuVecAdd(&camera, &camera, &pickup->position);
-        GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
-        GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
+        // The reference's completion branch passes an uninitialized temporary.
+        // Keep the message at the same valid averaged position as earlier counts.
+        AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
     }
-    // The reference's completion branch passes an uninitialized temporary.
-    // Keep the message at the same valid averaged position as earlier counts.
-    AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
 }
 
 i32 EffectOffProgress_Update(LEVEL_PROGRESS_s *progress, char *name, i32 visible) {
     if (name == NULL || progress == NULL || NuStrLen(name) > 15)
         return 0;
     for (i32 i = 0; i < 12; ++i) {
-        if (NuStrICmp(progress->disabled_effect_names[i], name) == 0) {
-            if (visible != 0) {
-                progress->disabled_effect_names[i][0] = '\0';
-                return 2;
-            }
-            return 3;
+        if (NuStrICmp(progress->disabled_effect_names[i], name) != 0) {
+            continue;
         }
+        if (visible != 0) {
+            progress->disabled_effect_names[i][0] = '\0';
+            return 2;
+        }
+        return 3;
     }
     if (visible != 0)
         return 0;
     for (i32 i = 0; i < 12; ++i) {
-        if (progress->disabled_effect_names[i][0] == '\0') {
-            NuStrCpy(progress->disabled_effect_names[i], name);
-            break;
+        if (progress->disabled_effect_names[i][0] != '\0') {
+            continue;
         }
+        NuStrCpy(progress->disabled_effect_names[i], name);
+        break;
     }
     return 1;
 }

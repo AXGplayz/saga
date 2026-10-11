@@ -205,8 +205,8 @@ static LEDGE *Ledge_AttachPoint(WORLDINFO_s *world, NUVEC *position, NUVEC *boun
         return NULL;
     LEDGE *nearest_segment = NULL;
     LEDGE *nearest_endpoint = NULL;
-    f32 segment_distance = 100000.0f;
     f32 endpoint_distance = 100000.0f;
+    f32 segment_distance = 100000.0f;
     NUVEC segment_position, endpoint_position;
     u16 segment_angle = 0, endpoint_angle = 0;
     i32 count = world->ledge_count;
@@ -337,7 +337,8 @@ static void Ledges_StoreProgress(void *world_info, void *, void *progress_data) 
     if (world == NULL || world->ledges == NULL)
         return;
     LEDGE *ledge = static_cast<LEDGE *>(world->ledges);
-    for (i32 i = 0; i < world->ledge_count && i < 128; ++i, ++ledge) {
+    auto world_ledge_count = world->ledge_count;
+    for (i32 i = 0; i < world_ledge_count && i < 128; ++i, ++ledge) {
         u32 mask = 1u << (i & 31);
         if (!(ledge->state_flags & 2))
             progress->state[4 + (i >> 5)] &= ~mask;
@@ -389,27 +390,28 @@ static inline void Ledge_TryAttach(WORLDINFO_s *world, GameObject_s *object) {
         if (object->character_context != 0 || !(object->context_animation_timer >= 0.1f))
             return;
     }
-    if (!object->apiobj.player_controlled && !(object->field_0xf01 & 0x80))
-        return;
-    f32 radius = 3.0f * object->apiobj.field_0x1dc;
-    NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
-                     object->apiobj.collision_position.z - radius};
-    NUVEC maximum = {object->apiobj.collision_position.x + radius, object->apiobj.upper_position.y,
-                     object->apiobj.collision_position.z + radius};
-    NUVEC position = {(maximum.x + minimum.x) * 0.5f, (maximum.y + minimum.y) * 0.5f, (maximum.z + minimum.z) * 0.5f};
-    u16 angle;
-    if (Ledge_AttachPoint(world, &position, &minimum, &maximum, &angle) == NULL)
-        return;
-    object->character_context = 0x5b;
-    object->context_animation = 0x9d;
-    object->apiobj.velocity = v000;
-    object->external_force = position;
-    object->apiobj.movement_facing_angle = angle + 0x8000;
-    object->launch_origin.x =
-        object->external_force.x - NU_SIN_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
-    object->launch_origin.y = object->external_force.y;
-    object->launch_origin.z =
-        object->external_force.z - NU_COS_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+    if (!(!object->apiobj.player_controlled && !(object->field_0xf01 & 0x80))) {
+        f32 radius = 3.0f * object->apiobj.field_0x1dc;
+        NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
+                         object->apiobj.collision_position.z - radius};
+        NUVEC maximum = {object->apiobj.collision_position.x + radius, object->apiobj.upper_position.y,
+                         object->apiobj.collision_position.z + radius};
+        NUVEC position = {(maximum.x + minimum.x) * 0.5f, (maximum.y + minimum.y) * 0.5f,
+                          (maximum.z + minimum.z) * 0.5f};
+        u16 angle;
+        if (Ledge_AttachPoint(world, &position, &minimum, &maximum, &angle) == NULL)
+            return;
+        object->character_context = 0x5b;
+        object->context_animation = 0x9d;
+        object->apiobj.velocity = v000;
+        object->external_force = position;
+        object->apiobj.movement_facing_angle = angle + 0x8000;
+        object->launch_origin.x =
+            object->external_force.x - NU_SIN_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+        object->launch_origin.y = object->external_force.y;
+        object->launch_origin.z =
+            object->external_force.z - NU_COS_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+    }
 }
 
 static inline void Ledge_UpdateUnattached(WORLDINFO_s *world, GameObject_s *object) {
@@ -444,7 +446,20 @@ void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     u16 angle = object->apiobj.movement_facing_angle + 0x4000;
     f32 push = PushingTowardsAngle(input, angle);
     f32 speed;
-    if (push > NuTrigTable[0x3555]) {
+    if (!(push > NuTrigTable[0x3555])) {
+        if (push < -NuTrigTable[0x3555]) {
+            if (object->apiobj.character_model->model_data_b[0x9e] != NULL) {
+                object->context_animation = 0x9e;
+                speed = -AnimSpeed(object->apiobj.character_model, 0x9e);
+                if (speed == 0.0f)
+                    return;
+            } else
+                speed = -0.5f;
+        } else {
+            object->context_animation = 0x9d;
+            return;
+        }
+    } else {
         if (object->apiobj.character_model->model_data_b[0x9f] != NULL) {
             object->context_animation = 0x9f;
             speed = AnimSpeed(object->apiobj.character_model, 0x9f);
@@ -452,24 +467,13 @@ void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 return;
         } else
             speed = 0.5f;
-    } else if (push < -NuTrigTable[0x3555]) {
-        if (object->apiobj.character_model->model_data_b[0x9e] != NULL) {
-            object->context_animation = 0x9e;
-            speed = -AnimSpeed(object->apiobj.character_model, 0x9e);
-            if (speed == 0.0f)
-                return;
-        } else
-            speed = -0.5f;
-    } else {
-        object->context_animation = 0x9d;
-        return;
     }
     NUVEC previous = object->external_force;
     f32 radius = object->apiobj.field_0x1dc;
-    NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
-                     object->apiobj.collision_position.z - radius};
     NUVEC maximum = {object->apiobj.collision_position.x + radius, object->apiobj.upper_position.y,
                      object->apiobj.collision_position.z + radius};
+    NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
+                     object->apiobj.collision_position.z - radius};
     f32 distance = speed * FRAMETIME;
     NUVEC offset = {NU_SIN_LUT(angle) * distance, 0.0f, NU_COS_LUT(angle) * distance};
     NUVEC position;

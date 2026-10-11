@@ -214,11 +214,11 @@ static void antinodeEditor_cbSelectType(eduimenu_s *parent, eduiitem_s *, unsign
         eduiMenuAddItem(menu, eduiItemCheckCreate(1, &attr, 0, 1, antinodeEditor_cbSetType, antinode_types[1]));
     }
     eduiMenuAttach(parent, menu);
-    if (antinode_selected()->type == 2) {
+    if (antinode_selected()->type != 2) {
+        eduiMenuAddItem(menu, eduiItemCheckCreate(2, &attr, 0, 1, antinodeEditor_cbSetType, antinode_types[2]));
+    } else {
         eduiMenuAddItem(menu, eduiItemCheckCreate(2, &attr, 1, 1, antinodeEditor_cbSetType, antinode_types[2]));
         menu->selected = edui_last_item;
-    } else {
-        eduiMenuAddItem(menu, eduiItemCheckCreate(2, &attr, 0, 1, antinodeEditor_cbSetType, antinode_types[2]));
     }
     eduiMenuAttach(parent, menu);
 }
@@ -286,7 +286,29 @@ static EDANTINODE_REGPARM1 EDANTINODE_s *antinodeEditor_GetNearestAntinode(i32 r
         if (!((height >= NuFmin(-0.2f, node->lower_height)) & (upper >= height)))
             continue;
         if (require_inside) {
-            if (node->type == 1) {
+            if (node->type != 1) {
+                if (node->type == 0) {
+                    if (!(node->radius * node->radius > distance))
+                        continue;
+                } else if (node->type == 2) {
+                    f32 diagonal =
+                        NuFsqrt(node->base_radius * node->base_radius + node->base_height * node->base_height);
+                    nuvec_s rectangle_offset;
+                    rectangle_offset.x = aieditor->camera_position.x - node->position.x;
+                    if (rectangle_offset.x > diagonal || rectangle_offset.x < -diagonal)
+                        continue;
+                    rectangle_offset.z = aieditor->camera_position.z - node->position.z;
+                    if (rectangle_offset.z > diagonal || rectangle_offset.z < -diagonal)
+                        continue;
+                    rectangle_offset.y = 0.0f;
+                    NuVecRotateY(&rectangle_offset, &rectangle_offset, -node->flags);
+                    if (!(node->base_radius > NuFabs(rectangle_offset.x)) ||
+                        !(node->base_height > NuFabs(rectangle_offset.z)))
+                        continue;
+                } else {
+                    continue;
+                }
+            } else {
                 f32 extent = node->base_radius > node->base_height ? node->base_radius : node->base_height;
                 nuvec_s ellipse_offset;
                 ellipse_offset.x = aieditor->camera_position.x - node->position.x;
@@ -307,25 +329,6 @@ static EDANTINODE_REGPARM1 EDANTINODE_s *antinodeEditor_GetNearestAntinode(i32 r
                 f32 ellipse_z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * node->base_height;
                 if (!(ellipse_x * ellipse_x + ellipse_z * ellipse_z > ellipse_distance))
                     continue;
-            } else if (node->type == 0) {
-                if (!(node->radius * node->radius > distance))
-                    continue;
-            } else if (node->type == 2) {
-                f32 diagonal = NuFsqrt(node->base_radius * node->base_radius + node->base_height * node->base_height);
-                nuvec_s rectangle_offset;
-                rectangle_offset.x = aieditor->camera_position.x - node->position.x;
-                if (rectangle_offset.x > diagonal || rectangle_offset.x < -diagonal)
-                    continue;
-                rectangle_offset.z = aieditor->camera_position.z - node->position.z;
-                if (rectangle_offset.z > diagonal || rectangle_offset.z < -diagonal)
-                    continue;
-                rectangle_offset.y = 0.0f;
-                NuVecRotateY(&rectangle_offset, &rectangle_offset, -node->flags);
-                if (!(node->base_radius > NuFabs(rectangle_offset.x)) ||
-                    !(node->base_height > NuFabs(rectangle_offset.z)))
-                    continue;
-            } else {
-                continue;
             }
         }
         nearest = node;
@@ -369,7 +372,7 @@ eduimenu_s *antinodeEditor_Process(nupad_s *pad) {
             eduiMenuAddItem(menu, eduiItemToggleCreate(0x80, &attr, selected->game_flags >> 7, 4,
                                                        antinodeEditor_cbAntiNodeFlagsToggle,
                                                        const_cast<char *>("Never On A Platform")));
-            eduiMenuAddItem(menu, eduiItemToggleCreate(2, &attr, (selected->game_flags >> 1) & 1, 5,
+            eduiMenuAddItem(menu, eduiItemToggleCreate(2, &attr, (antinode_selected()->game_flags >> 1) & 1, 5,
                                                        antinodeEditor_cbAntiNodeFlagsToggle,
                                                        const_cast<char *>("Disbale direction memory")));
         }
@@ -431,8 +434,8 @@ eduimenu_s *antinodeEditor_Process(nupad_s *pad) {
         if (selected != nullptr)
             edcamSetPos(&selected->position);
     } else if ((held & 0x100) && (pressed & (1 | 2 | 4 | 8))) {
-        bool forward = false;
         bool skip_platforms = false;
+        bool forward = false;
         if (pressed & 8) {
             forward = true;
         } else if (pressed & 2) {
@@ -481,23 +484,18 @@ eduimenu_s *antinodeEditor_Process(nupad_s *pad) {
                 else
                     antinode_rotation_repeat() =
                         antinode_rotation_repeat() + 20 < 601 ? antinode_rotation_repeat() + 20 : 600;
-                selected->flags = (held & 0x8000) ? NuAngSub(selected->flags, antinode_rotation_repeat())
-                                                  : NuAngAdd(selected->flags, antinode_rotation_repeat());
+                if ((held & 0x8000)) {
+                    selected->flags = NuAngSub(selected->flags, antinode_rotation_repeat());
+                } else {
+                    selected->flags = NuAngAdd(selected->flags, antinode_rotation_repeat());
+                }
                 aieditorsettings.area_rotation = selected->flags;
                 antinodeEditor_AntinodeMoved(selected);
             }
         } else if (aieditorsettings.solid_antinode_display && (held & (0x1000 | 0x4000))) {
             aieditor->flags |= 4;
             f32 step = (selected->upper_height - selected->lower_height) * 0.05f;
-            if (!(held & 0x1000)) {
-                if (held & 4)
-                    selected->lower_height += step;
-                else if (held & 1)
-                    selected->lower_height -= step;
-                selected->lower_height = selected->lower_height > selected->upper_height - 0.01f
-                                             ? selected->upper_height - 0.01f
-                                             : selected->lower_height;
-            } else {
+            if (held & 0x1000) {
                 if (held & 4)
                     selected->upper_height += step;
                 else if (held & 1)
@@ -505,6 +503,16 @@ eduimenu_s *antinodeEditor_Process(nupad_s *pad) {
                 selected->upper_height = selected->upper_height < selected->lower_height + 0.01f
                                              ? selected->lower_height + 0.01f
                                              : selected->upper_height;
+            } else {
+                if (held & 4)
+                    selected->lower_height += step;
+                else if (held & 1)
+                    selected->lower_height -= step;
+                if (selected->lower_height > selected->upper_height - 0.01f) {
+                    selected->lower_height = selected->upper_height - 0.01f;
+                } else {
+                    selected->lower_height = selected->lower_height;
+                }
             }
         }
     }
@@ -611,8 +619,8 @@ extern "C" {
         overlay_material->diffuse_color.r = 0.5f;
         overlay_material->diffuse_color.g = 0.5f;
         overlay_material->diffuse_color.b = 0.5f;
-        overlay_material->attribs.alpha_mode = 0;
         overlay_material->attribs.cull_mode = 2;
+        overlay_material->attribs.alpha_mode = 0;
         overlay_material->attribs.z_mode = 3;
         overlay_material->opacity = 1.0f;
         NuMtlUpdate(overlay_material);

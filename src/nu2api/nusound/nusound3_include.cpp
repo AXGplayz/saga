@@ -174,17 +174,18 @@ namespace {
     void StreamListRemove(NuEList<NuSound3Voice> *list, NuSound3Voice *voice) {
         NuSound3Voice *previous = voice->intrusive_prev;
         NuSound3Voice *next = voice->intrusive_next;
-        if (next != NULL || previous != NULL) {
-            list->length--;
-            if (previous != NULL) {
-                previous->intrusive_next = next;
-            }
-            if (next != NULL) {
-                next->intrusive_prev = previous;
-            }
-            voice->intrusive_next = NULL;
-            voice->intrusive_prev = NULL;
+        if (next == NULL && previous == NULL) {
+            return;
         }
+        list->length--;
+        if (previous != NULL) {
+            previous->intrusive_next = next;
+        }
+        if (next != NULL) {
+            next->intrusive_prev = previous;
+        }
+        voice->intrusive_next = NULL;
+        voice->intrusive_prev = NULL;
     }
 
 } // namespace
@@ -509,9 +510,9 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
         if (streaming_sample != NULL && streaming_sample->GetResourceCount() == 0) {
             NuSoundStream *node = new NuSoundStream();
 
+            node->field_0xc = (u8)(voice_loop != 0);
             node->ps2volume = volume_bits;
             node->pending_start = start_voice;
-            node->field_0xc = (u8)(voice_loop != 0);
             node->field_0xd = 0;
             g_NuSoundStreams[stream_index] = node;
             node->stream = streaming_sample;
@@ -571,6 +572,7 @@ void NuSound3ResumeStereoStream(i32 stream_index) {
 // flag; positional setup is selected independently by source_position.
 void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 falloff_a, f32 falloff_b, i32 volume_left, i32 volume_right,
                          f32 pitch, bool loop) {
+    f32 oldest_time;
     (void)volume_right;
     if (!(NuSound.GetNumAvailableOutputDevices() < 1 || index < 0 ||
           index >= static_cast<i32>(g_NuSoundSamples.length))) {
@@ -594,7 +596,6 @@ void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 falloff_a, f32 falloff_b, 
                 return;
             }
 
-            f32 oldest_time;
             NuSoundVoice *oldest_voice = NuSound.GetOldestVoice(sample, oldest_time);
             if (oldest_voice != NULL) {
                 NuSound3StopVoice(oldest_voice);
@@ -605,10 +606,10 @@ void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 falloff_a, f32 falloff_b, 
         voice->source = source;
         voice->pitch = pitch;
         voice->volume = volume_left;
-        voice->falloff_a = falloff_a;
         voice->falloff_b = falloff_b;
-        voice->loop = loop;
+        voice->falloff_a = falloff_a;
         voice->source_position = pos;
+        voice->loop = loop;
         if (pos != NULL) {
             voice->position = *pos;
         }
@@ -769,8 +770,8 @@ void NuSound3Update(void) {
                     ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->SetAutoDelete(false);
                     ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
                     ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->Play();
-                    stream->pending_start = 0;
                     stream->field_0xd = 1;
+                    stream->pending_start = 0;
                 }
             }
         } else if (NuSound3Stream::mVoice.obj != NULL) {

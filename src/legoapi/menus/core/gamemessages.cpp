@@ -149,11 +149,7 @@ GAMEMESSAGE_s *AddGameMsg(ADDGAMEMSG *message) {
 initialise_slot:
     slot->text = NULL;
     i32 text_index = 0;
-    if (message->special != NULL) {
-        if (NuSpecialExistsFn(message->special) == 0) {
-            return NULL;
-        }
-    } else {
+    if (message->special == NULL) {
         if (message->text == NULL) {
             return NULL;
         }
@@ -169,14 +165,18 @@ initialise_slot:
                 slot->text_buffer[text_index] = message->text[text_index];
             }
         }
+    } else {
+        if (NuSpecialExistsFn(message->special) == 0) {
+            return NULL;
+        }
     }
     slot->text_buffer[text_index] = '\0';
 
     slot->field_0xd4 = 0.0f;
     slot->position = *message->position;
     slot->position_a = slot->position;
-    slot->field_0xac = message->scale;
     slot->field_0xb4 = message->scale;
+    slot->field_0xac = message->scale;
     slot->elapsed = 0.0f;
     if ((message->flags & 0x80) == 0) {
         slot->duration = message->duration;
@@ -201,14 +201,14 @@ initialise_slot:
         slot->field_0xfb = 0;
     }
     slot->field_0xf9 = static_cast<u8>((message->flags & 1) == 0);
-    slot->field_0xfa = 0;
     slot->active = 1;
+    slot->field_0xfa = 0;
     slot->field_0xfc = message->field_0x4f;
     slot->icon = static_cast<u16>(message->icon);
-    if (message->special != NULL) {
-        slot->special = *message->special;
-    } else {
+    if (message->special == NULL) {
         slot->special = nuhspecial_s();
+    } else {
+        slot->special = *message->special;
     }
 
     slot->field_0xfd = static_cast<u8>(message->player_index);
@@ -305,7 +305,8 @@ void EndScoreMessage(GAMEMESSAGE_s *message) {
             goto play_counter_sound;
         }
 
-        COINPACKET *packet = Player[player_index]->coinpacket;
+        GameObject_s *object = Player[player_index];
+        COINPACKET *packet = object->coinpacket;
         const u32 old_coins = packet->coins;
         if (static_cast<i16>(data->icon) != -1) {
             packet->lastcoin = data->icon;
@@ -313,13 +314,14 @@ void EndScoreMessage(GAMEMESSAGE_s *message) {
 
         if (BonusWinner == -1) {
             IncreaseScore(&packet->coins, data->score, 1);
+            packet = object->coinpacket;
             packet->scale = 1.5f;
         }
         if (BuildUpDone == 0) {
             BuildUpScale = 1.5f;
         }
         if (Arcade != 0) {
-            Arcade_CoinCollected(player_index, &packet->coins, old_coins);
+            Arcade_CoinCollected(static_cast<i8>(data->field_0xfd), &packet->coins, old_coins);
             goto play_counter_sound;
         }
         if (BonusArea == 0 || BonusWinner != -1 || packet->coins <= 999999) {
@@ -327,7 +329,7 @@ void EndScoreMessage(GAMEMESSAGE_s *message) {
         }
 
         packet->coins = 1000000;
-        SetBonusWinner(player_index);
+        SetBonusWinner(static_cast<i8>(data->field_0xfd));
         BonusWinFlag = 0;
         NewMenu(31, -1, -1);
         PlaySfx("MK-Panel", NULL);
@@ -513,12 +515,12 @@ void TransformGameMessages(nuvec_s *camera_position, nuvec_s *camera_scale, nuve
         const f32 depth = (message->position.x - camera_position->x) * camera_direction->x +
                           (message->position.y - camera_position->y) * camera_direction->y +
                           (message->position.z - camera_position->z) * camera_direction->z;
-        if (depth > 0.0f) {
+        if (!(depth <= 0.0f)) {
             message->field_0xfb = 0;
         } else {
             message->field_0xfb = 1;
         }
-        if (depth > 0.0f && (message->flags & 4) != 0) {
+        if (!(depth <= 0.0f) && (message->flags & 4) != 0) {
             const f32 offset = message->field_0xb4;
             NUVEC target = {message->position.x + offset * camera_scale->x,
                             message->position.y + offset * camera_scale->y,

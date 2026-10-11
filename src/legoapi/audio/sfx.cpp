@@ -217,7 +217,11 @@ void SetLevelSfxBits(WORLDINFO *world) {
         ADD_SFX("SwLever");
     }
 
-    if (world->area == NULL || (world->area->flags & 1) == 0) {
+    if (world->area != NULL && (world->area->flags & 1) != 0) {
+        ADD_SFX("XWing_Torpedo");
+        ADD_SFX("imp_proton_torp");
+        ADD_SFX("XWing_LoopDeLoop");
+    } else {
         ADD_SFX("Char_Slide_Lp");
         if (world->push_block_count > 0) {
             ADD_SFX("Block_Shove");
@@ -228,10 +232,6 @@ void SetLevelSfxBits(WORLDINFO *world) {
         if (world->area != NULL && world->area == SPEEDERCHASE_ADATA) {
             ADD_SFX("XWing_LoopDeLoop");
         }
-    } else {
-        ADD_SFX("XWing_Torpedo");
-        ADD_SFX("imp_proton_torp");
-        ADD_SFX("XWing_LoopDeLoop");
     }
     ADD_SFX("Explode1");
 
@@ -1362,7 +1362,25 @@ void AddFootSteps(GameObject_s *object) {
     const i32 advancing = (packet.flags & ANIMPACKET_FLAG_LOOPED) != 0 ? packet.previous_time > packet.current_time
                                                                        : packet.current_time > packet.previous_time;
     bool crossed = false;
-    if ((config->flags & 0x10000) != 0) {
+    if ((config->flags & 0x10000) == 0) {
+        if (!(packet.previous_time > packet.current_time)) {
+            if (!advancing)
+                return;
+            for (i32 i = 2; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
+                    crossed = true;
+            }
+        } else {
+            if (!advancing)
+                return;
+            for (i32 i = 2; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
+                    crossed = true;
+            }
+        }
+    } else {
         if (!advancing)
             return;
         if (!(packet.previous_time > packet.current_time)) {
@@ -1377,22 +1395,6 @@ void AddFootSteps(GameObject_s *object) {
                 if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
                     crossed = true;
             }
-        }
-    } else if (!(packet.previous_time > packet.current_time)) {
-        if (!advancing)
-            return;
-        for (i32 i = 2; i < 4; ++i) {
-            const f32 frame = config->event_frames[i];
-            if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
-                crossed = true;
-        }
-    } else {
-        if (!advancing)
-            return;
-        for (i32 i = 2; i < 4; ++i) {
-            const f32 frame = config->event_frames[i];
-            if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
-                crossed = true;
         }
     }
     if (crossed)
@@ -1453,10 +1455,10 @@ void LevChatterSfx(char *name, nuvec_s *position) {
 
 void PlayRepeatSfx(char *name, i32 sfx_id, f32 initial_delay, char play_count, f32 interval, nuvec_s *position) {
     if (play_count == 1 && initial_delay == 0.0f) {
-        if (sfx_id != -1) {
-            GameAudio_PlaySfxById(sfx_id, position, 0, 0);
-        } else {
+        if (sfx_id == -1) {
             PlaySfx(name, position);
+        } else {
+            GameAudio_PlaySfxById(sfx_id, position, 0, 0);
         }
         return;
     }
@@ -1724,7 +1726,11 @@ void AddLevSfx(WORLDINFO_s *world, nuvec_s *position, char *name, i32 sfx) {
         if (index >= 64) {
             return;
         }
-        world->level_sfx[index].position = position != NULL ? *position : nuvec_zero;
+        if (position != NULL) {
+            world->level_sfx[index].position = *position;
+        } else {
+            world->level_sfx[index].position = nuvec_zero;
+        }
         world->level_sfx[index].id = static_cast<i16>(sfx);
         world->level_sfx[index].references = 1;
         world->level_sfx_count = index + 1;

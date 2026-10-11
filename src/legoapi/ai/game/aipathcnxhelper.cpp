@@ -45,9 +45,8 @@ void AIPathCalcExtents(AIPATH *path) {
         AIPATHNODE &node = path->nodes[node_index];
         const f32 x = node.position.x;
         const f32 radius = node.radius;
-        const f32 z = node.position.z;
         const f32 min_x = x - radius;
-        const f32 min_z = z - radius;
+        const f32 min_z = node.position.z - radius;
         const f32 min_height = node.min_height;
 
         if (min_x < path->bounds_min.x) {
@@ -60,7 +59,7 @@ void AIPathCalcExtents(AIPATH *path) {
             path->bounds_min.z = min_z;
         }
         const f32 max_x = x + radius;
-        const f32 max_z = z + radius;
+        const f32 max_z = node.position.z + radius;
         if (max_x > path->bounds_max.x) {
             path->bounds_max.x = max_x;
         }
@@ -145,7 +144,8 @@ void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system) {
     system->active_controllers.head = NULL;
     system->active_controllers.tail = NULL;
     memset(system->controllers, 0, system->controller_count * sizeof(*system->controllers));
-    for (i32 i = 0; i < system->controller_count; ++i) {
+    auto system_controller_count = system->controller_count;
+    for (i32 i = 0; i < system_controller_count; ++i) {
         NuLinkedListAppend(&system->available_controllers, &system->controllers[i].links);
     }
 }
@@ -352,8 +352,8 @@ AIPATHCNXCONTROLLER_s *AIPathCnxControllerCreate(AIPATHCNXCONTROLSYS_s *control_
             break;
         }
     }
-    controller->connection = connection;
     controller->flags = static_cast<u8>((controller->flags & ~1) | (direction & 1));
+    controller->connection = connection;
     controller->gizmo_output = gizmo_output;
     if (target != NULL) {
         controller->target = target;
@@ -429,8 +429,8 @@ AIPATHCNXHELPER_s *AIPathCnxHelperSys_AddHelper(AIPATHCNXHELPERSYS_s *system, AI
     ++helper_count;
     system->helper_count = helper_count;
     helper->connection = connection;
-    helper->target = target;
     helper->direction = direction;
+    helper->target = target;
     helper->type = type;
     return helper;
 }

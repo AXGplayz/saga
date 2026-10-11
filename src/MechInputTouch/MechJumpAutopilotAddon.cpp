@@ -18,16 +18,16 @@ void MechJumpAutoPilotAddon::AnalyseJumpTrajectory() {
 
     {
         float vy = field_54.y;
-        float x = field_44.x;
         float z = field_44.z;
+        float x = field_44.x;
         for (int count = 50; count != 0; --count) {
             if (state == 2)
                 break;
 
             VuVec next;
             next.x = x + field_54.x * 0.1f;
-            next.y = y + vy * 0.1f;
             next.z = z + field_54.z * 0.1f;
+            next.y = y + vy * 0.1f;
             LookForBottomInt(next);
             LookForTerrInt(next);
 
@@ -149,15 +149,159 @@ bool MechJumpAutoPilotAddon::LookForLandingSpotAroundPoint(VuVec const &point) {
     bool found = false;
     f32 best_score = -1000000000.0f;
     const f32 sweep_height = field_94 * 3.0f + 1.0f;
-    const f32 ray_offset = sweep_height - 1.0f;
     const f32 ray_length = -sweep_height;
+    const f32 ray_offset = sweep_height - 1.0f;
 
-    for (i32 i = 0; i < 9; ++i) {
+    {
         VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
         VuVec origin;
-        origin.x = point.x + offsets[i].x;
         origin.y = field_24.y + ray_offset;
-        origin.z = point.z + offsets[i].z;
+        origin.z = point.z + offsets[0].z;
+        origin.x = point.x + offsets[0].x;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.y = field_24.y + ray_offset;
+        origin.x = point.x + offsets[1].x;
+        origin.z = point.z + offsets[1].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[2].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[2].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[3].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[3].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[4].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[4].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[5].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[5].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[6].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[6].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[7].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[7].z;
+        if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
+            const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
+            const f32 dx = hit.x - field_24.x;
+            const f32 dz = hit.z - field_24.z;
+            const f32 score = (hit.y - field_24.y + 0.1f) * (dx * dx + dz * dz);
+            if (score > best_score) {
+                best_score = score;
+                field_84 = hit;
+            }
+            found = true;
+        }
+    }
+    {
+        VuVec ray(0.0f, ray_length, 0.0f, 1.0f);
+        VuVec origin;
+        origin.x = point.x + offsets[8].x;
+        origin.y = field_24.y + ray_offset;
+        origin.z = point.z + offsets[8].z;
         if (GameRayCast(&origin.xyz, &ray.xyz, 0.0f, 0)) {
             const VuVec hit(origin.x + ray.x, origin.y + ray.y, origin.z + ray.z, 0.0f);
             const f32 dx = hit.x - field_24.x;
@@ -174,23 +318,24 @@ bool MechJumpAutoPilotAddon::LookForLandingSpotAroundPoint(VuVec const &point) {
 }
 
 void MechJumpAutoPilotAddon::LookForTerrInt(VuVec const &point) {
-    if (field_9d)
-        return;
     NUVEC displacement;
-    displacement.x = point.x - field_44.x;
-    displacement.y = point.y - field_44.y;
-    displacement.z = point.z - field_44.z;
-    if (GameRayCast(&field_44.xyz, &displacement, 0.0f, 0) == 0)
-        return;
+    if (!field_9d) {
 
-    field_74.w = 0.0f;
-    VuVec normal = VuVec_Zero;
-    field_74.z = field_44.z + displacement.z;
-    field_9d = true;
-    field_74.y = field_44.y + displacement.y;
-    field_74.x = field_44.x + displacement.x;
-    NewRayCastGetImpactNormal(&normal.xyz);
-    state = 2 + (normal.y > 0.8f) * 4;
+        displacement.x = point.x - field_44.x;
+        displacement.y = point.y - field_44.y;
+        displacement.z = point.z - field_44.z;
+        if (GameRayCast(&field_44.xyz, &displacement, 0.0f, 0) == 0)
+            return;
+
+        field_74.w = 0.0f;
+        VuVec normal = VuVec_Zero;
+        field_74.z = field_44.z + displacement.z;
+        field_9d = true;
+        field_74.y = field_44.y + displacement.y;
+        field_74.x = field_44.x + displacement.x;
+        NewRayCastGetImpactNormal(&normal.xyz);
+        state = 2 + (normal.y > 0.8f) * 4;
+    }
 }
 
 MechJumpAutoPilotAddon::MechJumpAutoPilotAddon(MechObjectInterface &object)
@@ -245,17 +390,17 @@ bool MechJumpAutoPilotAddon::OnProcess(MechAddon::ProcessStage, float delta_time
 
     elapsed_time += delta_time;
     if (__builtin_expect(character->character_context == LEGOCONTEXT_JUMP && !started, 0)) {
-        field_24.x = character->apiobj.position.x;
         field_24.y = character->apiobj.position.y;
-        field_24.z = character->apiobj.position.z;
+        field_24.x = character->apiobj.position.x;
         field_24.w = 1.0f;
-        field_34.x = character->apiobj.velocity.x;
+        field_24.z = character->apiobj.position.z;
         field_34.y = character->apiobj.velocity.y;
+        field_34.x = character->apiobj.velocity.x;
         field_34.z = character->apiobj.velocity.z;
         field_34.w = 1.0f;
         field_44.x = field_24.x;
-        field_44.y = field_24.y;
         field_44.z = field_24.z;
+        field_44.y = field_24.y;
         field_44.w = 1.0f;
         field_54.x = field_34.x;
         field_54.y = field_34.y;

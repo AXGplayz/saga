@@ -48,8 +48,8 @@ void MechHintUIButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &);
 
 struct MechHintUIButton : MechTouchUITexButton {
     HINT_s *active_hint;
-    HINT_s *pending_hint;
     f32 display_elapsed;
+    HINT_s *pending_hint;
     f32 *slide_target;
     f32 slide_from, slide_to, slide_elapsed, slide_duration, slide_delay, slide;
     u8 pulse_active;
@@ -105,9 +105,9 @@ void MechHintUIButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder 
     const f32 y = button.position.y;
     hintIconPos.from = VuVec(x, y, 1.0f, 1.0f);
     hintIconPos.to = VuVec(-ICONX, -0.7f, 1.0f, 1.0f);
-    hintIconPos.elapsed = 0.0f;
     hintIconPos.duration = 0.5f;
     hintIconPos.delay = 0.0f;
+    hintIconPos.elapsed = 0.0f;
     hintIconPos.target->z = 1.0f;
     hintIconPos.target->w = 1.0f;
     hintIconPos.target->x = x;
@@ -134,9 +134,9 @@ void MechHintUIButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder 
 }
 
 void initHintSys() {
-    hintsys.current_hint = 0;
     hintsys.state = 2;
     hintsys.active_hint = NULL;
+    hintsys.current_hint = 0;
     MechHintUIButton *button =
         new MechHintUIButton(VuVec(ICONXPOS_TOUCHYFEELY, ICONYPOS_TOUCHYFEELY, 0.0f, 1.0f), 0.075f);
     button->UpdateTexture(MechInputTouchVirtualConsoleController::s_textures[3]);
@@ -211,8 +211,8 @@ void MechHintUIButton::Process(float elapsed) {
         const bool touch = TouchHacks::TouchControlsActive || MechInputTouchSystem::s_actualTouchMode == 7;
         position.y = touch ? ICONYPOS_TOUCHYFEELY : ICONYPOS_VIRTUALS;
         const f32 blend = AlphaBlendTime;
-        slide_from = *slide_target;
         slide_to = touch ? ICONXPOS_TOUCHYFEELY : ICONXPOS_VIRTUALS;
+        slide_from = *slide_target;
         slide_elapsed = 0.0f;
         slide_delay = 0.0f;
         slide_duration = blend;
@@ -359,8 +359,8 @@ void Hint_SetHint(HINT_s *hint, i32 force, i32 allow_completed) {
             button->field_0x48 = 0.0f;
             button->field_0x4c = 0.0f;
             button->field_0x54 = 0.0f;
-            button->field_0x44 = alpha_value;
             button->field_0x50 = blend_time;
+            button->field_0x44 = alpha_value;
         }
         return;
     }
@@ -370,7 +370,26 @@ void Hint_SetHint(HINT_s *hint, i32 force, i32 allow_completed) {
         if (hint->field_0x20 > 0.0f)
             return;
     }
-    if ((hint->flags & 8) != 0) {
+    if ((hint->flags & 8) == 0) {
+        if (button->field_0x78 != hint) {
+            const f32 blend_time = AlphaBlendTime;
+            button->field_0x7c = hint;
+            const f32 position = *button->field_0x84;
+            f32 *alpha = button->field_0x40;
+            button->field_0x8c = -1.5f;
+            button->field_0x90 = 0.0f;
+            button->field_0x98 = 0.0f;
+            button->field_0x88 = position;
+            button->field_0x94 = blend_time;
+            const f32 alpha_value = *alpha;
+            button->field_0xa0 = 0;
+            button->field_0x48 = 0.0f;
+            button->field_0x4c = 0.0f;
+            button->field_0x54 = 0.0f;
+            button->field_0x44 = alpha_value;
+            button->field_0x50 = blend_time;
+        }
+    } else {
         if (button->field_0x78 != NULL) {
             const f32 blend_time = AlphaBlendTime;
             button->field_0x7c = NULL;
@@ -393,23 +412,6 @@ void Hint_SetHint(HINT_s *hint, i32 force, i32 allow_completed) {
         hintsys.active_hint = hint;
         if (hint->on_display != NULL)
             hint->on_display(hint);
-    } else if (button->field_0x78 != hint) {
-        const f32 blend_time = AlphaBlendTime;
-        button->field_0x7c = hint;
-        const f32 position = *button->field_0x84;
-        f32 *alpha = button->field_0x40;
-        button->field_0x8c = -1.5f;
-        button->field_0x90 = 0.0f;
-        button->field_0x98 = 0.0f;
-        button->field_0x88 = position;
-        button->field_0x94 = blend_time;
-        const f32 alpha_value = *alpha;
-        button->field_0xa0 = 0;
-        button->field_0x48 = 0.0f;
-        button->field_0x4c = 0.0f;
-        button->field_0x54 = 0.0f;
-        button->field_0x44 = alpha_value;
-        button->field_0x50 = blend_time;
     }
     hintsys.current_hint = 0;
     hintsys.field_0x1c = 0;
@@ -680,29 +682,6 @@ void Hint_SetHintFromId(i32 hint_id, i32 force, i32 allow_completed) {
         Hint_SetHint(hint, force, allow_completed);
 }
 
-void Hint_LoadAllGameState() {
-    HINTSYS_s *system = &hintsys;
-    HINT_s *hint = system->hints;
-    if (hint == NULL || system->save_bits == NULL || hint->control_mode_ids[0] == -1 || system->save_bit_count <= 0) {
-        return;
-    }
-
-    i32 index = 0;
-    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
-    do {
-        if (HINT_COMPLETE(index) != 0) {
-            hint->completion_flags[control_mode] = 1;
-        } else {
-            hint->completion_flags[control_mode] = 0;
-        }
-        ++hint;
-        if (hint->control_mode_ids[0] == -1) {
-            return;
-        }
-        ++index;
-    } while ((index >> 5) < system->save_bit_count);
-}
-
 void Hint_SaveAllGameState() {
     HINT_s *hint = hintsys.hints;
     if (hint == NULL) {
@@ -724,6 +703,29 @@ void Hint_SaveAllGameState() {
         ++hint;
         ++index;
     } while (hint->control_mode_ids[0] != -1);
+}
+
+void Hint_LoadAllGameState() {
+    HINTSYS_s *system = &hintsys;
+    HINT_s *hint = system->hints;
+    if (hint == NULL || system->save_bits == NULL || hint->control_mode_ids[0] == -1 || system->save_bit_count <= 0) {
+        return;
+    }
+
+    i32 index = 0;
+    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    do {
+        if (HINT_COMPLETE(index) != 0) {
+            hint->completion_flags[control_mode] = 1;
+        } else {
+            hint->completion_flags[control_mode] = 0;
+        }
+        ++hint;
+        if (hint->control_mode_ids[0] == -1) {
+            return;
+        }
+        ++index;
+    } while ((index >> 5) < system->save_bit_count);
 }
 
 void Hint_ClearHintsAndDoneFlags() {

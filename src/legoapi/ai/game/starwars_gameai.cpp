@@ -92,18 +92,17 @@ static i32 StarWars_PrepareTakeOverJump(AIPACKET_s *packet, APIOBJECT_s *object,
 static i32 StarWars_PrepareObstacle(AIPACKET_s *packet, APIOBJECT_s *object, i32) {
     i32 near_index = packet->path_info.dist > 0.5f;
     i32 far_index = near_index == 0;
-    AIPATHCNX *connection = packet->path_info.connection;
-    AIPATHNODE *near_node = &packet->path_info.path->nodes[connection->node_indices[near_index]];
-    AIPATHNODE *far_node = &packet->path_info.path->nodes[connection->node_indices[far_index]];
+    AIPATHNODE *near_node = &packet->path_info.path->nodes[packet->path_info.connection->node_indices[near_index]];
+    AIPATHNODE *far_node = &packet->path_info.path->nodes[packet->path_info.connection->node_indices[far_index]];
     NUVEC offset;
     offset.z = far_node->position.z - near_node->position.z;
-    offset.x = far_node->position.x - near_node->position.x;
     offset.y = 0.0f;
+    offset.x = far_node->position.x - near_node->position.x;
     f32 radius = near_node->radius - packet->mover_height;
     if (radius < 0.0f) {
         radius = 0.0f;
     }
-    NuVecScale(&offset, &offset, radius / connection->horizontal_distance);
+    NuVecScale(&offset, &offset, radius / packet->path_info.connection->horizontal_distance);
     NuVecAdd(&packet->movement_destination, &near_node->position, &offset);
     offset.x = packet->path_info.width;
     offset.y = 0.0f;
@@ -375,9 +374,9 @@ extern TERRSET *CurTerr;
 
 static i32 StarWars_MidSpecialMove_Default(AISYS_s *system, AIPACKET_s *packet, APIOBJECT_s *object) {
     GameObject_s *owner = object->objptr;
+    AIPATHNODE *nodes = packet->path_info.path->nodes;
     u32 capabilities =
         packet->path_info.connection->traversal_flags[packet->path_info.direction] & packet->capabilities;
-    AIPATHNODE *nodes = packet->path_info.path->nodes;
     AIPATHNODE *source = &nodes[packet->path_info.connection->node_indices[packet->path_info.direction]];
     AIPATHNODE *destination = &nodes[packet->path_info.connection->node_indices[packet->path_info.direction == 0]];
     NuVecSub(&owner->special_move_look_position, &destination->position, &source->position);
@@ -470,17 +469,17 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
         packet->path_connection_state = 0;
         return 0;
     }
-    AIPATHNODE *nodes = packet->path_info.path->nodes;
     u8 source_index = packet->path_info.connection->node_indices[packet->path_info.direction];
     i32 destination_index = packet->path_info.connection->node_indices[packet->path_info.direction == 0];
+    AIPATHNODE *nodes = packet->path_info.path->nodes;
     AIPATHNODE *destination = &nodes[destination_index];
     NUVEC offset;
     if (NuVecXZDistSqr(&object->position, &destination->position, &offset) < destination->radius_squared) {
         packet->path_connection_state = 0;
         return 0;
     }
-    AIPATHNODE *source = &nodes[source_index];
     AIPATHCNX *connection = packet->path_info.connection;
+    AIPATHNODE *source = &nodes[source_index];
     if ((connection->traversal_flags[packet->path_info.direction] & 0x200) == 0 &&
         packet->inside_path_node != destination_index &&
         ((packet->path_info.path->previous_inside_node_bits[destination_index >> 3] >> (destination_index & 7)) & 1) !=
@@ -600,6 +599,7 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
             connection = packet->path_info.connection;
             if ((connection->traversal_flags[packet->path_info.direction] & 0x200) == 0) {
                 GameObject_s *other = Obj;
+                auto packet_mover_height = packet->mover_height;
                 for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++other) {
                     if ((other->apiobj.object_flags & 1) == 0 || other == owner ||
                         (other->apiobj.object_flags & 0x1000) == 0 || other->apiobj.field_0x287 != 0) {
@@ -620,7 +620,7 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
                                height - tolerance > other->apiobj.collision_min.y) {
                         continue;
                     }
-                    f32 clearance = other->ai.mover_height + other->ai.mover_height + packet->mover_height;
+                    f32 clearance = other->ai.mover_height + other->ai.mover_height + packet_mover_height;
                     offset.x = other->apiobj.position.x - destination->position.x;
                     if (!(clearance > offset.x && offset.x > -clearance)) {
                         continue;
@@ -682,8 +682,8 @@ i32 StarWars_PrepareR2D2Glide(AIPACKET_s *packet, APIOBJECT_s *object, i32) {
     NUVEC offset;
     if ((connection->traversal_flags[packet->path_info.direction] & 0x800) != 0) {
         offset.z = destination->position.z - source->position.z;
-        offset.x = destination->position.x - source->position.x;
         offset.y = 0.0f;
+        offset.x = destination->position.x - source->position.x;
         f32 radius = source->radius - packet->mover_height;
         if (radius < 0.0f) {
             radius = 0.0f;
@@ -710,8 +710,8 @@ i32 StarWars_PrepareR2D2Glide(AIPACKET_s *packet, APIOBJECT_s *object, i32) {
     if (owner->id != id_GEONOSIAN || owner->field_0xe31 == 3 || owner->field_0xe31 == 0) {
         owner->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
     }
-    packet->movement_destination = packet->special_move_node->position;
     packet->movement_stopping_distance = 0.0f;
+    packet->movement_destination = packet->special_move_node->position;
     object->collision_priority |= 0x2000;
     return 1;
 }

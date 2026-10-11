@@ -225,7 +225,24 @@ static inline u32 FS_EncodedDateKey(const char *name) {
 void FS_SortStrings(char *start, char *end, i32 mode) {
     char tmp[256];
 
-    if (static_cast<u32>(mode) > 1) {
+    if (!(static_cast<u32>(mode) > 1)) {
+        const i32 direction = mode == 0 ? 1 : -1;
+        for (char *current = start; current != end;) {
+            i32 current_length = NuStrLen(current);
+            char *candidate = current + NuStrLen(current) + 1;
+            while (candidate != end) {
+                const i32 candidate_length = NuStrLen(candidate);
+                if (NuStrICmp(current + 7, candidate + 7) == direction) {
+                    NuStrCpy(tmp, candidate);
+                    memmove(current + candidate_length + 1, current, candidate - current);
+                    memcpy(current, tmp, candidate_length + 1);
+                    current_length = candidate_length;
+                }
+                candidate += candidate_length + 1;
+            }
+            current += current_length + 1;
+        }
+    } else {
         const i32 direction = mode == 2 ? 1 : -1;
         for (char *current = start; current != end;) {
             u32 current_key = FS_EncodedDateKey(current);
@@ -240,23 +257,6 @@ void FS_SortStrings(char *start, char *end, i32 mode) {
                     memmove(current + candidate_length + 1, current, candidate - current);
                     memcpy(current, tmp, candidate_length + 1);
                     current_key = candidate_key;
-                    current_length = candidate_length;
-                }
-                candidate += candidate_length + 1;
-            }
-            current += current_length + 1;
-        }
-    } else {
-        const i32 direction = mode == 0 ? 1 : -1;
-        for (char *current = start; current != end;) {
-            i32 current_length = NuStrLen(current);
-            char *candidate = current + NuStrLen(current) + 1;
-            while (candidate != end) {
-                const i32 candidate_length = NuStrLen(candidate);
-                if (NuStrICmp(current + 7, candidate + 7) == direction) {
-                    NuStrCpy(tmp, candidate);
-                    memmove(current + candidate_length + 1, current, candidate - current);
-                    memcpy(current, tmp, candidate_length + 1);
                     current_length = candidate_length;
                 }
                 candidate += candidate_length + 1;
@@ -577,8 +577,8 @@ void FS_SetCursorToLastFileName() {
         if (NuStrICmp(entry + 7, last_name) == 0) {
             FS_CurrentCursorPos = entry;
             FS_CurrentPos = entry;
-            FS_CurrentPosFileNum = index;
             FS_CursorLine = 0;
+            FS_CurrentPosFileNum = index;
             if (index == 0 || index + 13 < FS_NumFiles) {
                 return;
             }
@@ -865,8 +865,8 @@ extern "C" {
                 i32 stored_checksum;
                 memcpy(&stored_checksum, static_cast<u8 *>(memcard_savedatabuffer) + memcard_savedatasize, 4);
                 if (ChecksumSaveData(memcard_savedatabuffer, memcard_savedatasize) != stored_checksum) {
-                    memcard_loadcorrupt = 1;
                     saveload_autosave = -1;
+                    memcard_loadcorrupt = 1;
                 }
                 if (memcard_extra_savedata != NULL && memcard_extra_savedatabuffer != NULL &&
                     memcard_extra_savedatasize >= 0) {
@@ -904,11 +904,34 @@ extern "C" {
             }
         } else if (memcard_autosavestarted != 0 && memcard_saveneeded == 0 && memcard_savestarted == 0 &&
                    !(memcard_autosavepredelay > 0.0f)) {
-            memcard_saveneeded = 1;
             memcard_slot = saveload_autosave;
+            memcard_saveneeded = 1;
         }
 
-        if (memcard_saveneeded != 0) {
+        if (memcard_saveneeded == 0) {
+            if (memcard_savestarted != 0 && saveload_status == 1) {
+                memcard_savestarted = 0;
+                if (saveload_error == 0) {
+                    MenuSaveOccurred = 1;
+                    if (savesuccessfn != NULL)
+                        savesuccessfn();
+                    if (memcard_autosavestarted != 0) {
+                        memcard_autosavepostdelay = 1.0f;
+                        memcard_autosavestarted = 0;
+                    }
+                } else {
+                    memcard_savefailed = 1;
+                    if (saveload_autosave != -1) {
+                        memcard_saveresult_delay = 1.5f;
+                        saveload_autosave = -1;
+                        memcard_autosavedisabled = 1;
+                        saveload_autosavedisabled = 1;
+                    }
+                    memcard_autosavestarted = 0;
+                    memcard_autosaveinprogress = 0;
+                }
+            }
+        } else {
             if (saveload_status == 1 && saveload_cardtype == 2 && saveload_cardformatted != 0) {
                 memcard_savemessage_delay = 1.5f;
                 if (memcard_savedatabuffer == NULL || memcard_savedata == NULL || memcard_savedatasize <= 0) {
@@ -937,27 +960,6 @@ extern "C" {
                 memcard_savefailed = 0;
                 memcard_justformatted = 0;
             }
-        } else if (memcard_savestarted != 0 && saveload_status == 1) {
-            memcard_savestarted = 0;
-            if (saveload_error == 0) {
-                MenuSaveOccurred = 1;
-                if (savesuccessfn != NULL)
-                    savesuccessfn();
-                if (memcard_autosavestarted != 0) {
-                    memcard_autosavestarted = 0;
-                    memcard_autosavepostdelay = 1.0f;
-                }
-            } else {
-                memcard_savefailed = 1;
-                if (saveload_autosave != -1) {
-                    saveload_autosave = -1;
-                    memcard_saveresult_delay = 1.5f;
-                    saveload_autosavedisabled = 1;
-                    memcard_autosavedisabled = 1;
-                }
-                memcard_autosavestarted = 0;
-                memcard_autosaveinprogress = 0;
-            }
         }
 
         if (memcard_deleteneeded != 0) {
@@ -975,8 +977,8 @@ extern "C" {
         if (memcard_formatme != 0) {
             if (saveload_status == 1 && saveload_cardtype == 2) {
                 saveloadASFormat();
-                memcard_formatme = 0;
                 memcard_formatmessage_delay = 1.5f;
+                memcard_formatme = 0;
                 memcard_formatting = 1;
                 memcard_formatfailed = 0;
                 memcard_justformatted = 0;

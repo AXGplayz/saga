@@ -188,11 +188,13 @@ void MechTouchUIPartySelector_OnRelease_Callback(MechTouchUIElement &element, To
     }
     if (target != NULL) {
         bool tagged = false;
-        if ((target->field_0xf00 & 2) != 0) {
+        if ((target->field_0xf00 & 2) == 0) {
+            if (TagCode(player, target, 0, 0, 1) == 1) {
+                Tag_NewTransfer(player, target);
+                tagged = true;
+            }
+        } else {
             TakeOver2GetIn(target, player);
-            tagged = true;
-        } else if (TagCode(player, target, 0, 0, 1) == 1) {
-            Tag_NewTransfer(player, target);
             tagged = true;
         }
         if (tagged) {
@@ -475,8 +477,9 @@ void MechInputTouchSystem::FindTargetForce(WORLDINFO_s *world, GameObject_s &obj
 MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object, VuVec const &touch, i32 flags,
                                                             MechObjectInterface *required_target,
                                                             MechTempPosInterface *temporary) {
-    MechObjectInterface *best = NULL;
+    VuVec normal;
     f32 best_distance = 25.0f;
+    MechObjectInterface *best = NULL;
     if (VehicleArea)
         best_distance = 5000.0f;
     VuVec start, end, direction;
@@ -490,15 +493,19 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
         if ((flags & 0x10) && TouchHacks::CanUseGizForce(object)) {
             bool found = false;
             PART_s *part = static_cast<PART_s *>(object.force_glow_object);
-            if (part != NULL && object.force_glow_kind == 3) {
+            if (!(part != NULL && object.force_glow_kind == 3)) {
+                if (!(flags & 0x2000)) {
+                    FindTargetForce(world, object, start, direction, best_distance, best, found, true);
+                }
+            } else {
                 if (!(flags & 0x2000) || (part->flags & 0x8000)) {
                     f32 radius = part->radius;
                     if (part->flags & 0x8000)
                         radius *= 6.0f;
                     VuVec center;
                     center.z = part->position.z;
-                    center.y = part->position.y;
                     center.x = part->position.x;
+                    center.y = part->position.y;
                     center.w = 1.0f;
                     f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, radius);
                     if (best_distance > distance) {
@@ -507,8 +514,6 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                         found = true;
                     }
                 }
-            } else if (!(flags & 0x2000)) {
-                FindTargetForce(world, object, start, direction, best_distance, best, found, true);
             }
             if (found)
                 flags = 0;
@@ -523,45 +528,45 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                 nuhspecial_s *special = item->override_special;
                 if (special == NULL || !NuSpecialExistsFn(special))
                     special = &item->type->special;
-                if (item->field_0x125[0] != 0 || (i8)item->state_flags >= 0 || item->type == NULL ||
-                    !NuSpecialExistsFn(special))
-                    continue;
-                bool sphere = __builtin_expect(item->field_0x124 != 0, 0) ||
-                              (world->current_level == MOSEISLEYB_LDATA && index <= 31) ||
-                              (world->current_level == VADERB_LDATA && index <= 1) ||
-                              (world->current_level == CLOUDCITYESCAPEA_LDATA && index == 0) || VehicleArea;
-                f32 distance;
-                bool hit;
-                if (__builtin_expect(sphere, 0)) {
-                    NUVEC *position = item->field_0x120 ? static_cast<NUVEC *>(item->field_0x120)
-                                                        : reinterpret_cast<NUVEC *>(mid_z - 2);
-                    VuVec center;
-                    center.z = position->z;
-                    center.y = position->y;
-                    center.x = position->x;
-                    center.w = 1.0f;
-                    f32 radius = item->field_0x128 > 0.0f ? item->field_0x128 : item->target_scale;
-                    if (VehicleArea)
-                        radius *= 3.0f;
-                    distance =
-                        CalcCapsuleIntersectDistance(start, direction, best_distance + best_distance, center, radius);
-                    hit = distance != 1000000000.0f;
-                } else {
-                    // bounds preserve the original special's fourth lanes.
-                    VuVec minimum, maximum;
-                    minimum.x = special->display_special->bounds_min.x + mid_z[-2];
-                    minimum.y = special->display_special->bounds_min.y + mid_z[-1];
-                    minimum.z = special->display_special->bounds_min.z + mid_z[0];
-                    minimum.w = special->display_special->bounds_min.w;
-                    maximum.x = special->display_special->bounds_max.x + mid_z[-2];
-                    maximum.y = special->display_special->bounds_max.y + mid_z[-1];
-                    maximum.z = special->display_special->bounds_max.z + mid_z[0];
-                    maximum.w = special->display_special->bounds_max.w;
-                    hit = CalculateRayBoxIntersection(minimum, maximum, start, direction, 30.0f, distance);
-                }
-                if (hit && best_distance + best_distance > distance) {
-                    best_distance = distance;
-                    best = item->GetMechObjectInterface();
+                if (item->field_0x125[0] == 0 && !((i8)item->state_flags >= 0) && item->type != NULL &&
+                    NuSpecialExistsFn(special)) {
+                    bool sphere = __builtin_expect(item->field_0x124 != 0, 0) ||
+                                  (world->current_level == MOSEISLEYB_LDATA && index <= 31) ||
+                                  (world->current_level == VADERB_LDATA && index <= 1) ||
+                                  (world->current_level == CLOUDCITYESCAPEA_LDATA && index == 0) || VehicleArea;
+                    f32 distance;
+                    bool hit;
+                    if (!!!__builtin_expect(sphere, 0)) {
+                        // bounds preserve the original special's fourth lanes.
+                        VuVec minimum, maximum;
+                        minimum.x = special->display_special->bounds_min.x + mid_z[-2];
+                        minimum.y = special->display_special->bounds_min.y + mid_z[-1];
+                        minimum.z = special->display_special->bounds_min.z + mid_z[0];
+                        minimum.w = special->display_special->bounds_min.w;
+                        maximum.y = special->display_special->bounds_max.y + mid_z[-1];
+                        maximum.w = special->display_special->bounds_max.w;
+                        maximum.z = special->display_special->bounds_max.z + mid_z[0];
+                        maximum.x = special->display_special->bounds_max.x + mid_z[-2];
+                        hit = CalculateRayBoxIntersection(minimum, maximum, start, direction, 30.0f, distance);
+                    } else {
+                        NUVEC *position = item->field_0x120 ? static_cast<NUVEC *>(item->field_0x120)
+                                                            : reinterpret_cast<NUVEC *>(mid_z - 2);
+                        VuVec center;
+                        center.y = position->y;
+                        center.z = position->z;
+                        center.x = position->x;
+                        center.w = 1.0f;
+                        f32 radius = item->field_0x128 > 0.0f ? item->field_0x128 : item->target_scale;
+                        if (VehicleArea)
+                            radius *= 3.0f;
+                        distance = CalcCapsuleIntersectDistance(start, direction, best_distance + best_distance, center,
+                                                                radius);
+                        hit = distance != 1000000000.0f;
+                    }
+                    if (hit && best_distance + best_distance > distance) {
+                        best_distance = distance;
+                        best = item->GetMechObjectInterface();
+                    }
                 }
             }
         }
@@ -570,16 +575,16 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
             if (system != NULL && system->buildits != NULL) {
                 GIZBUILDIT_s *item = system->buildits;
                 for (i32 index = 0; index < system->count; ++index, ++item) {
-                    if (!(item->availability_flags & 1) || item->build_state == 2 || !(item->availability_flags & 2))
-                        continue;
-                    VuVec center;
-                    f32 radius;
-                    CalcAveragePosAndRad(*item, center, radius, true);
-                    radius = radius > 0.2f ? radius : 0.2f;
-                    f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, radius);
-                    if (best_distance > distance) {
-                        best_distance = distance;
-                        best = item->GetMechObjectInterface();
+                    if (item->availability_flags & 1 && item->build_state != 2 && item->availability_flags & 2) {
+                        VuVec center;
+                        f32 radius;
+                        CalcAveragePosAndRad(*item, center, radius, true);
+                        radius = radius > 0.2f ? radius : 0.2f;
+                        f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, radius);
+                        if (best_distance > distance) {
+                            best_distance = distance;
+                            best = item->GetMechObjectInterface();
+                        }
                     }
                 }
             }
@@ -587,17 +592,17 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
         if ((flags & 8) && TouchHacks::CanUseLever(object)) {
             LEVER_s *item = world->levers;
             for (i32 index = 0; index < world->nlevers; ++index, ++item) {
-                if (item == NULL || (item->flags & 0x93) != 0x90 || item->pull_progress != 0.0f)
-                    continue;
-                VuVec center;
-                center.z = item->position.z;
-                center.y = item->position.y;
-                center.x = item->position.x;
-                center.w = 1.0f;
-                f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, 0.2f);
-                if (best_distance > distance) {
-                    best_distance = distance;
-                    best = item->GetMechObjectInterface();
+                if (item != NULL && (item->flags & 0x93) == 0x90 && item->pull_progress == 0.0f) {
+                    VuVec center;
+                    center.z = item->position.z;
+                    center.x = item->position.x;
+                    center.y = item->position.y;
+                    center.w = 1.0f;
+                    f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, 0.2f);
+                    if (best_distance > distance) {
+                        best_distance = distance;
+                        best = item->GetMechObjectInterface();
+                    }
                 }
             }
         }
@@ -612,8 +617,8 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                 VuVec center;
                 const NUVEC *position = reinterpret_cast<const NUVEC *>(position_z - offsetof(NUVEC, z));
                 center.z = position->z;
-                center.y = position->y;
                 center.x = position->x;
+                center.y = position->y;
                 center.w = 1.0f;
                 f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, 0.2f);
                 if (best_distance > distance) {
@@ -629,9 +634,9 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                     continue;
                 NUVEC *point = &item->path->pts[0];
                 VuVec center;
+                center.x = point->x;
                 center.z = point->z;
                 center.y = point->y + object.apiobj.scaled_height * 0.5f;
-                center.x = point->x;
                 center.w = 1.0f;
                 f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, 0.4f);
                 if (best_distance > distance) {
@@ -659,8 +664,8 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                     continue;
                 VuVec center;
                 center.z = item->position.z;
-                center.y = item->position.y;
                 center.x = item->position.x;
+                center.y = item->position.y;
                 center.w = 1.0f;
                 f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, 0.2f);
                 if (best_distance > distance) {
@@ -677,8 +682,8 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                     continue;
                 VuVec center;
                 center.z = item->field_0x3c.z;
-                center.y = item->field_0x3c.y;
                 center.x = item->field_0x3c.x;
+                center.y = item->field_0x3c.y;
                 center.w = 1.0f;
                 f32 distance = CalcCapsuleIntersectDistance(start, direction, best_distance, center, item->field_0x140);
                 if (best_distance > distance) {
@@ -691,8 +696,8 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
     if (flags & 1) {
         GameObject_s *candidate = Obj;
         GameObject_s *selected = NULL;
-        bool selected_nonplayer = false;
         f32 selected_distance = 1000000000.0f;
+        bool selected_nonplayer = false;
         f32 weighted_distance = 1000000000.0f;
         const u8 *collision_z =
             candidate != NULL ? reinterpret_cast<const u8 *>(&candidate->apiobj.collision_position.z) : NULL;
@@ -729,13 +734,13 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
             bool nonplayer = !(candidate->apiobj.field_0x1f4 & 1);
             f32 weighted = selected != NULL && selected_nonplayer && !nonplayer ? distance * 0.5f : distance;
             if (weighted_distance > weighted) {
-                if ((flags & 0x1000) && !selected_nonplayer && selected != NULL && nonplayer) {
-                    selected_nonplayer = false;
-                } else {
+                if (!((flags & 0x1000) && !selected_nonplayer && selected != NULL && nonplayer)) {
                     weighted_distance = weighted;
                     selected_distance = distance;
                     selected = candidate;
                     selected_nonplayer = nonplayer;
+                } else {
+                    selected_nonplayer = false;
                 }
             }
         }
@@ -753,33 +758,33 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
         if (system != NULL && system->obstacles != NULL) {
             GIZOBSTACLE_s *item = system->obstacles;
             for (i32 index = 0; index < system->count; ++index, ++item) {
-                if (item == NULL || (item->field_a1_0xa1 & 1))
-                    continue;
-                if (!(item->config_flags & 0x1800) && item->mode != 2)
-                    continue;
-                LEVELDATA_s *level = WORLD->current_level;
-                if ((level == ENDORBATTLEA_LDATA && index == 3) ||
-                    (level == GUNGAN_B_LDATA && (index == 0 || index == 2 || index == 3)) ||
-                    (level == ENDORBATTLED_LDATA && index == 5) ||
-                    (level == FACTORYD_LDATA && (index == 4 || index == 2)) ||
-                    (level == DEATHSTARRESCUEB_LDATA && (index == 2 || index == 6 || index == 12)) ||
-                    (level == HOTHESCAPEC_LDATA && (u32)(index - 18) <= 4) || (level == CRUISERB_LDATA && index == 0) ||
-                    (level == CRUISERD_LDATA && index == 19) || (level == JEDI_B_LDATA && index == 50) ||
-                    (level == TATOOINEB_LDATA && index == 37))
-                    continue;
-                if ((item->progress_flags & 3) != 3 || (i8)item->runtime_flags < 0 || item->anim_set == NULL ||
-                    item->anim_set->state == 2 || item->proximity_output != 0 || item->mode == 1 || item->mode == 3)
-                    continue;
-                VuVec center;
-                center.z = item->evaluated_position.z;
-                center.y = item->evaluated_position.y;
-                center.x = item->evaluated_position.x;
-                center.w = 1.0f;
-                f32 distance =
-                    CalcCapsuleIntersectDistance(start, direction, best_distance, center, item->field_0x58) * 1.5f;
-                if (best_distance > distance) {
-                    best_distance = distance;
-                    best = item->GetMechObjectInterface();
+                if (item != NULL && !(item->field_a1_0xa1 & 1)) {
+                    if (!(item->config_flags & 0x1800) && item->mode != 2)
+                        continue;
+                    LEVELDATA_s *level = WORLD->current_level;
+                    if ((level == ENDORBATTLEA_LDATA && index == 3) ||
+                        (level == GUNGAN_B_LDATA && (index == 0 || index == 2 || index == 3)) ||
+                        (level == ENDORBATTLED_LDATA && index == 5) ||
+                        (level == FACTORYD_LDATA && (index == 4 || index == 2)) ||
+                        (level == DEATHSTARRESCUEB_LDATA && (index == 2 || index == 6 || index == 12)) ||
+                        (level == HOTHESCAPEC_LDATA && (u32)(index - 18) <= 4) ||
+                        (level == CRUISERB_LDATA && index == 0) || (level == CRUISERD_LDATA && index == 19) ||
+                        (level == JEDI_B_LDATA && index == 50) || (level == TATOOINEB_LDATA && index == 37))
+                        continue;
+                    if ((item->progress_flags & 3) != 3 || (i8)item->runtime_flags < 0 || item->anim_set == NULL ||
+                        item->anim_set->state == 2 || item->proximity_output != 0 || item->mode == 1 || item->mode == 3)
+                        continue;
+                    VuVec center;
+                    center.z = item->evaluated_position.z;
+                    center.x = item->evaluated_position.x;
+                    center.y = item->evaluated_position.y;
+                    center.w = 1.0f;
+                    f32 distance =
+                        CalcCapsuleIntersectDistance(start, direction, best_distance, center, item->field_0x58) * 1.5f;
+                    if (best_distance > distance) {
+                        best_distance = distance;
+                        best = item->GetMechObjectInterface();
+                    }
                 }
             }
         }
@@ -794,12 +799,12 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                     step = 7;
                 remaining -= static_cast<f32>(step);
                 VuVec delta;
-                delta.x = direction.x * static_cast<f32>(step);
                 delta.y = direction.y * static_cast<f32>(step);
+                delta.x = direction.x * static_cast<f32>(step);
                 delta.z = direction.z * static_cast<f32>(step);
                 if (GameRayCast(&position.xyz, &delta.xyz, 0.0f, 0)) {
                     f32 distance = NuVecMag(&delta.xyz);
-                    VuVec normal = VuVec_Zero;
+                    normal = VuVec_Zero;
                     NewRayCastGetImpactNormal(&normal.xyz);
                     if (WORLD->current_level != DEATHSTARESCAPEB_LDATA)
                         remaining = -1.0f;
@@ -811,8 +816,8 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                         remaining = -1.0f;
                     }
                 }
-                position.x = delta.x * 1.1f + position.x;
                 position.y = delta.y * 1.1f + position.y;
+                position.x = delta.x * 1.1f + position.x;
                 position.z = delta.z * 1.1f + position.z;
             } while (remaining > 0.0f && best == NULL);
         }
@@ -844,14 +849,6 @@ void MechInputTouchSystem::ProcessEvenWhenPaused(ThingProcessData *data) {
     }
 }
 
-void MechInputTouchSystem::ResetAllOwners() {
-    for (i32 index = 0; index < 10; ++index) {
-        if (locked_buttons[index] != NULL) {
-            locked_buttons[index]->Reset();
-        }
-    }
-}
-
 void MechInputTouchSystem::SetTouchLockedBy(u32 touch_id, MechInputTouchButton *button, bool) {
     for (i32 index = 0; index < 10; ++index) {
         if (locked_touch_ids[index] == touch_id) {
@@ -877,6 +874,14 @@ void MechInputTouchSystem::SetTouchLockedBy(u32 touch_id, MechInputTouchButton *
                 locked_buttons[index] = button;
                 return;
             }
+        }
+    }
+}
+
+void MechInputTouchSystem::ResetAllOwners() {
+    for (i32 index = 0; index < 10; ++index) {
+        if (locked_buttons[index] != NULL) {
+            locked_buttons[index]->Reset();
         }
     }
 }

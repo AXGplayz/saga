@@ -49,50 +49,6 @@ f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 void AISysGetPathPos2(AISYS_s *, NUVEC *, AIPATHINFO_s *, NUVEC *, AIPATH_s *, i32);
 void GameObjectSetCanUse(GameObject_s *, void *, u8, u8, f32);
 
-i32 Action_UsePanel(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
-                    i32 first_time, f32 elapsed) {
-    if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
-        return 1;
-    GameObject_s *object = packet->owner->apiobj.objptr;
-    if (first_time != 0) {
-        for (i32 index = 0; index < param_count; ++index) {
-            char *name = NuStrIStr(params[index], "name=");
-            if (name == NULL)
-                continue;
-            GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, gizpanel_gizmotype_id, name + 5);
-            if (gizmo == NULL || gizmo->object == NULL)
-                continue;
-            GIZPANEL *panel = static_cast<GIZPANEL *>(gizmo->object);
-            processor->action_data_3 = panel;
-            if ((panel->flags & 2) != 0)
-                continue;
-            processor->action_pos = panel->floor_position;
-            f32 height = GameShadow(NULL, &processor->action_pos, 5.0f, -1);
-            if (height != 2000000.0f)
-                processor->action_pos.y = height;
-            AISysGetPathPos2(system, &processor->action_pos, &processor->path_info, &processor->action_pos, NULL, 0xff);
-        }
-    }
-    GIZPANEL *panel = static_cast<GIZPANEL *>(processor->action_data_3);
-    if (panel == NULL || (panel->flags & 2) != 0)
-        return 1;
-    AIMoveInstruction(packet, &processor->action_pos, 0.0f, &processor->path_info, 1, 0.0f);
-    if (GizPanel_CanUsePanel(object, panel) != 0) {
-        f32 distance = NuVecDistSqr(&packet->terrain_origin, &processor->action_pos, NULL);
-        if (distance < ai_moveradius * ai_moveradius) {
-            packet->movement_look_target = &panel->position;
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_SPECIAL;
-        }
-    } else if (FreePlay != 0) {
-        processor->action_timer -= elapsed;
-        if (processor->action_timer < 0.0f) {
-            processor->action_timer = 0.5f;
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
-        }
-    }
-    return object->field_0x7a5 == 0x0b && object->field_0x788 == panel;
-}
-
 i32 Action_CameraCut(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
                      i32 first_time, f32) {
     NUVEC target_position = {1000000000.0f, 1000000000.0f, 1000000000.0f};
@@ -232,6 +188,113 @@ camera_ready:
     return 1;
 }
 
+i32 Action_UsePanel(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
+                    i32 first_time, f32 elapsed) {
+    if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
+        return 1;
+    GameObject_s *object = packet->owner->apiobj.objptr;
+    if (first_time != 0) {
+        for (i32 index = 0; index < param_count; ++index) {
+            char *name = NuStrIStr(params[index], "name=");
+            if (name == NULL)
+                continue;
+            GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, gizpanel_gizmotype_id, name + 5);
+            if (gizmo == NULL || gizmo->object == NULL)
+                continue;
+            GIZPANEL *panel = static_cast<GIZPANEL *>(gizmo->object);
+            processor->action_data_3 = panel;
+            if ((panel->flags & 2) != 0)
+                continue;
+            processor->action_pos = panel->floor_position;
+            f32 height = GameShadow(NULL, &processor->action_pos, 5.0f, -1);
+            if (height != 2000000.0f)
+                processor->action_pos.y = height;
+            AISysGetPathPos2(system, &processor->action_pos, &processor->path_info, &processor->action_pos, NULL, 0xff);
+        }
+    }
+    GIZPANEL *panel = static_cast<GIZPANEL *>(processor->action_data_3);
+    if (panel == NULL || (panel->flags & 2) != 0)
+        return 1;
+    AIMoveInstruction(packet, &processor->action_pos, 0.0f, &processor->path_info, 1, 0.0f);
+    if (GizPanel_CanUsePanel(object, panel) != 0) {
+        f32 distance = NuVecDistSqr(&packet->terrain_origin, &processor->action_pos, NULL);
+        if (distance < ai_moveradius * ai_moveradius) {
+            packet->movement_look_target = &panel->position;
+            object->pad_gamepad->buttons_pressed |= GAMEPAD_SPECIAL;
+        }
+    } else if (FreePlay != 0) {
+        processor->action_timer -= elapsed;
+        if (processor->action_timer < 0.0f) {
+            processor->action_timer = 0.5f;
+            object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
+        }
+    }
+    return object->field_0x7a5 == 0x0b && object->field_0x788 == panel;
+}
+
+i32 Action_UseTechno(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
+                     i32 first_time, f32 elapsed) {
+    if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
+        return 1;
+    GameObject_s *object = packet->owner->apiobj.objptr;
+    if (first_time != 0) {
+        for (i32 index = 0; index < param_count; ++index) {
+            char *name = NuStrIStr(params[index], "name=");
+            if (name == NULL)
+                continue;
+            GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, techno_gizmotype_id, name + 5);
+            if (gizmo == NULL || gizmo->object == NULL)
+                continue;
+            TECHNO *techno = static_cast<TECHNO *>(gizmo->object);
+            processor->action_data_3 = techno;
+            processor->action_pos = techno->ground_position;
+            f32 height = GameShadow(NULL, &processor->action_pos, 5.0f, -1);
+            if (height != 2000000.0f)
+                processor->action_pos.y = height;
+            AISysGetPathPos2(system, &processor->action_pos, &processor->path_info, &processor->action_pos, NULL, 0xff);
+        }
+    }
+    TECHNO *techno = static_cast<TECHNO *>(processor->action_data_3);
+    if (techno == NULL || !techno->active || !techno->visible || techno->complete)
+        return 1;
+    AIMoveInstruction(packet, &processor->action_pos, 0.0f, &processor->path_info, 1, 0.0f);
+    if (GizTechno_CanUseTechno(object, techno) == 0) {
+        if (FreePlay != 0) {
+            processor->action_timer -= elapsed;
+            if (processor->action_timer < 0.0f) {
+                processor->action_timer = 0.5f;
+                object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
+            }
+        }
+    } else {
+        f32 distance = NuVecDistSqr(&packet->terrain_origin, &processor->action_pos, NULL);
+        if (distance < ai_moveradius * ai_moveradius) {
+            packet->movement_look_target = &techno->position;
+            GameObjectSetCanUse(object, techno, 2, 1, 0.0f);
+        }
+    }
+    return 0;
+}
+
+i32 Action_EndCameraCut(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_s *, char **params, i32 param_count,
+                        i32 first_time, float) {
+    if (first_time != 0 && MiniCutCam != 0) {
+        for (i32 i = 0; i < param_count; ++i) {
+            char *value = NuStrIStr(params[i], "end_time=");
+            if (value != NULL) {
+                const f32 duration = AIParamToFloat(processor, value + 9);
+                ObstacleCamEnd = duration + ObstacleCamTime;
+            } else {
+                value = NuStrIStr(params[i], "blend_out_time=");
+                if (value != NULL) {
+                    ObstacleCamBlendOutTime = AIParamToFloat(processor, value + 15);
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 i32 Action_PullLever(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
                      i32 first_time, f32 elapsed) {
     i32 instant = 0;
@@ -286,62 +349,18 @@ i32 Action_PullLever(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *
     return object->field_0x7a5 == 0x4a && object->field_0x788 == lever;
 }
 
-i32 Action_UseTechno(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **params, i32 param_count,
-                     i32 first_time, f32 elapsed) {
-    if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
-        return 1;
-    GameObject_s *object = packet->owner->apiobj.objptr;
+i32 Action_PlayCutScene(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **params, i32 param_count, i32 first_time,
+                        float) {
     if (first_time != 0) {
-        for (i32 index = 0; index < param_count; ++index) {
-            char *name = NuStrIStr(params[index], "name=");
-            if (name == NULL)
-                continue;
-            GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, techno_gizmotype_id, name + 5);
-            if (gizmo == NULL || gizmo->object == NULL)
-                continue;
-            TECHNO *techno = static_cast<TECHNO *>(gizmo->object);
-            processor->action_data_3 = techno;
-            processor->action_pos = techno->ground_position;
-            f32 height = GameShadow(NULL, &processor->action_pos, 5.0f, -1);
-            if (height != 2000000.0f)
-                processor->action_pos.y = height;
-            AISysGetPathPos2(system, &processor->action_pos, &processor->path_info, &processor->action_pos, NULL, 0xff);
-        }
-    }
-    TECHNO *techno = static_cast<TECHNO *>(processor->action_data_3);
-    if (techno == NULL || !techno->active || !techno->visible || techno->complete)
-        return 1;
-    AIMoveInstruction(packet, &processor->action_pos, 0.0f, &processor->path_info, 1, 0.0f);
-    if (GizTechno_CanUseTechno(object, techno) != 0) {
-        f32 distance = NuVecDistSqr(&packet->terrain_origin, &processor->action_pos, NULL);
-        if (distance < ai_moveradius * ai_moveradius) {
-            packet->movement_look_target = &techno->position;
-            GameObjectSetCanUse(object, techno, 2, 1, 0.0f);
-        }
-    } else if (FreePlay != 0) {
-        processor->action_timer -= elapsed;
-        if (processor->action_timer < 0.0f) {
-            processor->action_timer = 0.5f;
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
-        }
-    }
-    return 0;
-}
-
-i32 Action_EndCameraCut(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_s *, char **params, i32 param_count,
-                        i32 first_time, float) {
-    if (first_time != 0 && MiniCutCam != 0) {
+        char *name = NULL;
         for (i32 i = 0; i < param_count; ++i) {
-            char *value = NuStrIStr(params[i], "end_time=");
+            char *value = NuStrIStr(params[i], "name");
             if (value != NULL) {
-                const f32 duration = AIParamToFloat(processor, value + 9);
-                ObstacleCamEnd = duration + ObstacleCamTime;
-            } else {
-                value = NuStrIStr(params[i], "blend_out_time=");
-                if (value != NULL) {
-                    ObstacleCamBlendOutTime = AIParamToFloat(processor, value + 15);
-                }
+                name = value + 5;
             }
+        }
+        if (name != NULL) {
+            NewCutScene(NULL, WORLD->cutscene_sys, name, 0);
         }
     }
     return 1;
@@ -373,23 +392,6 @@ i32 Action_FollowPlayer(AISYS_s *sys, AISCRIPTPROCESS_s *processor, AIPACKET_s *
                         packet->movement_instruction_parameter);
     }
     return 0;
-}
-
-i32 Action_PlayCutScene(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **params, i32 param_count, i32 first_time,
-                        float) {
-    if (first_time != 0) {
-        char *name = NULL;
-        for (i32 i = 0; i < param_count; ++i) {
-            char *value = NuStrIStr(params[i], "name");
-            if (value != NULL) {
-                name = value + 5;
-            }
-        }
-        if (name != NULL) {
-            NewCutScene(NULL, WORLD->cutscene_sys, name, 0);
-        }
-    }
-    return 1;
 }
 
 i32 Action_SetVisibility(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **params, i32 param_count, i32 first_time,
@@ -490,16 +492,16 @@ i32 Action_BoulderSection(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKE
     }
     // The retail third probe reads padding past this two-entry array. Do not
     // reproduce that out-of-bounds access or enlarge the recovered global.
-    if (nearest == NULL) {
+    if (nearest != NULL) {
+        packet->movement_look_target = &nearest->position;
+        if (can_attack)
+            object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
+    } else {
         if (system != NULL && system->player_1 != NULL && system->player_1->ai != NULL) {
             AIPACKET_s *player_packet = system->player_1->ai;
             AIMoveInstruction(packet, &player_packet->last_path_position, player_packet->mover_height,
                               &player_packet->path_info, 1, packet->movement_instruction_parameter);
         }
-    } else {
-        packet->movement_look_target = &nearest->position;
-        if (can_attack)
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
     }
     return 0;
 }
@@ -738,10 +740,10 @@ i32 Action_GameFollowPlayer(AISYS_s *sys, AISCRIPTPROCESS_s *processor, AIPACKET
                 if (player != NULL && player2 != NULL) {
                     f32 first = NuVecDist(&packet->owner->apiobj.position, &player->apiobj.position, NULL);
                     f32 second = NuVecDist(&packet->owner->apiobj.position, &player2->apiobj.position, NULL);
-                    if (second < first) {
-                        processor->action_data_3 = player2;
-                    } else {
+                    if (!(second < first)) {
                         processor->action_data_3 = player;
+                    } else {
+                        processor->action_data_3 = player2;
                     }
                 } else {
                     processor->action_data_3 = player;
@@ -820,8 +822,9 @@ i32 Action_HelpWithTriggers(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_s 
                 GameObject_s *other = Player[i];
                 if (other == NULL || other->character_context != 0x46)
                     continue;
+                auto f0x788 = other->field_0x788;
                 for (i32 j = 0; j < set->trigger_count; ++j) {
-                    if (set->triggers[j] != NULL && set->triggers[j]->object == other->field_0x788) {
+                    if (set->triggers[j] != NULL && set->triggers[j]->object == f0x788) {
                         if (player->apiobj.position.y > object->apiobj.position.y + 0.05f)
                             object->field_0x107e = 1;
                         else if (object->apiobj.position.y - 0.05f > player->apiobj.position.y)
@@ -1026,10 +1029,11 @@ i32 Action_GetLocatorFromSet(AISYS_s *sys, AISCRIPTPROCESS_s *processor, AIPACKE
         AILOCATOR *current_locator = object->apiobj.ai->locator;
         if (current_locator != NULL) {
             for (current_index = 0; current_index < locator_set->locator_count; ++current_index) {
-                if (current_locator == &sys->locators[locator_set->locator_entries[current_index]]) {
-                    locator_set->assigned[current_index] = 0xff;
-                    break;
+                if (current_locator != &sys->locators[locator_set->locator_entries[current_index]]) {
+                    continue;
                 }
+                locator_set->assigned[current_index] = 0xff;
+                break;
             }
         }
         if (current_locator == NULL || current_index == locator_set->locator_count) {
@@ -1078,15 +1082,19 @@ i32 Action_GetLocatorFromSet(AISYS_s *sys, AISCRIPTPROCESS_s *processor, AIPACKE
         }
         object->apiobj.ai->locator = &sys->locators[locator_set->locator_entries[candidate]];
         locator_set->assigned[candidate] = target->field_0x289;
-    } else if (random) {
-        AILocatorSet_AssignRandomLocator(sys, locator_set, target, max_range, reference_position, off_screen_radius,
-                                         ignore_assigned);
-    } else if (furthest) {
-        AILocatorSet_AssignFurthestLocator(sys, locator_set, target, max_range, reference_position, second_position,
-                                           off_screen_radius, ignore_assigned);
     } else {
-        AILocatorSet_AssignNearestLocator(sys, locator_set, target, max_range, reference_position, second_position,
-                                          off_screen_radius, ignore_assigned);
+        if (!random) {
+            if (furthest) {
+                AILocatorSet_AssignFurthestLocator(sys, locator_set, target, max_range, reference_position,
+                                                   second_position, off_screen_radius, ignore_assigned);
+            } else {
+                AILocatorSet_AssignNearestLocator(sys, locator_set, target, max_range, reference_position,
+                                                  second_position, off_screen_radius, ignore_assigned);
+            }
+        } else {
+            AILocatorSet_AssignRandomLocator(sys, locator_set, target, max_range, reference_position, off_screen_radius,
+                                             ignore_assigned);
+        }
     }
     return 1;
 }
@@ -1134,10 +1142,11 @@ i32 Action_AssignLocatorInSet(AISYS_s *sys, AISCRIPTPROCESS_s *, AIPACKET_s *pac
     }
     const i32 locator_index = locator - sys->locators;
     for (i32 index = 0; index < locator_set->locator_count; ++index) {
-        if (locator_set->locator_entries[index] == locator_index) {
-            locator_set->assigned[index] = assignment;
-            break;
+        if (locator_set->locator_entries[index] != locator_index) {
+            continue;
         }
+        locator_set->assigned[index] = assignment;
+        break;
     }
     return 1;
 }

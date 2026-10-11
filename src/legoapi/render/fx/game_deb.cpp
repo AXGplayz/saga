@@ -65,6 +65,57 @@ static dma_particle_s *DebrisParticleAt(debkeydatatype_s *key, i16 index, u8 par
     return &key->particle_chunks[index / 32]->particles[index % 32];
 }
 
+uv1deb *GenDebIndexRadial(debkeydatatype_s *key, debinftype *effect, float time) {
+    if (key->field_18a >= key->particle_count)
+        key->field_18a = 0;
+    if (effect->particle_type == 7)
+        return NULL;
+    dma_particle_s *particle = DebrisParticleAt(key, key->field_18a++, effect->particle_type);
+    particle->start_time = time;
+    key->emission_epoch = time;
+    particle->inverse_lifetime = 64.0f / effect->particle_lifetime;
+    f32 random = NuRandFloatSeeded(&debrisseed);
+    i32 angle_y = static_cast<i32>((random + random) * effect->field_050 - effect->field_050 + effect->field_05c);
+    random = NuRandFloatSeeded(&debrisseed);
+    i32 angle_z = static_cast<i32>((random + random) * effect->field_054 - effect->field_054 + effect->field_060);
+    f32 radius;
+    if (effect->scale_in_time != 0.0f && effect->scale_in_time > globaltime - key->last_update_time)
+        radius = (globaltime - key->last_update_time) / effect->scale_in_time * effect->field_058;
+    else
+        radius = effect->field_058;
+    NUVEC vector = {0.0f, radius, 0.0f};
+    NuVecRotateZ(&vector, &vector, angle_z);
+    NuVecRotateY(&vector, &vector, angle_y);
+    NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
+    particle->position = vector;
+    random = NuRandFloatSeeded(&debrisseed);
+    vector.x = 0.0f;
+    vector.y = (random + random) * effect->field_04c - effect->field_04c + effect->field_048;
+    vector.z = 0.0f;
+    NuVecRotateZ(&vector, &vector, angle_z);
+    NuVecRotateY(&vector, &vector, angle_y);
+    NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
+    particle->momentum = vector;
+    if (key->momentum_adjuster != NULL)
+        key->momentum_adjuster(key, effect, reinterpret_cast<uv1deb *>(particle));
+    particle->position.x += key->emission_position.x;
+    particle->position.y += key->emission_position.y;
+    particle->position.z += key->emission_position.z;
+    particle->momentum.x += key->momentum.x;
+    particle->momentum.y += key->momentum.y;
+    particle->momentum.z += key->momentum.z;
+    for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
+        if (key->field_18a >= key->particle_count)
+            key->field_18a = 0;
+        dma_particle_s *copy = DebrisParticleAt(key, key->field_18a++, 0);
+        *copy = *particle;
+        copy->start_time += static_cast<f32>(trail + 1) * effect->trail_time;
+    }
+    if (effect->native_data == NULL)
+        GenericDebinfoDmaTypeUpdate(effect);
+    return reinterpret_cast<uv1deb *>(particle);
+}
+
 uv1deb *GenDebIndex(debkeydatatype_s *key, debinftype *effect, float time) {
     u16 particle_index = key->field_18a;
     u16 next_particle_index;
@@ -137,57 +188,6 @@ uv1deb *GenDebIndex(debkeydatatype_s *key, debinftype *effect, float time) {
     return reinterpret_cast<uv1deb *>(particle);
 }
 
-uv1deb *GenDebIndexRadial(debkeydatatype_s *key, debinftype *effect, float time) {
-    if (key->field_18a >= key->particle_count)
-        key->field_18a = 0;
-    if (effect->particle_type == 7)
-        return NULL;
-    dma_particle_s *particle = DebrisParticleAt(key, key->field_18a++, effect->particle_type);
-    particle->start_time = time;
-    key->emission_epoch = time;
-    particle->inverse_lifetime = 64.0f / effect->particle_lifetime;
-    f32 random = NuRandFloatSeeded(&debrisseed);
-    i32 angle_y = static_cast<i32>((random + random) * effect->field_050 - effect->field_050 + effect->field_05c);
-    random = NuRandFloatSeeded(&debrisseed);
-    i32 angle_z = static_cast<i32>((random + random) * effect->field_054 - effect->field_054 + effect->field_060);
-    f32 radius;
-    if (effect->scale_in_time != 0.0f && effect->scale_in_time > globaltime - key->last_update_time)
-        radius = (globaltime - key->last_update_time) / effect->scale_in_time * effect->field_058;
-    else
-        radius = effect->field_058;
-    NUVEC vector = {0.0f, radius, 0.0f};
-    NuVecRotateZ(&vector, &vector, angle_z);
-    NuVecRotateY(&vector, &vector, angle_y);
-    NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
-    particle->position = vector;
-    random = NuRandFloatSeeded(&debrisseed);
-    vector.x = 0.0f;
-    vector.y = (random + random) * effect->field_04c - effect->field_04c + effect->field_048;
-    vector.z = 0.0f;
-    NuVecRotateZ(&vector, &vector, angle_z);
-    NuVecRotateY(&vector, &vector, angle_y);
-    NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
-    particle->momentum = vector;
-    if (key->momentum_adjuster != NULL)
-        key->momentum_adjuster(key, effect, reinterpret_cast<uv1deb *>(particle));
-    particle->position.x += key->emission_position.x;
-    particle->position.y += key->emission_position.y;
-    particle->position.z += key->emission_position.z;
-    particle->momentum.x += key->momentum.x;
-    particle->momentum.y += key->momentum.y;
-    particle->momentum.z += key->momentum.z;
-    for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        if (key->field_18a >= key->particle_count)
-            key->field_18a = 0;
-        dma_particle_s *copy = DebrisParticleAt(key, key->field_18a++, 0);
-        *copy = *particle;
-        copy->start_time += static_cast<f32>(trail + 1) * effect->trail_time;
-    }
-    if (effect->native_data == NULL)
-        GenericDebinfoDmaTypeUpdate(effect);
-    return reinterpret_cast<uv1deb *>(particle);
-}
-
 i32 SolveQuadratic(f32, f32, f32, f32 *, f32 *);
 void DebrisGetControlStackLock();
 void DebrisReleaseControlStackLock();
@@ -241,10 +241,10 @@ uv1deb *GenDebIndexBounceY(debkeydatatype_s *key, debinftype *effect, float time
                 control->active = 5;
                 control->expiry_time = time + collision_time;
                 control->effect_index = key->effect_index;
-                control->rotation_y = 0;
-                control->field_01e = 0;
                 control->collision_plane = key->collision_plane;
+                control->rotation_y = 0;
                 control->restitution = key->reflection_scale;
+                control->field_01e = 0;
                 control->collision_time = collision_time;
                 control->particle_index = key->field_18a % 32;
                 AddChunkControlToStack(control, &debris_chunk_control_stack[0]);
@@ -312,19 +312,18 @@ uv1deb *GenDebIndexBounceXZ(debkeydatatype_s *key, debinftype *effect, float tim
         DebrisGetControlStackLock();
         if (freechunkcontrolsptr < debrischunks + debrischunksglass) {
             f32 collision_time = (0.0f - start_distance) / (end_distance - start_distance) * lifetime;
-            debris_chunk_control_s *control = freechunkcontrols[freechunkcontrolsptr];
-            control->particle_chunk = chunk;
-            control->expiry_time = time + collision_time;
-            control->owner = NULL;
-            control->active = 6;
-            control->effect_index = key->effect_index;
-            control->rotation_y = key->reflection_y;
-            control->field_01e = 0;
-            control->collision_plane = key->collision_plane;
-            control->restitution = key->reflection_scale;
-            control->collision_time = collision_time;
-            control->particle_index = key->field_18a % 32;
-            AddChunkControlToStack(control, &debris_chunk_control_stack[0]);
+            freechunkcontrols[freechunkcontrolsptr]->particle_chunk = chunk;
+            freechunkcontrols[freechunkcontrolsptr]->expiry_time = time + collision_time;
+            freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
+            freechunkcontrols[freechunkcontrolsptr]->active = 6;
+            freechunkcontrols[freechunkcontrolsptr]->effect_index = key->effect_index;
+            freechunkcontrols[freechunkcontrolsptr]->rotation_y = key->reflection_y;
+            freechunkcontrols[freechunkcontrolsptr]->field_01e = 0;
+            freechunkcontrols[freechunkcontrolsptr]->collision_plane = key->collision_plane;
+            freechunkcontrols[freechunkcontrolsptr]->restitution = key->reflection_scale;
+            freechunkcontrols[freechunkcontrolsptr]->collision_time = collision_time;
+            freechunkcontrols[freechunkcontrolsptr]->particle_index = key->field_18a % 32;
+            AddChunkControlToStack(freechunkcontrols[freechunkcontrolsptr], &debris_chunk_control_stack[0]);
             ++freechunkcontrolsptr;
         }
         DebrisReleaseControlStackLock();
@@ -474,8 +473,9 @@ uv1deb *GenDebIndexRadialStar(debkeydatatype_s *key, debinftype *effect, float t
     particle->momentum.x += key->momentum.x;
     particle->momentum.y += key->momentum.y;
     particle->momentum.z += key->momentum.z;
+    auto key_particle_count = key->particle_count;
     for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        if (key->field_18a >= key->particle_count)
+        if (key->field_18a >= key_particle_count)
             key->field_18a = 0;
         dma_particle_s *copy = DebrisParticleAt(key, key->field_18a++, 0);
         *copy = *particle;
@@ -619,9 +619,9 @@ uv1deb *GenDebIndexImprovedRadial(debkeydatatype_s *key, debinftype *effect, flo
     particle->momentum = vector;
     if (key->momentum_adjuster != NULL)
         key->momentum_adjuster(key, effect, reinterpret_cast<uv1deb *>(particle));
-    particle->position.x += key->emission_position.x;
     particle->position.y += key->emission_position.y;
     particle->position.z += key->emission_position.z;
+    particle->position.x += key->emission_position.x;
     particle->momentum.x += key->momentum.x;
     particle->momentum.y += key->momentum.y;
     particle->momentum.z += key->momentum.z;
@@ -872,8 +872,8 @@ extern "C" {
     void DebrisSetup2(VARIPTR *buffer, VARIPTR buffer_end, VARIPTR *trash_buffer, VARIPTR trash_end, char *texture_name,
                       i32 chunk_count, i32 glass_chunk_count, i32 key_count, i32 effect_count) {
         if (debris_trash_space == 0) {
-            debrischunks = chunk_count;
             debrischunksglass = glass_chunk_count;
+            debrischunks = chunk_count;
         }
         debris_setup_called = 1;
         maxdebkeys = key_count;
@@ -972,8 +972,8 @@ extern "C" {
         glass->attribs.cull_mode = 2;
         glass->attribs.z_mode = 1;
         glass->attribs.unknown_2_1_2 = 2;
-        glass->attribs.unknown_2_4 = 1;
         glass->attribs.alpha_fail = 1;
+        glass->attribs.unknown_2_4 = 1;
         glass->sort_pri = 128;
         glass->particle_type_tag = -105;
         NuMtlUpdate(glass);
@@ -1034,31 +1034,42 @@ extern "C" {
             return -1;
         }
 
+        i32 bound;
         const u8 requested_page = static_cast<u8>(page);
         if (requested_page < 8 && edpp_page_used[requested_page] != 0) {
-            for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+            bound = EDPP_MAX_TYPES;
+            for (i32 i = 1; i < bound; ++i) {
                 debinftype *effect = debtab[i];
-                if (i != ignore && effect != NULL && effect->page == requested_page &&
-                    NuStrICmp(effect->name, name) == 0) {
-                    return i;
+                if (i != ignore && effect != NULL && effect->page == requested_page) {
+                    if (NuStrICmp(effect->name, name) == 0) {
+                        return i;
+                    }
+                    bound = EDPP_MAX_TYPES;
                 }
             }
+        } else {
+            bound = EDPP_MAX_TYPES;
         }
 
-        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+        for (i32 i = 1; i < bound; ++i) {
             debinftype *effect = debtab[i];
-            if (i != ignore && effect != NULL &&
-                ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)) &&
-                NuStrICmp(effect->name, name) == 0) {
+            if (!(i != ignore && effect != NULL &&
+                  ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)))) {
+                continue;
+            }
+            if (NuStrICmp(effect->name, name) == 0) {
                 return i;
             }
+            bound = EDPP_MAX_TYPES;
         }
 
-        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+        for (i32 i = 1; i < bound; ++i) {
             debinftype *effect = debtab[i];
-            if (i != ignore && effect != NULL && edpp_page_used[static_cast<i8>(effect->page)] != 0 &&
-                NuStrICmp(effect->name, name) == 0) {
-                return i;
+            if (i != ignore && effect != NULL && edpp_page_used[static_cast<i8>(effect->page)] != 0) {
+                if (NuStrICmp(effect->name, name) == 0) {
+                    return i;
+                }
+                bound = EDPP_MAX_TYPES;
             }
         }
         return -1;
@@ -1074,22 +1085,27 @@ extern "C" {
             return -1;
         }
 
+        i32 limit = EDPP_MAX_TYPES;
         if (static_cast<u8>(page) < 8 && edpp_page_used[page] != 0) {
-            for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+            for (i32 i = 1; i < limit; ++i) {
                 debinftype *effect = debtab[i];
-                if (effect != NULL && effect->page == static_cast<u8>(page) && NuStrICmp(effect->name, name) == 0) {
-                    return i;
+                if (effect != NULL && effect->page == static_cast<u8>(page)) {
+                    if (NuStrICmp(effect->name, name) == 0)
+                        return i;
+                    limit = EDPP_MAX_TYPES;
                 }
             }
         }
 
-        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+        for (i32 i = 1; i < limit; ++i) {
             debinftype *effect = debtab[i];
-            if (effect != NULL &&
-                ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)) &&
-                NuStrICmp(effect->name, name) == 0) {
-                return i;
+            if (!(effect != NULL &&
+                  ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)))) {
+                continue;
             }
+            if (NuStrICmp(effect->name, name) == 0)
+                return i;
+            limit = EDPP_MAX_TYPES;
         }
         return -1;
     }
@@ -1544,7 +1560,7 @@ extern "C" {
     }
 
     void DebrisSetThinningLevel(f32 level) {
-        debris_thinning_level = level < 1.0f ? 1.0f : level;
+        debris_thinning_level = level > 1.0f ? level : 1.0f;
     }
 
     void DebrisSetDetailLevel(i32 level) {

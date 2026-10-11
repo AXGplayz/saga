@@ -106,16 +106,6 @@ u32 ShaderMtlDescFilter::getVertexFlags() const {
     return flags;
 }
 
-bool ShaderMtlDescFilter::hasDiffuseMap(i32 layer) const {
-    if (variant != 0 && desc->unknown_1b4 == 0) {
-        return false;
-    }
-    if (layer < 0 || layer >= 4) {
-        return false;
-    }
-    return desc->diffuse_map_tex_id[layer] > texture_id_threshold;
-}
-
 bool ShaderMtlDescFilter::hasLayer(i32 layer) const {
     if (variant != 0) {
         return layer == 0 && (desc->unknown_1b4 & 1) != 0;
@@ -135,14 +125,24 @@ bool ShaderMtlDescFilter::hasLayer(i32 layer) const {
     }
 }
 
+bool ShaderMtlDescFilter::hasDiffuseMap(i32 layer) const {
+    if (variant != 0 && desc->unknown_1b4 == 0) {
+        return false;
+    }
+    if (layer < 0 || layer >= 4) {
+        return false;
+    }
+    return desc->diffuse_map_tex_id[layer] > texture_id_threshold;
+}
+
 void ShaderMtlDescFilter::internalInit(nushadermtldesc_s const *material_desc, numtl_s const *material, i32 flags,
                                        i32 texture_threshold) {
     const u8 *material_bytes = reinterpret_cast<const u8 *>(material);
     desc = material_desc;
     mtl = material;
     flags_in = flags;
-    variant = flags & 3;
     texture_id_threshold = texture_threshold;
+    variant = flags & 3;
 
     const u8 *vertex_descriptor = reinterpret_cast<const u8 *>(&desc->vtx_desc);
     if (variant == 0) {
@@ -170,7 +170,11 @@ void ShaderMtlDescFilter::internalInit(nushadermtldesc_s const *material_desc, n
 
     layer_count = 0;
     if (base_variant) {
-        layer_count = field_0x10 == 0 && (desc->flagsbits_1ba & 1) == 0 ? 1 : 2;
+        if (field_0x10 == 0 && (desc->flagsbits_1ba & 1) == 0) {
+            layer_count = 1;
+        } else {
+            layer_count = 2;
+        }
     }
     if (field_0x18 != 0) {
         ++layer_count;

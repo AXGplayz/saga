@@ -279,8 +279,8 @@ void NuPostFilterGen::GetSampleOffsets_GaussBlur5x5(i32 width, i32 height, VuVec
 
 void NuDeferredFilterGen::render() {
     nuframebuffer_s *output = static_cast<nuframebuffer_s *>(portOutFramebuffer.get());
-    NuProxyBuffer *color = static_cast<NuProxyBuffer *>(portColorBuffer.get());
     NuProxyBuffer *normal = static_cast<NuProxyBuffer *>(portNormalBuffer.get());
+    NuProxyBuffer *color = static_cast<NuProxyBuffer *>(portColorBuffer.get());
     NuProxyBuffer *depth_rt = static_cast<NuProxyBuffer *>(portDepthRTBuffer.get());
     NuProxyBuffer *depth = static_cast<NuProxyBuffer *>(portDepthBuffer.get());
     NuPostResolve(color);
@@ -297,8 +297,7 @@ void NuDeferredFilterGen::render() {
         NUMTX view, projection;
         memcpy(&view, g_renderContext_view, sizeof(view));
         memcpy(&projection, g_renderContext_projection, sizeof(projection));
-        i32 shadow_count = light->active_render_set_count;
-        for (i32 shadow = 0; shadow < shadow_count; ++shadow) {
+        for (i32 shadow = 0; shadow < light->active_render_set_count; ++shadow) {
             // The original selects consecutive texture members beginning at 0x30.
             nueffecttex_s *shadow_texture = textures[shadow + 2];
             NuFramebufferAttachTex2D(shadow_fbos[shadow], 4, shadow_texture, 0);
@@ -347,10 +346,10 @@ void NuDeferredFilterGen::render() {
     f32 params[4] = {parameters[1], last_sample, parameters[2], parameters[3]};
     PostBlurSetVertexParam(programs[2], 0x80a0, params, 4);
     PostBlurDrawQuad();
-    color->texture = destination;
     color->kind = 0;
-    color->enabled = true;
+    color->texture = destination;
     color->resolved = false;
+    color->enabled = true;
     portColorBuffer.set(color);
 }
 
@@ -407,8 +406,8 @@ struct NuNetEmuSegment {
 };
 
 static i32 cbSortSeg(void const *left, void const *right) {
-    u16 left_size = static_cast<NuNetEmuSegment const *>(left)->size;
     u16 right_size = static_cast<NuNetEmuSegment const *>(right)->size;
+    u16 left_size = static_cast<NuNetEmuSegment const *>(left)->size;
     if (left_size < right_size) {
         return 1;
     }
@@ -477,22 +476,24 @@ i32 NuNetEmu::SendTo(void *data, i32 size, nunetaddr_s *address, i32) {
         return NuNetSessionSendTo(data, size, address);
     }
 
-    if (field_24 == 1) {
-        f32 random = NuRandFloat();
-        if (field_34 > random) {
-            return size;
-        }
-    } else if (field_24 == 2) {
-        if (field_30 == 0) {
-            f32 random = NuRandFloat();
-            if (field_34 > random) {
-                f32 range = static_cast<f32>(field_2c - field_28);
+    if (field_24 != 1) {
+        if (field_24 == 2) {
+            if (field_30 == 0) {
                 f32 random = NuRandFloat();
-                field_30 = static_cast<i32>(random * range) + field_28;
+                if (field_34 > random) {
+                    f32 range = static_cast<f32>(field_2c - field_28);
+                    f32 random = NuRandFloat();
+                    field_30 = static_cast<i32>(random * range) + field_28;
+                }
+            }
+            if (field_30 > 0) {
+                field_30--;
+                return size;
             }
         }
-        if (field_30 > 0) {
-            field_30--;
+    } else {
+        f32 random = NuRandFloat();
+        if (field_34 > random) {
             return size;
         }
     }
@@ -715,8 +716,8 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
                 f32 sx = set.capsule_end.x - set.capsule_center.x;
                 f32 sy = set.capsule_end.y - set.capsule_center.y;
                 f32 sz = set.capsule_end.z - set.capsule_center.z;
-                f32 length = sy * sy + sx * sx + sz * sz;
                 f32 radius = set.capsule_radius + box.first_w;
+                f32 length = sy * sy + sx * sx + sz * sz;
                 f32 ox = box.first.x - set.capsule_center.x;
                 f32 oy = box.first.y - set.capsule_center.y;
                 f32 oz = box.first.z - set.capsule_center.z;
@@ -729,13 +730,14 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
                     continue;
                 VuVec minimum, maximum;
                 minimum.x = box.first.x - box.second.x;
-                minimum.y = box.first.y - box.second.y;
                 minimum.z = box.first.z - box.second.z;
+                minimum.y = box.first.y - box.second.y;
                 maximum.x = box.first.x + box.second.x;
                 maximum.y = box.first.y + box.second.y;
                 maximum.z = box.first.z + box.second.z;
-                if (!testShadowExtrusion(minimum, maximum, i))
+                if (!!!testShadowExtrusion(minimum, maximum, i)) {
                     continue;
+                }
                 for (i32 j = 0; j < object->nmaterials; ++j) {
                     NUMTL *material = scene->mtls[object->material_ids[j]];
                     i32 channel = material->shader_desc.unknown_1b4 != 0;
@@ -773,18 +775,20 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
         if (set.scene_first[0]) {
             NUDISPLAYLIST *list = &set.display_lists[0];
             NuDisplayListLinkItems(list, 1);
-            list->items->type = 0x80;
+            NUMTL *material = scene->mtls[0];
+            list->items->next = material;
             list->items->id = 3;
-            list->items->next = scene->mtls[0];
+            list->items->type = 0x80;
             ++list->items;
             NuDisplayListLinkList(list, set.scene_first[0], set.scene_cursor[0]);
         }
         if (set.scene_first[1]) {
             NUDISPLAYLIST *list = &set.display_lists[1];
             NuDisplayListLinkItems(list, 1);
+            NUMTL *material = scene->mtls[0];
             list->items->type = 0x80;
+            list->items->next = material;
             list->items->id = 3;
-            list->items->next = scene->mtls[0];
             ++list->items;
             NuDisplayListLinkList(list, set.scene_first[1], set.scene_cursor[1]);
         }
@@ -839,26 +843,26 @@ NuDynamicLight *NuDynamicLight::clone(variptr_u *arena, variptr_u) {
         destination.display_lists[0] = source.display_lists[0];
         destination.display_lists[1] = source.display_lists[1];
         {
-            nurndrstate_s *first = source.render_states[0];
             nurndrstate_s *second = source.render_states[1];
+            nurndrstate_s *first = source.render_states[0];
             destination.render_states[1] = second;
             destination.render_states[0] = first;
         }
         {
-            NUDISPLAYLISTITEM *first = source.list_items[0];
             NUDISPLAYLISTITEM *second = source.list_items[1];
+            NUDISPLAYLISTITEM *first = source.list_items[0];
             destination.list_items[1] = second;
             destination.list_items[0] = first;
         }
         {
-            NUDISPLAYLISTITEM *first = source.scene_cursor[0];
             NUDISPLAYLISTITEM *second = source.scene_cursor[1];
+            NUDISPLAYLISTITEM *first = source.scene_cursor[0];
             destination.scene_cursor[1] = second;
             destination.scene_cursor[0] = first;
         }
         {
-            NUDISPLAYLISTITEM *first = source.scene_first[0];
             NUDISPLAYLISTITEM *second = source.scene_first[1];
+            NUDISPLAYLISTITEM *first = source.scene_first[0];
             destination.scene_first[1] = second;
             destination.scene_first[0] = first;
         }
@@ -935,6 +939,23 @@ NuDynamicLight *NuDynamicLight::clone(variptr_u *arena, variptr_u) {
     return copy;
 }
 
+void NuDynamicLight::resetGeometry() {
+    for (i32 i = 0; i < render_set_capacity; ++i) {
+        RenderSet &set = render_sets[i];
+        set.geometry_count = 0;
+        NuDisplayListReset(&set.display_lists[0]);
+        NUDISPLAYLISTITEM *item0 = set.display_lists[0].first;
+        item0->type = 0x8d;
+        item0->next = NULL;
+        item0->id = 1;
+        NuDisplayListReset(&set.display_lists[1]);
+        NUDISPLAYLISTITEM *item1 = set.display_lists[1].first;
+        item1->type = 0x8d;
+        item1->id = 1;
+        item1->next = NULL;
+    }
+}
+
 void NuDynamicLight::renderShadowMap(i32 index, nuframebuffer_s *) {
     RenderSet &set = render_sets[index];
     if (set.display_lists[0].mtl_last == set.display_lists[0].first &&
@@ -942,8 +963,8 @@ void NuDynamicLight::renderShadowMap(i32 index, nuframebuffer_s *) {
         return;
     refreshShadowTransform(set);
     NuDisplayListSetItemTable(1);
-    NUMTX bias = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5f, 0, 0, 0, 0.5f, 1};
     NUMTX matrix;
+    NUMTX bias = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5f, 0, 0, 0, 0.5f, 1};
     NuMtxMulH(&matrix, &set.warp, &bias);
     NuRenderContextSetViewProj(&matrix, &numtx_identity);
     if (set.display_lists[0].mtl_last != set.display_lists[0].first) {
@@ -981,23 +1002,6 @@ void NuDynamicLight::renderShadowMap(i32 index, nuframebuffer_s *) {
     for (i32 i = 0; i < set.geometry_count; ++i)
         NuDisplayListDrawRenderScene(set.reserved_33c[i]);
     NuDisplayListSetItemTable(0);
-}
-
-void NuDynamicLight::resetGeometry() {
-    for (i32 i = 0; i < render_set_capacity; ++i) {
-        RenderSet &set = render_sets[i];
-        set.geometry_count = 0;
-        NuDisplayListReset(&set.display_lists[0]);
-        NUDISPLAYLISTITEM *item0 = set.display_lists[0].first;
-        item0->type = 0x8d;
-        item0->next = NULL;
-        item0->id = 1;
-        NuDisplayListReset(&set.display_lists[1]);
-        NUDISPLAYLISTITEM *item1 = set.display_lists[1].first;
-        item1->type = 0x8d;
-        item1->id = 1;
-        item1->next = NULL;
-    }
 }
 
 void NuDynamicLight::setCameraViewProj(NUMTX *view, NUMTX *projection) {

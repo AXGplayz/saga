@@ -112,14 +112,19 @@ static i32 GizTorp_Load(void *world_ptr, void *) {
     GIZTORPMACHINESYS *system = world->giz_torp_machine_sys;
     const i32 version = EdFileReadInt();
     system->count = EdFileReadInt();
-    system->scale = version > 2 ? EdFileReadFloat() : 1.0f;
+    if (version > 2) {
+        system->scale = EdFileReadFloat();
+    } else {
+        system->scale = 1.0f;
+    }
 
     for (i32 index = 0; index < system->count; ++index) {
-        GIZTORPMACHINE &machine = system->machines[index];
         const i32 name_length = EdFileReadInt();
-        EdFileRead(machine.name, name_length);
-        EdFileReadNuVec(&machine.position);
-        machine.y_rotation = static_cast<u16>(EdFileReadShort());
+        EdFileRead(system->machines[index].name, name_length);
+        EdFileReadNuVec(&system->machines[index].position);
+        GIZTORPMACHINE &rotation_machine = system->machines[index];
+        rotation_machine.y_rotation = static_cast<u16>(EdFileReadShort());
+        GIZTORPMACHINE &machine = system->machines[index];
         if (version > 1) {
             const u8 alternate_model = EdFileReadUnsignedChar() != 0;
             machine.flags =
@@ -161,6 +166,7 @@ static void GizTorp_Draw(void *world_ptr, void *, float) {
 
     GIZTORPMACHINESYS *system = world->giz_torp_machine_sys;
     EnableShadowMapRendering(0);
+    auto system_scale = system->scale;
     for (i32 index = 0; index < system->count; ++index) {
         GIZTORPMACHINE &machine = system->machines[index];
         if ((machine.flags & GIZTORPMACHINE_FLAG_VISIBLE) == 0 && editor_active == 0) {
@@ -170,7 +176,7 @@ static void GizTorp_Draw(void *world_ptr, void *, float) {
         NUMTX matrix;
         NuMtxSetRotationY(&matrix, machine.y_rotation);
         NuMtxTranslate(&matrix, &machine.position);
-        NuMtxPreScaleU(&matrix, system->scale);
+        NuMtxPreScaleU(&matrix, system_scale);
 
         const i32 model_index = (machine.flags & GIZTORPMACHINE_FLAG_ALTERNATE_MODEL) != 0
                                     ? GIZTORP_LEVEL_OBJECT_ALTERNATE

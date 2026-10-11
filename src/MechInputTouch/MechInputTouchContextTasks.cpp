@@ -109,8 +109,8 @@ bool MechTouchTaskGoTo::Update() {
             const f32 object_z = object->apiobj.collision_position.z;
             VuVec position;
             target.Get()->GetPos(position, room);
-            const f32 target_y = position.y;
             const f32 dx = position.x - object_x;
+            const f32 target_y = position.y;
             const f32 dz = position.z - object_z;
             field_40 = NuFsqrt(dx * dx + dz * dz);
             VuVec direction;
@@ -132,8 +132,8 @@ bool MechTouchTaskGoTo::Update() {
             } else if (!(field_44 < 0.000001f) && !(field_40 < 0.1f)) {
                 if (field_4c == 0 || !(field_40 > s_mechTouchMoveToWalkAlwaysDist)) {
                     direction.x *= s_mechTouchMoveToWalkSpeed;
-                    direction.y *= s_mechTouchMoveToWalkSpeed;
                     direction.z *= s_mechTouchMoveToWalkSpeed;
+                    direction.y *= s_mechTouchMoveToWalkSpeed;
                 }
                 movement_x = direction.x;
                 movement_y = -direction.y;
@@ -173,14 +173,14 @@ void MechTouchTaskGoTo::UpdateStuck() {
         velocity_threshold *= 0.25f;
     }
 
-    if (field_4f == 0) {
-        field_4f = velocity_delta > velocity_threshold;
-    } else {
+    if (field_4f != 0) {
         bool stuck = false;
         if (field_34 > 0.25f && velocity_delta > 0.0f) {
             stuck = velocity_delta < velocity_threshold * 0.5f;
         }
         field_4e = stuck;
+    } else {
+        field_4f = velocity_delta > velocity_threshold;
     }
 
     f32 stuck_time = 0.0f;
@@ -212,8 +212,8 @@ MechTouchTaskJump::MechTouchTaskJump(MechInputTouchGestureBasedController &owner
                                      bool disable_auto, bool direct_velocity)
     : MechTouchTask(owner), velocity(packet.velocity), stick(), start(), end() {
     frames = 0;
-    started = false;
     landed = false;
+    started = false;
     descending = false;
     disable_autopilot = disable_auto;
     use_velocity = direct_velocity;
@@ -364,8 +364,8 @@ bool MechTouchTaskPanel::Update() {
     if (player->character_context != 0x0b) {
         VuVec position;
         target.Get()->GetPos(position, -1);
-        position.x -= player->apiobj.position.x;
         position.y -= player->apiobj.position.y;
+        position.x -= player->apiobj.position.x;
         position.z -= player->apiobj.position.z;
         const f32 distance_squared = position.x * position.x + position.y * position.y + position.z * position.z;
         if (distance_squared < 1.4f * 1.4f) {
@@ -418,8 +418,8 @@ bool MechTouchTaskAttack::Update() {
         VuVec delta;
         opponent->GetPos(delta, -1);
         delta.y -= origin_y;
-        delta.x -= origin_x;
         delta.z -= origin_z;
+        delta.x -= origin_x;
         const f32 distance_squared = delta.x * delta.x + delta.z * delta.z;
         const f32 radius = opponent->GetRadius();
         bool nearby = false;
@@ -433,14 +433,14 @@ bool MechTouchTaskAttack::Update() {
 
         const u32 model_flags = object->apiobj.character_data->model_flags;
         f32 attack_range_squared;
-        if ((model_flags & 0x40) != 0) {
-            attack_range_squared = 0.09f;
-        } else {
+        if ((model_flags & 0x40) == 0) {
             f32 attack_range = radius + 0.2f;
             if ((model_flags & 0x40000000) != 0) {
                 attack_range += object->apiobj.collision_radius * 1.25f;
             }
             attack_range_squared = attack_range * attack_range;
+        } else {
+            attack_range_squared = 0.09f;
         }
         const bool in_range = distance_squared <= attack_range_squared;
         if (in_range || nearby || (object->field_0xef8 & 4) != 0 || object->id == id_TRAININGREMOTE ||
@@ -589,7 +589,6 @@ bool MechTouchTaskUseForce::Update() {
     GIZFORCE_s *force = object->GetGizForce();
     bool within_range = false;
     if (force != NULL) {
-        const f32 dx = position.x;
         const f32 dz = position.z;
         const f32 radius = force->interaction_radius;
         if (TouchHacks::CanUseGizForce(*player, *force)) {
@@ -598,7 +597,7 @@ bool MechTouchTaskUseForce::Update() {
                 return true;
             }
             const f32 range = radius * 0.9f;
-            within_range = dx * dx + dz * dz < range * range;
+            within_range = position.x * position.x + dz * dz < range * range;
         } else {
             return false;
         }
@@ -691,8 +690,8 @@ void MechTouchTaskPlannedGoTo::AnalysePath() {
     position.z = start_position.z;
     position.w = start_position.w;
     for (; path_index <= end;) {
-        position.x += step_x;
         position.z += step_z;
+        position.x += step_x;
         const f32 ground_height = GameShadow(player, &position.xyz, 0.0f, -1);
         if (ground_height > position.y) {
             break;
@@ -767,8 +766,8 @@ void MechTouchTaskPlannedGoTo::BackgroundProcess() {
 }
 
 void MechTouchTaskPlannedGoTo::GenerateWaypoints() {
-    i32 waypoint_index = 0;
     i32 current = 0;
+    i32 waypoint_index = 0;
     if (path_count <= 0 || path_points[1].y == -1000000000.0f) {
         goto write_final_waypoint;
     }
@@ -778,8 +777,8 @@ void MechTouchTaskPlannedGoTo::GenerateWaypoints() {
             waypoints[waypoint_index].active = 1;
             const f32 previous_point_x = path_points[current - 1].x;
             const f32 previous_point_y = path_points[current - 1].y;
-            const f32 previous_point_z = path_points[current - 1].z;
             const f32 previous_point_w = path_points[current - 1].w;
+            const f32 previous_point_z = path_points[current - 1].z;
             waypoints[waypoint_index].position.x = previous_point_x;
             waypoints[waypoint_index].position.y = previous_point_y;
             waypoints[waypoint_index].position.z = previous_point_z;
@@ -982,23 +981,23 @@ bool MechTouchTaskPlannedGoTo::Update() {
     f32 velocity_x;
     f32 velocity_y;
     f32 velocity_z;
-    if (dx * dx + dy * dy + dz * dz > 1.4f * 1.4f || dy > player->apiobj.scaled_height) {
+    if (!(dx * dx + dy * dy + dz * dz > 1.4f * 1.4f) && !(dy > player->apiobj.scaled_height)) {
+        const VuVec velocity = TouchHacks::CalculateJumpVelToHitPoint(*player, waypoint.position);
+        velocity_x = velocity.x;
+        velocity_y = velocity.y;
+        velocity_z = velocity.z;
+    } else {
         const VuVec velocity = TouchHacks::CalculateJumpVelToHitPointDblJump(*player, waypoint.position);
         velocity_x = velocity.x;
         velocity_y = velocity.y;
         velocity_z = velocity.z;
         player->jump_input_flags |= 0x10;
-    } else {
-        const VuVec velocity = TouchHacks::CalculateJumpVelToHitPoint(*player, waypoint.position);
-        velocity_x = velocity.x;
-        velocity_y = velocity.y;
-        velocity_z = velocity.z;
     }
     GameObject_s *angle_player = player;
     const f32 previous_z = player->apiobj.velocity.z;
-    const f32 previous_target_z = player->target_velocity.z;
     const f32 previous_y = player->apiobj.velocity.y;
     const f32 previous_target_y = player->target_velocity.y;
+    const f32 previous_target_z = player->target_velocity.z;
     const f32 previous_x = player->apiobj.velocity.x;
     const f32 previous_target_x = player->target_velocity.x;
     const i32 angle = NuAtan2D(velocity_x, velocity_z);
@@ -1144,15 +1143,15 @@ void MechTouchTaskPlannedDoubleClickGoTo::OnResume() {
     }
 
     const f32 previous_z = player->apiobj.velocity.z;
-    const f32 previous_target_z = player->target_velocity.z;
     const f32 previous_y = player->apiobj.velocity.y;
     const f32 previous_target_y = player->target_velocity.y;
+    const f32 previous_target_z = player->target_velocity.z;
     const f32 previous_x = player->apiobj.velocity.x;
     const f32 previous_target_x = player->target_velocity.x;
     GameObject_s *angle_player = player;
     const i32 angle = NuAtan2D(velocity_x, velocity_z);
-    angle_player->apiobj.movement_facing_angle = angle;
     angle_player->apiobj.facing_angle = angle;
+    angle_player->apiobj.movement_facing_angle = angle;
     player->apiobj.velocity.x = velocity_x;
     player->apiobj.velocity.y = velocity_y;
     player->apiobj.velocity.z = velocity_z;

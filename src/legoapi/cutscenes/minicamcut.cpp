@@ -13,10 +13,10 @@ MINICAM_s MiniCam = {};
 
 void Minicam_Update() {
     f32 distance = MiniCam.distance;
-    i32 pitch = MiniCam.pitch;
     i32 yaw = MiniCam.yaw;
-    i32 roll = MiniCam.roll;
+    i32 pitch = MiniCam.pitch;
     NUVEC *focus = MiniCam.focus;
+    i32 roll = MiniCam.roll;
     NUVEC position = MiniCam.position;
     i32 pitch_rate = 0, yaw_rate = 0, roll_rate = 0;
     f32 command_duration;
@@ -137,8 +137,8 @@ dispatch_command: {
             MiniCam_ChangeMode(command->argument);
             u16 target_pitch = pitch_rate != 0 ? (i32)(pitch_rate * 0.0f) : pitch;
             u16 old_yaw = MiniCam.target_yaw;
-            u16 old_roll = MiniCam.target_roll;
             f32 old_distance = MiniCam.target_distance;
+            u16 old_roll = MiniCam.target_roll;
             MiniCam.target_pitch = target_pitch;
             MiniCam.start_pitch = MiniCam.pitch;
             Minicam_ClearDeltas();
@@ -418,8 +418,8 @@ void Minicam_ResetForNextCommand() {
     Minicam_ClearDeltas();
 
     const i32 current_command = MiniCam.current_command;
-    const i32 command_count = MiniCam.command_count;
     const i32 next_command = current_command + 1;
+    const i32 command_count = MiniCam.command_count;
     i32 remaining_commands;
     if (next_command < command_count) {
         MINICAMCOMMAND_s *destination = MiniCam.commands;

@@ -349,7 +349,8 @@ static void xAction(nufpar_s *parser) {
         GIZACTIONDEFN_s *definition = gizactiondefs;
         if (definition == NULL)
             continue;
-        while (definition->name != NULL && NuStrICmp(parser->word_buf, definition->name) != 0)
+        auto parser_word_buf = parser->word_buf;
+        while (definition->name != NULL && NuStrICmp(parser_word_buf, definition->name) != 0)
             ++definition;
         if (definition->name == NULL)
             continue;
@@ -382,8 +383,8 @@ static void xAction(nufpar_s *parser) {
             if (action->parameters != NULL) {
                 action->parameter_count = count;
                 for (i32 i = 0; i < count; ++i) {
-                    char **destination = &action->parameters[i];
                     VARIPTR *end = load_endbuff;
+                    char **destination = &action->parameters[i];
                     VARIPTR *buffer = load_buff;
                     i32 length = NuStrLen(parameters[i]);
                     char *parameter = NULL;
@@ -574,11 +575,13 @@ static void CheckIfParentsFinished(GIZFLOW_s *system, FLOWBOX_s *box) {
         i32 child_index;
         for (child_index = 0; child_index < parent->child_count; ++child_index) {
             FLOWBOX_s *child = parent->children[child_index];
-            if ((child->state_flags_low & 0xc0) != 0) {
+            if ((child->state_flags_low & 0xc0) == 0) {
+                if ((child->state_flags_low & 1) != 0 && child != box) {
+                    break;
+                }
+            } else {
                 if ((child->state_flags & 0x102) != 2)
                     break;
-            } else if ((child->state_flags_low & 1) != 0 && child != box) {
-                break;
             }
         }
         if (child_index != parent->child_count)
@@ -652,10 +655,11 @@ static void ProcessFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8 frame) {
         bool parents_ready = true;
         for (i32 i = 0; i < box->parent_count; ++i) {
             FLOWBOX_s *parent = box->parents[i];
-            if (!flowboxtypes[parent->type].check_output(system, parent, box->output_indices[0])) {
-                parents_ready = false;
-                break;
+            if (!(!flowboxtypes[parent->type].check_output(system, parent, box->output_indices[0]))) {
+                continue;
             }
+            parents_ready = false;
+            break;
         }
         FLOWBOXGIZMODATA_s *data = box->data;
         if (parents_ready) {
@@ -681,12 +685,15 @@ static void ProcessFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8 frame) {
                 box->state_flags_low |= 0x20;
             } else {
                 FLOWBOXGIZMODATA_s *data = box->data;
-                if (box->state_flags_low & 8) {
-                    for (i32 i = 0; i < data->gizmo_count; ++i)
+                if (!(box->state_flags_low & 8)) {
+                    if (box->state_flags_low & 0x10) {
+                        for (i32 i = 0; i < data->gizmo_count; ++i)
+                            GizmoActivate(system->gizmo_sys, data->gizmos[i]->gizmo, 0, 1);
+                    }
+                } else {
+                    auto data_gizmo_count = data->gizmo_count;
+                    for (i32 i = 0; i < data_gizmo_count; ++i)
                         GizmoSetVisibility(system->gizmo_sys, data->gizmos[i]->gizmo, 0, 1);
-                } else if (box->state_flags_low & 0x10) {
-                    for (i32 i = 0; i < data->gizmo_count; ++i)
-                        GizmoActivate(system->gizmo_sys, data->gizmos[i]->gizmo, 0, 1);
                 }
                 box->state_flags_low &= ~0x20;
             }
@@ -708,12 +715,14 @@ static void ProcessFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8 frame) {
     }
     if (box->type != 0)
         CheckIfParentsFinished(system, box);
-    for (i32 i = 0; i < box->child_count; ++i) {
+    i32 child_count = box->child_count;
+    for (i32 i = 0; i < child_count; ++i) {
         FLOWBOX_s **child = &box->children[i];
         (*child)->state_flags_low |= 1;
         if ((*child)->last_process_frame != frame || box->type == 1) {
             (*child)->last_process_frame = frame;
             ProcessFlowBox(system, *child, frame);
+            child_count = box->child_count;
         }
     }
 }
@@ -749,8 +758,8 @@ static i32 ProcessGizmoFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8) {
 }
 
 static i32 ProcessActionFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8) {
-    FLOWBOX_s **parents = box->parents;
     u8 *outputs = box->output_indices;
+    FLOWBOX_s **parents = box->parents;
     for (i32 i = 0; i < box->parent_count; ++i) {
         FLOWBOX_s *parent = parents[i];
         if (!flowboxtypes[parent->type].check_output(system, parent, outputs[i]))
@@ -817,8 +826,8 @@ void *LoadGizFlow(void *, GIZMOSYS_s *system, char *path, VARIPTR *buffer, VARIP
 static i32 ProcessConditionFlowBox(GIZFLOW_s *flow, FLOWBOX_s *box, u8) {
     u8 *condition = reinterpret_cast<u8 *>(box->data);
     if (condition == NULL) {
-        FLOWBOX_s **parents = box->parents;
         u8 *outputs = box->output_indices;
+        FLOWBOX_s **parents = box->parents;
         for (i32 i = 0; i < box->parent_count; ++i) {
             FLOWBOX_s *parent = parents[i];
             if (flowboxtypes[parent->type].check_output(flow, parent, outputs[i]) == 0) {
@@ -827,9 +836,10 @@ static i32 ProcessConditionFlowBox(GIZFLOW_s *flow, FLOWBOX_s *box, u8) {
         }
         return 1;
     }
-    i32 required;
+
     i32 count;
     switch (condition[0]) {
+        i32 required;
         case 0: {
             FLOWBOX_s **parents = box->parents;
             u8 *outputs = box->output_indices;
@@ -958,6 +968,31 @@ static u8 getNextLoopChecksum() {
     return ++loop_checksum;
 }
 
+void ResetGizFlowPointers(GIZFLOW_s *system) {
+    if (system == NULL || system->flowbox_count == 0)
+        return;
+    FLOWBOX_s *box = system->flowboxes;
+    for (i32 i = 0; i < system->flowbox_count; ++i, ++box) {
+        if (box->type != 0)
+            continue;
+        FLOWBOXGIZMODATA_s *data = box->data;
+        for (i32 j = 0; j < data->gizmo_count; ++j) {
+            FLOWBOXGIZMOREF_s *ref = data->gizmos[j];
+            if (ref->gizmo != NULL) {
+                ref->gizmo = GizmoFindByName(system->gizmo_sys, ref->gizmo->type_id, ref->name);
+            } else {
+                ref->gizmo = GizmoFindByName(system->gizmo_sys, -1, ref->name);
+                if (data->gizmos[j]->gizmo != NULL && (box->state_flags_low & 1) == 0) {
+                    if (flowboxtypes[box->type].reset != NULL)
+                        flowboxtypes[box->type].reset(system, box);
+                    if ((box->state_flags_low & 5) == 4 && box->type == 0)
+                        GizmoSetVisibility(system->gizmo_sys, data->gizmos[j]->gizmo, 0, 1);
+                }
+            }
+        }
+    }
+}
+
 void DynamicAddGizmoToFlow(GIZFLOW_s *system, GIZMO_s *gizmo) {
     if (gizmo == NULL || system == NULL || gizmotypes == NULL || gizmo->type_id >= gizmotypes->count ||
         gizmotypes->types[gizmo->type_id].fns.get_gizmo_name_fn == NULL)
@@ -979,31 +1014,6 @@ void DynamicAddGizmoToFlow(GIZFLOW_s *system, GIZMO_s *gizmo) {
                     flowboxtypes[box->type].reset(system, box);
                 if ((box->state_flags_low & 5) == 4 && box->type == 0)
                     GizmoSetVisibility(system->gizmo_sys, data->gizmos[j]->gizmo, 0, 1);
-            }
-        }
-    }
-}
-
-void ResetGizFlowPointers(GIZFLOW_s *system) {
-    if (system == NULL || system->flowbox_count == 0)
-        return;
-    FLOWBOX_s *box = system->flowboxes;
-    for (i32 i = 0; i < system->flowbox_count; ++i, ++box) {
-        if (box->type != 0)
-            continue;
-        FLOWBOXGIZMODATA_s *data = box->data;
-        for (i32 j = 0; j < data->gizmo_count; ++j) {
-            FLOWBOXGIZMOREF_s *ref = data->gizmos[j];
-            if (ref->gizmo != NULL) {
-                ref->gizmo = GizmoFindByName(system->gizmo_sys, ref->gizmo->type_id, ref->name);
-            } else {
-                ref->gizmo = GizmoFindByName(system->gizmo_sys, -1, ref->name);
-                if (data->gizmos[j]->gizmo != NULL && (box->state_flags_low & 1) == 0) {
-                    if (flowboxtypes[box->type].reset != NULL)
-                        flowboxtypes[box->type].reset(system, box);
-                    if ((box->state_flags_low & 5) == 4 && box->type == 0)
-                        GizmoSetVisibility(system->gizmo_sys, data->gizmos[j]->gizmo, 0, 1);
-                }
             }
         }
     }

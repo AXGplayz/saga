@@ -303,63 +303,63 @@ static void Grapples_DrawList(WORLDINFO *world, GRAPPLE *grapples, i32 grapple_c
     NUVEC rope_start;
     GameObject_s *nearest_player = NULL;
     NUMTX matrix;
-    if (grapples != NULL && world != NULL) {
+    if (!(grapples != NULL && world != NULL)) {
+        return;
+    }
 
-        for (i32 index = 0; index < grapple_count; ++index, ++grapples) {
-            GRAPPLE *grapple = grapples;
-            if ((grapple->flags & GRAPPLE_FLAG_VISIBLE) == 0) {
+    for (i32 index = 0; index < grapple_count; ++index, ++grapples) {
+        GRAPPLE *grapple = grapples;
+        if ((grapple->flags & GRAPPLE_FLAG_VISIBLE) == 0) {
+            continue;
+        }
+
+        if (NuSpecialExistsFn(&grapple->display_special) == 0 && LEGOOBJ_GRAPPLE_HOOK != -1 &&
+            world->lev_objs[LEGOOBJ_GRAPPLE_HOOK].active != 0) {
+            NuMtxSetRotationX(&matrix, grapple->x_rotation);
+            NuMtxRotateY(&matrix, grapple->y_rotation);
+            NuMtxTranslate(&matrix, &grapple->position);
+            NuSpecialDrawAt(&world->lev_objs[LEGOOBJ_GRAPPLE_HOOK].special, &matrix);
+        }
+
+        if ((grapple->flags & GRAPPLE_FLAG_ACTIVE) == 0) {
+            continue;
+        }
+
+        const u8 occupancy_flags = grapple->flags & (GRAPPLE_FLAG_DISABLED | GRAPPLE_FLAG_REVERSED);
+        if (occupancy_flags == GRAPPLE_FLAG_DISABLED && Grapple_Occupied(grapple, NULL, NULL) == NULL) {
+            rope_start = grapple->hook_position;
+            DrawRopeCurved(&rope_start, grapple->rope_points, 6, 0, NULL);
+        }
+
+        if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0 || editor_active != 0) {
+            if (grapple->ground_position.y == 2000000.0f || LEGOOBJ_FLOORTARGET == -1 ||
+                world->lev_objs[LEGOOBJ_FLOORTARGET].active == 0) {
                 continue;
             }
 
-            if (NuSpecialExistsFn(&grapple->display_special) == 0 && LEGOOBJ_GRAPPLE_HOOK != -1 &&
-                world->lev_objs[LEGOOBJ_GRAPPLE_HOOK].active != 0) {
-                NuMtxSetRotationX(&matrix, grapple->x_rotation);
-                NuMtxRotateY(&matrix, grapple->y_rotation);
-                NuMtxTranslate(&matrix, &grapple->position);
-                NuSpecialDrawAt(&world->lev_objs[LEGOOBJ_GRAPPLE_HOOK].special, &matrix);
+            NuMtxSetRotationY(&matrix, target_rotation);
+            if (grapple->ground_z_rotation != 0) {
+                NuMtxRotateZ(&matrix, grapple->ground_z_rotation);
             }
-
-            if ((grapple->flags & GRAPPLE_FLAG_ACTIVE) == 0) {
-                continue;
+            if (grapple->ground_x_rotation != 0) {
+                NuMtxRotateX(&matrix, grapple->ground_x_rotation);
             }
+            NuMtxScaleU(&matrix, 0.8f);
+            NuMtxTranslate(&matrix, &grapple->ground_position);
 
-            const u8 occupancy_flags = grapple->flags & (GRAPPLE_FLAG_DISABLED | GRAPPLE_FLAG_REVERSED);
-            if (occupancy_flags == GRAPPLE_FLAG_DISABLED && Grapple_Occupied(grapple, NULL, NULL) == NULL) {
-                rope_start = grapple->hook_position;
-                DrawRopeCurved(&rope_start, grapple->rope_points, 6, 0, NULL);
-            }
-
-            if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0 || editor_active != 0) {
-                if (grapple->ground_position.y == 2000000.0f || LEGOOBJ_FLOORTARGET == -1 ||
-                    world->lev_objs[LEGOOBJ_FLOORTARGET].active == 0) {
+            f32 alpha = target_alpha;
+            if (editor_active == 0) {
+                if (!FindNearestPlayerToVec(&grapple->ground_position, &nearest_player, distance_squared, false, 0)) {
                     continue;
                 }
 
-                NuMtxSetRotationY(&matrix, target_rotation);
-                if (grapple->ground_z_rotation != 0) {
-                    NuMtxRotateZ(&matrix, grapple->ground_z_rotation);
-                }
-                if (grapple->ground_x_rotation != 0) {
-                    NuMtxRotateX(&matrix, grapple->ground_x_rotation);
-                }
-                NuMtxScaleU(&matrix, 0.8f);
-                NuMtxTranslate(&matrix, &grapple->ground_position);
+                const i32 distance_band = static_cast<i32>(distance_squared / 6.0f);
+                const i32 fade_index = distance_band > 0 ? 0x2000 : (distance_band << 13) & 0x6000;
+                alpha -= NuTrigTable[fade_index];
+            }
 
-                f32 alpha = target_alpha;
-                if (editor_active == 0) {
-                    if (!FindNearestPlayerToVec(&grapple->ground_position, &nearest_player, distance_squared, false,
-                                                0)) {
-                        continue;
-                    }
-
-                    const i32 distance_band = static_cast<i32>(distance_squared / 6.0f);
-                    const i32 fade_index = distance_band > 0 ? 0x2000 : (distance_band << 13) & 0x6000;
-                    alpha -= NuTrigTable[fade_index];
-                }
-
-                if (alpha > 0.0f) {
-                    NuSpecialDrawAtAlpha(&world->lev_objs[LEGOOBJ_FLOORTARGET].special, &matrix, alpha);
-                }
+            if (alpha > 0.0f) {
+                NuSpecialDrawAtAlpha(&world->lev_objs[LEGOOBJ_FLOORTARGET].special, &matrix, alpha);
             }
         }
     }
@@ -452,7 +452,8 @@ static void Grapples_StoreProgress(void *world_ptr, void *, void *progress_ptr) 
         return;
     }
 
-    for (i32 index = 0; index < world->grapple_count && index < 32; ++index) {
+    auto world_grapple_count = world->grapple_count;
+    for (i32 index = 0; index < world_grapple_count && index < 32; ++index) {
         const u32 mask = 1u << index;
         if ((world->grapples[index].flags & GRAPPLE_FLAG_VISIBLE) == 0) {
             progress->visible_mask &= ~mask;
@@ -676,14 +677,14 @@ void Grapple_DrawLine(GameObject_s *object) {
     const NUVEC *first_attachment;
     const NUVEC *second_attachment = NULL;
     const i32 joint_a = config->grapple_joint_a;
-    if (joint_a != -1 && object->apiobj.character_model->points_of_interest[joint_a] != NULL) {
+    if (!(joint_a != -1 && object->apiobj.character_model->points_of_interest[joint_a] != NULL)) {
+        first_attachment = grapple->disabled ? &object->apiobj.collision_position : &object->apiobj.upper_position;
+    } else {
         first_attachment = NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_a], 3);
         const i32 joint_b = config->grapple_joint_b;
         if (joint_b != -1 && object->apiobj.character_model->points_of_interest[joint_b] != NULL) {
             second_attachment = NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
         }
-    } else {
-        first_attachment = grapple->disabled ? &object->apiobj.collision_position : &object->apiobj.upper_position;
     }
 
     vertices[0].position = grapple->hook_position;
@@ -742,17 +743,18 @@ ADDGIZMOTYPE *Grapples_RegisterGizmo(i32 type_id) {
 
 GRAPPLE *Grapple_AddDynamic(void *attached_object, i32 retain_attachment) {
     for (i32 index = 0; index < 4; ++index) {
-        if (DynamicGrapple[index].attached_object == attached_object) {
-            return &DynamicGrapple[index];
+        if (DynamicGrapple[index].attached_object != attached_object) {
+            continue;
         }
+        return &DynamicGrapple[index];
     }
 
     for (i32 index = 0; index < 4; ++index) {
         GRAPPLE *grapple = &DynamicGrapple[index];
         if (grapple->attached_object == NULL) {
             grapple->attached_object = static_cast<GameObject_s *>(attached_object);
-            grapple->retain_attachment = static_cast<u8>(retain_attachment);
             grapple->flags |= GRAPPLE_FLAG_VISIBLE;
+            grapple->retain_attachment = static_cast<u8>(retain_attachment);
             return grapple;
         }
     }
@@ -812,76 +814,7 @@ void Grapple_MoveCode(GameObject_s *object) {
         }                                                                                                              \
     } while (0)
 
-    if (object->character_context != LEGOCONTEXT_GRAPPLE) {
-        if (Grapples_Available == 0)
-            return;
-        if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->use_action != 1)
-            return;
-        if (ObjLandReady(object) == 0 && (LEGOCONTEXT_JUMP == -1 || object->character_context != LEGOCONTEXT_JUMP)) {
-            if (LEGOCONTEXT_GLIDE == -1 || object->character_context != LEGOCONTEXT_GLIDE || LEGOACT_GLIDE == -1 ||
-                object->context_animation != LEGOACT_GLIDE || object->field_0x788 != NULL)
-                return;
-        }
-        GRAPPLE *grapple = Grapple_FindNearest(WORLD, &object->apiobj.collision_position, object, NULL);
-        if (grapple == NULL)
-            return;
-        if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->can_use_object != grapple)
-            return;
-        if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0) {
-            if ((object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) == 0 &&
-                (object->panel_use_request != 4 || object->tube_entry_data == NULL)) {
-                SetHeadTarget(object, &grapple->hook_position, 4, 2.0f, 1.0f, 2.0f);
-                return;
-            }
-        } else if (!(grapple->activation_progress <= 0.0f) ||
-                   (!(object->pad_gamepad->input_magnitude > 0.0f) && object->apiobj.field_0x27d != 0)) {
-            SetHeadTarget(object, &grapple->hook_position, 4, 2.0f, 1.0f, 2.0f);
-            return;
-        }
-        object->field_0x788 = grapple;
-        object->character_context = static_cast<i8>(LEGOCONTEXT_GRAPPLE);
-        object->context_animation_timer = 0.0f;
-        object->airborne_action_duration = 0.0f;
-        object->field_0x7a3 = 0;
-        object->context_animation = LEGOACT_GRAPPLE_IDLE;
-        object->field_0x768 = NuFabs(grapple->shadow_probe_position.y - object->apiobj.upper_position.y);
-        if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0) {
-            object->context_variant_flags |= 1;
-            object->apiobj.movement_facing_angle = static_cast<u16>(grapple->y_rotation + 0x8000);
-        } else {
-            object->context_variant_flags &= ~1;
-            SetWeaponIn(object);
-        }
-        GameCam_Blend(NULL, 0.5f, 0.0f, 1);
-        if (object->pad_gamepad->input_magnitude <= 0.0f &&
-            (object->apiobj.velocity.x != 0.0f || object->apiobj.velocity.z != 0.0f)) {
-            object->takeover_start_angle = NuAtan2D(object->apiobj.velocity.x, object->apiobj.velocity.z);
-        } else {
-            object->takeover_start_angle = object->apiobj.movement_facing_angle;
-        }
-        if (GrappleSwingMode == 1)
-            GRAPPLE_QUANTIZE(object->takeover_start_angle);
-        f32 maximum_length;
-        GRAPPLE_MAXIMUM_LENGTH(maximum_length);
-        object->grapple_swing_degrees = 0;
-        object->grapple_swing_phase = 0x2000;
-        const f32 depth = 0.75f * FRAMETIME + object->field_0x768;
-        object->field_0x768 = MIN(maximum_length, depth);
-        if (object->pad_gamepad->input_magnitude > 0.0f && static_cast<i8>(object->apiobj.flags_low) < 0) {
-            object->grapple_swing_degrees = static_cast<u8>(static_cast<i32>(
-                (object->pad_gamepad->input_magnitude / object->apiobj.character_data->game_character->run_speed) *
-                30.0f));
-            if (object->grapple_swing_degrees != 0) {
-                if (object->grapple_swing_degrees > 60)
-                    object->grapple_swing_degrees = 60;
-                const u16 angle = object->takeover_start_angle;
-                if (abs(RotDiff(GamePad_InputAngle(object, object->pad_gamepad), angle)) < 0x4000)
-                    object->grapple_swing_phase += 0x8000;
-            }
-        }
-        GameAudio_PlaySfx(0x44, &object->apiobj.lower_position, 0, 0);
-        object->field_0xe31 = 0;
-    } else {
+    if (object->character_context == LEGOCONTEXT_GRAPPLE) {
         if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->can_use_object != object->field_0x788) {
             GRAPPLE_CURRENT->activation_progress = 0.0f;
             object->character_context = -1;
@@ -895,8 +828,8 @@ void Grapple_MoveCode(GameObject_s *object) {
             if (object->pad_gamepad->input_magnitude == 0.0f || object->pad_gamepad->input_angle < 0x6001 ||
                 object->pad_gamepad->input_angle > 0x9fff)
                 return;
-            object->field_0x7a3 = 0;
             object->airborne_action_duration = 0.0f;
+            object->field_0x7a3 = 0;
             object->context_variant_flags &= ~1;
             object->context_animation = LEGOACT_GRAPPLE_IDLE;
             object->field_0x768 = 0.1f;
@@ -997,7 +930,14 @@ void Grapple_MoveCode(GameObject_s *object) {
                 }
             }
         } else if (object->grapple_swing_degrees <= 15) {
-            if (down) {
+            if (!down) {
+                if (object->pad_gamepad->input_magnitude == 0.0f &&
+                    (GRAPPLE_CURRENT->flags & GRAPPLE_FLAG_DISABLED) == 0 && object->field_0x768 < 0.1f) {
+                    object->field_0x768 += 0.75f * FRAMETIME;
+                    if (object->field_0x768 > 0.1f)
+                        object->field_0x768 = 0.1f;
+                }
+            } else {
                 f32 speed = 0.75f;
                 if (LEGOACT_GRAPPLE_DOWN != -1 &&
                     object->apiobj.character_model->model_data_b[LEGOACT_GRAPPLE_DOWN] != NULL) {
@@ -1007,10 +947,7 @@ void Grapple_MoveCode(GameObject_s *object) {
                 }
                 f32 maximum_length;
                 GRAPPLE_MAXIMUM_LENGTH(maximum_length);
-                if (!(maximum_length > object->field_0x768)) {
-                    object->field_0xe24 |= 0x80;
-                    object->context_animation = LEGOACT_GRAPPLE_IDLE;
-                } else {
+                if (maximum_length > object->field_0x768) {
                     object->field_0x768 += speed * FRAMETIME;
                     if (maximum_length < object->field_0x768) {
                         object->field_0x768 = maximum_length;
@@ -1020,12 +957,10 @@ void Grapple_MoveCode(GameObject_s *object) {
                     if (Grapple_RopeSwingRotate != 0 && (GRAPPLE_CURRENT->flags & GRAPPLE_FLAG_DISABLED) != 0)
                         object->apiobj.movement_facing_angle +=
                             static_cast<i32>(static_cast<u16>(Grapple_RopeSwingRotate) * FRAMETIME);
+                } else {
+                    object->field_0xe24 |= 0x80;
+                    object->context_animation = LEGOACT_GRAPPLE_IDLE;
                 }
-            } else if (object->pad_gamepad->input_magnitude == 0.0f &&
-                       (GRAPPLE_CURRENT->flags & GRAPPLE_FLAG_DISABLED) == 0 && object->field_0x768 < 0.1f) {
-                object->field_0x768 += 0.75f * FRAMETIME;
-                if (object->field_0x768 > 0.1f)
-                    object->field_0x768 = 0.1f;
             }
         }
         if (GrappleSwingMode == 0) {
@@ -1077,6 +1012,75 @@ void Grapple_MoveCode(GameObject_s *object) {
             change = -20;
         }
         object->grapple_swing_degrees = MAX(0, object->grapple_swing_degrees + change);
+    } else {
+        if (Grapples_Available == 0)
+            return;
+        if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->use_action != 1)
+            return;
+        if (ObjLandReady(object) == 0 && (LEGOCONTEXT_JUMP == -1 || object->character_context != LEGOCONTEXT_JUMP)) {
+            if (LEGOCONTEXT_GLIDE == -1 || object->character_context != LEGOCONTEXT_GLIDE || LEGOACT_GLIDE == -1 ||
+                object->context_animation != LEGOACT_GLIDE || object->field_0x788 != NULL)
+                return;
+        }
+        GRAPPLE *grapple = Grapple_FindNearest(WORLD, &object->apiobj.collision_position, object, NULL);
+        if (grapple == NULL)
+            return;
+        if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->can_use_object != grapple)
+            return;
+        if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0) {
+            if ((object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) == 0 &&
+                (object->panel_use_request != 4 || object->tube_entry_data == NULL)) {
+                SetHeadTarget(object, &grapple->hook_position, 4, 2.0f, 1.0f, 2.0f);
+                return;
+            }
+        } else if (!(grapple->activation_progress <= 0.0f) ||
+                   (!(object->pad_gamepad->input_magnitude > 0.0f) && object->apiobj.field_0x27d != 0)) {
+            SetHeadTarget(object, &grapple->hook_position, 4, 2.0f, 1.0f, 2.0f);
+            return;
+        }
+        object->field_0x788 = grapple;
+        object->character_context = static_cast<i8>(LEGOCONTEXT_GRAPPLE);
+        object->context_animation_timer = 0.0f;
+        object->airborne_action_duration = 0.0f;
+        object->field_0x7a3 = 0;
+        object->context_animation = LEGOACT_GRAPPLE_IDLE;
+        object->field_0x768 = NuFabs(grapple->shadow_probe_position.y - object->apiobj.upper_position.y);
+        if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0) {
+            object->context_variant_flags |= 1;
+            object->apiobj.movement_facing_angle = static_cast<u16>(grapple->y_rotation + 0x8000);
+        } else {
+            object->context_variant_flags &= ~1;
+            SetWeaponIn(object);
+        }
+        GameCam_Blend(NULL, 0.5f, 0.0f, 1);
+        if (object->pad_gamepad->input_magnitude <= 0.0f &&
+            (object->apiobj.velocity.x != 0.0f || object->apiobj.velocity.z != 0.0f)) {
+            object->takeover_start_angle = NuAtan2D(object->apiobj.velocity.x, object->apiobj.velocity.z);
+        } else {
+            object->takeover_start_angle = object->apiobj.movement_facing_angle;
+        }
+        if (GrappleSwingMode == 1)
+            GRAPPLE_QUANTIZE(object->takeover_start_angle);
+        f32 maximum_length;
+        GRAPPLE_MAXIMUM_LENGTH(maximum_length);
+        object->grapple_swing_degrees = 0;
+        object->grapple_swing_phase = 0x2000;
+        const f32 depth = 0.75f * FRAMETIME + object->field_0x768;
+        object->field_0x768 = MIN(maximum_length, depth);
+        if (object->pad_gamepad->input_magnitude > 0.0f && static_cast<i8>(object->apiobj.flags_low) < 0) {
+            object->grapple_swing_degrees = static_cast<u8>(static_cast<i32>(
+                (object->pad_gamepad->input_magnitude / object->apiobj.character_data->game_character->run_speed) *
+                30.0f));
+            if (object->grapple_swing_degrees != 0) {
+                if (object->grapple_swing_degrees > 60)
+                    object->grapple_swing_degrees = 60;
+                const u16 angle = object->takeover_start_angle;
+                if (abs(RotDiff(GamePad_InputAngle(object, object->pad_gamepad), angle)) < 0x4000)
+                    object->grapple_swing_phase += 0x8000;
+            }
+        }
+        GameAudio_PlaySfx(0x44, &object->apiobj.lower_position, 0, 0);
+        object->field_0xe31 = 0;
     }
 #undef GRAPPLE_CURRENT
 #undef GRAPPLE_QUANTIZE
@@ -1095,8 +1099,8 @@ i32 Grapple_ReachedTop(GameObject_s *object) {
 
 void Grapple_SetPlayerTargetPoint(GameObject_s *object, nuvec_s *target) {
     target->x = 0.0f;
-    target->z = 0.0f;
     target->y = -object->field_0x768;
+    target->z = 0.0f;
     i32 amplitude = (static_cast<i32>(object->grapple_swing_degrees) << 16) / 360;
     i32 angle = static_cast<i32>(static_cast<f32>(amplitude) * NuTrigTable[object->grapple_swing_phase >> 1] *
                                  static_cast<GRAPPLE *>(object->field_0x788)->field_0x4c);

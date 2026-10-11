@@ -23,15 +23,20 @@ void Climb_MoveCode(GameObject_s *object) {
     if (LEGOCONTEXT_CLIMB == -1)
         return;
     if (object->character_context != LEGOCONTEXT_CLIMB) {
-        bool can_enter = object->character_context == -1 ||
-                         (LEGOCONTEXT_WALLSHUFFLE != -1 && object->character_context == LEGOCONTEXT_WALLSHUFFLE);
-        if (!can_enter && LEGOCONTEXT_JUMP != -1 && object->character_context == LEGOCONTEXT_JUMP) {
-            can_enter = object->context_animation_timer >= 1.0f ||
-                        (object->context_animation_timer >= 0.1f && object->apiobj.velocity.y <= 0.0f);
+        if (object->character_context == -1)
+            goto enter_climb;
+        if (LEGOCONTEXT_WALLSHUFFLE != -1 && object->character_context == LEGOCONTEXT_WALLSHUFFLE)
+            goto enter_climb;
+        if (LEGOCONTEXT_JUMP != -1 && object->character_context == LEGOCONTEXT_JUMP) {
+            if (object->context_animation_timer >= 1.0f ||
+                (object->context_animation_timer >= 0.1f && object->apiobj.velocity.y <= 0.0f))
+                goto enter_climb;
         }
-        if (!can_enter && LEGOCONTEXT_GLIDE != -1 && object->character_context == LEGOCONTEXT_GLIDE)
-            can_enter = object->field_0x788 == NULL;
-        if (!can_enter || !(object->pad_gamepad->input_magnitude > 0.0f) || object->field_0x1084 == 0 ||
+        if (LEGOCONTEXT_GLIDE != -1 && object->character_context == LEGOCONTEXT_GLIDE && object->field_0x788 == NULL)
+            goto enter_climb;
+        return;
+    enter_climb:
+        if (!(object->pad_gamepad->input_magnitude > 0.0f) || object->field_0x1084 == 0 ||
             !(fabsf(object->contact_normal.y) < NuTrigTable[0x3000]) ||
             CanClimbSurface(object, static_cast<i8>(object->field_0x6b0)) == 0)
             return;
@@ -91,15 +96,7 @@ void Climb_MoveCode(GameObject_s *object) {
     }
     if (object->character_context != LEGOCONTEXT_CLIMB)
         return;
-    if (object->field_0x7a6 == 5) {
-        Climb_SetMagnetAction(object);
-        Climb_SetMagnetDrawOffsetTarget(object, &object->zipup_swing_position);
-        object->movement_runtime_flags |= 0x20;
-        if (object->pad_gamepad->input_magnitude > 0.0f)
-            object->tertiary_lean_angle =
-                SeekRot(object->tertiary_lean_angle,
-                        static_cast<u16>(RotDiff(object->apiobj.movement_facing_angle, input_angle)), 9.0f);
-    } else {
+    if (object->field_0x7a6 != 5) {
         if (object->pad_gamepad->input_magnitude > 0.0f) {
             i32 difference =
                 RotDiff(object->apiobj.movement_facing_angle, GamePad_InputAngle(object, object->pad_gamepad));
@@ -110,6 +107,14 @@ void Climb_MoveCode(GameObject_s *object) {
                 return;
         }
         object->context_animation = LEGOACT_CLIMB_IDLE;
+    } else {
+        Climb_SetMagnetAction(object);
+        Climb_SetMagnetDrawOffsetTarget(object, &object->zipup_swing_position);
+        object->movement_runtime_flags |= 0x20;
+        if (object->pad_gamepad->input_magnitude > 0.0f)
+            object->tertiary_lean_angle =
+                SeekRot(object->tertiary_lean_angle,
+                        static_cast<u16>(RotDiff(object->apiobj.movement_facing_angle, input_angle)), 9.0f);
     }
 }
 
@@ -171,8 +176,8 @@ extern i32 TERRAINMASK_NONWEAPON, TERRAINMASK_NONDROID;
 i32 GameRayCast(NUVEC *, NUVEC *, f32, i32);
 
 static __used__ void ClimbObject_FindNormal(CLIMBOBJECT_s *object) {
-    AIPATHNODE *first = &object->path->nodes[object->connection->node_indices[0]];
     AIPATHNODE *second = &object->path->nodes[object->connection->node_indices[1]];
+    AIPATHNODE *first = &object->path->nodes[object->connection->node_indices[0]];
     AIPATHNODE *node = second->position.y > first->position.y ? first : second;
     NUVEC displacement, origin;
 #define PROBE_CLIMB_NORMAL(angle)                                                                                      \
@@ -201,9 +206,9 @@ static __used__ void ClimbObject_FindNormal(CLIMBOBJECT_s *object) {
     return;
 found_normal:
     object->flags |= 1;
-    object->normal = ShadNorm;
     object->impact_x = origin.x + displacement.x;
     object->impact_z = origin.z + displacement.z;
+    object->normal = ShadNorm;
 }
 
 i32 CanClimbSurface(GameObject_s *object, i32 surface) {

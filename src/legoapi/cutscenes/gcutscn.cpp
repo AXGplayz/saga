@@ -180,11 +180,12 @@ void CutScenePlayer_DrawGrid(COLLECTION_s *collection, i16 *ids, float x, float 
     i32 previous_area = -1, colour = -1;
     static const u8 colours[8][3] = {{255, 63, 0},  {255, 127, 0},  {255, 223, 0},  {0, 255, 63},
                                      {0, 127, 255}, {191, 31, 255}, {255, 31, 191}, {255, 255, 255}};
+    auto collection_count_y = collection->count_y;
     for (i32 row = 0; row <= rows; ++row, y += dy) {
         x = first_x;
         for (i32 column = 0; column < collection->count_x; ++column, x += dx) {
             const i32 i = row * collection->count_x + column;
-            if (i >= collection->count_y)
+            if (i >= collection_count_y)
                 continue;
             collection->list[i].grid_x = x;
             collection->list[i].grid_y = y;
@@ -228,42 +229,43 @@ void CutScenePlayer_Configure(char *file, VARIPTR *buffer, VARIPTR *, i16 *clip_
     player.outro_text = outro;
     player.ending_text = ending;
     while (NuFParGetLine(fp)) {
-        if (!NuFParGetWord(fp) || NuStrICmp(fp->word_buf, "clip"))
-            continue;
-        CUTSCENEPLAYERCLIP *clip = &player.clips[player.clip_count];
-        clip->level_id = -1;
-        clip->type = CLIP_INTRO;
-        clip->name[0] = 0;
-        clip->guest_episode = -1;
-        while (NuFParGetWord(fp)) {
-            if (NuStrICmp(fp->word_buf, "in_level") == 0) {
-                i32 level;
-                if (NuFParGetWord(fp) && Level_FindByName(fp->word_buf, &level))
-                    clip->level_id = level;
-            } else if (NuStrICmp(fp->word_buf, "name") == 0) {
-                if (NuFParGetWord(fp) && NuStrLen(fp->word_buf) <= 63)
-                    NuStrCpy(clip->name, fp->word_buf);
-            } else if (NuStrICmp(fp->word_buf, "intro") == 0)
-                clip->type = CLIP_INTRO;
-            else if (NuStrICmp(fp->word_buf, "midtro") == 0)
-                clip->type = CLIP_MIDTRO;
-            else if (NuStrICmp(fp->word_buf, "outro") == 0)
-                clip->type = CLIP_OUTRO;
-            else if (NuStrICmp(fp->word_buf, "ending") == 0)
-                clip->type = CLIP_ENDING;
-            else if (NuStrICmp(fp->word_buf, "guest_in_episode") == 0 && NuFParGetWord(fp))
-                clip->guest_episode = NuAToI(fp->word_buf);
+        if (NuFParGetWord(fp) && !(NuStrICmp(fp->word_buf, "clip"))) {
+            CUTSCENEPLAYERCLIP *clip = &player.clips[player.clip_count];
+            clip->level_id = -1;
+            clip->type = CLIP_INTRO;
+            clip->name[0] = 0;
+            clip->guest_episode = -1;
+            while (NuFParGetWord(fp)) {
+                if (NuStrICmp(fp->word_buf, "in_level") == 0) {
+                    i32 level;
+                    if (NuFParGetWord(fp) && Level_FindByName(fp->word_buf, &level))
+                        clip->level_id = level;
+                } else if (NuStrICmp(fp->word_buf, "name") == 0) {
+                    if (NuFParGetWord(fp) && NuStrLen(fp->word_buf) <= 63)
+                        NuStrCpy(clip->name, fp->word_buf);
+                } else if (NuStrICmp(fp->word_buf, "intro") == 0)
+                    clip->type = CLIP_INTRO;
+                else if (NuStrICmp(fp->word_buf, "midtro") == 0)
+                    clip->type = CLIP_MIDTRO;
+                else if (NuStrICmp(fp->word_buf, "outro") == 0)
+                    clip->type = CLIP_OUTRO;
+                else if (NuStrICmp(fp->word_buf, "ending") == 0)
+                    clip->type = CLIP_ENDING;
+                else if (NuStrICmp(fp->word_buf, "guest_in_episode") == 0 && NuFParGetWord(fp))
+                    clip->guest_episode = NuAToI(fp->word_buf);
+            }
+            if (clip->level_id != -1 && (CutScenePlayer_AcceptFn == NULL || CutScenePlayer_AcceptFn(clip)))
+                ++player.clip_count;
         }
-        if (clip->level_id != -1 && (CutScenePlayer_AcceptFn == NULL || CutScenePlayer_AcceptFn(clip)))
-            ++player.clip_count;
     }
     NuFParDestroy(fp);
-    if (player.clip_count != 0) {
-        buffer->void_ptr = &player.clips[player.clip_count];
-        memmove(buffer->void_ptr, &player, sizeof(player));
-        CutScenePlayer = reinterpret_cast<CUTSCENEPLAYER_s *>(buffer->void_ptr);
-        buffer->addr += sizeof(player);
+    if (player.clip_count == 0) {
+        return;
     }
+    buffer->void_ptr = &player.clips[player.clip_count];
+    memmove(buffer->void_ptr, &player, sizeof(player));
+    CutScenePlayer = reinterpret_cast<CUTSCENEPLAYER_s *>(buffer->void_ptr);
+    buffer->addr += sizeof(player);
 }
 
 void CutScenePlayer_SetObjects(CUTINFO *cut) {
@@ -380,8 +382,7 @@ void instGetLookAtLocatorInfo(instNUGCUTSCENE_s *instance, instNUGCUTLOOKAT_s *o
     state->locator = NULL;
     NUGCUTSCENE_s *cutscene = instance->cutscene;
     NUGCUTCHARANIM_s *animations = cutscene->character_animations;
-    i32 character_count = cutscene->character_system->character_count;
-    for (i32 i = 0; i < character_count; ++i) {
+    for (i32 i = 0; i < cutscene->character_system->character_count; ++i) {
         if (static_cast<u8>(animations[i].field_00) == character_id) {
             state->character_index = i + 1;
             break;
@@ -456,10 +457,10 @@ void instNuGCutSceneResetCamLock(instNUGCUTSCENE_s *instance) {
 }
 
 void instNuGCutSceneEndButNotSystems(instNUGCUTSCENE_s *instance) {
-    instance->flags_88 &= ~2U;
     instance->current_frame = instance->cutscene->duration;
-    instance->flags_89 |= 0x10;
     instance->render_frame = instance->cutscene->duration;
+    instance->flags_88 &= ~2U;
+    instance->flags_89 |= 0x10;
     instance->flags_8c &= ~0x40U;
     instNuGCutSceneResetCamLock(instance);
 }

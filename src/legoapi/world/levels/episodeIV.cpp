@@ -592,8 +592,7 @@ void MosEisleyB_Update(WORLDINFO_s *world) {
     if (third == NULL)
         return;
 
-    GIZFORCEGROUP_s *group = first->group;
-    if (__builtin_expect(group != NULL && (group->field_0x24 & 2) != 0, 0)) {
+    if (__builtin_expect(first->group != NULL && (first->group->field_0x24 & 2) != 0, 0)) {
         if (mosEisleyB_nodesNeedUpdating != 0)
             return;
         mosEisleyB_nodesNeedUpdating = 1;
@@ -630,22 +629,24 @@ void MosEisleyB_Update(WORLDINFO_s *world) {
         node3->position.z = z3;                                                                                        \
     } while (0)
 
-        GIZFORCE_s *selected = group->forces[0];
-        if (selected == first) {
-            if (group->forces[1] == second)
+        GIZFORCE_s *selected = first->group->forces[0];
+        if (selected != first) {
+            if (selected == second) {
+                if (first->group->forces[1] == first)
+                    SET_STACK_NODE_POSITIONS(22.75f, -15.12f, 23.27f, -14.93f, 23.72f, -14.78f, 23.32f, -14.61f);
+                else
+                    SET_STACK_NODE_POSITIONS(22.75f, -15.12f, 23.27f, -14.93f, 23.27f, -14.62f, 23.66f, -14.73f);
+            } else if (selected == third) {
+                if (first->group->forces[1] == first)
+                    SET_STACK_NODE_POSITIONS(22.79f, -14.62f, 23.29f, -14.58f, 23.73f, -14.70f, 23.34f, -14.87f);
+                else
+                    SET_STACK_NODE_POSITIONS(22.79f, -14.62f, 23.29f, -14.58f, 23.27f, -14.85f, 23.63f, -14.76f);
+            }
+        } else {
+            if (first->group->forces[1] == second)
                 SET_STACK_NODE_POSITIONS(24.12f, -14.69f, 23.75f, -14.78f, 23.32f, -14.91f, 23.32f, -14.63f);
             else
                 SET_STACK_NODE_POSITIONS(24.12f, -14.69f, 23.75f, -14.78f, 23.34f, -14.57f, 23.34f, -14.84f);
-        } else if (selected == second) {
-            if (group->forces[1] == first)
-                SET_STACK_NODE_POSITIONS(22.75f, -15.12f, 23.27f, -14.93f, 23.72f, -14.78f, 23.32f, -14.61f);
-            else
-                SET_STACK_NODE_POSITIONS(22.75f, -15.12f, 23.27f, -14.93f, 23.27f, -14.62f, 23.66f, -14.73f);
-        } else if (selected == third) {
-            if (group->forces[1] == first)
-                SET_STACK_NODE_POSITIONS(22.79f, -14.62f, 23.29f, -14.58f, 23.73f, -14.70f, 23.34f, -14.87f);
-            else
-                SET_STACK_NODE_POSITIONS(22.79f, -14.62f, 23.29f, -14.58f, 23.27f, -14.85f, 23.63f, -14.76f);
         }
 #undef SET_STACK_NODE_POSITIONS
 
@@ -880,8 +881,9 @@ void DeathStarEscapeB_Init(WORLDINFO_s *world) {
 }
 
 void DeathStarEscapeB_Draw(WORLDINFO_s *) {
+    NUMTX matrix;
     if (LevGameObject[0] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
-        NUMTX matrix = LevGameObject[0]->joint_matrices[1];
+        matrix = LevGameObject[0]->joint_matrices[1];
         NuSpecialDrawAt(&LevHSpecial[2], &matrix);
     }
     if (LevGameObject[1] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
@@ -988,8 +990,8 @@ void KillParts_TIEFIGHTER(ADDPART_s *params, i32 part_index, i32 variant, GameOb
         params->flags = 0x90;
         params->stop_fn = PartStop_Flickerer;
         params->draw_fn = PartDraw_Flickerer;
-        params->field_3c = PartImpact_Brick;
         params->gravity = -8.0f;
+        params->field_3c = PartImpact_Brick;
         params->velocity = velocity;
         AddPart(params);
         return;
@@ -1018,9 +1020,9 @@ void KillParts_TIEFIGHTER(ADDPART_s *params, i32 part_index, i32 variant, GameOb
         }
         params->flags = 0x111;
         params->field_a4 = 2.0f;
-        params->velocity = &spin_velocity;
         params->field_44 = TiePart_Kill;
         params->field_3c = TiePart_Impact;
+        params->velocity = &spin_velocity;
         PlaySfx("Tie_Spins", &object->apiobj.collision_position);
         AddPart(params);
         return;

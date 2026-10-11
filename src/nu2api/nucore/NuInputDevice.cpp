@@ -10,24 +10,26 @@ void NuTouchInputButton::Update(NuInputTouchData const *data) {
         u8 active = data->touch_events[i].unknown_00;
         u8 released = data->touch_events[i].unknown_01;
         u8 started = data->touch_events[i].unknown_02;
-        float tx = data->touch_events[i].unknown_04;
         float ty = data->touch_events[i].unknown_08;
+        float tx = data->touch_events[i].unknown_04;
         u32 touch_id = data->touch_events[i].unknown_14;
         if (!released && !started && !active)
             continue;
-        if (touch_captured) {
-            if (touch_id == captured_touch_id) {
-                pressed = true;
-                found = true;
+        if (!touch_captured) {
+            if (started) {
+                float dy = ty - y;
+                float ry = height * 0.5f;
+                float rx = width * 0.5f;
+                float dx = tx - x;
+                if (dx * dx / (rx * rx) + dy * dy / (ry * ry) <= 1.0f) {
+                    captured_touch_id = touch_id;
+                    touch_captured = true;
+                    pressed = true;
+                    found = true;
+                }
             }
-        } else if (started) {
-            float dy = ty - y;
-            float dx = tx - x;
-            float ry = height * 0.5f;
-            float rx = width * 0.5f;
-            if (dx * dx / (rx * rx) + dy * dy / (ry * ry) <= 1.0f) {
-                captured_touch_id = touch_id;
-                touch_captured = true;
+        } else {
+            if (touch_id == captured_touch_id) {
                 pressed = true;
                 found = true;
             }
@@ -113,7 +115,7 @@ NuInputDevice::NuInputDevice(u32 port) {
 
 void NuInputDevice::Update(f32 delta_time, bool emulate_touch) {
     u32 i;
-    f32 raw_analog_values[12];
+
     f32 raw_motion_values[20];
     NuInputTouchData raw_touch_data;
     NuInputMouseData raw_mouse_data;
@@ -133,6 +135,7 @@ void NuInputDevice::Update(f32 delta_time, bool emulate_touch) {
     this->is_intercepted = NuInputDevicePS::IsInterceptedPS(this->port);
 
     if (!this->is_intercepted) {
+        f32 raw_analog_values[12];
         NuInputDevicePS::ReadButtonsPS(this->port, &this->button_states);
         NuInputDevicePS::ReadAnalogValuesPS(this->port, this->analog_values);
         NuInputDevicePS::ReadMotionValuesPS(this->port, this->motion_values);
@@ -312,21 +315,29 @@ void NuInputDevice::DeadZone(NUPADANALOGVALUE input, f32 dead_zone) {
 
 void NuInputDevice::ConvertToEmulatedTouchFromMouse(void) {
     type = NUPADTYPE_TOUCH;
-    idx_by_type = 0;
     prev_valid_type = NUPADTYPE_TOUCH;
+    idx_by_type = 0;
     prev_valid_idx_by_type = 0;
     touch_data.touch_count = 0;
-    for (u32 button = 0; button < 2; ++button) {
-        if (mouse_data.buttons[button].active != 0) {
-            NuInputTouch &touch = touch_data.touch_events[touch_data.touch_count];
-            touch.unknown_00 = 1;
-            touch.unknown_01 = mouse_data.buttons[button].released;
-            touch.unknown_02 = mouse_data.buttons[button].pressed;
-            touch.unknown_04 = mouse_data.x;
-            touch.unknown_08 = mouse_data.y;
-            touch.unknown_14 = button;
-            ++touch_data.touch_count;
-        }
+    if (mouse_data.buttons[0].active != 0) {
+        NuInputTouch &touch = touch_data.touch_events[0];
+        touch.unknown_01 = mouse_data.buttons[0].released;
+        touch.unknown_00 = 1;
+        touch.unknown_02 = mouse_data.buttons[0].pressed;
+        touch.unknown_04 = mouse_data.x;
+        touch.unknown_08 = mouse_data.y;
+        touch.unknown_14 = 0;
+        touch_data.touch_count = 1;
+    }
+    if (mouse_data.buttons[1].active != 0) {
+        NuInputTouch &touch = touch_data.touch_events[touch_data.touch_count];
+        touch.unknown_01 = mouse_data.buttons[1].released;
+        touch.unknown_00 = 1;
+        touch.unknown_02 = mouse_data.buttons[1].pressed;
+        touch.unknown_04 = mouse_data.x;
+        touch.unknown_08 = mouse_data.y;
+        touch.unknown_14 = 1;
+        ++touch_data.touch_count;
     }
     memset(&mouse_data, 0, sizeof(mouse_data));
     caps = 0x400;

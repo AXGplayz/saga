@@ -180,7 +180,7 @@ void MechSystems::LoadPerm() {
         raw[0x42] = static_cast<u8>((raw[0x42] & 0x8c) | 0x12);
         material->tex_id = static_cast<i16>(
             NuTexRead(const_cast<char *>("STUFF/UIBUTTONS/UIBUTTONS_RIPPLE"), &permbuffer_ptr, permbuffer_end));
-        NuMtlUpdate(material);
+        NuMtlUpdate(radar_pulse_material);
     }
 }
 
@@ -245,16 +245,18 @@ void MechSystems::NewRadarPulse(VuVec const &position, bool paused) {
 
 void MechSystems::NewSwipeMarker(TouchHolder &holder, i32 direction, SwipeDecalRenderer::Style style) {
     i32 slot;
-    if (swipe_markers[0] == NULL) {
-        slot = 0;
-    } else if (swipe_markers[1] == NULL) {
-        slot = 1;
-    } else if (swipe_markers[2] == NULL) {
-        slot = 2;
-    } else if (swipe_markers[3] == NULL) {
-        slot = 3;
+    if (swipe_markers[0] != NULL) {
+        if (swipe_markers[1] == NULL) {
+            slot = 1;
+        } else if (swipe_markers[2] == NULL) {
+            slot = 2;
+        } else if (swipe_markers[3] == NULL) {
+            slot = 3;
+        } else {
+            return;
+        }
     } else {
-        return;
+        slot = 0;
     }
     swipe_markers[slot] = new SwipeDecalRenderer(holder, direction, style);
 }

@@ -320,8 +320,8 @@ extern "C" {
             if (forward != 0) {
                 return;
             }
-            instance->flags_88 |= 2;
             instance->flags_89 &= ~0x10;
+            instance->flags_88 |= 2;
             instance->current_frame = instance->cutscene->duration - 1.0f;
             if (instance->rate > 0.0f) {
                 instance->rate = -instance->rate;
@@ -415,7 +415,7 @@ extern "C" {
     void instNuGCutSceneStop(instNUGCUTSCENE_s *instance) {
         instance->flags_88 &= ~6;
         instance->flags_89 &= ~0x10;
-        if ((instance->flags_8a & 4) != 0) {
+        if ((instance->flags_8a & 4) == 0) {
             instNUGCUTCHARSYS_s *runtime = instance->character_instance;
             if (runtime != NULL) {
                 NUGCUTCHARSYS_s *system = instance->cutscene->character_system;
@@ -507,6 +507,7 @@ extern "C" {
     void instNuGCutLocatorUpdate(instNUGCUTSCENE_s *instance, NUGCUTLOCATORSYS_s *system,
                                  instNUGCUTLOCATOR_s *inst_locator, NUGCUTLOCATOR_s *locator, f32 frame,
                                  NUMTX *parent_mtx, i32 paused) {
+        NUMTX matrix;
         NUGCUTLOCATORTYPE_s *type = &system->types[locator->type_index];
         i32 effect_index = static_cast<i32>(static_cast<u16>(type->function_index));
         debinftype *effect =
@@ -530,7 +531,7 @@ extern "C" {
                 if ((locator->flags & 0x10) != 0 && inst_locator->effect_handle != 0) {
                     return;
                 }
-                NUMTX matrix;
+
                 NuGCutLocatorCalcMtx(locator, frame, &matrix, &time);
                 if ((locator->flags & 4) != 0) {
                     NuMtxPreTranslate(&matrix, &locator->pivot);
@@ -570,10 +571,12 @@ extern "C" {
                 }
                 return;
             }
-            if ((locator->flags & 0x20) == 0) {
+            if ((locator->flags & 0x20) != 0) {
+                if (inst_locator->effect_handle >= 0) {
+                    DebFreeInstantly(&inst_locator->effect_handle);
+                }
+            } else {
                 inst_locator->effect_handle = 0;
-            } else if (inst_locator->effect_handle >= 0) {
-                DebFreeInstantly(&inst_locator->effect_handle);
             }
             inst_locator->field_00 = 0;
             return;
@@ -596,7 +599,7 @@ extern "C" {
             if (locator->animation != NULL) {
                 NuAnimData2CalcTime(locator->animation, frame, &time);
             }
-            if (NuGCutLocatorIsVisble(locator, frame, &time, &opacity, NULL) == 0 || opacity <= 0.1f) {
+            if (!(NuGCutLocatorIsVisble(locator, frame, &time, &opacity, NULL) != 0 && !(opacity <= 0.1f))) {
                 if (inst_locator->effect_handle >= 0) {
                     ReleaseLocatorVfxFn(inst_locator->effect_handle);
                 }

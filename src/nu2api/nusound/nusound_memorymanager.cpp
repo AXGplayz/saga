@@ -204,18 +204,18 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Defragment(u32 size) {
                 if (!next->IsAlloced()) {
                     buffer = this->MergeFreeBuffer(buffer);
                     if (size != 0 && buffer->GetSize() >= size) {
-                        break;
+                        goto done;
                     }
                     continue;
                 }
 
-                NuSoundMemoryBuffer *merged = NULL;
                 NuSoundMemoryBuffer *split = NULL;
+                NuSoundMemoryBuffer *merged = NULL;
                 NuSoundMemoryBuffer *moved = this->MoveLargestTrailingBufferIntoBuffer(buffer, &split, &merged);
 
                 if (size != 0 && merged != NULL && merged->GetSize() >= size) {
                     buffer = merged;
-                    break;
+                    goto done;
                 }
 
                 if (moved == buffer) {
@@ -234,7 +234,7 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Defragment(u32 size) {
                     }
                     buffer = scan;
                     if (size != 0 && buffer->GetSize() >= size) {
-                        break;
+                        goto done;
                     }
                     continue;
                 }
@@ -248,6 +248,7 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Defragment(u32 size) {
     }
 
     this->free_count = 0;
+done:
     NuSoundMemoryBuffer::EndCriticalSection();
     pthread_mutex_unlock(&this->mutex);
 
@@ -279,8 +280,8 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Alloc(u32 size) {
             if (!buf->IsAlloced()) {
                 u32 buf_size = buf->GetSize();
                 if (buf_size >= alloc_size) {
-                    if (best == NULL || best->GetSize() > buf_size) {
-                        if (buf_size == alloc_size) {
+                    if (best == NULL || best->GetSize() > buf->GetSize()) {
+                        if (buf->GetSize() == alloc_size) {
                             best = buf;
                             break;
                         }
@@ -296,7 +297,7 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Alloc(u32 size) {
         }
 
         if (best != NULL) {
-            if (best->GetSize() != alloc_size) {
+            if (alloc_size < best->GetSize()) {
                 best = this->SplitFreeBuffer(best, alloc_size, NULL);
             }
             best->SetAlloced(true);
@@ -314,7 +315,11 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::Alloc(u32 size) {
 NuSoundMemoryBuffer *NuSoundMemoryManager::SplitFreeBuffer(NuSoundMemoryBuffer *buffer, u32 size,
                                                            NuSoundMemoryBuffer **remainder) {
     u32 total = buffer->GetSize();
-    if (total > size) {
+    if (!(total > size)) {
+        if (remainder != NULL) {
+            *remainder = NULL;
+        }
+    } else {
         NuSoundMemoryBuffer *tail = PopFreeBuffer();
 
         tail->SetSize(total - size);
@@ -333,8 +338,6 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::SplitFreeBuffer(NuSoundMemoryBuffer *
         if (remainder != NULL) {
             *remainder = tail;
         }
-    } else if (remainder != NULL) {
-        *remainder = NULL;
     }
 
     return buffer;
@@ -609,15 +612,19 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::SwapOrMergeAdjacentBuffers(NuSoundMem
     buffer->SetAddress(buffer_address + next_size);
     next->SetAddress(buffer_address);
 
-    u32 remaining = next_size;
-    char *dest = buffer_address;
-    char *source = next_address;
-    while (remaining != 0) {
-        u32 amount = remaining < buffer_size ? remaining : buffer_size;
-        memmove(dest, source, amount);
-        dest += amount;
-        source += amount;
-        remaining -= amount;
+    if (buffer_size >= next_size) {
+        memmove(buffer_address, next_address, next_size);
+    } else {
+        i32 remaining = next_size;
+        char *source = next_address;
+        char *dest = buffer_address;
+        while (remaining != 0) {
+            i32 amount = remaining < (i32)buffer_size ? remaining : (i32)buffer_size;
+            memmove(dest, source, amount);
+            source += amount;
+            dest += amount;
+            remaining -= amount;
+        }
     }
 
     next->Unlock();
@@ -641,7 +648,12 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::SwapOrMergeAdjacentBuffers(NuSoundMem
 
 // libTTapp.so 0x321a60.
 bool NuSoundMemoryManager::SwapSimilarBuffers(NuSoundMemoryBuffer *a, NuSoundMemoryBuffer *b) {
-    if (!a->IsAlloced() || a->IsLocked() || b->IsAlloced() || b->IsLocked() || a->GetSize() != b->GetSize()) {
+    if (!a->IsAlloced() || a->IsLocked() || b->IsAlloced() || b->IsLocked()) {
+        return false;
+    }
+
+    u32 copy_size = a->GetSize();
+    if (copy_size != b->GetSize()) {
         return false;
     }
 
@@ -650,7 +662,7 @@ bool NuSoundMemoryManager::SwapSimilarBuffers(NuSoundMemoryBuffer *a, NuSoundMem
 
     void *a_address = a->GetAddress();
     void *b_address = b->GetAddress();
-    memmove(b_address, a_address, a->GetSize());
+    memmove(b_address, a_address, copy_size);
     a->SetAddress(b_address);
     b->SetAddress(a_address);
 

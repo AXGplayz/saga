@@ -67,8 +67,8 @@ MechAutoJumpConnection *MechAutoJumpManager::AddAutoJumpConnection(AIPATH_s *pat
             jump->is_using = false;
             jump->link.prev = NULL;
             jump->link.next = NULL;
-            jump->base_colour_components.x = colour & 0xff;
             jump->base_colour_components.y = (colour >> 8) & 0xff;
+            jump->base_colour_components.x = colour & 0xff;
             jump->streak_handle = NULL;
             jump->cooldown = 0.0f;
             jump->streak_alpha = 0.0f;
@@ -191,8 +191,8 @@ void MechAutoJumpManager::Process() {
             show_autojump_hint = 0;
             for (i32 index = 0; index < path->connection_count; ++index) {
                 AIPATHCNX *connection = &path->connections[index];
-                for (i32 direction = 1; direction >= 0; --direction) {
-                    i32 far_index = direction == 0 ? 1 : 0;
+                for (i32 direction = 0; direction < 2; ++direction) {
+                    i32 far_index = direction;
                     u32 flags = connection->traversal_flags[far_index];
                     if ((flags & (static_cast<u32>(LEGO_AIPATHCNX_DONT_JUMP_NOW) | 0x98000000u)) != 0 ||
                         (flags & static_cast<u32>(mechAutoJumpFlags)) == 0) {
@@ -228,8 +228,8 @@ void MechAutoJumpManager::Process() {
                         AutoJumpStreakLink *new_streak = new AutoJumpStreakLink;
                         new_streak->link.prev = NULL;
                         new_streak->link.next = NULL;
-                        new_streak->connection = jump;
                         new_streak->path = path;
+                        new_streak->connection = jump;
                         new_streak->path_connection = connection;
                         new_streak->direction = direction;
                         new_streak->handle = NULL;
