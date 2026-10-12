@@ -1,3 +1,4 @@
+#include "nu2api/nu3d/nuhspecial.h"
 #include <stdio.h>
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nu3d/nuvport.h"
@@ -24,6 +25,7 @@
 #include "nu2api/nu3d/nuprim_internal.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nuvec.h"
 
 #include "decomp.h"
@@ -192,9 +194,177 @@ NUGSCNVIDEOMEMFN video_mem_to_gscene;
 extern "C" void NuGScnFromVideoMem(NUGSCNVIDEOMEMFN callback) {
     video_mem_to_gscene = callback;
 }
-extern "C" void NuGScnReadForMultiRender(void) {
-    STUBBED();
+class NuDynamicLight;
+extern "C" {
+    void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
+    static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
+        for (i32 i = 0; i < scene->clip_objects[clip_index].nmaterials; ++i) {
+            const u32 material = scene->clip_objects[clip_index].material_ids[i];
+            scene->mtl_used[scene->render_buffer >> 7][material >> 3] |= static_cast<u8>(1U << (material & 7));
+        }
+        scene->clip_used[scene->render_buffer >> 7][clip_index >> 2] |=
+            static_cast<u8>(clip_result << ((clip_index & 3) * 2));
+    }
+
+    static f32 DisplaySceneDistanceSqrToCamera(const NUCLIPBOUNDS &bounds) {
+        const f32 x = global_camera.mtx.m30 - bounds.center.x;
+        const f32 y = global_camera.mtx.m31 - bounds.center.y;
+        const f32 z = global_camera.mtx.m32 - bounds.center.z;
+        return x * x + y * y + z * z;
+    }
+
+    // A scene has one bound/visibility record per instance, but one or more
+    // clip-object records per instance.  lod_ranges terminates every instance
+    // group with zero; preceding values select progressively nearer LODs.
+    static i32 DisplaySceneSelectLod(const NUDLDLISTSCENE *scene, i32 first_clip, f32 distance_sqr) {
+        i32 selected_clip = first_clip;
+        if (scene->lod_ranges[selected_clip] != 0.0f && distance_sqr < scene->lod_ranges[selected_clip]) {
+            do {
+                ++selected_clip;
+            } while (distance_sqr < scene->lod_ranges[selected_clip]);
+        }
+        return selected_clip;
+    }
+
+    static i32 DisplaySceneNextInstance(const NUDLDLISTSCENE *scene, i32 clip_index) {
+        while (scene->lod_ranges[clip_index] != 0.0f) {
+            ++clip_index;
+        }
+        return clip_index + 1;
+    }
+
+    static f32 DisplaySceneFarClip(const NUDLDLISTSCENE *scene, i32 instance_index, i32 clip_index) {
+        f32 far_clip = scene->far_clip_ranges[clip_index];
+        if (scene->fade_ranges == NULL ||
+            (scene->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_DISTANCE_FADE) == 0) {
+            return far_clip;
+        }
+
+        const f32 fade_start = scene->fade_ranges[instance_index * 2];
+        const f32 fade_end = scene->fade_ranges[instance_index * 2 + 1];
+        if (fade_end > fade_start) {
+            return fade_end;
+        }
+        return far_clip;
+    }
+
+    static f32 DisplaySceneDistanceFade(const NUDLDLISTSCENE *scene, i32 instance_index, f32 distance_sqr) {
+        if (scene->fade_ranges == NULL ||
+            (scene->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_DISTANCE_FADE) == 0) {
+            return 1.0f;
+        }
+
+        const f32 fade_start = scene->fade_ranges[instance_index * 2];
+        const f32 fade_end = scene->fade_ranges[instance_index * 2 + 1];
+        if (fade_end <= fade_start) {
+            if (fade_end * fade_end < distance_sqr) {
+                const f32 alpha = (NuFsqrt(distance_sqr) - fade_end) / (fade_start - fade_end);
+                return alpha < 1.0f ? alpha : 1.0f;
+            }
+            return 0.0f;
+        }
+
+        if (fade_start * fade_start < distance_sqr) {
+            const f32 alpha = (fade_end - NuFsqrt(distance_sqr)) / (fade_end - fade_start);
+            return alpha > 0.0f ? alpha : 0.0f;
+        }
+        return 1.0f;
+    }
+
+    extern nurenderscene_s currentScene;
+    i32 NuDynamicLightTestShadowExtrusionExtent(NuDynamicLight *light, const NUVEC *center, const NUVEC *extent,
+                                                i32 render_set);
+
+    void NuDisplaySceneRndr(void *display_scene) {
+        NUDLDLISTSCENE *scene = static_cast<NUDLDLISTSCENE *>(display_scene);
+        if ((scene->flags & NUDL_SCENE_FLAG_CLIPPING) != 0)
+            return;
+
+        u8 visibility_context[0x2800];
+        RndrStateCopyGlobalState(scene->local_state);
+        NuVisibilityResult *visibility =
+            static_cast<NuVisibilityResult *>(NuVisiEvaluate(scene->gscene, visibility_context));
+        if (visibility == NULL || (visibility->state & 1) == 0) {
+            if (currentScene.unknown_3c != NULL) {
+                i32 instance = 0;
+                for (i32 clip = 0; clip < scene->nclip_objects; ++instance) {
+                    if ((scene->visibility_flags[instance] & NUDL_INSTANCE_FLAG_CASTS_SHADOW) != 0) {
+                        NUCLIPBOUNDS &bounds = scene->clip_bounds[instance];
+                        if (scene->lod_ranges[clip] != 0.0f)
+                            clip = DisplaySceneSelectLod(scene, clip, DisplaySceneDistanceSqrToCamera(bounds));
+                        const i32 result = NuDynamicLightTestShadowExtrusionExtent(
+                            static_cast<NuDynamicLight *>(currentScene.unknown_3c), &bounds.center, &bounds.extent,
+                            currentScene.unknown_40);
+                        if (result != 0)
+                            DisplaySceneSetClipResult(scene, clip, result);
+                    }
+                    clip = DisplaySceneNextInstance(scene, clip);
+                }
+            } else {
+                scene->alpha_values = NULL;
+                if (scene->fade_ranges != NULL) {
+                    VARIPTR *buffer = NuDisplayListGetBuffer();
+                    scene->alpha_values = buffer->f32_ptr;
+                    buffer->addr += static_cast<usize>(scene->nclip_objects) * sizeof(f32);
+                }
+                i32 instance = 0;
+                for (i32 clip = 0; clip < scene->nclip_objects; ++instance) {
+                    const u8 flags = scene->visibility_flags[instance];
+                    bool visible = visibility == NULL || visibility->instance_tree_bits == NULL ||
+                                   (visibility->instance_tree_bits[instance >> 3] & (1U << (instance & 7))) != 0;
+                    if (visibility != NULL && visibility->portal_marker != NULL && portals_enabled != 0) {
+                        visible = (flags & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) != 0 ||
+                                  (visibility->portal_bits[instance >> 3] & (1U << (instance & 7))) != 0;
+                    }
+                    if (visible && (flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+                        NUCLIPBOUNDS &bounds = scene->clip_bounds[instance];
+                        const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
+                        clip = DisplaySceneSelectLod(scene, clip, distance_sqr);
+                        const f32 far_clip = DisplaySceneFarClip(scene, instance, clip);
+                        const i32 result = NuCameraClipTestExtentsAxisAligned(&bounds.center, &bounds.extent, far_clip);
+                        if (result != 0) {
+                            if (scene->alpha_values != NULL)
+                                scene->alpha_values[clip] = DisplaySceneDistanceFade(scene, instance, distance_sqr);
+                            DisplaySceneSetClipResult(scene, clip, result);
+                        }
+                    }
+                    clip = DisplaySceneNextInstance(scene, clip);
+                }
+            }
+        }
+        if (scene->nclip_objects != 0)
+            scene->flags |= NUDL_SCENE_FLAG_CLIPPING;
+        DisplayListGenerateTransforms(scene);
+
+        NUGSCN temporary_scene;
+        NUGSCN *gscene = scene->gscene;
+        if (gscene == NULL) {
+            temporary_scene.display_list = scene;
+            gscene = &temporary_scene;
+        }
+        const bool portal_filter = visibility != NULL && portal_special_objects != 0 &&
+                                   visibility->portal_marker != NULL && portals_enabled != 0;
+        if ((scene->instance_visibility_enabled & NUDL_SCENE_INSTANCE_VISIBILITY_ENABLED) == 0 &&
+            noscenespecials == 0) {
+            nuhspecial_s handle = {gscene, NULL, NULL};
+            for (i32 index = 0; index < scene->nspecials; ++index) {
+                NUDISPLAYSPECIAL *special = &static_cast<NUDISPLAYSPECIAL *>(scene->specials)[index];
+                if ((special->flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) == 0)
+                    continue;
+                handle.display_special = special;
+                const i32 instance = special->instance_ix;
+                if (portal_filter && (scene->visibility_flags[instance] & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0 &&
+                    (visibility->portal_bits[instance >> 3] & (1U << (instance & 7))) == 0)
+                    continue;
+                NUMTX *draw_mtx = special->draw_mtx_ptr;
+                if (draw_mtx == NULL || draw_mtx == reinterpret_cast<NUMTX *>(-1))
+                    draw_mtx = &special->draw_mtx;
+                NuDisplayListRndrSpecial(&handle, draw_mtx, 0, NULL, NULL);
+            }
+        }
+    }
 }
+
 extern "C" void NuGScnRndr(NUGSCN *scene) {
     if (scene->additional_scenes != NULL && scene->rendered_additional_scene_count > 0) {
         NuDisplaySceneRndr(scene->additional_scenes[scene->rendered_additional_scene_count - 1]->display_list);
@@ -797,36 +967,28 @@ extern "C" void NuRndrLine2di(i32 x0, i32 y0, i32 x1, i32 y1, i32 colour, NUMTL 
 extern "C" i32 NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *matrix) {
     NuPrim3DBegin(2, 7, material, matrix);
     {
-        if (!g_NuPrim_NeedsOverbrightening)
-            ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color =
-                ((vertices[0].colour >> 1) & 0x007f7f7f) | (vertices[0].colour & 0xff000000);
-        else
-            ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color = vertices[0].colour;
+        NuRndrPrimSetColour(vertices[0].colour);
         NuRndrPrimUV(vertices[0].u, vertices[0].v);
         f32 x = vertices[0].position.x;
         f32 y = vertices[0].position.y;
         f32 z = vertices[0].position.z;
         PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
-        vertex->y = y;
         vertex->x = x;
+        vertex->y = y;
         vertex->z = z;
         g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
         ++g_NuPrim_VertexCount;
     }
     {
-        if (!g_NuPrim_NeedsOverbrightening)
-            ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color =
-                ((vertices[1].colour >> 1) & 0x007f7f7f) | (vertices[1].colour & 0xff000000);
-        else
-            ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color = vertices[1].colour;
+        NuRndrPrimSetColour(vertices[1].colour);
         NuRndrPrimUV(vertices[1].u, vertices[1].v);
         f32 x = vertices[1].position.x;
         f32 y = vertices[1].position.y;
         f32 z = vertices[1].position.z;
         PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
         vertex->x = x;
-        vertex->z = z;
         vertex->y = y;
+        vertex->z = z;
         g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
         ++g_NuPrim_VertexCount;
     }
@@ -911,16 +1073,7 @@ extern "C" void NuRndrLineStrip2di(i32 *positions, f32 *uvs, i32 count, i32 colo
         for (i32 i = 0; i != end; i += 2) {
             NuRndrPrimSetColour(colour);
             if (uvs) {
-                f32 u = uvs[i];
-                u8 *vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-                f32 v = uvs[i + 1];
-                if (!g_NuPrim_NeedsHalfUVs) {
-                    *(f32 *)(vertex + 0x10) = u;
-                    *(f32 *)(vertex + 0x14) = v;
-                } else {
-                    *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u);
-                    *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v);
-                }
+                NuRndrPrimUV(uvs[i], uvs[i + 1]);
             }
             NuPrim2DAddXYZ((f32)positions[i] * 0.0625f, (f32)positions[i + 1] * 0.0625f, 0.0f);
         }
@@ -1158,6 +1311,28 @@ extern "C" void NuRndrSetWind(f32 speed, f32 scale) {
     global_windscale = scale;
 }
 
+extern "C" void WindShear(NUMTX *output, NUMTX *input, i32 wind_scale, i32 wind_speed) {
+    u32 seed = static_cast<u32>(wind_speed);
+    const f32 amplitude = (static_cast<f32>(wind_scale) / 65535.0f) * global_windscale;
+    const f32 speed = (static_cast<f32>(wind_speed) / 65535.0f) * global_windspeed;
+    const f32 random = NuRandFloatSeeded(&seed);
+    const u32 frame = static_cast<u32>(NuRndrGlobalFrameCount());
+    const f32 phase = random * 3.142f + random * 3.142f + static_cast<f32>(frame) * speed;
+    const f32 shear_x =
+        (NU_SIN_LUT(4.2f * phase * 10430.3779296875f) * 0.25f +
+         (NU_SIN_LUT(2.1f * phase * 10430.3779296875f) * 0.5f + NU_SIN_LUT(phase * 10430.3779296875f))) *
+        amplitude;
+    const f32 shear_z =
+        (0.25f * NU_COS_LUT(4.4f * phase * 10430.3779296875f) +
+         (0.5f * NU_COS_LUT(2.3f * phase * 10430.3779296875f) + NU_COS_LUT(phase * 1.1f * 10430.3779296875f))) *
+        amplitude;
+    *output = *input;
+    output->m10 = input->m00 * shear_x + input->m10 + input->m20 * shear_z;
+    output->m11 = input->m01 * shear_x + input->m11 + input->m21 * shear_z;
+    output->m12 = input->m02 * shear_x + input->m12 + input->m22 * shear_z;
+    output->m13 = shear_x * input->m03 + input->m13 + shear_z * input->m23;
+}
+
 extern "C" void NuRndrGrid(NUVEC *centre, NUVEC *size, i32 columns, i32 rows) {
     NUMTX matrix = numtx_identity;
     matrix.m30 = centre->x;
@@ -1307,10 +1482,9 @@ extern "C" i32 NuRndrStrip3d(NURND_VERTEX3D *vertices, numtl_s *material, NUMTX 
         vertex->x = x;
         vertex->y = y;
         vertex->z = z;
-        g_NuPrim_StreamBufferPtr->addr += 0x18;
+        g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
+        ++g_NuPrim_VertexCount;
     }
-    if (count > 0)
-        g_NuPrim_VertexCount += count;
     NuPrim3DEnd();
     return 1;
 }
@@ -1321,16 +1495,7 @@ extern "C" void NuRndrTriStrip2di(i32 *positions, f32 *uvs, i32 count, i32 colou
         for (i32 i = 0; i != end; i += 2) {
             NuRndrPrimSetColour(colour);
             if (uvs) {
-                f32 u = uvs[i];
-                u8 *vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-                f32 v = uvs[i + 1];
-                if (!g_NuPrim_NeedsHalfUVs) {
-                    *(f32 *)(vertex + 0x10) = u;
-                    *(f32 *)(vertex + 0x14) = v;
-                } else {
-                    *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u);
-                    *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v);
-                }
+                NuRndrPrimUV(uvs[i], uvs[i + 1]);
             }
             NuPrim2DAddXYZ((f32)positions[i] * 0.0625f, (f32)positions[i + 1] * 0.0625f, 0.0f);
         }
@@ -1351,10 +1516,9 @@ extern "C" i32 NuRndrTri3dClip(NURND_VERTEX3D *vertices, i32 count, NUMTX *matri
         vertex->x = x;
         vertex->y = y;
         vertex->z = z;
-        g_NuPrim_StreamBufferPtr->addr += 24;
+        g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
+        ++g_NuPrim_VertexCount;
     }
-    if (count > 0)
-        g_NuPrim_VertexCount += count;
     NuPrim3DEnd();
     return 1;
 }

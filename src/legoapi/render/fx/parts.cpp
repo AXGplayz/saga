@@ -935,7 +935,7 @@ static __used__ void PartMove_VehiclePickup(PART_s *part, f32) {
 extern "C" {
 
     void AddDebrisEffect(i32 *handle, i32 effect_index, f32 x, f32 y, f32 z) {
-        if (handle == NULL || effect_index < 0 || EDPP_MAX_TYPES <= effect_index || debtab == NULL ||
+        if (static_cast<u32>(effect_index) + 1U <= 1 || EDPP_MAX_TYPES <= effect_index ||
             debtab[effect_index] == NULL) {
             return;
         }
@@ -959,70 +959,76 @@ extern "C" {
         debkeydata[key_index].field_184 = 0;
         debkeydata[key_index].effect_index = static_cast<i16>(effect_index);
         DebrisStartOffset(key_index, effect->emission_period);
-        debkeydata[key_index].generator = gensorttab[static_cast<i8>(effect->generator_type)];
-        debkeydata[key_index].momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
-        debkeydata[key_index].field_1d4 = 0;
-        debkeydata[key_index].sphere_next_time = 0.0f;
-        debkeydata[key_index].emitter_rotation_x = 0;
-        debkeydata[key_index].emitter_rotation_y = 0;
-        debkeydata[key_index].field_2c8 = 0;
-        for (i32 i = 0; i < effect->process_spheres; ++i) {
-            debkeydata[key_index].process_spheres[i].time = -1.0f;
+        debkeydatatype_s *key = &debkeydata[key_index];
+        key->generator = gensorttab[static_cast<i8>(effect->generator_type)];
+        key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
+        key->field_1d4 = 0;
+        key->sphere_next_time = 0.0f;
+        key->emitter_rotation_x = 0;
+        key->emitter_rotation_y = 0;
+        key->field_2c8 = 0;
+        for (i32 i = 0; i < static_cast<i8>(debtab[effect_index]->process_spheres); ++i) {
+            key->process_spheres[i].time = -1.0f;
         }
-        memset(&debkeydata[key_index].emission_position, 0, sizeof(debkeydata[key_index].emission_position));
-        memset(&debkeydata[key_index].momentum, 0, sizeof(debkeydata[key_index].momentum));
-        memset(&debkeydata[key_index].emitter_momentum, 0, sizeof(debkeydata[key_index].emitter_momentum));
-        debkeydata[key_index].orientation_dirty = 0.0f;
-        debkeydata[key_index].cutoff_distance = 999999.0f;
-        debkeydata[key_index].field_2f2 = -1;
-        debkeydata[key_index].field_1d8 = 0;
-        debkeydata[key_index].field_1da = 7;
-        debkeydata[key_index].gscene = NULL;
-        debkeydata[key_index].process_collision_sound = 0;
-        debkeydata[key_index].last_update_time = now;
-        debkeydata[key_index].field_2f9 = 1;
-        debkeydata[key_index].user_data = NULL;
-        debkeydata[key_index].field_2fa = 0;
-        debkeydata[key_index].emission_epoch =
-            debkeydata[key_index].field_1e4 < now ? debkeydata[key_index].field_1e4 : now;
+        key->emission_position.x = 0.0f;
+        key->emission_position.y = 0.0f;
+        key->emission_position.z = 0.0f;
+        key->momentum.x = 0.0f;
+        key->momentum.y = 0.0f;
+        key->momentum.z = 0.0f;
+        key->emitter_momentum.x = 0.0f;
+        key->emitter_momentum.y = 0.0f;
+        key->emitter_momentum.z = 0.0f;
+        key->orientation_dirty = 0.0f;
+        key->cutoff_distance = 999999.0f;
+        key->field_2f2 = -1;
+        key->field_1d8 = 0;
+        key->field_1da = 7;
+        key->gscene = NULL;
+        key->process_collision_sound = 0;
+        key->last_update_time = now;
+        key->field_2f9 = 1;
+        key->user_data = NULL;
+        key->field_2fa = 0;
+        key->emission_epoch = key->field_1e4 < now ? key->field_1e4 : now;
 
         switch (effect->particle_type) {
             case 3:
-                debkeydata[key_index].render_priority = static_cast<i16>(40000);
+                key->render_priority = static_cast<i16>(40000);
                 break;
             case 7:
-                debkeydata[key_index].render_priority = static_cast<i16>(20000);
+                key->render_priority = static_cast<i16>(20000);
                 break;
             case 2:
-                debkeydata[key_index].render_priority = static_cast<i16>(50000);
+                key->render_priority = static_cast<i16>(50000);
                 break;
             default:
-                debkeydata[key_index].render_priority = static_cast<i16>(30000);
+                key->render_priority = static_cast<i16>(30000);
                 break;
         }
-        debkeydata[key_index].collision_timers[0] = 9999;
+        key->collision_timers[0] = 9999;
         if (effect->sound_data[0] != -1) {
             if (effect->sound_data[1] == 3 || effect->sound_data[1] == 4)
-                debkeydata[key_index].collision_timers[0] = 1;
-            debkeydata[key_index].process_collision_sound = 1;
+                key->collision_timers[0] = 1;
+            key->process_collision_sound = 1;
         }
-        debkeydata[key_index].collision_timers[1] = 9999;
+        key->collision_timers[1] = 9999;
         if (effect->sound_data[3] != -1) {
             if (effect->sound_data[4] == 3 || effect->sound_data[4] == 4)
-                debkeydata[key_index].collision_timers[1] = 1;
-            debkeydata[key_index].process_collision_sound = 1;
+                key->collision_timers[1] = 1;
+            key->process_collision_sound = 1;
         }
-        debkeydata[key_index].collision_timers[2] = 9999;
+        key->collision_timers[2] = 9999;
         if (effect->sound_data[6] != -1) {
             if (effect->sound_data[7] == 3 || effect->sound_data[7] == 4)
-                debkeydata[key_index].collision_timers[2] = 1;
-            debkeydata[key_index].process_collision_sound = 1;
+                key->collision_timers[2] = 1;
+            key->process_collision_sound = 1;
         }
-        debkeydata[key_index].collision_timers[3] = 9999;
+        key->collision_timers[3] = 9999;
         if (effect->sound_data[9] != -1) {
             if (effect->sound_data[10] == 3 || effect->sound_data[10] == 4)
-                debkeydata[key_index].collision_timers[3] = 1;
-            debkeydata[key_index].process_collision_sound = 1;
+                key->collision_timers[3] = 1;
+            key->process_collision_sound = 1;
         }
         DebrisEmitterPos(key_index, x, y, z);
         DebrisEmitterOrientation(key_index, 0, 0, 0);
@@ -1463,7 +1469,7 @@ extern "C" {
     void AddVariableShotDebrisEffectTimed5(i32 effect_index, NUVEC *position, NUVEC *momentum, NUVEC *position_delta,
                                            i32 count, f32 duration, NUMTX *emitter_orientation,
                                            NUMTX *particle_orientation, u16 render_priority, i8 timed_flags) {
-        if (debris_suspended != 0 || static_cast<u32>(effect_index + 1) <= 1 || EDPP_MAX_TYPES <= effect_index ||
+        if (debris_suspended != 0 || static_cast<u32>(effect_index) + 1U <= 1U || EDPP_MAX_TYPES <= effect_index ||
             debtab[effect_index] == NULL) {
             return;
         }
@@ -1528,61 +1534,36 @@ extern "C" {
         debkeydatatype_s *key = NULL;
         i32 new_key_index;
 
-#define TRY_EXISTING_DEBRIS_KEY(slot)                                                                                  \
-    if (effect->particle_keys[slot] != -1) {                                                                           \
-        key = &debkeydata[effect->particle_keys[slot]];                                                                \
-        if (effect->particle_type == 7 ? key->particle_count + particle_count <= 0x180                                 \
-                                       : key->particle_count + particle_count <= 0x400) {                              \
-            particle_key_slot = slot;                                                                                  \
-            goto debris_key_found;                                                                                     \
-        }                                                                                                              \
-    } else {                                                                                                           \
-        key = NULL;                                                                                                    \
-    }
-
-#define TRY_OR_ALLOCATE_DEBRIS_KEY(slot)                                                                               \
-    if (effect->particle_keys[slot] == -1) {                                                                           \
-        particle_key_slot = slot;                                                                                      \
-        goto allocate_debris_key;                                                                                      \
-    }                                                                                                                  \
-    key = &debkeydata[effect->particle_keys[slot]];                                                                    \
-    if (effect->particle_type == 7 ? key->particle_count + particle_count <= 0x180                                     \
-                                   : key->particle_count + particle_count <= 0x400) {                                  \
-        particle_key_slot = slot;                                                                                      \
-        goto debris_key_found;                                                                                         \
-    }
-
-        if (freedebkeyptr >= maxdebkeys) {
-            TRY_EXISTING_DEBRIS_KEY(0);
-            TRY_EXISTING_DEBRIS_KEY(1);
-            TRY_EXISTING_DEBRIS_KEY(2);
-            TRY_EXISTING_DEBRIS_KEY(3);
-            TRY_EXISTING_DEBRIS_KEY(4);
-            TRY_EXISTING_DEBRIS_KEY(5);
-            TRY_EXISTING_DEBRIS_KEY(6);
-            TRY_EXISTING_DEBRIS_KEY(7);
-            goto debris_keys_searched;
+        for (i32 slot = 0; slot < 8; ++slot) {
+            if (effect->particle_keys[slot] == -1) {
+                if (freedebkeyptr < maxdebkeys) {
+                    particle_key_slot = slot;
+                    goto allocate_debris_key;
+                }
+            } else {
+                key = &debkeydata[effect->particle_keys[slot]];
+                if (effect->particle_type == 7) {
+                    if (key->particle_count + particle_count <= 0x180) {
+                        particle_key_slot = slot;
+                        goto debris_key_found;
+                    }
+                } else if (key->particle_count + particle_count <= 0x400) {
+                    particle_key_slot = slot;
+                    goto debris_key_found;
+                }
+            }
         }
-
-        TRY_OR_ALLOCATE_DEBRIS_KEY(0);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(1);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(2);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(3);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(4);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(5);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(6);
-        TRY_OR_ALLOCATE_DEBRIS_KEY(7);
         goto debris_keys_searched;
 
     allocate_debris_key:
         new_key_index = DebAlloc();
         effect->particle_keys[particle_key_slot] = static_cast<i16>(new_key_index);
         key = &debkeydata[effect->particle_keys[particle_key_slot]];
-        key->generator = gensorttab[static_cast<i8>(effect->generator_type)];
         key->effect_index = static_cast<i16>(effect_index);
-        key->effect_orientation = *particle_orientation;
-        key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
         key->field_1d4 = 0;
+        key->generator = gensorttab[static_cast<i8>(effect->generator_type)];
+        key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
+        key->effect_orientation = *particle_orientation;
         key->effect_orientation.m30 = 0.0f;
         key->effect_orientation.m31 = 0.0f;
         key->effect_orientation.m32 = 0.0f;
@@ -1596,8 +1577,6 @@ extern "C" {
         }
 
     debris_key_found:
-#undef TRY_OR_ALLOCATE_DEBRIS_KEY
-#undef TRY_EXISTING_DEBRIS_KEY
 
         const i32 required_particles = key->particle_count + particle_count;
 
@@ -1694,9 +1673,9 @@ extern "C" {
                 continue;
             }
             debris_chunk_control_s *control = freechunkcontrols[freechunkcontrolsptr];
-            control->active = 1;
             control->particle_chunk = key->particle_chunks[chunk_index];
             control->owner = key;
+            control->active = 1;
             control->expiry_time =
                 now + effect->particle_lifetime + static_cast<f32>(effect->trail_count) * effect->trail_time;
             AddChunkControlToStack(control, &debris_chunk_control_stack[control_stack_index]);
@@ -3619,8 +3598,8 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
             HUBMINIKITPIECE_s *piece = &pieces->pieces[i];
             if (!NuSpecialExistsFn(&piece->special))
                 continue;
-            NUMTX matrix;
-            NuMtxMul(&matrix, &piece->matrix, &object->apiobj.field_0xb8);
+            NUMTX matrix = pieces->pieces[i].matrix;
+            NuMtxMul(&matrix, &matrix, &object->apiobj.field_0xb8);
             NUVEC momentum;
             SetKillPartMom(&momentum);
             NuVecScale(&momentum, &momentum, 3.0f);
@@ -3632,7 +3611,7 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
             params.velocity = &momentum;
             params.field_14 = params.field_18 = 0.2f;
             params.gravity = -10.0f;
-            params.special = &piece->special;
+            params.special = &pieces->pieces[i].special;
             params.field_3c = PartImpact_Brick;
             params.flags = mode == 0 ? 0x480 : 0x90;
             params.stop_fn = PartStop_Flickerer;

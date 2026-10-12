@@ -1451,6 +1451,8 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 fr
                                                            root_translation);
     }
 
+    // Sampling advances a local cursor; the animation owns the unchanged table.
+    ani3_scalemin_s *scale_min = anim->scale_min;
     const i32 key_stride = anim->key_stride;
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
     const f32 last_key = static_cast<f32>(anim->key_count - 1);
@@ -1466,7 +1468,6 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 fr
     const u32 quarter = static_cast<u32>(whole_key) & 3;
     const f32 fraction = key - static_cast<f32>(whole_key);
     u8 *keys = anim->keys + (whole_key / 4) * key_stride;
-    ani3_scalemin_s *scale_min = anim->scale_min;
     const u16 *curve_types = anim->curve_types;
 
     // Advance all packed stream cursors to the first requested joint.

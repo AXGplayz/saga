@@ -503,17 +503,18 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
         return 1;
     }
 
+    f32 longest_duration = 0.0f;
     for (i32 index = 0; index < world->spinner_count; ++index) {
         GIZSPINNER_s *spinner = &world->spinners[index];
-        GAMEANIMSET_s *anim_set = spinner->anim_set;
+        GAMEANIMSET_s *anim_set = world->spinners[index].anim_set;
         memset(spinner, 0, sizeof(*spinner));
-        spinner->anim_set = anim_set;
+        world->spinners[index].anim_set = anim_set;
 
         char special_name[32];
         const i32 name_length = static_cast<signed char>(EdFileReadChar());
-        EdFileRead(spinner->name, name_length);
-        EdFileReadNuVec(&spinner->position);
-        spinner->initial_rotation = static_cast<u16>(EdFileReadShort());
+        EdFileRead(world->spinners[index].name, name_length);
+        EdFileReadNuVec(&world->spinners[index].position);
+        world->spinners[index].initial_rotation = static_cast<u16>(EdFileReadShort());
 
         const i32 special_name_length = static_cast<signed char>(EdFileReadChar());
         EdFileRead(special_name, special_name_length);
@@ -524,7 +525,7 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
             NuSpecialFind(things_scene, &special, special_name, 0);
             special_missing = NuSpecialExistsFn(&special) == 0;
         }
-        spinner->special = special;
+        world->spinners[index].special = special;
 
         const u8 output_count = static_cast<u8>(EdFileReadChar());
         const i32 output_points = static_cast<signed char>(output_count);
@@ -540,30 +541,29 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
             spinner_type = static_cast<u8>(EdFileReadChar());
         }
         if (version <= 2) {
-            GameAnimSet_RemoveAllObjects(spinner->anim_set);
+            GameAnimSet_RemoveAllObjects(world->spinners[index].anim_set);
             animation_speed = 1.0f;
         } else {
             spinner_state_flags = static_cast<u32>(EdFileReadInt()) & ~0x360u;
-            spinner->field_0x2d8 = EdFileReadFloat();
+            world->spinners[index].field_0x2d8 = EdFileReadFloat();
             if (version == 3) {
-                GameAnimSet_RemoveAllObjects(spinner->anim_set);
+                GameAnimSet_RemoveAllObjects(world->spinners[index].anim_set);
                 animation_speed = 1.0f;
             } else {
                 animation_speed = EdFileReadFloat();
                 if (version == 4) {
-                    GameAnimSet_RemoveAllObjects(spinner->anim_set);
+                    GameAnimSet_RemoveAllObjects(world->spinners[index].anim_set);
                     initial_animation_point = animation_speed;
                 } else {
                     if (version > 5) {
                         spinner_flags = static_cast<u8>(EdFileReadChar());
                     }
-                    GameAnimSet_RemoveAllObjects(spinner->anim_set);
+                    GameAnimSet_RemoveAllObjects(world->spinners[index].anim_set);
                     read_game_anim_set = true;
                 }
             }
         }
 
-        f32 longest_duration = 0.0f;
         if (!read_game_anim_set) {
             const i32 object_count = static_cast<signed char>(EdFileReadChar());
             for (i32 object_index = 0; object_index < object_count; ++object_index) {
@@ -580,23 +580,25 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
                     start_frame = EdFileReadFloat();
                     end_frame = EdFileReadFloat();
                 }
-                GAMEANIMOBJ_s *object = GameAnimSet_AddObject(spinner->anim_set, &special, start_frame, end_frame, 0);
-                if (spinner->primary_anim_obj == NULL) {
+                GAMEANIMOBJ_s *object =
+                    GameAnimSet_AddObject(world->spinners[index].anim_set, &special, start_frame, end_frame, 0);
+                if (world->spinners[index].primary_anim_obj == NULL) {
                     if (object != NULL && object->animation != NULL) {
-                        spinner->primary_anim_obj = object;
+                        world->spinners[index].primary_anim_obj = object;
                         longest_duration = __builtin_fabsf(object->end_frame - object->start_frame);
                     }
                 } else if (object != NULL && object->animation != NULL) {
                     const f32 duration = __builtin_fabsf(object->end_frame - object->start_frame);
                     if (duration > longest_duration) {
-                        spinner->primary_anim_obj = object;
+                        world->spinners[index].primary_anim_obj = object;
                         longest_duration = duration;
                     }
                 }
             }
         } else {
-            GizmoFileReadGameAnimSet(spinner->anim_set, world, NULL, static_cast<u8>(version),
-                                     const_cast<char *>("Spinner"), spinner->name);
+            GizmoFileReadGameAnimSet(world->spinners[index].anim_set, world, NULL, static_cast<u8>(version),
+                                     const_cast<char *>("Spinner"), world->spinners[index].name);
+            spinner = &world->spinners[index];
             for (GAMEANIMOBJ_s *object = spinner->anim_set->objects; object != NULL; object = object->next) {
                 if (spinner->primary_anim_obj == NULL) {
                     if (object->animation != NULL) {
@@ -613,12 +615,14 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
             }
         }
 
+        spinner = &world->spinners[index];
         if (version > 6) {
             if (output_points > 0) {
                 for (i32 point = 1; point <= output_points; ++point) {
-                    spinner->animation_points[point] = EdFileReadFloat();
+                    world->spinners[index].animation_points[point] = EdFileReadFloat();
                 }
             }
+            spinner = &world->spinners[index];
             if (output_points <= 7) {
                 for (i32 point = output_points + 1; point < 9; ++point) {
                     spinner->animation_points[point] = -1.0f;
@@ -628,10 +632,12 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
                 initial_animation_point = animation_speed;
             } else {
                 spinner_field_98 = EdFileReadFloat();
+                spinner = &world->spinners[index];
                 if (version == 8) {
                     initial_animation_point = animation_speed;
                 } else {
                     initial_animation_point = EdFileReadFloat();
+                    spinner = &world->spinners[index];
                 }
             }
         } else {
@@ -691,15 +697,15 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
             spinner->field_0x09c = extent * 0.5f;
         }
 
-        spinner->type = spinner_type;
-        spinner->animation_speed = animation_speed;
-        spinner->animation_points[0] = initial_animation_point;
-        spinner->output_count = output_count;
-        spinner->state_flags = spinner_state_flags;
-        spinner->flags = spinner_flags;
-        spinner->field_0x098 = spinner_field_98;
-        spinner->flags |= GIZSPINNER_FLAG_VALID;
-        spinner->flags &= 0xdd;
+        world->spinners[index].type = spinner_type;
+        world->spinners[index].animation_speed = animation_speed;
+        world->spinners[index].animation_points[0] = initial_animation_point;
+        world->spinners[index].output_count = output_count;
+        world->spinners[index].state_flags = spinner_state_flags;
+        world->spinners[index].flags = spinner_flags;
+        world->spinners[index].field_0x098 = spinner_field_98;
+        world->spinners[index].flags |= GIZSPINNER_FLAG_VALID;
+        world->spinners[index].flags &= 0xdd;
     }
     return 1;
 }
@@ -906,13 +912,7 @@ int GizSpinner_Update(GIZSPINNER_s *spinner) {
     animation_updated:
 
         NUMTX matrix;
-        matrix.m00 = matrix.m22 = NU_COS_LUT(spinner->rotation);
-        matrix.m20 = NU_SIN_LUT(spinner->rotation);
-        matrix.m11 = 1.0f;
-        matrix.m02 = -matrix.m20;
-        matrix.m01 = matrix.m10 = matrix.m03 = matrix.m23 = matrix.m12 = matrix.m21 = matrix.m13 = matrix.m30 =
-            matrix.m31 = matrix.m32 = 0.0f;
-        matrix.m33 = 1.0f;
+        NuMtxSetRotationYInline(&matrix, spinner->rotation);
         if ((old_flags & 0x100) != 0)
             NuMtxRotateYInline(&matrix, 0x0222);
         else if ((old_flags & 0x200) != 0)
@@ -1099,7 +1099,7 @@ static void GizSpinner_ResetAll(void *world_ptr, void *, void *progress_ptr) {
             if ((spinner.flags & GIZSPINNER_FLAG_VALID) != 0) {
                 if (entry != NULL && (entry->flags & SPINNER_PROGRESS_VALID) != 0) {
                     spinner.rotation = entry->rotation;
-                    if (entry->animation_position != 0.0f) {
+                    if (entry->animation_position != 1.0f) {
                         GameAnimSet_JumpToAnimPos(spinner.anim_set, entry->animation_position);
                     } else {
                         GameAnimSet_JumpToEnd(spinner.anim_set);
@@ -1134,7 +1134,7 @@ static void GizSpinner_ResetAll(void *world_ptr, void *, void *progress_ptr) {
                 if (NuSpecialGetMtx(&spinner.special) != NULL) {
                     NUMTX *special_matrix = NuSpecialGetMtx(&spinner.special);
                     spinner.ground_height = GameShadow(NULL, NUMTX_GET_ROW_VEC(special_matrix, 3), 5.0f, -1);
-                    if (spinner.ground_height != -78.0f && ShadowInfo() == 2) {
+                    if (spinner.ground_height != 2000000.0f && ShadowInfo() == 2) {
                         spinner.state_flags |= GIZSPINNER_STATE_SHADOW_PLATFORM;
                     }
                 } else {
@@ -1451,7 +1451,7 @@ GIZSPINNER_s *GizSpinner_FindNearest(nuvec_s *position, WORLDINFO_s *world, f32 
 GIZSPINNER_s *GizSpinner_Find(WORLDINFO_s *world, nuvec_s *position, i32 alternate) {
     GIZSPINNER_s *nearest = NULL;
     if (world->current_level->max_spinners != 0) {
-        f32 nearest_distance = 1000000000.0f;
+        f32 nearest_distance = 1.5625f;
         if (alternate == 0) {
             i32 index = 0;
             do {
