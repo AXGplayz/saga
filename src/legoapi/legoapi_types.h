@@ -1178,6 +1178,20 @@ struct FLOWBOX_s {
             u8 state_flags_low;
             u8 state_flags_high;
         };
+        struct {
+            u8 state_low_bits : 2;
+            u8 start_invisible : 1;
+            u8 finished_invisible : 1;
+            u8 finished_deactive : 1;
+            u8 state_low_bit5 : 1;
+            u8 reverse : 1;
+            u8 reverse_invisible : 1;
+            u8 state_high_bits : 4;
+            u8 output_only : 1;
+            u8 freeplay : 1;
+            u8 story_mode : 1;
+            u8 state_high_bit7 : 1;
+        };
     };
     union {
         FLOWBOXGIZMODATA_s *data;
@@ -1762,10 +1776,10 @@ struct GIZMOPICKUP_s {
             u8 state_active : 1;
             u8 state_enabled : 1;
             u8 state_visible : 1;
-            u8 other_state_flags : 5;
-        };
-        struct {
-            u8 activation_state_padding : 7;
+            u8 state_collected : 1;
+            u8 state_drawn : 1;
+            u8 state_draw_visible : 1;
+            u8 state_alternate_type : 1;
             u8 state_activated : 1;
         };
     }; // 0x17
@@ -3433,7 +3447,15 @@ struct instNUGCUTSCENE_s;
 struct mdct_lookup {};
 struct minisnowtrooper_s {
     u8 formation_index;
-    u8 state_flags;
+    union {
+        u8 state_flags;
+        struct {
+            u8 state_low_bits : 2;
+            u8 step_frame : 2;
+            u8 slot : 2;
+            u8 state_high_bits : 2;
+        };
+    };
     u8 reserved_002;
     u8 speed_divisor;
     u16 rotation;
@@ -3455,10 +3477,26 @@ struct minitrooperteam_s {
     f32 formation_width;
     f32 formation_depth;
     u16 facing_angle;
-    u8 formation_state;
-    u8 route_state;
-    u8 waypoint_state;
-    u8 team_flags; // 0x19, bit 1 selects the opposing team
+    union {
+        struct {
+            u8 formation_state;
+            u8 route_state;
+            u8 waypoint_state;
+            u8 team_flags; // 0x19, bit 1 selects the opposing team
+        };
+        struct {
+            u8 formation_shape : 4;
+            u8 formation_mode : 4;
+            u8 previous_mode : 4;
+            u8 mode_changed : 1;
+            u8 route_index : 3;
+            u16 waypoint_current : 3;
+            u16 waypoint_index : 3;
+            u16 waypoint_count : 3;
+            u16 team_side : 1;
+            u16 team_bits : 6;
+        };
+    };
     u8 trooper_count;
     u8 reserved_01b;
     u32 state_flags; // 0x1c, bit 0 marks an active team
@@ -3715,6 +3753,11 @@ struct pushblock_s {
     union {
         u16 completion_flags; // 0xcc
         u16 field_0xcc;
+        struct {
+            u16 completion_low_bits : 3;
+            u16 completed_outputs : 8;
+            u16 completion_high_bits : 5;
+        };
     };
     union {
         struct {
@@ -4210,9 +4253,23 @@ struct GIZBUILDIT_s {
     u16 state_flags; // 0x7a
     u16 field_0x7c;
     i16 room_index;
-    i16 blowup_type;       // 0x80
-    u8 availability_flags; // 0x82
-    u8 field_0x83;
+    i16 blowup_type; // 0x80
+    union {
+        u8 availability_flags; // 0x82, GIZBUILDIT_AVAILABILITY_FLAGS
+        struct {
+            u8 available_active : 1;
+            u8 available_visible : 1;
+            u8 available_other : 6;
+        };
+    };
+    union {
+        u8 field_0x83; // GIZBUILDIT_RUNTIME_FLAGS
+        struct {
+            u8 runtime_bit0 : 1;
+            u8 reward_released : 1;
+            u8 runtime_other : 6;
+        };
+    };
 
     void ClearMechObjectInterface();
     MechObjectInterface *GetMechObjectInterface();
@@ -4328,7 +4385,7 @@ struct GIZFORCE_s {
     f32 horizontal_range;   // 0x74
     u32 config_flags;       // 0x78, GIZFORCE_CONFIG_FLAGS
     u32 field_0x7c;
-    u8 group_index;     // 0x80
+    i8 group_index;     // 0x80, negative when the force is ungrouped
     u8 collision_mask;  // 0x81
     u8 activation_mode; // 0x82
     u8 field_0x83;
@@ -4397,7 +4454,7 @@ struct GIZFORCE_s {
                 struct {
                     u8 state_destroyed_or_thrown : 1;
                     u8 state_debris_active : 1;
-                    u8 : 3;
+                    u8 state_reset_bits : 3; // cleared on reset, otherwise unused here
                     u8 state_being_used : 1;
                     u8 : 2;
                 };
@@ -4612,7 +4669,19 @@ struct GIZOBSTACLE_s {
     u8 control_flags; // 0x99, GIZOBSTACLE_CONTROL_FLAGS
     u8 field_0x9a[2];
     i32 proximity_output; // 0x9c
-    u8 runtime_flags;     // 0xa0, GIZOBSTACLE_RUNTIME_FLAGS
+    union {
+        u8 runtime_flags; // 0xa0, GIZOBSTACLE_RUNTIME_FLAGS
+        struct {
+            u8 runtime_pickups_spawned : 1;
+            u8 runtime_pending_blowup_type : 1;
+            u8 runtime_ai_active : 1;
+            u8 runtime_blocked : 1;
+            u8 runtime_has_platform : 1;
+            u8 runtime_anim_object_bit_1 : 1;
+            u8 runtime_trigger_latched : 1;
+            u8 runtime_destroyed : 1;
+        };
+    };
     u8 field_a1_0xa1;
     u8 field_0xa2[2];
     void ClearMechObjectInterface();
@@ -4915,7 +4984,8 @@ struct GIZTURRET_s {
     union {
         u8 runtime_flags; // 0x13b
         struct {
-            u8 : 3;
+            u8 : 2;
+            u8 runtime_bit2 : 1; // persisted in turret progress
             u8 rotation_sound_playing : 1;
             u8 : 4;
         };
@@ -5131,6 +5201,14 @@ struct LEVER_s {
             u8 returning : 1;
             u8 enabled : 1;
             u8 flags_high;
+        };
+        struct {
+            u8 : 8;
+            u8 hide_base : 1;             // LEVER_FLAG_HIDE_BASE
+            u8 hide_target_indicator : 1; // LEVER_FLAG_HIDE_TARGET_INDICATOR
+            u8 : 1;
+            u8 interaction_finished : 1; // LEVER_FLAG_INTERACTION_FINISHED
+            u8 pulled_down : 1;          // LEVER_FLAG_PULLED_DOWN
         };
     };
     char model_variant; // 0x9e

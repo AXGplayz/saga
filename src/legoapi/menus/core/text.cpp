@@ -819,7 +819,7 @@ void Text_InsertCommasIntoNumber(char *number, char *text, i32 length) {
     char separator;
     if (Text_Language == 2) {
         separator = ' ';
-    } else if (Text_Language == 18 || Text_Language == 1 || Text_Language == 0) {
+    } else if (Text_Language == 1 || Text_Language == 18 || Text_Language == 0) {
         separator = ',';
     } else {
         separator = '.';
@@ -833,7 +833,7 @@ void Text_InsertCommasIntoNumber(char *number, char *text, i32 length) {
     for (i32 digit = 0; digit < length; ++digit) {
         text[output++] = number[digit];
         const i32 remaining = length - digit - 1;
-        if (remaining > 0 && remaining % 3 == 0) {
+        if (remaining != 0 && remaining % 3 == 0) {
             text[output++] = separator;
         }
     }
@@ -1046,8 +1046,8 @@ extern "C" {
         SmartTextEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, max_width, max_lines,
                     message_box, suppress_draw, alpha);
     }
-    void MenuText3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
-                      u8 green, u8 blue, i32 alpha) {
+    void MenuText3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
+                      u8 green, u8 blue, u8 alpha) {
         if (MenuDrawDropShadows != 0) {
             Text3DEx2(text, x + x_scale * 0.015f, y - y_scale * 0.015f, z, x_scale, y_scale, z_scale, alignment, 0, 0,
                       0, alpha >> 2);
@@ -1575,28 +1575,62 @@ extern "C" {
     void TextDecode(char *source, unsigned char *dest) {
         i32 source_pos = 0;
         i32 dest_pos = 0;
-        while (source[source_pos] != '\0' && dest_pos < 0x1e0) {
-            if (source[source_pos] == '[' && source[source_pos + 1] == '[') {
+        const unsigned char *text = reinterpret_cast<unsigned char *>(source);
+        do {
+            if (text[source_pos] == '\0')
+                break;
+            if (text[source_pos] == '[' && text[source_pos + 1] == '[') {
                 source_pos += 2;
                 char codeword[512];
                 i32 codeword_len = 0;
-                while (source[source_pos] != ']' && source[source_pos] != '\0' && codeword_len < 511)
-                    codeword[codeword_len++] = source[source_pos++];
-                while (source[source_pos] == ']')
+                while (text[source_pos] != '\0' && text[source_pos] != ']')
+                    codeword[codeword_len++] = static_cast<char>(text[source_pos++]);
+                while (text[source_pos] == ']')
                     source_pos++;
                 codeword[codeword_len] = '\0';
-                char decoded[520];
-                decoded[0] = '\0';
+                char decoded[512];
                 TextDecodeCodeword(codeword, decoded);
-                for (i32 i = 0; decoded[i] != '\0' && dest_pos < 0x1e0; i++)
+                for (i32 i = 0; decoded[i] != '\0'; i++)
                     dest[dest_pos++] = static_cast<unsigned char>(decoded[i]);
                 continue;
             }
 
-            dest[dest_pos++] = static_cast<unsigned char>(source[source_pos++]);
-            while ((static_cast<u8>(source[source_pos]) + 0x80U) < 0x40U && dest_pos < 0x1e0)
-                dest[dest_pos++] = static_cast<unsigned char>(source[source_pos++]);
-        }
+            // Wide CJK punctuation is followed by a space so that lines can break after it.
+            if (text[source_pos] == 0xe3 && text[source_pos + 1] == 0x80) {
+                switch (text[source_pos + 2]) {
+                    case 0x80:
+                        dest[dest_pos++] = ' ';
+                        source_pos += 3;
+                        continue;
+                    case 0x81:
+                    case 0x82:
+                    case 0x85:
+                        dest[dest_pos] = 0xe3;
+                        dest[dest_pos + 1] = text[source_pos + 1];
+                        dest[dest_pos + 2] = text[source_pos + 2];
+                        dest[dest_pos + 3] = ' ';
+                        dest_pos += 4;
+                        source_pos += 3;
+                        continue;
+                }
+            } else if (text[source_pos] == 0xef && text[source_pos + 1] == 0xbc) {
+                switch (text[source_pos + 2]) {
+                    case 0x81:
+                    case 0x9f:
+                        dest[dest_pos] = 0xef;
+                        dest[dest_pos + 1] = text[source_pos + 1];
+                        dest[dest_pos + 2] = text[source_pos + 2];
+                        dest[dest_pos + 3] = ' ';
+                        dest_pos += 4;
+                        source_pos += 3;
+                        continue;
+                }
+            }
+
+            dest[dest_pos++] = text[source_pos++];
+            while (static_cast<u8>(text[source_pos] + 0x80) < 0x40)
+                dest[dest_pos++] = text[source_pos++];
+        } while (dest_pos < 0x1e0);
         dest[dest_pos] = 0;
     }
     void TextRegisterButtonMapFn(void (*fn)(char *, char *)) {

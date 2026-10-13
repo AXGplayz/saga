@@ -422,10 +422,9 @@ void EdDrawPolyTri(VuVec const &a, VuVec const &b, VuVec const &c, i32 colour) {
 void edanimDoInput(nupad_s *pad) {
     if ((pad->digital_buttons & 0x100) == 0)
         edcamMove(pad);
-    u32 pressed = pad->digital_buttons_pressed;
 
     if ((pad->digital_buttons & 0x100) != 0) {
-        if (edanim_sound_mode == 0 && (pressed & 0x80) != 0) {
+        if (edanim_sound_mode == 0 && (pad->digital_buttons_pressed & 0x80) != 0) {
             if (edanim_particle_mode != 0) {
                 edanim_particle_mode = 0;
             } else if (edanim_nearest != -1 && edanim_nearest_param_id != -1) {
@@ -436,11 +435,11 @@ void edanimDoInput(nupad_s *pad) {
         if (edanim_particle_mode != 0) {
             if (edanim_nearest_particle != -1) {
 
-                if (pressed & 0x8) {
+                if (pad->digital_buttons_pressed & 0x8) {
                     if (++edanim_nearest_particle == AnimParams[edanim_nearest_param_id].effect_count)
                         edanim_nearest_particle = 0;
                 }
-                if (pressed & 0x2) {
+                if (pad->digital_buttons_pressed & 0x2) {
                     if (--edanim_nearest_particle == -1)
                         edanim_nearest_particle = AnimParams[edanim_nearest_param_id].effect_count - 1;
                 }
@@ -452,7 +451,8 @@ void edanimDoInput(nupad_s *pad) {
                 NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
 
                 NUVEC position;
-                NuVecAdd(&position, NuSpecialGetPos(&special),
+                NUVEC *origin = NuSpecialGetPos(&special);
+                NuVecAdd(&position, origin,
                          reinterpret_cast<NUVEC *>(
                              AnimParams[edanim_nearest_param_id].effect_positions[edanim_nearest_particle]));
                 edcamSetPos(&position);
@@ -461,7 +461,7 @@ void edanimDoInput(nupad_s *pad) {
                 edanim_particle_type = AnimParams[edanim_nearest_param_id].effect_ids[edanim_nearest_particle];
             }
         } else {
-            if ((pressed & 0x10) != 0) {
+            if ((pad->digital_buttons_pressed & 0x10) != 0) {
                 if (edanim_sound_mode != 0) {
                     edanim_sound_mode = 0;
                 } else if (edanim_nearest != -1 && edanim_nearest_param_id != -1) {
@@ -474,11 +474,11 @@ void edanimDoInput(nupad_s *pad) {
                     edanimDetermineNearestSound(-1.0f);
                 } else {
 
-                    if (pressed & 0x8) {
+                    if (pad->digital_buttons_pressed & 0x8) {
                         if (++edanim_nearest_sound == AnimParams[edanim_nearest_param_id].sound_count)
                             edanim_nearest_sound = 0;
                     }
-                    if (pressed & 0x2) {
+                    if (pad->digital_buttons_pressed & 0x2) {
                         if (--edanim_nearest_sound == -1)
                             edanim_nearest_sound = AnimParams[edanim_nearest_param_id].sound_count - 1;
                     }
@@ -488,7 +488,8 @@ void edanimDoInput(nupad_s *pad) {
                     NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
 
                     NUVEC position;
-                    NuVecAdd(&position, NuSpecialGetPos(&special),
+                    NUVEC *origin = NuSpecialGetPos(&special);
+                    NuVecAdd(&position, origin,
                              reinterpret_cast<NUVEC *>(
                                  AnimParams[edanim_nearest_param_id].sound_positions[edanim_nearest_sound]));
                     edcamSetPos(&position);
@@ -496,12 +497,11 @@ void edanimDoInput(nupad_s *pad) {
                 }
             } else {
                 if (edanim_nearest != -1) {
-                    if (pressed & 0x8) {
+                    if (pad->digital_buttons_pressed & 0x8) {
                         if (++edanim_nearest == NuGScnNumSpecials(edbits_base_scene))
                             edanim_nearest = 0;
-                        pressed = pad->digital_buttons_pressed;
                     }
-                    if (pressed & 0x2) {
+                    if (pad->digital_buttons_pressed & 0x2) {
                         if (--edanim_nearest == -1)
                             edanim_nearest = NuGScnNumSpecials(edbits_base_scene) - 1;
                     }
@@ -541,11 +541,10 @@ void edanimDoInput(nupad_s *pad) {
     }
 
     edcamGetPosAng(&edanim_cam_pos, &edanim_cam_ax, &edanim_cam_ay);
-    pressed = pad->digital_buttons_pressed;
     if ((pad->digital_buttons & 0x100) == 0) {
-        if (pressed & 0x80)
+        if (pad->digital_buttons_pressed & 0x80)
             edanim_active_menu = edanim_options_menu;
-        if (pressed & 0x40) {
+        if (pad->digital_buttons_pressed & 0x40) {
             if (edanim_particle_mode != 0) {
                 edanimParticleCreate(&edanim_cam_pos);
             } else if (edanim_sound_mode != 0) {
@@ -561,7 +560,7 @@ void edanimDoInput(nupad_s *pad) {
                 edanimSoundPlace(edanim_nearest_sound, &edanim_cam_pos);
             }
         }
-        if (pressed & 0x10) {
+        if (pad->digital_buttons_pressed & 0x10) {
             if (edanim_particle_mode != 0) {
                 if (edanim_nearest_particle != -1) {
                     edanimParticleDestroy(edanim_nearest_param_id, edanim_nearest_particle);
@@ -908,19 +907,19 @@ i32 edanimFileSave(char *path) {
 }
 
 void edpartInitType(i32 index) {
-    part_type_s *type = &part_types[index];
+    part_types[index].lifetime = 0.0f;
     for (i32 variant = 0; variant < 8; ++variant) {
-        type->effect_ids[variant] = -1;
-        type->effect_pages[variant] = 1;
+        part_types[index].effect_ids[variant] = -1;
+        part_types[index].effect_pages[variant] = 1;
     }
-    type->lifetime = 0.0f;
+    part_type_s *type = &part_types[index];
     type->variant_count = 0;
     type->speed = 1.0f;
     type->gravity = 0.0f;
     type->emission_rate = 1.0f;
+    type->emission_period = 1.0f;
     type->emission_period_random = 0.0f;
     type->emission_pause = 0.0f;
-    type->emission_period = 1.0f;
     type->emission_pause_random = 0.0f;
     type->rotation[0] = 0;
     type->rotation[1] = 0;
@@ -928,12 +927,12 @@ void edpartInitType(i32 index) {
     type->flags = 0;
     type->trail_effects[0] = -1;
     type->trail_effects[1] = -1;
-    type->kill_effect = -1;
     type->attached_effect = -1;
-    type->impact_part = -1;
+    type->kill_effect = -1;
     type->impact_effect = -1;
-    type->field_174 = -1;
+    type->impact_part = -1;
     type->last_used_time = 0.0f;
+    type->field_174 = -1;
     type->scale = 1.0f;
     for (i32 sound = 0; sound < 4; ++sound) {
         type->sounds[sound] = -1;
@@ -1281,34 +1280,63 @@ void EdDrawPolyArrow(VuVec const &start, VuVec const &end, i32 sides, i32 colour
 }
 
 void edbriDrawCursor() {
-    NURND_VERTEX3D line[2] = {};
-    line[0].colour = line[1].colour = 0xffffffff;
-    line[0].position = line[1].position = edbri_cam_pos;
-    line[0].position.x -= 0.5f;
-    line[1].position.x += 0.5f;
+    NURND_VERTEX3D line[2];
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edbri_cam_pos.x - 0.5f;
+    line[0].position.y = edbri_cam_pos.y;
+    line[0].position.z = edbri_cam_pos.z;
+    line[1].position.x = edbri_cam_pos.x + 0.5f;
+    line[1].position.y = edbri_cam_pos.y;
+    line[1].position.z = edbri_cam_pos.z;
     NuRndrLine3d(line, edbri_mtl, NULL);
-    line[0].position = line[1].position = edbri_cam_pos;
-    line[0].position.y -= 0.5f;
-    line[1].position.y += 0.5f;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edbri_cam_pos.x;
+    line[0].position.y = edbri_cam_pos.y - 0.5f;
+    line[0].position.z = edbri_cam_pos.z;
+    line[1].position.x = edbri_cam_pos.x;
+    line[1].position.y = edbri_cam_pos.y + 0.5f;
+    line[1].position.z = edbri_cam_pos.z;
     NuRndrLine3d(line, edbri_mtl, NULL);
-    line[0].position = line[1].position = edbri_cam_pos;
-    line[0].position.z -= 0.5f;
-    line[1].position.z += 0.5f;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edbri_cam_pos.x;
+    line[0].position.y = edbri_cam_pos.y;
+    line[0].position.z = edbri_cam_pos.z - 0.5f;
+    line[1].position.x = edbri_cam_pos.x;
+    line[1].position.y = edbri_cam_pos.y;
+    line[1].position.z = edbri_cam_pos.z + 0.5f;
     NuRndrLine3d(line, edbri_mtl, NULL);
 
-    NUVEC extent = {edbri_length, 0.0f, 0.0f};
+    NUVEC extent;
+    extent.x = edbri_length;
+    extent.y = 0.0f;
+    extent.z = 0.0f;
     NuVecRotateZ(&extent, &extent, edbri_rotz);
     NuVecRotateY(&extent, &extent, edbri_roty);
-    line[0].position = edbri_cam_pos;
-    NuVecAdd(&line[1].position, &edbri_cam_pos, &extent);
-    line[0].colour = line[1].colour = 0xff0000ff;
+    line[0].colour = 0xff0000ff;
+    line[1].colour = 0xff0000ff;
+    line[0].position.x = edbri_cam_pos.x;
+    line[0].position.y = edbri_cam_pos.y;
+    line[0].position.z = edbri_cam_pos.z;
+    line[1].position.x = edbri_cam_pos.x + extent.x;
+    line[1].position.y = edbri_cam_pos.y + extent.y;
+    line[1].position.z = edbri_cam_pos.z + extent.z;
     NuRndrLine3d(line, edbri_mtl, NULL);
-    extent.x = extent.y = 0.0f;
+    extent.x = 0.0f;
+    extent.y = 0.0f;
     extent.z = edbri_width;
     NuVecRotateZ(&extent, &extent, edbri_rotz);
     NuVecRotateY(&extent, &extent, edbri_roty);
-    NuVecSub(&line[0].position, &edbri_cam_pos, &extent);
-    NuVecAdd(&line[1].position, &edbri_cam_pos, &extent);
+    line[0].colour = 0xff0000ff;
+    line[1].colour = 0xff0000ff;
+    line[0].position.x = edbri_cam_pos.x - extent.x;
+    line[0].position.y = edbri_cam_pos.y - extent.y;
+    line[0].position.z = edbri_cam_pos.z - extent.z;
+    line[1].position.x = edbri_cam_pos.x + extent.x;
+    line[1].position.y = edbri_cam_pos.y + extent.y;
+    line[1].position.z = edbri_cam_pos.z + extent.z;
     NuRndrLine3d(line, edbri_mtl, NULL);
 
     NuRndrRect2di(0x1720, 0x9b0, 0xdc0, 0x410, 0x80808080, edbri_mtl_zoff);
@@ -1361,32 +1389,47 @@ void edgraClumpPlace(i32 index, NUVEC *position) {
 
 void edgraDrawCursor() {
     NURND_VERTEX3D line[2];
-    line[0].colour = line[1].colour = 0xffffffff;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
     line[0].position.x = edgra_cam_pos.x - 0.5f;
+    line[0].position.y = edgra_cam_pos.y;
+    line[0].position.z = edgra_cam_pos.z;
     line[1].position.x = edgra_cam_pos.x + 0.5f;
-    line[0].position.y = line[1].position.y = edgra_cam_pos.y;
-    line[0].position.z = line[1].position.z = edgra_cam_pos.z;
+    line[1].position.y = edgra_cam_pos.y;
+    line[1].position.z = edgra_cam_pos.z;
     NuRndrLine3d(line, edgra_mtl, NULL);
-    line[0].position.x = line[1].position.x = edgra_cam_pos.x;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edgra_cam_pos.x;
     line[0].position.y = edgra_cam_pos.y - 0.5f;
+    line[0].position.z = edgra_cam_pos.z;
+    line[1].position.x = edgra_cam_pos.x;
     line[1].position.y = edgra_cam_pos.y + 0.5f;
-    line[0].position.z = line[1].position.z = edgra_cam_pos.z;
-    line[0].colour = line[1].colour = 0xffffffff;
+    line[1].position.z = edgra_cam_pos.z;
     NuRndrLine3d(line, edgra_mtl, NULL);
-    line[0].position.x = line[1].position.x = edgra_cam_pos.x;
-    line[0].position.y = line[1].position.y = edgra_cam_pos.y;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edgra_cam_pos.x;
+    line[0].position.y = edgra_cam_pos.y;
     line[0].position.z = edgra_cam_pos.z - 0.5f;
+    line[1].position.x = edgra_cam_pos.x;
+    line[1].position.y = edgra_cam_pos.y;
     line[1].position.z = edgra_cam_pos.z + 0.5f;
-    line[0].colour = line[1].colour = 0xffffffff;
     NuRndrLine3d(line, edgra_mtl, NULL);
-    NUVEC arrow = {0.0f, 0.5f, 0.0f};
+    NUVEC arrow;
+    arrow.x = 0.0f;
+    arrow.y = 0.5f;
+    arrow.z = 0.0f;
     NuVecRotateZ(&arrow, &arrow, edgra_rotz);
     NuVecRotateY(&arrow, &arrow, edgra_roty);
-    line[0].position = edgra_cam_pos;
+    line[0].colour = 0xff0000ff;
+    line[1].colour = 0xff0000ff;
+    line[0].position.x = edgra_cam_pos.x;
+    line[0].position.y = edgra_cam_pos.y;
+    line[0].position.z = edgra_cam_pos.z;
     line[1].position.x = edgra_cam_pos.x + arrow.x;
     line[1].position.y = edgra_cam_pos.y + arrow.y;
     line[1].position.z = edgra_cam_pos.z + arrow.z;
-    line[0].colour = line[1].colour = 0xff0000ff;
     NuRndrLine3d(line, edgra_mtl, NULL);
 
     if (edgra_nearest != -1 && GrassClumps[edgra_nearest].kind == 3) {
@@ -1940,30 +1983,50 @@ void EdDrawPolySector(VuVec const &center, float radius, i32 axis, i32 first_ang
 }
 
 void edanimDrawCursor() {
-    NURND_VERTEX3D line[2] = {};
-    line[0].colour = line[1].colour = 0xffffffff;
-    line[0].position = line[1].position = edanim_cam_pos;
-    line[0].position.x -= 0.5f;
-    line[1].position.x += 0.5f;
+    NURND_VERTEX3D line[2];
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edanim_cam_pos.x - 0.5f;
+    line[0].position.y = edanim_cam_pos.y;
+    line[0].position.z = edanim_cam_pos.z;
+    line[1].position.x = edanim_cam_pos.x + 0.5f;
+    line[1].position.y = edanim_cam_pos.y;
+    line[1].position.z = edanim_cam_pos.z;
     NuRndrLine3d(line, edanim_mtl, NULL);
-    line[0].position = line[1].position = edanim_cam_pos;
-    line[0].position.y -= 0.5f;
-    line[1].position.y += 0.5f;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edanim_cam_pos.x;
+    line[0].position.y = edanim_cam_pos.y - 0.5f;
+    line[0].position.z = edanim_cam_pos.z;
+    line[1].position.x = edanim_cam_pos.x;
+    line[1].position.y = edanim_cam_pos.y + 0.5f;
+    line[1].position.z = edanim_cam_pos.z;
     NuRndrLine3d(line, edanim_mtl, NULL);
-    line[0].position = line[1].position = edanim_cam_pos;
-    line[0].position.z -= 0.5f;
-    line[1].position.z += 0.5f;
+    line[0].colour = 0xffffffff;
+    line[1].colour = 0xffffffff;
+    line[0].position.x = edanim_cam_pos.x;
+    line[0].position.y = edanim_cam_pos.y;
+    line[0].position.z = edanim_cam_pos.z - 0.5f;
+    line[1].position.x = edanim_cam_pos.x;
+    line[1].position.y = edanim_cam_pos.y;
+    line[1].position.z = edanim_cam_pos.z + 0.5f;
     NuRndrLine3d(line, edanim_mtl, NULL);
 
     if (edanim_particle_mode != 0) {
-        NUVEC direction{0.0f, 0.375f, 0.0f};
+        NUVEC direction;
+        direction.x = 0.0f;
+        direction.y = 0.375f;
+        direction.z = 0.0f;
         NuVecRotateZ(&direction, &direction, edanim_emitrotz);
         NuVecRotateY(&direction, &direction, edanim_emitroty);
-        line[0].position = edanim_cam_pos;
+        line[0].colour = 0xff0000ff;
+        line[1].colour = 0xff0000ff;
+        line[0].position.x = edanim_cam_pos.x;
+        line[0].position.y = edanim_cam_pos.y;
+        line[0].position.z = edanim_cam_pos.z;
         line[1].position.x = edanim_cam_pos.x + direction.x;
         line[1].position.y = edanim_cam_pos.y + direction.y;
         line[1].position.z = edanim_cam_pos.z + direction.z;
-        line[0].colour = line[1].colour = 0xff0000ff;
         NuRndrLine3d(line, edanim_mtl, NULL);
     }
 
@@ -1989,16 +2052,17 @@ void edanimDrawCursor() {
         NuQFntPrintEx(system_qfont, 0x17c0, 0xb90, 0x10, "Params: No");
     } else {
         NuQFntPrintEx(system_qfont, 0x17c0, 0xb90, 0x10, "Params: Yes");
-        auto &param = AnimParams[edanim_nearest_param_id];
         if (edanim_particle_mode != 0) {
-            NuQFntPrintEx(system_qfont, 0x1810, 0xc30, 0x10, "Particles: %d (Max %d)", param.effect_count, 8);
+            NuQFntPrintEx(system_qfont, 0x1810, 0xc30, 0x10, "Particles: %d (Max %d)",
+                          AnimParams[edanim_nearest_param_id].effect_count, 8);
             if (edanim_particle_type != -1) {
                 NuQFntPrintEx(system_qfont, 0x1810, 0xcd0, 0x10, "Select Type: %s", debtab[edanim_particle_type]->name);
             } else {
                 NuQFntPrintEx(system_qfont, 0x1810, 0xcd0, 0x10, "Select Type: <none>");
             }
         } else if (edanim_sound_mode != 0) {
-            NuQFntPrintEx(system_qfont, 0x1810, 0xc30, 0x10, "Sounds: %d (Max %d)", param.sound_count, 8);
+            NuQFntPrintEx(system_qfont, 0x1810, 0xc30, 0x10, "Sounds: %d (Max %d)",
+                          AnimParams[edanim_nearest_param_id].sound_count, 8);
             if (edanim_sound_type == -1) {
                 NuQFntPrintEx(system_qfont, 0x1810, 0xcd0, 0x10, "Select Type: <none>");
             } else {
@@ -2329,7 +2393,7 @@ template <i32 Axis> static inline void EdDrawCircle(VuVec const &centre, float r
     VuVec base(0.0f, Axis == 2 ? radius : 0.0f, Axis == 2 ? 0.0f : radius, 0.0f);
     VuVec point(base.x + centre.x, base.y + centre.y, base.z + centre.z, 0.0f);
     for (i32 i = 1; i <= segments; i++) {
-        VuVec previous = point;
+        VuVec previous(point.x, point.y, point.z, point.w);
         i32 angle = i * (0x10000 / segments);
         if (Axis == 0) {
             NuVecRotateX(&point.xyz, &base.xyz, angle);
@@ -2338,10 +2402,7 @@ template <i32 Axis> static inline void EdDrawCircle(VuVec const &centre, float r
         } else {
             NuVecRotateZ(&point.xyz, &base.xyz, angle);
         }
-        point.x += centre.x;
-        point.y += centre.y;
-        point.z += centre.z;
-        point.w = 0.0f;
+        point = VuVec(point.x + centre.x, point.y + centre.y, point.z + centre.z, 0.0f);
         EdDrawLineSegment(previous, point, colour);
     }
 }
@@ -2374,37 +2435,36 @@ i32 edanimParamCreate(i32 instance_id) {
         return -1;
     }
     const i32 start = edanim_next_param;
-    i32 index = start;
-    while (AnimParams[index].instance_id != -1) {
-        index = index + 1 >= 65 ? 0 : index + 1;
-        if (index == start) {
+    while (AnimParams[edanim_next_param].instance_id != -1) {
+        edanim_next_param++;
+        if (edanim_next_param >= 65)
+            edanim_next_param = 0;
+        if (edanim_next_param == start) {
             edanim_next_param = start;
             return -1;
         }
     }
-    auto &param = AnimParams[index];
-    edanim_next_param = index;
-    param.effect_count = 0;
-    param.instance_id = instance_id;
+    AnimParams[edanim_next_param].effect_count = 0;
+    AnimParams[edanim_next_param].instance_id = instance_id;
     nuhspecial_s special;
     NuGScnGetSpecial(&special, edbits_base_scene, instance_id);
-    param.platform_id = FindPlatInst(NuSpecialGetInstanceix(&special));
-    param.bounce_impulse = 0.0f;
-    param.bounce_spring = 0.0f;
-    param.bounce_damping = 0.0f;
-    if (param.platform_id != -1) {
-        PlatInstBounce(param.platform_id, 0.0f, 0.0f, 0.0f);
+    AnimParams[edanim_next_param].platform_id = FindPlatInst(NuSpecialGetInstanceix(&special));
+    AnimParams[edanim_next_param].bounce_impulse = 0.0f;
+    AnimParams[edanim_next_param].bounce_spring = 0.0f;
+    AnimParams[edanim_next_param].bounce_damping = 0.0f;
+    if (AnimParams[edanim_next_param].platform_id != -1) {
+        PlatInstBounce(AnimParams[edanim_next_param].platform_id, 0.0f, 0.0f, 0.0f);
     }
-    const i32 page = edbits_anim_page;
-    param.page = static_cast<i8>(page);
-    edanim_page_used[page] = 1;
-    edanim_page_on[page] = 1;
-    if (!edanim_page_scene[page]) {
-        edanim_page_scene[page] = edbits_base_scene;
+    AnimParams[edanim_next_param].page = static_cast<i8>(edbits_anim_page);
+    edanim_page_used[edbits_anim_page] = 1;
+    edanim_page_on[edbits_anim_page] = 1;
+    if (!edanim_page_scene[edbits_anim_page]) {
+        edanim_page_scene[edbits_anim_page] = edbits_base_scene;
     }
-    edanim_next_param = index + 1;
+    const i32 created = edanim_next_param;
+    edanim_next_param = created + 1;
     ++edanim_params_used;
-    return index;
+    return created;
 }
 
 i32 edpartSaveEffects(char *filename, char page) {
@@ -2727,11 +2787,9 @@ void edanimParamDestroy(i32 index) {
 void edbitsDoSingleDump(i32 face) {
     char filename[32];
     i32 index;
-    for (index = 0; index < 1000; ++index) {
+    for (index = 0;; ++index) {
         sprintf(filename, "pictures\\cub%03d_%d.bmp", index, face);
-        if (NuFileSize(filename) <= 0)
-            break;
-        if (index == 999)
+        if (NuFileSize(filename) <= 0 || index == 999)
             break;
     }
     sprintf(filename, "pictures\\cub%03d_", index);
@@ -2955,18 +3013,20 @@ i32 edSpline_FindAllBeg(NUGSCN *scene, char *prefix, NUGSPLINE **results, i32 ca
     if (capacity <= 0)
         return 0;
     if (splineStore != NULL) {
-        for (i32 i = 0; i < numSplinesLoaded; ++i) {
-            if (NuStrNICmp(prefix, splineStore[i].name, -1) == 0) {
-                results[count++] = &splineStore[i];
+        NUGSPLINE *spline = splineStore;
+        for (i32 i = 0; i < numSplinesLoaded; ++spline, ++i) {
+            if (NuStrNICmp(prefix, spline->name, -1) == 0) {
+                results[count++] = spline;
                 if (count >= capacity)
                     return count;
             }
         }
     }
     if (scene != NULL) {
-        for (i32 i = 0; i < scene->numsplines; ++i) {
-            if (NuStrNICmp(prefix, scene->splines[i].name, -1) == 0) {
-                results[count++] = &scene->splines[i];
+        NUGSPLINE *spline = scene->splines;
+        for (i32 i = 0; i < scene->numsplines; ++spline, ++i) {
+            if (NuStrNICmp(prefix, spline->name, -1) == 0) {
+                results[count++] = spline;
                 if (count >= capacity)
                     return count;
             }
@@ -2976,7 +3036,8 @@ i32 edSpline_FindAllBeg(NUGSCN *scene, char *prefix, NUGSPLINE **results, i32 ca
 }
 
 i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
-    splineStore = reinterpret_cast<NUGSPLINE *>(buf->void_ptr);
+    NUGSPLINE *store = reinterpret_cast<NUGSPLINE *>(buf->void_ptr);
+    splineStore = store;
     buf->addr = (buf->addr + 3) & ~static_cast<usize>(3);
 
     EdFileSetMedia(1);
@@ -2987,7 +3048,7 @@ i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
 
     const i32 file_check_length = NuStrLen(EDSPLINE_FILECHECK);
     for (i32 i = 0; i < file_check_length; ++i) {
-        if (EdFileReadChar() != EDSPLINE_FILECHECK[i]) {
+        if (EDSPLINE_FILECHECK[i] != EdFileReadChar()) {
             EdFileClose();
             splineStore = NULL;
             return 0;
@@ -2999,7 +3060,7 @@ i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
     i32 point_count = EdFileReadInt();
     i32 string_bytes = EdFileReadInt();
 
-    char *name_cursor = reinterpret_cast<char *>(splineStore + spline_count);
+    char *name_cursor = reinterpret_cast<char *>(store + spline_count);
     char *name_end = name_cursor + string_bytes;
     NUVEC *point_cursor = reinterpret_cast<NUVEC *>((reinterpret_cast<usize>(name_end) + 3) & ~static_cast<usize>(3));
     NUVEC *data_end = point_cursor + point_count;
@@ -3012,14 +3073,13 @@ i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
     for (i32 i = 0; i < spline_count; ++i) {
         EdFileReadChar();
         i32 name_length = EdFileReadInt();
-        NUGSPLINE *spline = &splineStore[i];
-        spline->name = name_cursor;
-        spline->pt_size = sizeof(NUVEC);
-        spline->length = static_cast<i16>(EdFileReadInt());
-        spline->pts = point_cursor;
+        splineStore[i].name = name_cursor;
+        splineStore[i].pt_size = sizeof(NUVEC);
+        splineStore[i].length = static_cast<i16>(EdFileReadInt());
+        splineStore[i].pts = point_cursor;
 
         for (i32 j = 0; j < name_length; ++j) {
-            spline->name[j] = EdFileReadChar();
+            splineStore[i].name[j] = EdFileReadChar();
         }
         name_cursor += name_length;
         if (name_cursor > name_end) {
@@ -3031,12 +3091,13 @@ i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
             return 0;
         }
 
-        for (i32 j = 0; j < spline->length; ++j) {
-            point_cursor[j].x = EdFileReadFloat();
-            point_cursor[j].y = EdFileReadFloat();
-            point_cursor[j].z = EdFileReadFloat();
+        for (i32 j = 0; j < splineStore[i].length; ++j) {
+            NUVEC *point = &splineStore[i].pts[j];
+            point->x = EdFileReadFloat();
+            point->y = EdFileReadFloat();
+            point->z = EdFileReadFloat();
         }
-        point_cursor += spline->length;
+        point_cursor += splineStore[i].length;
         if (point_cursor > data_end) {
             EdFileClose();
             splineStore = NULL;
@@ -3058,19 +3119,20 @@ i32 edSpline_FindAllSub(NUGSCN *scene, char *name, NUGSPLINE **results, i32 capa
     if (capacity <= 0)
         return 0;
     if (splineStore != NULL) {
-        for (i32 i = 0; i < numSplinesLoaded; ++i) {
-            if (NuStrIStr(splineStore[i].name, name) != NULL) {
-                results[count++] = &splineStore[i];
+        NUGSPLINE *spline = splineStore;
+        for (i32 i = 0; i < numSplinesLoaded; ++spline, ++i) {
+            if (NuStrIStr(spline->name, name) != NULL) {
+                results[count++] = spline;
                 if (count >= capacity)
                     return count;
             }
         }
     }
     if (scene != NULL) {
-        auto scene_numsplines = scene->numsplines;
-        for (i32 i = 0; i < scene_numsplines; ++i) {
-            if (NuStrIStr(scene->splines[i].name, name) != NULL) {
-                results[count++] = &scene->splines[i];
+        NUGSPLINE *spline = scene->splines;
+        for (i32 i = 0; i < scene->numsplines; ++spline, ++i) {
+            if (NuStrIStr(spline->name, name) != NULL) {
+                results[count++] = spline;
                 if (count >= capacity)
                     return count;
             }
@@ -3131,22 +3193,10 @@ i32 edpartPtlChangeType(i32 index, i32 type) {
 }
 
 void edppDestroyAllPages() {
-    if (edpp_page_used[0])
-        edppClearPage(0);
-    if (edpp_page_used[1])
-        edppClearPage(1);
-    if (edpp_page_used[2])
-        edppClearPage(2);
-    if (edpp_page_used[3])
-        edppClearPage(3);
-    if (edpp_page_used[4])
-        edppClearPage(4);
-    if (edpp_page_used[5])
-        edppClearPage(5);
-    if (edpp_page_used[6])
-        edppClearPage(6);
-    if (edpp_page_used[7])
-        edppClearPage(7);
+    for (i32 i = 0; i < 8; i++) {
+        if (edpp_page_used[i])
+            edppClearPage(i);
+    }
 }
 
 void edanimParticleCreate(NUVEC *position) {
@@ -3183,9 +3233,8 @@ void edgraInstanceDestroy(i32 index) {
 void edppDetermineNearest(float max_distance_squared) {
     NUVEC delta;
     if (edpp_nearest != -1) {
-        edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
-        if (particle->instance_id != 99999 && particle->instance_id != -1) {
-            NuVecSub(&delta, &edpp_cam_pos, &particle->position);
+        if (edpp_ptls[edpp_nearest].instance_id != -1 && edpp_ptls[edpp_nearest].instance_id != 99999) {
+            NuVecSub(&delta, &edpp_cam_pos, &edpp_ptls[edpp_nearest].position);
             if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z == 0.0f) {
                 return;
             }
@@ -3214,20 +3263,19 @@ void edppHighlightNearest() {
 
     if (edpp_copy_mode != 0) {
         edpp_copy_enclosed = 0;
-        edpp_particle_s *particle = edpp_ptls;
-        for (i32 index = 0; index < 512; ++index, ++particle) {
-            if (particle->instance_id == 99999)
+        for (i32 index = 0; index < 512; ++index) {
+            if (edpp_ptls[index].instance_id == 99999)
                 continue;
-            if (particle->instance_id == -1)
+            if (edpp_ptls[index].instance_id == -1)
                 continue;
 
-            NuVecSub(&delta, &edpp_cam_pos, &particle->position);
+            NuVecSub(&delta, &edpp_cam_pos, &edpp_ptls[index].position);
             if (!(__builtin_fabsf(delta.x) <= edpp_copy_size) || !(__builtin_fabsf(delta.y) <= edpp_copy_size) ||
                 !(__builtin_fabsf(delta.z) <= edpp_copy_size))
                 continue;
             ++edpp_copy_enclosed;
-            edbitsDrawDiagonalCross(particle->position.x, particle->position.y, particle->position.z, 0.05f, 0xffffffff,
-                                    edpp_mtl);
+            edbitsDrawDiagonalCross(edpp_ptls[index].position.x, edpp_ptls[index].position.y,
+                                    edpp_ptls[index].position.z, 0.05f, 0xffffffff, edpp_mtl);
         }
         for (i32 source = 0; source < edpp_copy_source_count; ++source) {
             NUVEC offset, position;
@@ -3242,11 +3290,10 @@ void edppHighlightNearest() {
             edbitsDrawCube(position.x, position.y, position.z, 0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 0, 0xffffffff, edpp_mtl);
         }
         if (edpp_showAllPlaced != 0) {
-            const edpp_particle_s *particle = edpp_ptls;
-            for (i32 index = 0; index < 512; ++index, ++particle) {
-                if (particle->effect_index > 0 && index != edpp_nearest) {
-                    edbitsDrawCube(particle->position.x, particle->position.y, particle->position.z, 0.5f, 0.5f, 0.5f,
-                                   0, 0, 0, 0, 0, 0xff000000, edpp_mtl);
+            for (i32 index = 0; index < 512; ++index) {
+                if (edpp_ptls[index].effect_index > 0 && index != edpp_nearest) {
+                    edbitsDrawCube(edpp_ptls[index].position.x, edpp_ptls[index].position.y,
+                                   edpp_ptls[index].position.z, 0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 0, 0xff000000, edpp_mtl);
                 }
             }
         }
@@ -3258,13 +3305,12 @@ void edppMultipleCopyCopy() {
     extern NUVEC edpp_copy_source_vec;
 
     edpp_copy_source_count = 0;
-    edpp_particle_s *particle = edpp_ptls;
-    for (i32 index = 0; index < 512; ++index, ++particle) {
-        if (particle->instance_id == 99999 || particle->instance_id == -1)
+    for (i32 index = 0; index < 512; ++index) {
+        if (edpp_ptls[index].instance_id == -1 || edpp_ptls[index].instance_id == 99999)
             continue;
 
         NUVEC delta;
-        NuVecSub(&delta, &edpp_cam_pos, &particle->position);
+        NuVecSub(&delta, &edpp_cam_pos, &edpp_ptls[index].position);
         if (__builtin_fabsf(delta.x) <= edpp_copy_size && __builtin_fabsf(delta.y) <= edpp_copy_size &&
             __builtin_fabsf(delta.z) <= edpp_copy_size) {
             edpp_copy_source[edpp_copy_source_count++] = index;
@@ -3320,22 +3366,10 @@ void edgraSortVectorBuffer(i32 index) {
 }
 
 void edpartDestroyAllPages() {
-    if (part_page_used[0])
-        edpartClearPage(0);
-    if (part_page_used[1])
-        edpartClearPage(1);
-    if (part_page_used[2])
-        edpartClearPage(2);
-    if (part_page_used[3])
-        edpartClearPage(3);
-    if (part_page_used[4])
-        edpartClearPage(4);
-    if (part_page_used[5])
-        edpartClearPage(5);
-    if (part_page_used[6])
-        edpartClearPage(6);
-    if (part_page_used[7])
-        edpartClearPage(7);
+    for (i32 i = 0; i < 8; i++) {
+        if (part_page_used[i])
+            edpartClearPage(i);
+    }
 }
 
 void edppMultipleCopyClear() {
@@ -3348,13 +3382,14 @@ void edppMultipleCopyPaste() {
     extern i32 edpp_copy_source_count, edpp_copy_source[8], edpp_copyroty;
     extern NUVEC edpp_copy_source_vec;
 
+    if (edpp_copy_source_count == 0)
+        return;
     for (i32 source = 0; source < edpp_copy_source_count; ++source) {
         NUVEC offset, position;
-        const i32 source_index = edpp_copy_source[source];
-        NuVecSub(&offset, &edpp_ptls[source_index].position, &edpp_copy_source_vec);
+        NuVecSub(&offset, &edpp_ptls[edpp_copy_source[source]].position, &edpp_copy_source_vec);
         NuVecRotateY(&offset, &offset, edpp_copyroty);
         NuVecAdd(&position, &edpp_cam_pos, &offset);
-        const i32 index = edppPtlCreateCopy(&position, source_index);
+        const i32 index = edppPtlCreateCopy(&position, edpp_copy_source[source]);
         if (index != -1) {
             edpp_particle_s &particle = edpp_ptls[index];
             particle.emitter_rotation_y += static_cast<i16>(edpp_copyroty);
@@ -3396,11 +3431,10 @@ void edpartHighlightNearest() {
     extern NUMTL *edpart_mtl;
     if (edpart_copy_mode != 0) {
         edpart_copy_enclosed = 0;
-        part_emit_s *emitter = part_emits;
-        for (i32 index = 0; index < 512; ++index, ++emitter) {
-            if (emitter->instance_id == 99999)
+        for (i32 index = 0; index < 512; ++index) {
+            if (part_emits[index].instance_id == 99999)
                 continue;
-            if (emitter->instance_id == -1)
+            if (part_emits[index].instance_id == -1)
                 continue;
 
             NuVecSub(&delta, &edpart_cam_pos, &part_emits[index].position);
@@ -3408,8 +3442,8 @@ void edpartHighlightNearest() {
                 edpart_copy_size < __builtin_fabsf(delta.z))
                 continue;
             ++edpart_copy_enclosed;
-            edbitsDrawDiagonalCross(emitter->position.x, emitter->position.y, emitter->position.z, 0.05f, 0xffffffff,
-                                    edpart_mtl);
+            edbitsDrawDiagonalCross(part_emits[index].position.x, part_emits[index].position.y,
+                                    part_emits[index].position.z, 0.05f, 0xffffffff, edpart_mtl);
         }
         for (i32 index = 0; index < edpart_copy_source_count; ++index) {
             NUVEC offset, destination;
@@ -3431,12 +3465,11 @@ void edpartMultipleCopyCopy() {
 
     edpart_copy_source_count = 0;
     for (i32 index = 0; index < 512; ++index) {
-        part_emit_s &emitter = part_emits[index];
-        if (emitter.instance_id == 99999 || emitter.instance_id == -1)
+        if (part_emits[index].instance_id == -1 || part_emits[index].instance_id == 99999)
             continue;
 
         NUVEC delta;
-        NuVecSub(&delta, &edpart_cam_pos, &emitter.position);
+        NuVecSub(&delta, &edpart_cam_pos, &part_emits[index].position);
         if (__builtin_fabsf(delta.x) > edpart_copy_size || __builtin_fabsf(delta.y) > edpart_copy_size ||
             __builtin_fabsf(delta.z) > edpart_copy_size)
             continue;
@@ -3472,7 +3505,8 @@ void edanimRenderSoundEmitters(i32 parameter_index) {
     NuGScnGetSpecial(&special, edbits_base_scene, param.instance_id);
     const NUVEC *base_position = NuSpecialGetPos(&special);
     for (i32 sound = 0; sound < param.sound_count; ++sound) {
-        if (param.sound_ids[sound] == -1) {
+        // The original skips sounds by their flags slot rather than the sound id.
+        if (param.sound_flags[sound] == -1) {
             continue;
         }
         const i32 colour = edanim_sound_mode && edanim_nearest_sound == sound ? 0xffff0000 : 0xffffffff;
@@ -3581,29 +3615,28 @@ eduiitem_s *eduiItemFileSelectorCreate(u32 data, eduiiattr_s *colours, EdUiItemC
 }
 
 void edanimRenderParticleEmitters(i32 parameter_index) {
-    auto &param = AnimParams[parameter_index];
     nuhspecial_s special;
-    NuGScnGetSpecial(&special, edbits_base_scene, param.instance_id);
+    NuGScnGetSpecial(&special, edbits_base_scene, AnimParams[parameter_index].instance_id);
     const NUVEC *base_position = NuSpecialGetPos(&special);
-    for (i32 particle = 0; particle < param.effect_count; ++particle) {
-        const i32 effect_id = param.effect_ids[particle];
-        if (effect_id == -1) {
+    for (i32 particle = 0; particle < AnimParams[parameter_index].effect_count; ++particle) {
+        if (AnimParams[parameter_index].effect_ids[particle] == -1)
             continue;
-        }
-        const auto &offset = param.effect_positions[particle];
-        const f32 x = base_position->x + offset[0];
-        const f32 y = base_position->y + offset[1];
-        const f32 z = base_position->z + offset[2];
         i32 colour = 0xffffffff;
         if (edanim_particle_mode && edanim_nearest_particle == particle) {
-            const debinftype *definition = debtab[effect_id];
+            const debinftype *definition = debtab[AnimParams[parameter_index].effect_ids[particle]];
             if (definition->generator_type == 0) {
-                edbitsDrawCube(x, y, z, definition->field_058, definition->field_05c, definition->field_060,
-                               edanim_emitrotz, edanim_emitroty, 0, 0, 0, 0xff008000, edanim_mtl);
+                edbitsDrawCube(base_position->x + AnimParams[parameter_index].effect_positions[particle][0],
+                               base_position->y + AnimParams[parameter_index].effect_positions[particle][1],
+                               base_position->z + AnimParams[parameter_index].effect_positions[particle][2],
+                               definition->field_058, definition->field_05c, definition->field_060, edanim_emitrotz,
+                               edanim_emitroty, 0, 0, 0, 0xff008000, edanim_mtl);
             }
             colour = 0xff00ff00;
         }
-        edbitsDrawDiagonalCross(x, y, z, 0.25f, colour, edanim_mtl);
+        edbitsDrawDiagonalCross(base_position->x + AnimParams[parameter_index].effect_positions[particle][0],
+                                base_position->y + AnimParams[parameter_index].effect_positions[particle][1],
+                                base_position->z + AnimParams[parameter_index].effect_positions[particle][2], 0.25f,
+                                colour, edanim_mtl);
     }
 }
 
@@ -3617,18 +3650,18 @@ void edanimDetermineNearestSound(float distance) {
     NUVEC *base_position = NuSpecialGetPos(&special);
     NUVEC delta;
     NUVEC world_position;
-    auto &param = AnimParams[edanim_nearest_param_id];
     if (edanim_nearest_sound != -1) {
         NuVecAdd(&world_position, base_position,
-                 reinterpret_cast<NUVEC *>(param.sound_positions[edanim_nearest_sound]));
+                 reinterpret_cast<NUVEC *>(AnimParams[edanim_nearest_param_id].sound_positions[edanim_nearest_sound]));
         NuVecSub(&delta, &edanim_cam_pos, &world_position);
         if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z == 0.0f) {
             return;
         }
     }
     edanim_nearest_sound = -1;
-    for (i32 sound = 0; sound < param.sound_count; ++sound) {
-        NuVecAdd(&world_position, base_position, reinterpret_cast<NUVEC *>(param.sound_positions[sound]));
+    for (i32 sound = 0; sound < AnimParams[edanim_nearest_param_id].sound_count; ++sound) {
+        NuVecAdd(&world_position, base_position,
+                 reinterpret_cast<NUVEC *>(AnimParams[edanim_nearest_param_id].sound_positions[sound]));
         NuVecSub(&delta, &edanim_cam_pos, &world_position);
         const f32 candidate = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         if (distance < 0.0f || candidate < distance) {
@@ -3674,18 +3707,19 @@ void edanimDetermineNearestParticle(float distance) {
     NUVEC *base_position = NuSpecialGetPos(&special);
     NUVEC delta;
     NUVEC world_position;
-    auto &param = AnimParams[edanim_nearest_param_id];
     if (edanim_nearest_particle != -1) {
-        NuVecAdd(&world_position, base_position,
-                 reinterpret_cast<NUVEC *>(param.effect_positions[edanim_nearest_particle]));
+        NuVecAdd(
+            &world_position, base_position,
+            reinterpret_cast<NUVEC *>(AnimParams[edanim_nearest_param_id].effect_positions[edanim_nearest_particle]));
         NuVecSub(&delta, &edanim_cam_pos, &world_position);
         if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z == 0.0f) {
             return;
         }
     }
     edanim_nearest_particle = -1;
-    for (i32 particle = 0; particle < param.effect_count; ++particle) {
-        NuVecAdd(&world_position, base_position, reinterpret_cast<NUVEC *>(param.effect_positions[particle]));
+    for (i32 particle = 0; particle < AnimParams[edanim_nearest_param_id].effect_count; ++particle) {
+        NuVecAdd(&world_position, base_position,
+                 reinterpret_cast<NUVEC *>(AnimParams[edanim_nearest_param_id].effect_positions[particle]));
         NuVecSub(&delta, &edanim_cam_pos, &world_position);
         const f32 candidate = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         if (distance < 0.0f || candidate < distance) {
@@ -4715,7 +4749,8 @@ i32 EdManipulator::AxisColour[8] = {
 };
 
 void EdManipulator::DrawAxis(VuVec &origin, VuMtx *matrix) {
-    VuVec points[8];
+    // The original keeps the locator array in a 16-byte aligned slot of a realigned frame.
+    VuVec points[8] __attribute__((aligned(16)));
     GetAxisLocators(origin, points, matrix);
     EdDrawBegin(1);
     EdDrawLineSphere(points[1], Scale * 0.25f, 1.0f,
@@ -4820,12 +4855,12 @@ void EdManipulator::DrawRotator(VuVec &origin) {
                       32);
     EdDrawEnd();
     const u8 *data = reinterpret_cast<const u8 *>(this);
-    const i32 end_angle = *reinterpret_cast<const i32 *>(data + 0x64);
-    const i32 start_angle = *reinterpret_cast<const i32 *>(data + 0x60);
-    const i32 selected_axis = *reinterpret_cast<const i32 *>(data + 0x0c);
-    if (start_angle != end_angle && selected_axis != 0) {
+    const i32 *selected_axis = reinterpret_cast<const i32 *>(data + 0x0c);
+    const i32 *start_angle = reinterpret_cast<const i32 *>(data + 0x60);
+    const i32 *end_angle = reinterpret_cast<const i32 *>(data + 0x64);
+    if (*start_angle != *end_angle && *selected_axis != 0) {
         EdDrawBegin(1);
-        EdDrawPolySector(origin, scale, selected_axis - 1, start_angle, end_angle, static_cast<i32>(0x80808080), 32);
+        EdDrawPolySector(origin, scale, *selected_axis - 1, *start_angle, *end_angle, static_cast<i32>(0x80808080), 32);
         EdDrawEnd();
     }
 }
@@ -4866,40 +4901,26 @@ void EdManipulator::GetAxisLocators(VuVec &origin, VuVec *points, VuMtx *matrix)
     points[6].z = half;
     points[6].w = 0.0f;
     if (matrix != NULL) {
-#define TRANSFORM_LOCATOR(index)                                                                                       \
-    {                                                                                                                  \
-        VuVec &point = points[index];                                                                                  \
-        const NUMTX &transform = matrix->matrix;                                                                       \
-        const f32 x = point.x;                                                                                         \
-        const f32 y = point.y;                                                                                         \
-        const f32 z = point.z;                                                                                         \
-        point.x = x * transform.m00 + y * transform.m10 + z * transform.m20;                                           \
-        point.y = x * transform.m01 + y * transform.m11 + z * transform.m21;                                           \
-        point.z = x * transform.m02 + y * transform.m12 + z * transform.m22;                                           \
+        for (i32 index = 0; index < 8; ++index) {
+            VuVec &point = points[index];
+            // The original reads the matrix rows as vectors, so they are reloaded after each locator store.
+            const VuVec *rows = reinterpret_cast<const VuVec *>(&matrix->matrix);
+            const f32 x = point.x;
+            const f32 y = point.y;
+            const f32 z = point.z;
+            const f32 transformed_x = x * rows[0].x + y * rows[1].x + z * rows[2].x;
+            const f32 transformed_y = x * rows[0].y + y * rows[1].y + z * rows[2].y;
+            const f32 transformed_z = x * rows[0].z + y * rows[1].z + z * rows[2].z;
+            point.x = transformed_x;
+            point.y = transformed_y;
+            point.z = transformed_z;
+        }
     }
-        TRANSFORM_LOCATOR(0);
-        TRANSFORM_LOCATOR(1);
-        TRANSFORM_LOCATOR(2);
-        TRANSFORM_LOCATOR(3);
-        TRANSFORM_LOCATOR(4);
-        TRANSFORM_LOCATOR(5);
-        TRANSFORM_LOCATOR(6);
-        TRANSFORM_LOCATOR(7);
-#undef TRANSFORM_LOCATOR
+    for (i32 index = 0; index < 8; ++index) {
+        points[index].x += origin.x;
+        points[index].y += origin.y;
+        points[index].z += origin.z;
     }
-#define OFFSET_LOCATOR(index)                                                                                          \
-    points[index].x += origin.x;                                                                                       \
-    points[index].y += origin.y;                                                                                       \
-    points[index].z += origin.z
-    OFFSET_LOCATOR(0);
-    OFFSET_LOCATOR(1);
-    OFFSET_LOCATOR(2);
-    OFFSET_LOCATOR(3);
-    OFFSET_LOCATOR(4);
-    OFFSET_LOCATOR(5);
-    OFFSET_LOCATOR(6);
-    OFFSET_LOCATOR(7);
-#undef OFFSET_LOCATOR
 }
 
 i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
@@ -4913,15 +4934,15 @@ i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
             Scale -= step * input.delta_time;
     }
 
-    VuVec average;
+    // The original keeps this vector in a 16-byte aligned slot of a realigned frame.
+    VuVec average __attribute__((aligned(16)));
     f32 distance = 0.0f;
     VuVec *ray_origin = reinterpret_cast<VuVec *>(input.reserved_00 + 0x20);
-    VuVec *ray_direction = reinterpret_cast<VuVec *>(input.reserved_00 + 0x30);
     if (selected.GetAveragePosition(average) != 0) {
         VuVec displacement = {average.x - ray_origin->x, average.y - ray_origin->y, average.z - ray_origin->z, 0.0f};
         distance = NuVecMag(reinterpret_cast<NUVEC *>(&displacement));
     }
-    VuVec direction = *ray_direction;
+    VuVec direction = *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30);
     NuVecNorm(reinterpret_cast<NUVEC *>(&direction), reinterpret_cast<NUVEC *>(&direction));
     VuVec *last_point = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x30);
     VuVec point = {ray_origin->x + direction.x * distance, ray_origin->y + direction.y * distance,
@@ -4929,7 +4950,7 @@ i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
     VuVec *delta = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x40);
     VuVec *cursor = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x50);
     if (input.GetPress(3) != 0.0f) {
-        *delta = VuVec_Zero;
+        *delta = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
     } else {
         delta->x = point.x - last_point->x;
         delta->y = point.y - last_point->y;
@@ -4938,8 +4959,12 @@ i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
     }
     *last_point = point;
     last_point->w = 0.0f;
-    *cursor = *reinterpret_cast<VuVec *>(input.reserved_00);
-    if (EdTerrRay(*cursor, *ray_direction) == 0)
+    VuVec *ray_cursor = reinterpret_cast<VuVec *>(input.reserved_00);
+    cursor->x = ray_cursor->x;
+    cursor->y = ray_cursor->y;
+    cursor->z = ray_cursor->z;
+    cursor->w = ray_cursor->w;
+    if (EdTerrRay(*cursor, *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30)) == 0)
         *cursor = *last_point;
     last_point->w = 1.0f;
     delta->w = 1.0f;
@@ -5318,7 +5343,7 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
         if (eduiGetActiveMenu() == NULL) {
             const u32 buttons = pad->digital_buttons;
             square = buttons & 0x80;
-            Set(38, static_cast<f32>(buttons & 0x40), elapsed);
+            Set(38, static_cast<f32>(static_cast<i32>(buttons & 0x40)), elapsed);
         }
         right_click = NuMouseReadButtons() == 2 || (pad->digital_buttons & 0x20) != 0;
     } else {
@@ -5327,8 +5352,8 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     Set(0, mouse_x, elapsed);
     Set(1, mouse_y, elapsed);
     Set(2, mouse_z, elapsed);
-    Set(3, left_click && !control_or_c, elapsed);
-    Set(4, right_click && !alt_or_space && !control_or_c, elapsed);
+    Set(3, static_cast<i32>(left_click && !control_or_c), elapsed);
+    Set(4, static_cast<i32>(right_click && !alt_or_space && !control_or_c), elapsed);
     Set(5, static_cast<f32>(NuKeyboard(0x10)), elapsed);
     Set(6, static_cast<f32>(NuKeyboard(0x11)), elapsed);
     Set(7, static_cast<f32>(NuKeyboard(0x12)), elapsed);
@@ -5347,9 +5372,9 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     Set(20, static_cast<f32>(NuKeyboard(0xcb)), elapsed);
     Set(21, static_cast<f32>(shift_or_s), elapsed);
     Set(22, static_cast<f32>(control_or_c), elapsed);
-    Set(23, static_cast<f32>(NuKeyboard(0x1f) && control_or_c), elapsed);
+    Set(23, static_cast<i32>(NuKeyboard(0x1f) && control_or_c), elapsed);
     Set(24, static_cast<f32>(NuKeyboard(0x01)), elapsed);
-    Set(25, static_cast<f32>(left_click && control_or_c), elapsed);
+    Set(25, static_cast<i32>(left_click && control_or_c), elapsed);
     Set(26, static_cast<f32>(NuKeyboard(2)), elapsed);
     Set(27, static_cast<f32>(NuKeyboard(3)), elapsed);
     Set(28, static_cast<f32>(NuKeyboard(4)), elapsed);
@@ -5360,8 +5385,8 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     Set(33, static_cast<f32>(NuKeyboard(9)), elapsed);
     Set(34, static_cast<f32>(NuKeyboard(10)), elapsed);
     Set(35, static_cast<f32>(NuKeyboard(11)), elapsed);
-    Set(37, static_cast<f32>(square), elapsed);
-    Set(39, static_cast<f32>(pad->digital_buttons & 0x800), elapsed);
+    Set(37, static_cast<f32>(static_cast<i32>(square)), elapsed);
+    Set(39, static_cast<f32>(static_cast<i32>(pad->digital_buttons & 0x800)), elapsed);
     memset(cleared, 0, sizeof(cleared));
 }
 
@@ -5681,10 +5706,13 @@ void EdMatrixControl::cbChanged(eduimenu_s *, eduiitem_s *item, u32) {
 
         NuMtxSetIdentity(&rebuilt);
         if (control->components[6] && control->components[7] && control->components[8]) {
-            NUVEC scale = {NuAToF(static_cast<edui_prop_s *>(control->components[6])->property_text),
-                           NuAToF(static_cast<edui_prop_s *>(control->components[7])->property_text),
-                           NuAToF(static_cast<edui_prop_s *>(control->components[8])->property_text)};
-            NuMtxScale(&rebuilt, &scale);
+            // The original builds the scale as an aligned four-component vector with w set to one.
+            VuVec scale __attribute__((aligned(16)));
+            scale.x = NuAToF(static_cast<edui_prop_s *>(control->components[6])->property_text);
+            scale.y = NuAToF(static_cast<edui_prop_s *>(control->components[7])->property_text);
+            scale.z = NuAToF(static_cast<edui_prop_s *>(control->components[8])->property_text);
+            scale.w = 1.0f;
+            NuMtxScale(&rebuilt, reinterpret_cast<NUVEC *>(&scale));
         }
         {
             NUANG x = static_cast<NUANG>(NuAToF(static_cast<edui_prop_s *>(control->components[3])->property_text) *
@@ -5743,7 +5771,8 @@ void EdMatrixControl::cbChanged(eduimenu_s *, eduiitem_s *item, u32) {
     }
     matrix.m33 = 1.0f;
     control->reference->SetMemberData(control->object, EdType_VuMtx, &source, 0, nullptr);
-    char text[128];
+    // The original keeps the text buffer at a 16-byte aligned stack address.
+    char text[128] __attribute__((aligned(16)));
     sprintf(text, "%.2f", changed_value);
     eduiItemPropSetText(static_cast<edui_prop_s *>(item), text);
 }
@@ -5871,26 +5900,28 @@ template <>
 __attribute__((force_align_arg_pointer)) void EdValueControl<f32>::cbButton(eduimenu_s *, eduiitem_s *item, u32) {
     EdValueControl<f32> *control = static_cast<EdValueControl<f32> *>(item->data_ptr);
     nupad_s *pad = EdControl::Input->pad;
-    f32 sensitivity = control->maximum - control->minimum < 5.0f ? 0.001f : 0.01f;
+    f32 sensitivity = 0.01f;
+    if (control->maximum - control->minimum < 5.0f)
+        sensitivity = 0.001f;
     static_cast<edui_prop_s *>(item)->unknown_property_flags |= 0x20;
     f32 initial_value = NuAToF(static_cast<edui_prop_s *>(item)->property_text);
-    f32 change = 0.0f;
+    f32 dx = 0.0f;
+    // The original keeps the change, shared with the cursor delta, at a 16-byte aligned stack address.
+    f32 change __attribute__((aligned(16))) = 0.0f;
     if (pad && (pad->digital_buttons & EDUI_CURSOR_PRIMARY)) {
-        f32 left_y = pad->analog_left_y;
+        f32 left_y = static_cast<i32>(pad->analog_left_y);
         if (left_y > 128.0f)
             change = 10.0f * sensitivity * (left_y - 128.0f);
-        if (left_y < 128.0f)
+        if (pad->analog_left_y < 128)
             change = -10.0f * sensitivity * (128.0f - left_y);
-        f32 right_y = pad->analog_right_y;
+        f32 right_y = static_cast<i32>(pad->analog_right_y);
         if (right_y > 128.0f)
             change = 0.1f * sensitivity * (right_y - 128.0f);
-        if (right_y < 128.0f)
+        if (pad->analog_right_y < 128)
             change = -0.1f * sensitivity * (128.0f - right_y);
     } else {
-        f32 dx = 0.0f;
-        f32 dy = 0.0f;
-        eduiGetCursorDelta(&dx, &dy);
-        change = dy * MouseScale;
+        eduiGetCursorDelta(&dx, &change);
+        change *= MouseScale;
     }
     initial_value -= change;
     char text[128];
@@ -6626,27 +6657,23 @@ EdRef::EdRef(char *type_name, char *member_name, i32 offset, i32 member_size, i3
 }
 
 i32 EdRef::GetAttributeData(void *object, i32 attribute, i32 requested_type, void *data, i32 data_size) {
-    if (!(attributes & attribute)) {
-        return 0;
-    }
-    if ((attribute & 8) && type_id == EdType_VuMtx) {
-        NUMTX_ALIGNED16 matrix;
-        GetMemberData(object, type_id, &matrix, 0);
-        VuVec *position = static_cast<VuVec *>(data);
-        position->x = matrix.m30;
-        position->y = matrix.m31;
-        position->z = matrix.m32;
-        position->w = matrix.m33;
-        return 1;
-    }
-    if (!(attribute & 0x100)) {
-        GetMemberData(object, requested_type, data, data_size);
-    } else {
+    if (attributes & attribute) {
+        if ((attribute & 8) && type_id == EdType_VuMtx) {
+            NUMTX_ALIGNED16 matrix;
+            GetMemberData(object, type_id, &matrix, 0);
+            *static_cast<VuVec *>(data) = *reinterpret_cast<VuVec *>(&matrix.m30);
+            return 1;
+        }
+        if (!(attribute & 0x100)) {
+            GetMemberData(object, requested_type, data, data_size);
+            return 1;
+        }
         i16 value;
         GetMemberData(object, EdType_Short, &value, 0);
         *static_cast<i16 *>(data) = value;
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 void EdRef::GetMemberData(void *object, i32 requested_type, void *data, i32 data_size) {
@@ -6869,21 +6896,22 @@ void EdControl::Render() {
 // The original realigns the stack for its local ClassObject.
 __attribute__((force_align_arg_pointer)) i32 EdControl::SelectSubObject() {
     ClassObject selection = {};
-    void *target = object;
-    for (ClassObjectListEntry *entry = theClassEditor.selected_objects.first; entry; entry = entry->next) {
-        if (entry->object != target)
-            continue;
-        selection.ed_class = entry->ed_class;
-        selection.object = entry->object;
-        selection.reference = entry->reference;
-        if (selection.object != NULL) {
-            i32 mode = static_cast<i32>(Input->GetHold(16)) >= 1 ? 1 : 2;
-            selection.reference = reference;
-            theClassEditor.SelectObject(selection, mode);
-            if (!theClassEditor.selected_objects.IsInList(selection.object, NULL))
-                theClassEditor.SelectObject(selection, 1);
-        }
+    ClassObjectListEntry *entry;
+    for (entry = theClassEditor.selected_objects.first; entry; entry = entry->next) {
+        if (entry->object == object)
+            break;
+    }
+    if (entry == NULL)
         return 1;
+    selection.ed_class = entry->ed_class;
+    selection.object = entry->object;
+    selection.reference = entry->reference;
+    if (selection.object != NULL) {
+        i32 mode = static_cast<i32>(Input->GetHold(16)) != 0 ? 1 : 2;
+        selection.reference = reference;
+        theClassEditor.SelectObject(selection, mode);
+        if (!theClassEditor.selected_objects.IsInList(selection.object, NULL))
+            theClassEditor.SelectObject(selection, 1);
     }
     return 1;
 }

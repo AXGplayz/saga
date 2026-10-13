@@ -162,20 +162,6 @@ i32 AllMiniKitsDone(AREASAVE_s *save) {
 }
 
 char *LEGOASCII_BIGARROW = NULL;
-void GameMsg_Draw_MiniKitDetector(GAMEMESSAGE_s *, nuvec_s *,
-                                  float) __asm__("_ZL28GameMsg_Draw_MiniKitDetectorP13GAMEMESSAGE_sP7nuvec_sf")
-    __attribute__((visibility("hidden")));
-void MiniKitDetector(nuvec_s *position) {
-    ADDGAMEMSG message = AddGameMsg_Default;
-    message.text = LEGOASCII_BIGARROW != NULL ? LEGOASCII_BIGARROW : txt_UNKNOWN;
-    message.position = position;
-    message.flags = 0x40083;
-    message.scale = 0.6f;
-    message.field_0x44 = reinterpret_cast<void *>(GameMsg_Draw_MiniKitDetector);
-    message.field_0x4f = 4;
-    AddGameMsg(&message);
-}
-
 i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
 void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflection_plane, float reflection_height) {
     NUMTX draw_matrix;
@@ -478,12 +464,13 @@ void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
 void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
 void MiniKit_GameMsg_End(GAMEMESSAGE_s *message) {
     MiniKitScale = 2.0f;
-    if (WorldInfo_CurrentlyActive()->area != NULL && message->icon != -1) {
-        if (message->icon == LEGOOBJ_MINIKIT) {
+    if (WorldInfo_CurrentlyActive()->area != NULL && static_cast<i16>(message->icon) != -1) {
+        if (static_cast<i16>(message->icon) == LEGOOBJ_MINIKIT) {
             ++AreaGlobals.values.field_0x14;
             if (AreaGlobals.values.field_0x14 > AreaGlobals.values.field_0x0c)
                 AreaGlobals.values.field_0x14 = AreaGlobals.values.field_0x0c;
-        } else if (message->icon == LEGOOBJ_CHARKIT && AreaGlobals.values.field_0x20 < AreaGlobals.values.field_0x1c) {
+        } else if (static_cast<i16>(message->icon) == LEGOOBJ_CHARKIT &&
+                   AreaGlobals.values.field_0x20 < AreaGlobals.values.field_0x1c) {
             ++AreaGlobals.values.field_0x20;
             if (AreaGlobals.values.field_0x20 == AreaGlobals.values.field_0x1c && AreaGlobals.values.field_0x1c > 9)
                 EndChallenge(2, 1);
@@ -574,20 +561,24 @@ extern NUCOLOUR3 panelcol[3], panelamb;
 extern NUVEC paneldir[3];
 
 void AllMiniKits_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    if (stage->field_0x14 == 0) {
-        stage->field_0x18 = 0.0f;
-        stage->field_0x1c = 6.5f;
-        stage->field_0x14 = 1;
-    } else if (stage->field_0x14 == 1) {
-        const f32 previous = stage->field_0x18;
-        stage->field_0x18 += elapsed;
-        if (stage->field_0x18 >= stage->field_0x1c)
-            NextStatusStage(packet);
-        else if (previous < 0.5f && stage->field_0x18 >= 0.5f) {
-            PlaySfx(const_cast<char *>("StatusAward"), NULL);
-            NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
-        } else if (previous < 4.0f && stage->field_0x18 >= 4.0f)
-            PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
+    switch (stage->field_0x14) {
+        case 0:
+            stage->field_0x18 = 0.0f;
+            stage->field_0x1c = 6.5f;
+            stage->field_0x14 = 1;
+            break;
+        case 1: {
+            const f32 previous = stage->field_0x18;
+            stage->field_0x18 += elapsed;
+            if (stage->field_0x18 >= stage->field_0x1c)
+                NextStatusStage(packet);
+            else if (previous < 0.5f && stage->field_0x18 >= 0.5f) {
+                PlaySfx(const_cast<char *>("StatusAward"), NULL);
+                NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
+            } else if (previous < 4.0f && stage->field_0x18 >= 4.0f)
+                PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
+            break;
+        }
     }
 }
 
@@ -621,7 +612,7 @@ void AddStatusMiniKitParts() {
         for (i32 coin = 0; coin < 5; ++coin) {
             NUVEC position = {0.0f, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.1f, 1.0f};
             NuVecRotateZ(&position, &position, qrand());
-            ADDGAMEMSG message = AddGameMsg_Default;
+            ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
             message.position = &position;
             message.target_scale = 0.75f;
             message.player_index = qrand() / 0x8000;
@@ -699,47 +690,39 @@ void EffectOffProgress_Reset(LEVEL_PROGRESS_s *progress) {
     }
 }
 
-void IncrementMinikitCounter(GameObject_s *) {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    NUVEC average;
-    Players_AveragePos(&average, NULL);
-    u8 *counter;
-    i32 gizmo_index;
-    NUVEC camera;
-    if (world->current_level == HOTHBATTLEA_LDATA) {
-        gizmo_index = 0;
-        counter = &minikitCounter_A;
-        camera = {0.0f, 0.0f, 10.0f};
-    } else if (world->current_level == HOTHBATTLEC_LDATA) {
-        gizmo_index = 1;
-        counter = &minikitCounter_C;
-        camera = {0.0f, 0.0f, 25.0f};
-    } else {
-        return;
-    }
+static inline void IncrementMinikitCounterFor(WORLDINFO_s *world, NUVEC *average, i32 gizmo_index, u8 *counter,
+                                              f32 camera_distance, u16 camera_pitch, u16 camera_yaw) {
     GIZMO *gizmo = LevGizmo[gizmo_index];
     if (gizmo == NULL || gizmo->object == NULL) {
         return;
     }
     GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
-    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) == 0 &&
-        !(*counter >= 10)) {
-        ++*counter;
-        if (*counter == 10) {
-            if (gizmo_index == 0) {
-                NuVecRotateX(&camera, &camera, 0xf1c8);
-                NuVecRotateY(&camera, &camera, 0xe000);
-            } else {
-                NuVecRotateX(&camera, &camera, 0xeaab);
-                NuVecRotateY(&camera, &camera, 0x78e4);
-            }
-            NuVecAdd(&camera, &camera, &pickup->position);
-            GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
-            GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
-        }
-        // The reference's completion branch passes an uninitialized temporary.
-        // Keep the message at the same valid averaged position as earlier counts.
-        AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
+    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) != 0 ||
+        *counter >= 10) {
+        return;
+    }
+    ++*counter;
+    if (*counter == 10) {
+        NUVEC camera = {0.0f, 0.0f, camera_distance};
+        NuVecRotateX(&camera, &camera, camera_pitch);
+        NuVecRotateY(&camera, &camera, camera_yaw);
+        NuVecAdd(&camera, &camera, &pickup->position);
+        GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
+        GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
+    }
+    // The reference's completion branch passes an uninitialized temporary.
+    // Keep the message at the same valid averaged position as earlier counts.
+    AddGameMsgCount(average, *counter, 10, 200, 100, 30, 0.75f);
+}
+
+void IncrementMinikitCounter(GameObject_s *) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    NUVEC average;
+    Players_AveragePos(&average, NULL);
+    if (world->current_level == HOTHBATTLEA_LDATA) {
+        IncrementMinikitCounterFor(world, &average, 0, &minikitCounter_A, 10.0f, 0xf1c8, 0xe000);
+    } else if (world->current_level == HOTHBATTLEC_LDATA) {
+        IncrementMinikitCounterFor(world, &average, 1, &minikitCounter_C, 25.0f, 0xeaab, 0x78e4);
     }
 }
 

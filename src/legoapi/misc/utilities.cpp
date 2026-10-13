@@ -119,8 +119,8 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
 
 void VecRotateAxis(nuvec_s *vector, u16 angle, nuvec_s *axis) {
     NuVecNorm(axis, axis);
-    const f32 sine = NuTrigTable[angle >> 1];
-    const f32 cosine = NuTrigTable[((static_cast<u32>(angle) + 0x4000) >> 1) & 0x7fff];
+    const f32 sine = NuTrigTable[static_cast<u16>(angle / 2)];
+    const f32 cosine = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
     const f32 complement = 1.0f - cosine;
     const f32 x = axis->x;
     const f32 y = axis->y;
@@ -397,7 +397,7 @@ f32 RatioAlongLineXZ(nuvec_s *point, nuvec_s *start, nuvec_s *end) {
     f32 dx = end->x - start->x;
     f32 dz = end->z - start->z;
     i32 angle = -NuAtan2D(dx, dz);
-    f32 sine = NuTrigTable[static_cast<u16>(angle) >> 1];
+    f32 sine = NuTrigTable[static_cast<u16>(static_cast<u16>(angle) / 2)];
     f32 cosine = NuTrigTable[((static_cast<u16>(angle) + 0x4000) >> 1) & 0x7fff];
     f32 px = point->x - start->x;
     f32 pz = point->z - start->z;

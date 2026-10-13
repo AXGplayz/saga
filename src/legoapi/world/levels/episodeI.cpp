@@ -199,19 +199,19 @@ static __used__ void PodRaceSnipersUpdate(void) {
     i32 n = PodRace_nsnipers;
     if (n <= 0 || max_nsnipers <= 0)
         return;
-    for (i32 i = 0; i < n && i < max_nsnipers; i++) {
-        SNIPER_s *s = &PodRace_snipers[i];
-        bool in_range = false;
+    SNIPER_s *s = PodRace_snipers;
+    for (i32 i = 0; i < n && i < max_nsnipers; i++, s++) {
+        i32 in_range = 0;
         for (i32 j = 0; j < 2; ++j) {
             GameObject_s *target = Player[j];
             if (!(target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001)) {
                 continue;
             }
-            float dz = target->apiobj.collision_position.z - s->pos.z;
-            float dx = target->apiobj.collision_position.x - s->pos.x;
-            float dist2 = dx * dx + dz * dz;
+            direction.x = target->apiobj.collision_position.x - s->pos.x;
+            direction.z = target->apiobj.collision_position.z - s->pos.z;
+            float dist2 = direction.x * direction.x + direction.z * direction.z;
             if (dist2 < PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
-                in_range = true;
+                in_range = 1;
                 if (dist2 < PodRace_sniper_fire_radius * PodRace_sniper_fire_radius)
                     s->state = PodRace_sniper_fire_range_time;
             }
@@ -243,17 +243,17 @@ static __used__ void PodRaceSnipersUpdate(void) {
                     aim.y = 0.0f;
                     aim.z = NuRandFloat() * PodRace_sniper_fire_radius;
                     NuVecRotateY(&aim, &aim, NuRandInt());
-                    NuVecAdd(&aim, &aim, &s->pos);
+                    NuVecAdd(&aim, &aim, &PodRace_snipers[i].pos);
                 }
 
-                float distance = NuVecDist(&aim, &s->prev, &direction);
+                float distance = NuVecDist(&aim, &PodRace_snipers[i].prev, &direction);
                 temp_yrot = NuAtan2D(direction.x, direction.z);
                 temp_xrot = NuAtan2D(-direction.y, distance);
                 // Retail uses an aligned matrix local in its realigned stack frame.
                 NUMTX_ALIGNED16 mtx;
                 NuMtxSetRotationX(&mtx, (u16)temp_xrot);
                 NuMtxRotateY(&mtx, (u16)temp_yrot);
-                Bolt_Add(NULL, &s->prev, &mtx, bolttype, 0);
+                Bolt_Add(NULL, &PodRace_snipers[i].prev, &mtx, bolttype, 0);
             }
             n = PodRace_nsnipers;
         }
@@ -269,11 +269,11 @@ static __used__ void PodRaceSnipersReset(void) {
         NUGSPLINE *spline = NuSplineFind(WORLD->current_gscn, buf);
         if (spline != NULL && spline->length > 0 && PodRace_nsnipers <= 9) {
             i32 npts = 0;
+            float half_time = PodRace_sniper_fire_time * 0.5f;
             do {
                 SNIPER_s *dst = &PodRace_snipers[PodRace_nsnipers];
                 dst->prev = spline->pts[npts];
                 dst->pos = spline->pts[npts + 1];
-                float half_time = PodRace_sniper_fire_time * 0.5f;
                 dst->fire_timer = NuRandFloat() * PodRace_sniper_fire_time + half_time;
                 PodRace_snipers[PodRace_nsnipers++].state = 0.0f;
                 npts += 2;
@@ -449,7 +449,7 @@ static __used__ void UpdatePodRaceMines(void) {
             if (entry->active == 0)
                 continue;
 
-            NUVEC delta;
+            NUVEC_ALIGNED16 delta;
             NuVecSub(&delta, &entry->pos, &GameCam->pos);
             GAMECAMERA_s *cam = GameCam;
             float along = delta.x * cam->dir.x + delta.y * cam->dir.y + delta.z * cam->dir.z;
@@ -1053,7 +1053,8 @@ void PodRaceA_AlwaysUpdate(WORLDINFO_s *world) {
 }
 
 void PodRaceADraw(WORLDINFO_s *world) {
-    NUMTX mtx;
+    // Retail realigns the stack for this 16-byte aligned matrix local.
+    NUMTX_ALIGNED16 mtx;
     if (netclient == 0) {
         if (NuSpecialExistsFn(&minesys) != 0) {
             MINESYS_s *mines = &minesys;
@@ -1244,8 +1245,8 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     float start = 0.0f;
     float end = 1.0f;
     float time_factor = 1.0f;
-    bool pacemaker = false;
-    bool damaged = false;
+    i32 pacemaker = 0;
+    i32 damaged = 0;
     for (i32 i = 0; i != param_count; i++, ++params) {
         char *value = NuStrIStr(*params, "spline_id=");
         if (value != NULL) {
@@ -1264,9 +1265,9 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
         } else if ((value = NuStrIStr(*params, "time_factor=")) != NULL) {
             time_factor = AIParamToFloat((AISCRIPTPROCESS *)packet, value + 12);
         } else if (NuStrICmp(*params, "pacemaker") == 0) {
-            pacemaker = true;
+            pacemaker = 1;
         } else if (NuStrICmp(*params, "damaged") == 0) {
-            damaged = true;
+            damaged = 1;
         }
     }
     if ((u32)spline_id > 31 || model_id == -1)
@@ -1275,7 +1276,7 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     flightspline_s *spline = NULL;
     for (i32 spline_index = 0; spline_index != 32; ++spline_index) {
         spline = &PodRace->splines[spline_index];
-        if (spline->id == spline_id)
+        if (PodRace->splines[spline_index].id == spline_id)
             break;
     }
 

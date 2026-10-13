@@ -73,12 +73,14 @@ static void UpdateTotalPtls(debinftype *effect);
 #include "gameapi/edtools/edptlcallbacks.cpp"
 
 void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
-    char original_directory[64] = {};
+    char original_directory[64] = "";
     if (edbits_datapath[0] != '\0') {
         NuFileGetCurrentDirectory(original_directory);
         NuFileSetCurrentDirectory(edbits_datapath);
     }
 
+    char filename[256];
+    char backup[256];
     char general_directory[256];
     char general_name[256];
     char general_extension[256];
@@ -110,8 +112,6 @@ void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     else
         strcpy(level_extension, edbits_level_save_extension);
 
-    char filename[256];
-    char backup[256];
     bool valid_page = true;
     const char *saved_name = NULL;
     if (edpp_effect_list == 0) {
@@ -295,9 +295,9 @@ static void edptlcbSetGroup(eduimenu_s *, eduiitem_s *item, u32) {
     debkeydata[edpp_ptls[edpp_nearest].instance_id].render_group = render_group;
 }
 static void edptlcbStarMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
         edptl_star_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelStarMenu, "Star Settings");
         if (edptl_star_menu == NULL)
             return;
@@ -318,9 +318,9 @@ static void edptlcbClearPage(eduimenu_s *, eduiitem_s *item, u32) {
     edppClearPage(static_cast<i8>(item->data));
 }
 static void edptlcbGhostMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
         edptl_ghost_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelGhostMenu, "Particle Ghosts");
         if (edptl_ghost_menu == NULL)
             return;
@@ -428,16 +428,17 @@ static void edptlcbDetailMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edptl_detail_menu == NULL)
         return;
     if (edpp_nearest != -1 && edpp_ptls[edpp_nearest].instance_id != -1) {
-        edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
-        debinftype *effect = debtab[debkeydata[particle->instance_id].effect_index];
+        debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
         eduiMenuAddItem(edptl_detail_menu, eduiItemSliderCreate(0, edblack, 0, edptlcbSetMaxThin, 1.0f, 9.0f,
                                                                 effect->thinning, "Maximum Thinning"));
-        eduiMenuAddItem(edptl_detail_menu, eduiItemToggleCreate(4, edblack, (particle->detail_levels >> 2) & 1, 1,
-                                                                edptlcbSetDetail, "High Detail"));
-        eduiMenuAddItem(edptl_detail_menu, eduiItemToggleCreate(2, edblack, (particle->detail_levels >> 1) & 1, 2,
-                                                                edptlcbSetDetail, "Medium Detail"));
-        eduiMenuAddItem(edptl_detail_menu, eduiItemToggleCreate(1, edblack, particle->detail_levels & 1, 3,
-                                                                edptlcbSetDetail, "Low Detail"));
+        eduiMenuAddItem(edptl_detail_menu,
+                        eduiItemToggleCreate(4, edblack, (edpp_ptls[edpp_nearest].detail_levels >> 2) & 1, 1,
+                                             edptlcbSetDetail, "High Detail"));
+        eduiMenuAddItem(edptl_detail_menu,
+                        eduiItemToggleCreate(2, edblack, (edpp_ptls[edpp_nearest].detail_levels >> 1) & 1, 2,
+                                             edptlcbSetDetail, "Medium Detail"));
+        eduiMenuAddItem(edptl_detail_menu, eduiItemToggleCreate(1, edblack, edpp_ptls[edpp_nearest].detail_levels & 1,
+                                                                3, edptlcbSetDetail, "Low Detail"));
         eduiMenuAddItem(edptl_detail_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edptlcbTestDetailMenu, "Detail Level Test..."));
     }
@@ -482,20 +483,19 @@ static void edptlcbSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) {
             continue;
         }
 
-        debkeydatatype_s *key = &debkeydata[instance_id];
-        debinftype *effect = debtab[key->effect_index];
-        key->process_collision_sound = 0;
+        debinftype *effect = debtab[debkeydata[instance_id].effect_index];
+        debkeydata[instance_id].process_collision_sound = 0;
         if (effect->sound_data[0] != -1) {
-            key->process_collision_sound = 1;
+            debkeydata[instance_id].process_collision_sound = 1;
         }
         if (effect->sound_data[3] != -1) {
-            key->process_collision_sound = 1;
+            debkeydata[instance_id].process_collision_sound = 1;
         }
         if (effect->sound_data[6] != -1) {
-            key->process_collision_sound = 1;
+            debkeydata[instance_id].process_collision_sound = 1;
         }
         if (effect->sound_data[9] != -1) {
-            key->process_collision_sound = 1;
+            debkeydata[instance_id].process_collision_sound = 1;
         }
     }
 
@@ -503,8 +503,8 @@ static void edptlcbSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) {
     eduiMenuDestroy(menu);
 }
 static void edptlcbSoundXMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
-        const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
         char title[16];
         sprintf(title, "Sound %d Menu", static_cast<i32>(item->data) + 1);
         edptl_soundx_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edptlcbCancelSoundXMenu, title);
@@ -711,10 +711,10 @@ static void edptlChangeRepeatBox(eduimenu_s *, eduiitem_s *item, u32) {
     }
 }
 static void edptlcbClipboardMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] __attribute__((aligned(16))) = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_create_type == -1)
         return;
 
-    const u32 colours[4] __attribute__((aligned(16))) = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlclipmenu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edptlcbCancelClipboardMenu, "Clipboard Menu");
     if (ptlclipmenu == NULL)
         return;

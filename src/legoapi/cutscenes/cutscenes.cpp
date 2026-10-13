@@ -75,7 +75,6 @@ extern "C" {
     void instNuGCutSceneDestroy(instNUGCUTSCENE_s *);
     void NuGCutSceneSysRender(i32);
     void NuGCutSceneSysUpdate(i32, i32, f32);
-    extern NUGCUTLOCATORFNENTRY_s cutscene_locatorfns[];
 }
 
 void SetLevelLights(void *, f32);
@@ -251,17 +250,13 @@ void CutScenes_End() {
     if (CutScenePlayer_Active() != 0 && NewLData != NULL && NewLData == HUB_LDATA) {
         return;
     }
-    i32 i = 0;
-    if (CutInstEndCount > 0) {
-        do {
-            instNuGCutSceneEnd(CutInstEnd[i]);
-            if (i == CutInstEndStop) {
-                CUTSTOPGAME = 0;
-                CutStopInfo = NULL;
-                GameCam_Reset(GameCam);
-            }
-            ++i;
-        } while (CutInstEndCount > i);
+    for (i32 i = 0; i < CutInstEndCount; ++i) {
+        instNuGCutSceneEnd(CutInstEnd[i]);
+        if (i == CutInstEndStop) {
+            CUTSTOPGAME = 0;
+            CutStopInfo = NULL;
+            GameCam_Reset(GameCam);
+        }
     }
 }
 
@@ -287,8 +282,8 @@ void CutScenes_Draw(WORLDINFO_s *world) {
         if (CUTDRAWWORLD != 0 && world->current_gscn != NULL) {
             SetLevelLights(world->rtl_set, 1.0f);
             NuGScnRndr3(world->current_gscn);
-            cut = static_cast<CUTINFO *>(CutStopInfo);
-            if (world->gizmo_sys != NULL && cut != NULL && (cut->flags & 0x8000) != 0) {
+            if (world->gizmo_sys != NULL && CutStopInfo != NULL &&
+                (static_cast<CUTINFO *>(CutStopInfo)->flags & 0x8000) != 0) {
                 GizmoSysDraw(world->gizmo_sys, world, FRAMETIME);
             }
         }
@@ -538,11 +533,12 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
             if (CutScene_PreUpdateFn != NULL) {
                 CutScene_PreUpdateFn(cut);
             }
-            for (CUTSCENETEXANIM &animation : cut->texture_animations) {
-                if (animation.index != -1) {
-                    const u32 bit = 1U << (animation.index & 0x1f);
+            for (i32 j = 0; j < 4; ++j) {
+                CUTSCENETEXANIM *animation = &cut->texture_animations[j];
+                if (animation->index != -1) {
+                    const u32 bit = 1U << animation->index;
                     if ((texanimbits & bit) == 0 &&
-                        animation.frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
+                        animation->frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
                         texanimbits |= bit;
                     }
                 }
@@ -570,10 +566,11 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
             }
             instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
             if (instance->rate > 0.0f) {
-                for (CUTSCENESFX &sfx : cut->sfx) {
-                    if (sfx.id != -1 && cut->previous_frame < sfx.frame &&
-                        sfx.frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
-                        PlaySfxById(sfx.id, (sfx.flags & 1) != 0 ? &sfx.position : NULL);
+                for (i32 j = 0; j < 6; ++j) {
+                    CUTSCENESFX *sfx = &cut->sfx[j];
+                    if (sfx->id != -1 && cut->previous_frame < sfx->frame &&
+                        sfx->frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
+                        PlaySfxById(sfx->id, (sfx->flags & 1) != 0 ? &sfx->position : NULL);
                     }
                 }
             }
@@ -608,9 +605,9 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
     if (CutScene_StoppedFn != NULL) {
         CutScene_StoppedFn(stop_cut);
     }
-    for (CUTSCENETEXANIM &animation : stop_cut->texture_animations) {
-        if (animation.index != -1) {
-            texanimbits &= ~(1U << (animation.index & 0x1f));
+    for (i32 i = 0; i < 4; ++i) {
+        if (stop_cut->texture_animations[i].index != -1) {
+            texanimbits &= ~(1U << stop_cut->texture_animations[i].index);
         }
     }
 
@@ -724,7 +721,7 @@ i32 CutScene_HasPlayed(CUTINFO *cut) {
     i32 has_played = 0;
     if (cutscene_index != -1) {
         world = WorldInfo_CurrentlyActive();
-        has_played = (world->level_progress->played_cutscene_mask & (1u << (cutscene_index & 0x1f))) != 0;
+        has_played = (world->level_progress->played_cutscene_mask & (1 << cutscene_index)) != 0;
     }
     return has_played;
 }
@@ -778,6 +775,37 @@ i32 CutScene_StartFn_LSW(CUTINFO *cut) {
     return 1;
 }
 
+extern "C" i32 NuGCutLocatorCalcMtx(NUGCUTLOCATOR_s *, f32, NUMTX *, nuanimtime_s *);
+extern "C" i32 NuGCutLocatorIsVisble(NUGCUTLOCATOR_s *, f32, nuanimtime_s *, f32 *, f32 *);
+extern "C" void NuAnimData2CalcTime(nuanimdata2_s *, f32, nuanimtime_s *);
+
+static __used__ void LocatorFunction_Blaster(instNUGCUTSCENE_s *, NUGCUTLOCATORSYS_s *, instNUGCUTLOCATOR_s *,
+                                             NUGCUTLOCATOR_s *locator, float frame, numtx_s *parent_mtx, int) {
+    nuanimtime_s time;
+    NuAnimData2CalcTime(locator->animation, frame, &time);
+    if (NuGCutLocatorIsVisble(locator, frame, &time, NULL, NULL) == 0) {
+        return;
+    }
+    // Retail realigns the frame (and esp,-16) for this matrix.
+    NUMTX_ALIGNED16 matrix;
+    NuGCutLocatorCalcMtx(locator, frame, &matrix, &time);
+    if ((locator->flags & 4) != 0) {
+        NuMtxPreTranslate(&matrix, &locator->pivot);
+    }
+    if (parent_mtx != NULL) {
+        NuMtxMul(&matrix, &matrix, parent_mtx);
+    }
+    if (CutSceneSys != NULL) {
+        Draw3DObjectMtx(NULL, CutSceneSys->blaster_object_0, &matrix);
+        Draw3DObjectMtx(NULL, CutSceneSys->blaster_object_1, &matrix);
+    }
+}
+
+static NUGCUTLOCATORFNENTRY_s cutscene_locatorfns[] = {
+    {"blaster", 0, 0, 0, LocatorFunction_Blaster},
+    {NULL, 0, 0, 0, NULL},
+};
+
 void CutScenes_InitSystem(CUTSCENESYS *system) {
     CutSceneSys = system;
     NuGCutSceneSysInit(cutscene_locatorfns);
@@ -798,6 +826,7 @@ extern CHARACTERMODEL_s *dco_cmodel;
 
 static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTSCENE_s *cutscene,
                                    instNUGCUTCHAR_s *instance, NUGCUTCHAR_s *character, f32 frame, i32 paused) {
+    i32 visible;
     i32 layer_mask = -1;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
     CUTSYS *cutscene_system = world->cutscene_sys;
@@ -837,8 +866,8 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
     const i32 character_id = model->model_id;
     CHARACTERDATA *character_data = &apicharsys->char_data[character_id];
     GAMECHARACTERDATA *game_data = static_cast<GAMECHARACTERDATA *>(character_data->field11_0x24);
-    NUMTX world_matrix;
-    i32 visible;
+    // Retail realigns this frame with `and esp, -32` for the world matrix.
+    NUMTX_ALIGNED32 world_matrix;
     u32 animation_index;
     f32 animation_rate;
     f32 blend_time;
@@ -1221,7 +1250,7 @@ static void CutScene_EvalCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
         object = static_cast<GameObject_s *>(instance->character_model);
     }
     i32 visible;
-    NUMTX matrix;
+    NUMTX_ALIGNED32 matrix;
     NuGCutCharAnimProcess(character, frame, &matrix, &visible, NULL, NULL, NULL, NULL, NULL);
     if (static_cast<i8>(cutscene_instance->flags_88) < 0) {
         NuMtxMul(&matrix, &matrix, &cutscene_instance->matrix);
@@ -1237,8 +1266,8 @@ static void CutScene_FindCharacters(NUGCUTSCENE_s *cutscene) {
     for (i32 i = 0; i < system->character_count; ++i) {
         NUGCUTCHAR_s *character = &system->characters[i];
         CUTSYS *cutscene_system = CS_cutsys;
-        NUGCUTLOCATORSYS_s *locator_system = cutscene->locator_system;
         character->flags |= 2;
+        NUGCUTLOCATORSYS_s *locator_system = cutscene->locator_system;
         char *name = character->name;
 
         i32 model_index;
@@ -1257,12 +1286,12 @@ static void CutScene_FindCharacters(NUGCUTSCENE_s *cutscene) {
         character->character_model = NULL;
 
     resolve_locators:
-        if (character->has_locator == 0 || reinterpret_cast<isize>(character->locator) > 0xfe) {
-            character->locator_index = 0xff;
-        } else {
+        if (character->has_locator != 0 && reinterpret_cast<isize>(character->locator) <= 0xfe) {
             isize locator_index = reinterpret_cast<isize>(character->locator);
             character->locator_index = static_cast<u8>(reinterpret_cast<usize>(character->locator));
             character->locator = &locator_system->locators[locator_index];
+        } else {
+            character->locator_index = 0xff;
         }
     }
 }
@@ -1330,15 +1359,16 @@ static void CutScene_CreateCharacterInstance(NUGCUTCHAR_s *character, instNUGCUT
     }
 }
 
+// The loop re-reads the active cut through CutStopInfo after each SmartTextEx call.
+#define CUT_STOP static_cast<CUTINFO *>(CutStopInfo)
 void CutScene_DrawSubtitles() {
-    CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
-    if (cut == NULL || cut->subtitle_data == NULL || cut->subtitle_count == 0) {
+    if (CutStopInfo == NULL || CUT_STOP->subtitle_data == NULL) {
         return;
     }
 
-    CUTSCENESUBTITLE *subtitle = cut->subtitle_data;
-    for (i32 i = 0; i < cut->subtitle_count; ++i, ++subtitle) {
-        f32 frame = cut->field_58;
+    CUTSCENESUBTITLE *subtitle = CUT_STOP->subtitle_data;
+    for (i32 i = 0; i < CUT_STOP->subtitle_count; ++i, ++subtitle) {
+        f32 frame = CUT_STOP->field_58;
         if (frame >= subtitle->start_frame && subtitle->end_frame >= frame) {
             f32 alpha = 1.0f;
             if (subtitle->fade_time > 0.0f) {
@@ -1359,6 +1389,7 @@ void CutScene_DrawSubtitles() {
         }
     }
 }
+#undef CUT_STOP
 
 void CutScene_StoppedFn_LSW(CUTINFO *cut) {
     LOG_INFO("cutscene stopped cut=%p world=%p", (void *)cut, (void *)WORLD);
@@ -1569,15 +1600,14 @@ i32 CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *cut, NUGCUTCHAR_s *character) 
 
 CUTINFO *NewCutScene(CUTINFO *cut, CUTSYS *system, char *name, i32) {
     if (cut == NULL) {
-        if (name == NULL || system == NULL)
+        if (name != NULL && system != NULL)
+            cut = CutScene_Find(system, name);
+        if (cut == NULL)
             return NULL;
-        cut = CutScene_Find(system, name);
     }
-    if (cut != NULL) {
-        if (NewCutInfoCount < 8) {
-            NewCutInfo[NewCutInfoCount++] = cut;
-            return cut;
-        }
+    if (NewCutInfoCount < 8) {
+        NewCutInfo[NewCutInfoCount++] = cut;
+        return cut;
     }
     return NULL;
 }
@@ -1677,6 +1707,7 @@ NUGCUTSCENE_s *RelocateCutScene(NUGCUTSCENE_s *source, variptr_u *buffer) {
                 : NULL;
         if (cutscene->camera_system != NULL) {
             isize data_delta = cutscene->string_delta;
+            const i32 version = cutscene->version & 0xff;
             cutscene->camera_system =
                 reinterpret_cast<NUGCUTCAMERASYS_s *>(reinterpret_cast<isize>(cutscene->camera_system) + data_delta);
             NUGCUTCAMERASYS_s *system = cutscene->camera_system;
@@ -1684,7 +1715,7 @@ NUGCUTSCENE_s *RelocateCutScene(NUGCUTSCENE_s *source, variptr_u *buffer) {
                 system->cameras != NULL
                     ? reinterpret_cast<NUGCUTCAMERA_s *>(reinterpret_cast<isize>(system->cameras) + data_delta)
                     : NULL;
-            if (__builtin_expect(static_cast<u8>(cutscene->version) > 4, 1)) {
+            if (__builtin_expect(version > 4, 1)) {
                 if (system->focus_animation != NULL) {
                     system->focus_animation =
                         static_cast<nuanimdata2_s *>(NuAnimData2FixPtrs(system->focus_animation, delta, 1, 0));
@@ -1868,12 +1899,12 @@ void GoldBrick_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 activ
                 count = previous;
             } else {
                 const f32 end = stage->field_0x1c - 2.0f;
-                if (time >= end)
+                if (!(time < end))
                     blend = NuTrigTable[(static_cast<i32>((1.0f - (time - end)) * 16384.0f) >> 1) & 0x7fff];
-                if (time < (count - previous - 1) * 2.5f + 2.0f)
+                if (!(time < 2.0f) && time < (count - previous - 1) * 2.5f + 2.0f)
                     count = (previous + 1) + (time - 2.0f) / 2.5f;
             }
-            char text[268];
+            char text[256];
             sprintf(text, "%i/%i", count, GOLDBRICKPOINTS);
             SmartTextEx(text, 0.0f, blend * -0.99999994f + 1.3f, 1.0f, 1.5f, 1.5f, 1.5f, 0, 255, 255, 255, 1.7f, 1,
                         NULL, 0, static_cast<i32>(blend * 128.0f));

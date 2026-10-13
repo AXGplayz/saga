@@ -385,24 +385,22 @@ static void edptlcbApplyBounceFactor(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpp_nearest == -1) {
         return;
     }
-    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
-    if (particle->instance_id == -1) {
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
         return;
     }
-    particle->reflection_bounce = static_cast<edui_slider_s *>(item)->value;
-    debkeydata[particle->instance_id].reflection_scale = particle->reflection_bounce;
+    edpp_ptls[edpp_nearest].reflection_bounce = static_cast<edui_slider_s *>(item)->value;
+    debkeydata[edpp_ptls[edpp_nearest].instance_id].reflection_scale = edpp_ptls[edpp_nearest].reflection_bounce;
 }
 
 static void edptlcbApplyBounceOffset(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpp_nearest == -1) {
         return;
     }
-    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
-    if (particle->instance_id == -1) {
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
         return;
     }
-    particle->reflection_offset = static_cast<edui_slider_s *>(item)->value;
-    debkeydata[particle->instance_id].collision_plane = particle->reflection_offset;
+    edpp_ptls[edpp_nearest].reflection_offset = static_cast<edui_slider_s *>(item)->value;
+    debkeydata[edpp_ptls[edpp_nearest].instance_id].collision_plane = edpp_ptls[edpp_nearest].reflection_offset;
 }
 
 static void edptlcbCancelSoundIDMenu(eduimenu_s *, eduimenu_s *) {
@@ -575,37 +573,59 @@ static void cbPtlChangeZ(eduimenu_s *menu, eduiitem_s *item, u32) {
 }
 
 static void cbPtlColMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlcolmenu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, cbPtlCancelColMenu, "Particle Colour");
     if (ptlcolmenu == NULL)
         return;
 
     eduiMenuAddItem(ptlcolmenu, eduiItemGradPickCreate(0, colours, cbPtlApplyGrad, "Colour Grad"));
     grad_item = edui_last_item;
-    for (i32 index = 0; index < 8; ++index) {
-        const debris_colour_key_s &key = effect->colour_keys[index];
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_item), key.time,
-                            static_cast<u32>(key.red) / 255.0f, static_cast<u32>(key.green) / 255.0f,
-                            static_cast<u32>(key.blue) / 255.0f);
-        if (key.time == 1.0f)
-            break;
+#define COLOUR_STAGE(index)                                                                                            \
+    {                                                                                                                  \
+        const debris_colour_key_s &key = effect->colour_keys[index];                                                   \
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_item), key.time,                                  \
+                            static_cast<u32>(key.red) / 255.0f, static_cast<u32>(key.green) / 255.0f,                  \
+                            static_cast<u32>(key.blue) / 255.0f);                                                      \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
+            goto colour_stages_done;                                                                                   \
     }
+    COLOUR_STAGE(0)
+    COLOUR_STAGE(1)
+    COLOUR_STAGE(2)
+    COLOUR_STAGE(3)
+    COLOUR_STAGE(4)
+    COLOUR_STAGE(5)
+    COLOUR_STAGE(6)
+    COLOUR_STAGE(7)
+#undef COLOUR_STAGE
+colour_stages_done:
 
     char *alpha_label =
         effect->particle_type == 7 ? const_cast<char *>("Distortion Grad") : const_cast<char *>("Alpha Grad");
     eduiMenuAddItem(ptlcolmenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplyGrad, alpha_label));
     grad_alpha_item = edui_last_item;
-    for (i32 index = 0; index < 8; ++index) {
-        const debris_float_key_s &key = effect->alpha_keys[index];
-        const f32 alpha = key.value / 255.0f;
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_alpha_item), key.time, alpha, alpha, alpha);
-        if (key.time == 1.0f)
-            break;
+#define ALPHA_STAGE(index)                                                                                             \
+    {                                                                                                                  \
+        const debris_float_key_s &key = effect->alpha_keys[index];                                                     \
+        const f32 alpha = key.value / 255.0f;                                                                          \
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_alpha_item), key.time, alpha, alpha, alpha);      \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
+            goto alpha_stages_done;                                                                                    \
     }
+    ALPHA_STAGE(0)
+    ALPHA_STAGE(1)
+    ALPHA_STAGE(2)
+    ALPHA_STAGE(3)
+    ALPHA_STAGE(4)
+    ALPHA_STAGE(5)
+    ALPHA_STAGE(6)
+    ALPHA_STAGE(7)
+#undef ALPHA_STAGE
+alpha_stages_done:
 
     if (effect->particle_type == 7) {
         eduiMenuAddItem(ptlcolmenu, eduiItemSliderCreate(0, colours, 0, edptlcbChangeDistortX, 0.0f, 1.0f,
@@ -619,9 +639,9 @@ static void cbPtlColMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 }
 
 static void cbPtlJibMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
         ptljibmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelJibMenu, "Particle Jibber");
         if (ptljibmenu == NULL)
             return;
@@ -645,11 +665,11 @@ static void cbPtlJibMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 }
 
 static void cbPtlRotMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlrotmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelRotMenu, "Particle Rotation");
     if (ptlrotmenu == NULL)
         return;
@@ -664,7 +684,7 @@ static void cbPtlRotMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                               ? 1.0f                                                                                   \
                               : (rotation - effect->min_rotation) / (effect->max_rotation - effect->min_rotation);     \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_rot_item), key.time, value, value, value);        \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto rot_stages_done;                                                                                      \
     }
     ROT_STAGE(0)
@@ -749,11 +769,11 @@ static void cbPtlApplyRot(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlCollMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     collmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelCollMenu, "Collision Spheres");
     if (collmenu == NULL)
         return;
@@ -767,7 +787,7 @@ static void cbPtlCollMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         const f32 range = (effect->max_size - effect->min_size) / 10000.0f;                                            \
         const f32 value = effect->min_size == effect->max_size ? 1.0f : (key.value - minimum) / range;                 \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(coll_env_item), key.time, value, value, value);        \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto coll_stages_done;                                                                                     \
     }
     COLL_STAGE(0)
@@ -797,10 +817,40 @@ static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
     debinftype *effect = debtab[debkeydata[instance].effect_index];
     edui_gradient_pick_s *gradient;
     if (item->data == 1) {
-        memcpy(effect->height_keys, effect->width_keys, sizeof(effect->height_keys));
+        effect->height_keys[0].time = effect->width_keys[0].time;
+        effect->height_keys[0].value = effect->width_keys[0].value;
+        effect->height_keys[1].time = effect->width_keys[1].time;
+        effect->height_keys[1].value = effect->width_keys[1].value;
+        effect->height_keys[2].time = effect->width_keys[2].time;
+        effect->height_keys[2].value = effect->width_keys[2].value;
+        effect->height_keys[3].time = effect->width_keys[3].time;
+        effect->height_keys[3].value = effect->width_keys[3].value;
+        effect->height_keys[4].time = effect->width_keys[4].time;
+        effect->height_keys[4].value = effect->width_keys[4].value;
+        effect->height_keys[5].time = effect->width_keys[5].time;
+        effect->height_keys[5].value = effect->width_keys[5].value;
+        effect->height_keys[6].time = effect->width_keys[6].time;
+        effect->height_keys[6].value = effect->width_keys[6].value;
+        effect->height_keys[7].time = effect->width_keys[7].time;
+        effect->height_keys[7].value = effect->width_keys[7].value;
         gradient = static_cast<edui_gradient_pick_s *>(grad_size_h_item);
     } else {
-        memcpy(effect->width_keys, effect->height_keys, sizeof(effect->width_keys));
+        effect->width_keys[0].time = effect->height_keys[0].time;
+        effect->width_keys[0].value = effect->height_keys[0].value;
+        effect->width_keys[1].time = effect->height_keys[1].time;
+        effect->width_keys[1].value = effect->height_keys[1].value;
+        effect->width_keys[2].time = effect->height_keys[2].time;
+        effect->width_keys[2].value = effect->height_keys[2].value;
+        effect->width_keys[3].time = effect->height_keys[3].time;
+        effect->width_keys[3].value = effect->height_keys[3].value;
+        effect->width_keys[4].time = effect->height_keys[4].time;
+        effect->width_keys[4].value = effect->height_keys[4].value;
+        effect->width_keys[5].time = effect->height_keys[5].time;
+        effect->width_keys[5].value = effect->height_keys[5].value;
+        effect->width_keys[6].time = effect->height_keys[6].time;
+        effect->width_keys[6].value = effect->height_keys[6].value;
+        effect->width_keys[7].time = effect->height_keys[7].time;
+        effect->width_keys[7].value = effect->height_keys[7].value;
         gradient = static_cast<edui_gradient_pick_s *>(grad_size_w_item);
     }
     while (gradient->first_stage)
@@ -811,13 +861,13 @@ static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
         f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);          \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), effect->height_keys[i].time, grey,  \
                             grey, grey);                                                                               \
-        if (effect->height_keys[i].time == 1.0f)                                                                       \
+        if (__builtin_expect(effect->height_keys[i].time == 1.0f, 0))                                                  \
             goto copy_size_done;                                                                                       \
     } else {                                                                                                           \
         f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);           \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), effect->width_keys[i].time, grey,   \
                             grey, grey);                                                                               \
-        if (effect->width_keys[i].time == 1.0f)                                                                        \
+        if (__builtin_expect(effect->width_keys[i].time == 1.0f, 0))                                                   \
             goto copy_size_done;                                                                                       \
     }
     COPY_SIZE_STAGE(0)
@@ -867,26 +917,28 @@ static void cbPtlDataMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 }
 
 static void cbPtlEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    u32 disabled_colours[4] = {0x80303030, 0x80ff0000, 0x80808080, 0x80404040};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
-        const u32 disabled_colours[4] = {0x80303030, 0x80ff0000, 0x80808080, 0x80404040};
         ptlemitmenu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, cbPtlCancelEmitMenu, "Emitter Settings");
         if (ptlemitmenu != NULL) {
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlEmitVelMenu, "Emitter Vel..."));
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlGravMenu, "Gravity..."));
 
-            const u8 generator = effect->generator_type;
-            if ((generator & 0xf7) == 0 || generator == 9 || generator == 10) {
+            if ((effect->generator_type & 0xf7) == 0 || effect->generator_type == 9 || effect->generator_type == 10) {
                 eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlVarStartMenu, "Random Start..."));
-            } else if (generator == 6 || generator == 7 || generator == 11 || generator == 12) {
+            } else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                       effect->generator_type == 12) {
                 eduiMenuAddItem(ptlemitmenu,
                                 eduiItemSelCreate(1, colours, 0, 0, cbPtlVarStartMenu, "Base Emit Vector..."));
             }
-            if (generator == 0 || generator == 7 || generator == 11) {
-                char *label = generator == 0 ? const_cast<char *>("Start Velocity...")
-                                             : const_cast<char *>("Emit Point Velocity...");
-                eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlStartVelMenu, label));
+            if (effect->generator_type == 0) {
+                eduiMenuAddItem(ptlemitmenu,
+                                eduiItemSelCreate(1, colours, 0, 0, cbPtlStartVelMenu, "Start Velocity..."));
+            } else if (effect->generator_type == 7 || effect->generator_type == 11) {
+                eduiMenuAddItem(ptlemitmenu,
+                                eduiItemSelCreate(1, colours, 0, 0, cbPtlStartVelMenu, "Emit Point Velocity..."));
             }
 
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlVarEmitMenu, "Emitter Variation..."));
@@ -896,13 +948,18 @@ static void cbPtlEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlEmitTimeMenu, "Emitter Timing..."));
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlCutOffMenu, "Repeat / Radii..."));
 
-            const bool ghosts_enabled = generator == 0 || generator == 6 || generator == 7 || generator == 11;
-            eduiMenuAddItem(ptlemitmenu,
-                            eduiItemSelCreate(1, ghosts_enabled ? colours : disabled_colours, 0, 0,
-                                              ghosts_enabled ? edptlcbGhostMenu : NULL, "Particle Ghosts..."));
-            const bool star_enabled = generator == 12;
-            eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, star_enabled ? colours : disabled_colours, 0, 0,
-                                                           star_enabled ? edptlcbStarMenu : NULL, "Star Settings..."));
+            if (effect->generator_type == 0 || effect->generator_type == 6 || effect->generator_type == 7 ||
+                effect->generator_type == 8) {
+                eduiMenuAddItem(ptlemitmenu,
+                                eduiItemSelCreate(1, colours, 0, 0, edptlcbGhostMenu, "Particle Ghosts..."));
+            } else {
+                eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, disabled_colours, 0, 0, NULL, "Particle Ghosts..."));
+            }
+            if (effect->generator_type == 12) {
+                eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, edptlcbStarMenu, "Star Settings..."));
+            } else {
+                eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, disabled_colours, 0, 0, NULL, "Star Settings..."));
+            }
         }
         eduiMenuAttach(parent, ptlemitmenu);
         ptlemitmenu->x = parent->x + 10;
@@ -977,11 +1034,11 @@ static void cbPtlSelGSort(eduimenu_s *menu, eduiitem_s *item, u32) {
 }
 
 static void cbPtlSizeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlsizemenu = eduiMenuCreate(70, 70, 220, 300, ed_fnt, cbPtlCancelSizeMenu, "Particle Size");
     if (ptlsizemenu == NULL)
         return;
@@ -995,7 +1052,7 @@ static void cbPtlSizeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                               ? 1.0f                                                                                   \
                               : (key.value - effect->min_size) / (effect->max_size - effect->min_size);                \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), key.time, value, value, value);     \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto width_stages_done;                                                                                    \
     }
     WIDTH_STAGE(0)
@@ -1018,7 +1075,7 @@ width_stages_done:
                               ? 1.0f                                                                                   \
                               : (key.value - effect->min_size) / (effect->max_size - effect->min_size);                \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), key.time, value, value, value);     \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto height_stages_done;                                                                                   \
     }
     HEIGHT_STAGE(0)
@@ -1051,11 +1108,18 @@ height_stages_done:
 
 static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     i32 count = 0;
-    for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
-        debinftype *effect = debtab[index];
-        if (effect != NULL && effect->category == edpp_effect_list &&
-            (edpp_effect_list != 1 || effect->page == edbits_particle_level_page)) {
-            ++count;
+    if (edpp_effect_list == 1) {
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+            if (debtab[index] != NULL && debtab[index]->category == 1 &&
+                debtab[index]->page == edbits_particle_level_page) {
+                ++count;
+            }
+        }
+    } else {
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+            if (debtab[index] != NULL && debtab[index]->category == edpp_effect_list) {
+                ++count;
+            }
         }
     }
 
@@ -1068,24 +1132,28 @@ static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     bool found_selected = false;
     for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
         debinftype *effect = debtab[index];
-        if (effect == NULL || effect->category != edpp_effect_list ||
-            (edpp_effect_list == 1 && effect->page != edbits_particle_level_page)) {
+        if (effect == NULL)
+            continue;
+        if (edpp_effect_list == 1) {
+            if (effect->category != 1 || effect->page != edbits_particle_level_page)
+                continue;
+        } else if (effect->category != edpp_effect_list) {
             continue;
         }
 
         bool placed = false;
         for (const edpp_particle_s &particle : edpp_ptls) {
-            if (particle.instance_id != 99999 && particle.instance_id != -1 && particle.effect_index == index) {
+            if (particle.instance_id != -1 && particle.instance_id != 99999 && particle.effect_index == index) {
                 placed = true;
                 break;
             }
         }
-        eduiitem_s *item = eduiItemCheckCreate(index, placed ? edblack : eddarkred, index == edpp_create_type, 1,
-                                               cbPtlSelType, effect->name);
-        eduiMenuAddItem(ptltypemenu, item);
-        if (index == edpp_create_type) {
+        const i32 selected = index == edpp_create_type;
+        eduiMenuAddItem(ptltypemenu, eduiItemCheckCreate(index, placed ? edblack : eddarkred, selected, 1, cbPtlSelType,
+                                                         effect->name));
+        if (selected == 1) {
             found_selected = true;
-            ptltypemenu->selected = item;
+            ptltypemenu->selected = edui_last_item;
         }
     }
     eduiMenuSortItemsByTxt(ptltypemenu);
@@ -1103,31 +1171,28 @@ static void cbPtlAddEffect(eduimenu_s *menu, eduiitem_s *, u32) {
         return;
     }
 
-    i32 index = 1;
-    while (index < EDPP_MAX_TYPES && debtab[index] != NULL)
-        ++index;
-    if (index < EDPP_MAX_TYPES) {
-        debtab[index] = &effecttypes[index];
-        *debtab[index] = *debtab[0];
-        debtab[index]->status = 1;
-        sprintf(debtab[index]->name, "New%d", index);
-        debtab[index]->category = edpp_effect_list;
-        if (edpp_effect_list == 0) {
-            i32 page = edbits_particle_general_page;
-            debtab[index]->page = static_cast<u8>(page);
-            edpp_page_used[page] = 1;
-        } else if (edpp_effect_list == 5) {
-            i32 page = edbits_particle_char_page;
-            debtab[index]->page = static_cast<u8>(page);
-            edpp_page_used[page] = 1;
-        } else if (edpp_effect_list == 1) {
-            i32 page = edbits_particle_level_page;
-            debtab[index]->page = static_cast<u8>(page);
-            edpp_page_used[page] = 1;
+    for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+        if (debtab[index] == NULL) {
+            debtab[index] = &effecttypes[index];
+            memcpy(debtab[index], debtab[0], sizeof(debinftype));
+            debtab[index]->status = 1;
+            sprintf(debtab[index]->name, "New%d", index);
+            debtab[index]->category = edpp_effect_list;
+            if (edpp_effect_list == 0) {
+                debtab[index]->page = edbits_particle_general_page;
+                edpp_page_used[edbits_particle_general_page] = 1;
+            } else if (edpp_effect_list == 5) {
+                debtab[index]->page = edbits_particle_char_page;
+                edpp_page_used[edbits_particle_char_page] = 1;
+            } else if (edpp_effect_list == 1) {
+                debtab[index]->page = edbits_particle_level_page;
+                edpp_page_used[edbits_particle_level_page] = 1;
+            }
+            edpp_create_type = index;
+            ++edpp_types_used;
+            UpdateTotalPtls(debtab[index]);
+            break;
         }
-        edpp_create_type = index;
-        ++edpp_types_used;
-        UpdateTotalPtls(debtab[index]);
     }
     eduimenu_s *parent = menu->parent;
     if (parent != NULL)
@@ -1249,16 +1314,16 @@ static void cbPtlGSortMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 }
 
 static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *item, u32) {
-    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
-    particle->facing_mode = item->highlighted;
+    edpp_ptls[edpp_nearest].facing_mode = item->highlighted;
     if (item->highlighted) {
-        particle->facing_rotation_x = edpp_facrotx;
-        particle->facing_rotation_y = edpp_facroty;
-        DebrisSetFacing(particle->instance_id, 1, particle->facing_rotation_x, particle->facing_rotation_y);
+        edpp_ptls[edpp_nearest].facing_rotation_x = edpp_facrotx;
+        edpp_ptls[edpp_nearest].facing_rotation_y = edpp_facroty;
+        DebrisSetFacing(edpp_ptls[edpp_nearest].instance_id, 1, edpp_ptls[edpp_nearest].facing_rotation_x,
+                        edpp_ptls[edpp_nearest].facing_rotation_y);
     } else {
-        particle->facing_rotation_x = 0;
-        particle->facing_rotation_y = 0;
-        DebrisSetFacing(particle->instance_id, 0, 0, 0);
+        edpp_ptls[edpp_nearest].facing_rotation_x = 0;
+        edpp_ptls[edpp_nearest].facing_rotation_y = 0;
+        DebrisSetFacing(edpp_ptls[edpp_nearest].instance_id, 0, 0, 0);
     }
 }
 
@@ -1290,7 +1355,7 @@ static void cbPtlTorusMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         const debris_float_key_s &key = effect->torus_keys1[index];                                                    \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env1_item), key.time, key.value, key.value,      \
                             key.value);                                                                                \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto torus_major_stages_done;                                                                              \
     }
     TORUS_MAJOR_STAGE(0)
@@ -1312,7 +1377,7 @@ torus_major_stages_done:
         const debris_float_key_s &key = effect->torus_keys2[index];                                                    \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env2_item), key.time, key.value, key.value,      \
                             key.value);                                                                                \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto torus_minor1_stages_done;                                                                             \
     }
     TORUS_MINOR1_STAGE(0)
@@ -1334,7 +1399,7 @@ torus_minor1_stages_done:
         const debris_float_key_s &key = effect->torus_keys3[index];                                                    \
         eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env3_item), key.time, key.value, key.value,      \
                             key.value);                                                                                \
-        if (key.time == 1.0f)                                                                                          \
+        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
             goto torus_minor2_stages_done;                                                                             \
     }
     TORUS_MINOR2_STAGE(0)
@@ -1372,26 +1437,26 @@ static void cbPtlCopyEffect(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpp_create_type == -1) {
         eduiCreateMessageMenu(menu, "No particle to copy", 0);
     } else {
-        i32 index = 1;
-        while (index < EDPP_MAX_TYPES && debtab[index] != NULL)
-            ++index;
-        if (index < EDPP_MAX_TYPES) {
-            debinftype *effect = &effecttypes[index];
-            debtab[index] = effect;
-            *effect = *debtab[edpp_create_type];
-            effect->native_data = NULL;
-            effect->last_render_time = 0.0f;
-            const char *source_name = debtab[edpp_create_type]->name;
-            char short_name[32];
-            size_t name_length = strlen(source_name);
-            if (name_length > 12) {
-                memcpy(short_name, source_name, name_length + 1);
-                short_name[12] = '\0';
-                source_name = short_name;
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+            if (debtab[index] == NULL) {
+                debtab[index] = &effecttypes[index];
+                memcpy(debtab[index], debtab[edpp_create_type], sizeof(debinftype));
+                debtab[index]->native_data = NULL;
+                debtab[index]->last_render_time = 0.0f;
+                char *source_name = debtab[edpp_create_type]->name;
+                size_t name_length = strlen(source_name);
+                if (name_length <= 12) {
+                    sprintf(debtab[index]->name, "%s%03d", source_name, index);
+                } else {
+                    char short_name[16];
+                    memcpy(short_name, source_name, name_length + 1);
+                    short_name[12] = '\0';
+                    sprintf(debtab[index]->name, "%s%03d", short_name, index);
+                }
+                ++edpp_types_used;
+                edpp_create_type = index;
+                break;
             }
-            sprintf(effect->name, "%s%03d", source_name, index);
-            ++edpp_types_used;
-            edpp_create_type = index;
         }
         eduimenu_s *parent = menu->parent;
         if (parent != NULL)
@@ -1599,15 +1664,14 @@ static void cbPtlTextureMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 }
 
 static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
-    const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     ptlvaremitmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelVarEmitMenu, "Emitter Variation");
     if (ptlvaremitmenu != NULL) {
-        const u8 generator = effect->generator_type;
-        if ((generator & 0xf7) == 0 || generator == 9 || generator == 10) {
+        if ((effect->generator_type & 0xf7) == 0 || effect->generator_type == 9 || effect->generator_type == 10) {
             eduiMenuAddItem(ptlvaremitmenu,
                             eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
                                                  effect->field_04c, "Rand Emit X"));
@@ -1617,23 +1681,46 @@ static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
             eduiMenuAddItem(ptlvaremitmenu,
                             eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, 0.0f, 5.0f * edptl_superscale,
                                                  effect->field_054, "Rand Emit Z"));
-        } else if (generator == 6 || generator == 7 || generator == 11 || generator == 12) {
-            char *magnitude_label = generator == 7 ? const_cast<char *>("Rand Mag") : const_cast<char *>("Rand Mag X");
+        } else if (effect->generator_type == 11) {
             eduiMenuAddItem(ptlvaremitmenu,
                             eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
-                                                 effect->field_04c, magnitude_label));
+                                                 effect->field_04c, "Rand Mag X"));
             eduiMenuAddItem(ptlvaremitmenu,
-                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, generator == 7 ? -90.0f : 0.0f, 180.0f,
-                                                 effect->field_050 * (360.0f / 65536.0f),
-                                                 generator == 7 ? const_cast<char *>("Step Rot Y")
-                                                                : const_cast<char *>("Rand Rot Y")));
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, 0.0f, 180.0f,
+                                                 effect->field_050 * (360.0f / 65536.0f), "Rand Rot Y"));
             eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
             eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
             eduiMenuAddItem(ptlvaremitmenu,
-                            eduiItemSliderCreate(
-                                0, colours, 0, cbPtlChangeZ, generator == 7 ? -90.0f : 0.0f,
-                                generator == 11 ? 90.0f : 180.0f, effect->field_054 * (360.0f / 65536.0f),
-                                generator == 7 ? const_cast<char *>("Step Rot Z") : const_cast<char *>("Rand Rot Z")));
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, 0.0f, 90.0f,
+                                                 effect->field_054 * (360.0f / 65536.0f), "Rand Rot Z"));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        } else if (effect->generator_type == 6 || effect->generator_type == 12) {
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_04c, "Rand Mag X"));
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, 0.0f, 180.0f,
+                                                 effect->field_050 * (360.0f / 65536.0f), "Rand Rot Y"));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, 0.0f, 180.0f,
+                                                 effect->field_054 * (360.0f / 65536.0f), "Rand Rot Z"));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        } else if (effect->generator_type == 7) {
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_04c, "Rand Mag"));
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, -90.0f, 180.0f,
+                                                 effect->field_050 * (360.0f / 65536.0f), "Step Rot Y"));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, -90.0f, 180.0f,
+                                                 effect->field_054 * (360.0f / 65536.0f), "Step Rot Z"));
             eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
             eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
         }
@@ -1644,9 +1731,9 @@ static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 }
 
 static void cbChangeETimeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
         etimemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelChangeETimeMenu, "Particle Life");
         if (etimemenu == NULL)
             return;
@@ -1692,27 +1779,45 @@ static void cbChangeTorusRad2(eduimenu_s *, eduiitem_s *item, u32) {
 }
 
 static void cbFileLoadEffects(eduimenu_s *parent, eduiitem_s *, u32) {
+    char original_directory[64] = "";
     edppDestroyAllPages();
-    char original_directory[64] = {};
     if (edbits_datapath[0] != '\0') {
         NuFileGetCurrentDirectory(original_directory);
         NuFileSetCurrentDirectory(edbits_datapath);
     }
 
+    char path[256];
     char general_directory[256];
     char general_name[256];
     char general_extension[256];
     char level_directory[256];
     char level_name[256];
-    char level_extension[264];
-    strcpy(general_directory, edbits_general_save_directory[0] ? edbits_general_save_directory : ".");
-    strcpy(general_name, edbits_general_save_name[0] ? edbits_general_save_name : "particle");
-    strcpy(general_extension, edbits_general_save_extension[0] ? edbits_general_save_extension : "ptl");
-    strcpy(level_directory, edbits_level_save_directory[0] ? edbits_level_save_directory : ".");
-    strcpy(level_name, edbits_level_save_name[0] ? edbits_level_save_name : "particle");
-    strcpy(level_extension, edbits_level_save_extension[0] ? edbits_level_save_extension : "ptl");
+    char level_extension[256];
+    if (!edbits_general_save_directory[0])
+        strcpy(general_directory, ".");
+    else
+        strcpy(general_directory, edbits_general_save_directory);
+    if (!edbits_general_save_name[0])
+        strcpy(general_name, "particle");
+    else
+        strcpy(general_name, edbits_general_save_name);
+    if (!edbits_general_save_extension[0])
+        strcpy(general_extension, "ptl");
+    else
+        strcpy(general_extension, edbits_general_save_extension);
+    if (!edbits_level_save_directory[0])
+        strcpy(level_directory, ".");
+    else
+        strcpy(level_directory, edbits_level_save_directory);
+    if (!edbits_level_save_name[0])
+        strcpy(level_name, "particle");
+    else
+        strcpy(level_name, edbits_level_save_name);
+    if (!edbits_level_save_extension[0])
+        strcpy(level_extension, "ptl");
+    else
+        strcpy(level_extension, edbits_level_save_extension);
 
-    char path[256];
     sprintf(path, "%s\\%s.%s", general_directory, general_name, general_extension);
     if (NuFileExists(path))
         edppLoadPage(path, 0, 0);
@@ -1724,7 +1829,7 @@ static void cbFileLoadEffects(eduimenu_s *parent, eduiitem_s *, u32) {
         edppLoadPage(path, 1, reinterpret_cast<usize>(edbits_base_scene));
     edppRestartAllEffectsInLevel();
 
-    const u32 colours[4] = {0x8000c000, 0x80ff0000, 0x80808080, 0x80404040};
+    u32 colours[4] = {0x8000c000, 0x80ff0000, 0x80808080, 0x80404040};
     messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
     if (messagemenu != NULL) {
         eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Loaded OK"));
@@ -1786,11 +1891,11 @@ static void cbPtlDeleteEffect(eduimenu_s *menu, eduiitem_s *, u32) {
 }
 
 static void cbPtlEmitTimeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     emittimemenu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, cbPtlCancelEmitTimeMenu, "Emitter Timing");
     if (emittimemenu == NULL)
         return;
@@ -1922,9 +2027,9 @@ static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *item, u32) {
 }
 
 static void cbChangeGenRateMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
-        const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
         changegenratemenu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, cbCancelChangeGenRateMenu, "Particles per Second");
         if (changegenratemenu == NULL)
             return;
@@ -2070,20 +2175,14 @@ static void cbPtlSelTextureType(eduimenu_s *menu, eduiitem_s *item, u32) {
         debinftype *effect = debtab[type];
         i8 old_type = static_cast<i8>(effect->particle_type);
         if (old_type != item->data) {
-            switch (item->data) {
-                case 0:
-                    edpp_ptls[edpp_nearest].render_priority = 20000;
-                    break;
-                case 2:
-                    edpp_ptls[edpp_nearest].render_priority = static_cast<i16>(40000);
-                    break;
-                case 3:
-                    edpp_ptls[edpp_nearest].render_priority = 30000;
-                    break;
-                case 7:
-                    edpp_ptls[edpp_nearest].render_priority = 10000;
-                    break;
-            }
+            if (item->data == 2)
+                edpp_ptls[edpp_nearest].render_priority = static_cast<i16>(40000);
+            else if (item->data == 3)
+                edpp_ptls[edpp_nearest].render_priority = 30000;
+            else if (item->data == 0)
+                edpp_ptls[edpp_nearest].render_priority = 20000;
+            else if (item->data == 7)
+                edpp_ptls[edpp_nearest].render_priority = 10000;
         }
         if (item->data == 7) {
             effect->time_group = 2;
@@ -2100,31 +2199,32 @@ static void cbPtlSelTextureType(eduimenu_s *menu, eduiitem_s *item, u32) {
             effect->particle_type = static_cast<u8>(item->data);
             GenericDebinfoDmaTypeUpdate(effect);
             for (i32 index = 0; index < 512; ++index) {
-                edpp_particle_s *particle = &edpp_ptls[index];
-                if (particle->effect_index != type || particle->instance_id != 99999) {
+                if (edpp_ptls[index].effect_index != type || edpp_ptls[index].instance_id != 99999) {
                     continue;
                 }
-                particle->instance_id = -1;
-                AddDebrisEffect(&particle->instance_id, type, particle->position.x, particle->position.y,
-                                particle->position.z);
-                if (particle->instance_id == -1) {
-                    particle->instance_id = 99999;
+                edpp_ptls[index].instance_id = -1;
+                AddDebrisEffect(&edpp_ptls[index].instance_id, type, edpp_ptls[index].position.x,
+                                edpp_ptls[index].position.y, edpp_ptls[index].position.z);
+                if (edpp_ptls[index].instance_id == -1) {
+                    edpp_ptls[index].instance_id = 99999;
                     continue;
                 }
-                debkeydata[particle->instance_id].field_2f9 = 0;
-                DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
-                DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z,
-                                         particle->emitter_rotation_y, particle->emitter_rotation_x);
-                DebrisStartOffset(particle->instance_id, particle->start_offset);
-                DebrisSetTrigger(particle->instance_id, particle->switch_type, particle->switch_id,
-                                 particle->switch_variable);
-                DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z,
-                                            particle->reflection_rotation_y, particle->reflection_offset,
-                                            particle->reflection_bounce);
-                DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
-                                particle->facing_rotation_y);
-                DebrisSetGroupID(particle->instance_id, particle->render_group);
-                DebrisSetRoomID(particle->instance_id, reinterpret_cast<nugscn_s *>(edpp_page_scene[particle->page]));
+                debkeydata[edpp_ptls[index].instance_id].field_2f9 = 0;
+                DebrisOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].rotation_z,
+                                  edpp_ptls[index].rotation_y);
+                DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].emitter_rotation_z,
+                                         edpp_ptls[index].emitter_rotation_y, edpp_ptls[index].emitter_rotation_x);
+                DebrisStartOffset(edpp_ptls[index].instance_id, edpp_ptls[index].start_offset);
+                DebrisSetTrigger(edpp_ptls[index].instance_id, edpp_ptls[index].switch_type, edpp_ptls[index].switch_id,
+                                 edpp_ptls[index].switch_variable);
+                DebrisReflectionOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].reflection_rotation_z,
+                                            edpp_ptls[index].reflection_rotation_y, edpp_ptls[index].reflection_offset,
+                                            edpp_ptls[index].reflection_bounce);
+                DebrisSetFacing(edpp_ptls[index].instance_id, edpp_ptls[index].facing_mode,
+                                edpp_ptls[index].facing_rotation_x, edpp_ptls[index].facing_rotation_y);
+                DebrisSetGroupID(edpp_ptls[index].instance_id, edpp_ptls[index].render_group);
+                DebrisSetRoomID(edpp_ptls[index].instance_id,
+                                reinterpret_cast<nugscn_s *>(edpp_page_scene[edpp_ptls[index].page]));
             }
         } else {
             effect->particle_type = static_cast<u8>(item->data);

@@ -498,29 +498,30 @@ void MakeMenuPacket() {
 
 void MenuDrawExtras(MENU_s *menu) {
     char text[256];
+    char value[64];
     menu->draw_y = -updateextras_current_y * MENUDY * menu->item_scale;
     for (i32 cheat = 0; cheat < 44; ++cheat) {
         CHEAT &entry = Cheat[cheat];
-        const char *value;
         f32 alpha = 0.5f;
-        bool locked_power_brick = false;
+        bool locked = false;
 
         if (MenuCheatUnlocked(cheat)) {
-            value = TTab[Cheat_IsOn(cheat) != 0 ? tON : tOFF];
+            NuStrCpy(value, TTab[Cheat_IsOn(cheat) != 0 ? tON : tOFF]);
             if (BonusArea == 0 || Cheat_CheckFlags(cheat, 0x200000) == 0) {
                 alpha = 1.0f;
             }
-        } else if (cheat < 8 || entry.area == 0xff || Game.area_save[entry.area].field_0x5[1] != 0) {
-            value = TTab[tAVAILABLETOBUY];
+        } else if (cheat < 8 || static_cast<i8>(entry.area) == -1 ||
+                   Game.area_save[static_cast<i8>(entry.area)].field_0x5[1] != 0) {
+            NuStrCpy(value, TTab[tAVAILABLETOBUY]);
         } else {
-            snprintf(text, sizeof(text), "%s %i: %s", TTab[tPOWERBRICK], cheat - 7, TTab[tLOCKED]);
-            locked_power_brick = true;
+            NuStrCpy(text, TTab[tPOWERBRICK]);
+            sprintf(value, " %i: ", cheat - 7);
+            NuStrCat(text, value);
+            NuStrCat(text, TTab[tLOCKED]);
+            locked = true;
         }
-
-        if (!locked_power_brick) {
-            const i16 text_id = entry.text_id != NULL ? *entry.text_id : -1;
-            const char *name = text_id >= 0 && TTab[text_id] != NULL ? TTab[text_id] : entry.name;
-            snprintf(text, sizeof(text), "%s: %s", name != NULL ? name : "", value);
+        if (!locked) {
+            sprintf(text, "%s: %s", TTab[*entry.text_id], value);
         }
 
         dme_sy = menu->item_scale;
@@ -539,7 +540,7 @@ void MenuDrawExtras(MENU_s *menu) {
             dme_align = PauseMenus_Align;
             menu->draw_x = PauseMenus_X;
         }
-        DrawMenuEntryEx(menu, text, static_cast<u8>(static_cast<i32>(static_cast<f32>(MenuA) * alpha)));
+        DrawMenuEntryEx(menu, text, static_cast<u8>(static_cast<f32>(MenuA) * alpha));
     }
 }
 
@@ -912,7 +913,7 @@ void MenuUpdateLoading(MENU_s *) {
     if (memcard_loadneeded != 0) {
         memcard_loadmessage_delay = 1.0f;
         memcard_loadresult_delay = 1.0f;
-        if (memcard_cardchanged != 0 || saveload_autosave == -1) {
+        if (memcard_cardchanged != 0 || saveload_cardtype == -1) {
             memcard_loadneeded = 0;
             memcard_loadfailed = 1;
         }
@@ -946,7 +947,7 @@ void MenuUpdateSaving(MENU_s *) {
     if (memcard_saveneeded != 0) {
         memcard_savemessage_delay = 1.0f;
         memcard_saveresult_delay = 1.0f;
-        if (memcard_cardchanged != 0 || saveload_autosave == -1) {
+        if (memcard_cardchanged != 0 || saveload_cardtype == -1) {
             memcard_saveneeded = 0;
             memcard_savefailed = 1;
         }
@@ -961,14 +962,16 @@ void MenuUpdateSaving(MENU_s *) {
         return;
     }
 
-    if (memcard_savefailed == 0 && memcard_autosave != 0 && saveload_autosave != -1) {
+    if (memcard_savefailed == 0) {
+        if (memcard_autosave != 0 && saveload_autosave != -1) {
+            BackupMenuNoFn();
+            BackupMenuNoFn();
+            memcard_autosaveenabled = 1;
+            memcard_autosavedisabled = 0;
+            return;
+        }
         BackupMenuNoFn();
-        BackupMenuNoFn();
-        memcard_autosaveenabled = 1;
-        memcard_autosavedisabled = 0;
-        return;
     }
-    BackupMenuNoFn();
     BackupMenu();
 }
 
@@ -1107,8 +1110,11 @@ void MenuDrawInsertCard(MENU_s *) {
 
 void MenuDrawLoadCancel(MENU_s *menu) {
     NuStrCpy(MenuHeader, apitxt_LOADGAME);
-    MenuText3DEx(apitxt_DOYOUWANTTOABORTLOAD, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                 MENUNORMALR, MENUNORMALG, MENUNORMALB, MenuA);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
+    MenuSmartTextEx(apitxt_DOYOUWANTTOABORTLOAD, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_YES);
     DrawMenuEntry(menu, apitxt_NO);
@@ -1116,8 +1122,11 @@ void MenuDrawLoadCancel(MENU_s *menu) {
 
 void MenuDrawSaveCancel(MENU_s *menu) {
     NuStrCpy(MenuHeader, apitxt_SAVEGAME);
-    MenuText3DEx(apitxt_DOYOUWANTTOABORT, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                 MENUNORMALR, MENUNORMALG, MENUNORMALB, MenuA);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
+    MenuSmartTextEx(apitxt_DOYOUWANTTOABORT, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_YES);
     DrawMenuEntry(menu, apitxt_NO);
@@ -1904,24 +1913,50 @@ extern "C" {
             static_cast<i32>(static_cast<f32>(first) * amount + static_cast<f32>(second) * (1.0f - amount)));
     }
 
+    void MenuRememberCursor(MENU *menu) {
+        if (menu->menu == -1)
+            return;
+
+        if (MenuInfo[menu->menu].memory_x != -1)
+            MenuInfo[menu->menu].memory_x = menu->selected_column;
+        if (MenuInfo[menu->menu].memory_y != -1)
+            MenuInfo[menu->menu].memory_y = menu->selected_row;
+    }
+
+    // Both backup variants leave the current menu (calling its exit hook), reset
+    // the parent's cursor state, queue the "back" sound unless another sound
+    // is already pending, and restart the menu fade-in.
     void BackupMenu(void) {
         if (GameMenuLevel == 0) {
             return;
         }
 
         MENU *menu = &GameMenu[GameMenuLevel];
-        const i16 menu_index = menu->menu;
-        if (menu_index != -1 && MenuInfo[menu_index].exit_fn != NULL) {
-            MenuInfo[menu_index].exit_fn(menu);
+        if (MenuInfo[menu->menu].exit_fn != NULL) {
+            MenuInfo[menu->menu].exit_fn(menu);
         }
+        MenuRememberCursor(menu);
         menu->menu = -1;
+        menu->field_b4 = 0;
+        menu->field_b8 = 1;
+        menu->field_bc = 0;
 
         --GameMenuLevel;
-        menu = &GameMenu[GameMenuLevel];
-        menu->menu_time = 0.0f;
-        if (menu->menu != -1 && MenuInfo[menu->menu].enter_fn != NULL) {
-            MenuInfo[menu->menu].enter_fn(menu);
+        MENU *parent = &GameMenu[GameMenuLevel];
+        parent->field_b8 = 1;
+        parent->field_b4 = 1;
+        parent->field_b0 = 0;
+        parent->field_c0 = 0;
+        parent->menu_time = 0.0f;
+        if (parent->menu != -1 && MenuInfo[parent->menu].enter_fn != NULL) {
+            MenuInfo[parent->menu].enter_fn(parent);
         }
+        if (MenuSFX == -1) {
+            MenuSFX = MENUSFX_MENUBACK;
+        }
+        MenuAlpha = 0.0f;
+        MenuA = 0;
+        MenuValidated = 0;
     }
 
     void BackupMenuNoFn(void) {
@@ -1930,15 +1965,14 @@ extern "C" {
         }
 
         MENU *menu = &GameMenu[GameMenuLevel];
-        const i16 menu_index = menu->menu;
-        if (menu_index != -1 && MenuInfo[menu_index].exit_fn != NULL) {
-            MenuInfo[menu_index].exit_fn(menu);
+        if (MenuInfo[menu->menu].exit_fn != NULL) {
+            MenuInfo[menu->menu].exit_fn(menu);
         }
         MenuRememberCursor(menu);
-        menu->field_b8 = 1;
         menu->field_b4 = 0;
-        menu->field_bc = 0;
+        menu->field_b8 = 1;
         menu->menu = -1;
+        menu->field_bc = 0;
 
         --GameMenuLevel;
         MENU *parent = &GameMenu[GameMenuLevel];
@@ -1947,11 +1981,12 @@ extern "C" {
         parent->field_b4 = 1;
         parent->field_b0 = 0;
         parent->field_c0 = 0;
-        if (parent->menu != -1) {
-            MenuAlpha = 0.0f;
-            MenuA = 0;
-            MenuValidated = 0;
+        if (MenuSFX == -1) {
+            MenuSFX = MENUSFX_MENUBACK;
         }
+        MenuAlpha = 0.0f;
+        MenuA = 0;
+        MenuValidated = 0;
     }
 
     void DrawMenu(i32 paused) {
@@ -2005,9 +2040,8 @@ extern "C" {
         if (headerdrawfn != NULL)
             headerdrawfn();
         if (MenuAlpha >= 0.5f && g_enableButtonPrompts != 0) {
-            const MENUFNINFO &info = MenuInfo[menu->menu];
-            DrawMenuButtonPrompts(info.confirm_prompt, info.cancel_prompt, 1, MENUNORMALR, MENUNORMALG, MENUNORMALB,
-                                  static_cast<u8>(MenuA));
+            DrawMenuButtonPrompts(MenuInfo[menu->menu].confirm_prompt, MenuInfo[menu->menu].cancel_prompt, 1,
+                                  MENUNORMALR, MENUNORMALG, MENUNORMALB, static_cast<u8>(MenuA));
         }
 
         if (SmartTextFont != NULL) {
@@ -2275,32 +2309,19 @@ extern "C" {
         MENUSFX_MENUNOENTRY = no_entry;
     }
 
-    void MenuRememberCursor(MENU *menu) {
-        if (menu->menu == -1)
-            return;
-
-        MENUFNINFO &info = MenuInfo[menu->menu];
-        if (info.memory_x != -1)
-            info.memory_x = menu->selected_column;
-        if (info.memory_y != -1)
-            info.memory_y = menu->selected_row;
-    }
-
     void MenuRepeat(i32 *held, i32 *repeat, f32 *repeat_time, u8 *repeat_count, f32 interval, f32 elapsed) {
-        if (*held == 0) {
+        if (*held != 0) {
+            if (*repeat_time > 0.0f) {
+                *repeat_time -= elapsed;
+                if (*repeat_time <= 0.0f) {
+                    *repeat = 1;
+                    *repeat_time = interval;
+                    ++*repeat_count;
+                }
+            }
+        } else {
             *repeat_time = 0.5f;
             *repeat_count = 0;
-            return;
-        }
-
-        if (*repeat_time > 0.0f) {
-            *repeat_time -= elapsed;
-            if (*repeat_time > 0.0f)
-                return;
-
-            *repeat = 1;
-            *repeat_time = interval;
-            ++*repeat_count;
         }
     }
 

@@ -103,6 +103,15 @@ i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex) {
 
     return -1;
 }
+static bool Episode_HasArea(const EPISODEDATA *episode, i32 area_index) {
+    for (i32 i = 0; i < episode->area_count; i++) {
+        if (episode->area_ids[i] == area_index) {
+            return true;
+        }
+    }
+    return false;
+}
+
 EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 maxCount,
                                     i32 *countDest) {
     NUFPAR *fp = NuFParCreate(file);
@@ -113,118 +122,73 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
         return NULL;
     }
 
-    bool bVar3 = false;
     i32 count = 0;
-    EPISODEDATA *episodePtr = (EPISODEDATA *)ALIGN((usize)bufferStart->void_ptr, 4);
-    bufferStart->void_ptr = (void *)episodePtr;
-    EPISODEDATA *episode = episodePtr;
+    i32 in_episode = 0;
+    EPISODEDATA *list = (EPISODEDATA *)ALIGN((usize)bufferStart->void_ptr, 4);
+    bufferStart->void_ptr = (void *)list;
+    EPISODEDATA *episode = list;
 
     while (NuFParGetLine(fp)) {
-    get_word:
         NuFParGetWord(fp);
-        char *a = fp->word_buf;
-        if (*a == '\0') {
+        if (fp->word_buf[0] == '\0') {
             continue;
         }
 
-        if (!bVar3) {
-            if (NuStrICmp(a, "episode_start") == 0 && count < maxCount) {
-                episode->name_id = -1;
-                episode->text_id = -1;
-                episode->area_count = 0;
-                episode->index = (u8)count;
-                bVar3 = true;
-            }
-            continue;
-        }
-
-        if (NuStrICmp(a, "episode_end") == 0) {
-            bVar3 = false;
-            if (episode->area_count != 0) {
-                count++;
-                episode++;
-                if (NuFParGetLine(fp) == 0) {
-                    break;
+        if (in_episode) {
+            if (NuStrICmp(fp->word_buf, "episode_end") == 0) {
+                in_episode = 0;
+                if (episode->area_count != 0) {
+                    count++;
+                    episode++;
                 }
-                goto get_word;
-            }
-            continue;
-        }
-
-        if (NuStrICmp(a, "area") == 0) {
-            if (episode->area_count <= 9 && NuFParGetWord(fp) != 0) {
-                i32 areaIndex;
-                AREADATA *area = Area_FindByName(fp->word_buf, &areaIndex);
-                bVar3 = true;
-                if (areaIndex != -1) {
-                    u32 areaCount = episode->area_count;
-                    bool found = false;
-                    if (areaCount != 0) {
-                        if (episode->area_ids[0] == areaIndex) {
-                            found = true;
-                        } else {
-                            for (i32 k = 1; k < (i32)areaCount; k++) {
-                                if (episode->area_ids[k] == areaIndex) {
-                                    found = true;
-                                    break;
-                                }
-                            }
+            } else if (NuStrICmp(fp->word_buf, "area") == 0) {
+                if (episode->area_count < 10 && NuFParGetWord(fp) != 0) {
+                    i32 area_index;
+                    AREADATA *area = Area_FindByName(fp->word_buf, &area_index);
+                    if (area_index != -1) {
+                        if (Episode_HasArea(episode, area_index)) {
+                            continue;
                         }
-                    }
-                    if (!found) {
-                        for (i32 j = 0; j < count; j++) {
-                            EPISODEDATA *prev = &episodePtr[j];
-                            for (i32 byteOff = 0; byteOff < (i32)prev->area_count * 2; byteOff += 2) {
-                                if (*(i16 *)((u8 *)prev->area_ids + byteOff) != areaIndex) {
-                                    continue;
-                                }
-                                found = true;
-                                break;
-                            }
-                            if (found) {
+                        // An area may only belong to one episode.
+                        i32 j;
+                        for (j = 0; j < count; j++) {
+                            if (Episode_HasArea(&list[j], area_index)) {
                                 break;
                             }
                         }
-                    }
-                    if (!found) {
-                        episode->area_ids[areaCount] = (i16)areaIndex;
-                        episode->area_count = (u8)(areaCount + 1);
-                        if ((area->flags & (AREAFLAG_ENDING_AREA | AREAFLAG_BONUS_AREA)) == 0) {
-                            episode->regular_areas += 1;
+                        if (j == count) {
+                            const i32 area_count = episode->area_count;
+                            episode->area_ids[area_count] = (i16)area_index;
+                            episode->area_count = (u8)(area_count + 1);
+                            if ((area->flags & (AREAFLAG_ENDING_AREA | AREAFLAG_BONUS_AREA)) == 0) {
+                                episode->regular_areas++;
+                            }
                         }
                     }
                 }
-            } else {
-                bVar3 = true;
+            } else if (NuStrICmp(fp->word_buf, "name_id") == 0) {
+                episode->name_id = (i16)NuFParGetInt(fp);
+            } else if (NuStrICmp(fp->word_buf, "text_id") == 0) {
+                episode->text_id = (i16)NuFParGetInt(fp);
             }
-            continue;
+        } else if (NuStrICmp(fp->word_buf, "episode_start") == 0 && count < maxCount) {
+            episode->name_id = -1;
+            episode->text_id = -1;
+            episode->area_count = 0;
+            episode->index = (u8)count;
+            in_episode = 1;
         }
-
-        if (NuStrICmp(a, "name_id") == 0) {
-            episode->name_id = (i16)NuFParGetInt(fp);
-            bVar3 = true;
-            continue;
-        }
-
-        if (NuStrICmp(a, "text_id") == 0) {
-            bVar3 = true;
-            episode->text_id = (i16)NuFParGetInt(fp);
-            continue;
-        }
-
-        bVar3 = true;
-        continue;
     }
 
     NuFParDestroy(fp);
-    if (count != 0) {
-        bufferStart->void_ptr = (void *)episode;
-        if (countDest != NULL) {
-            *countDest = count;
-        }
-        return episodePtr;
+    if (count == 0) {
+        return NULL;
     }
-    return NULL;
+    bufferStart->void_ptr = (void *)episode;
+    if (countDest != NULL) {
+        *countDest = count;
+    }
+    return list;
 }
 
 #include "decomp.h"
@@ -486,7 +450,7 @@ static void GenerateTrooperTeamShape(minitrooperteam_s *team, i32 initialize_rot
     NUVEC position;
     minisnowtrooper_s *trooper = team->troopers;
 
-    switch (team->formation_state & 0xf) {
+    switch (team->formation_shape) {
         case 0: {
             width.x = team->formation_width;
             width.z = 0.0f;
@@ -564,46 +528,47 @@ static void GenerateTrooperTeamShape(minitrooperteam_s *team, i32 initialize_rot
 }
 
 static void TrooperTeamSetStateCode(minitrooperteam_s *team) {
-    team->route_state = (team->route_state & 0x1f) | ((team->waypoint_state >> 3) << 5);
+    team->route_index = team->waypoint_index;
+    team->waypoint_index = qrand() / (0xffff / team->waypoint_count + 1);
 
-    const i32 waypoint_count = (*reinterpret_cast<u16 *>(&team->waypoint_state) >> 6) & 7;
-    const i32 waypoint = qrand() / (0xffff / waypoint_count + 1);
-    team->waypoint_state = (team->waypoint_state & 0xc7) | ((waypoint & 7) << 3);
-
-    team->route_point = &team->path->pts[team->route_state >> 5];
-    team->formation_state = (team->formation_state & 0xf) | ((qrand() / 0x4000) << 4);
+    team->route_point = &team->path->pts[team->route_index];
+    team->formation_mode = qrand() / 0x4000;
     team->state_timer = static_cast<f32>(qrand()) * (4.0f / 65536.0f) + 1.0f;
 
-    const NUVEC &destination = team->path->pts[(team->waypoint_state >> 3) & 7];
-    const NUVEC &origin = team->path->pts[team->route_state >> 5];
+    const NUVEC &destination = team->path->pts[team->waypoint_index];
+    const NUVEC &origin = team->path->pts[team->route_index];
     team->facing_angle = NuAtan2D(destination.x - origin.x, destination.z - origin.z);
 
     if (droid_hack == 0) {
-        if ((team->formation_state & 0xf0) == 0x10)
+        if (team->formation_mode == 1)
             team->formation_state = 0x11;
         else
-            team->formation_state = (team->formation_state & 0xf0) | (qrand() / (0xffff / 3 + 1) & 0xf);
+            team->formation_shape = qrand() / (0xffff / 3 + 1);
     } else {
-        team->formation_state = (team->formation_state & 0xf0) | 4;
+        team->formation_shape = 4;
     }
 
     GenerateTrooperTeamShape(team, 0);
-    for (i32 i = 0; i < team->trooper_count; ++i) {
-        minisnowtrooper_s &trooper = team->troopers[i];
-        trooper.state_flags &= ~0x40;
+    minisnowtrooper_s *trooper = team->troopers;
+    for (i32 i = 0; i < team->trooper_count; ++i, ++trooper) {
+        trooper->state_flags &= ~0x40;
         if (droid_hack != 0) {
-            trooper.state_flags = (trooper.state_flags & 0x8f) | 0x20;
+            trooper->state_flags = (trooper->state_flags & 0x8f) | 0x20;
         } else {
-            trooper.state_flags = (trooper.state_flags & 0xcf) | (((qrand() / (0xffff / 3 + 1) + 1) & 3) << 4);
+            const i32 slot = qrand() / (0xffff / 3 + 1) + 1;
+            trooper->state_flags = (trooper->state_flags & 0xcf) | ((slot & 3) << 4);
         }
-        trooper.formation_index = static_cast<u8>(i);
+        trooper->formation_index = static_cast<u8>(i);
     }
     team->route_state |= 0x10;
 }
 
 i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s *trooper, u16 *shot_angle,
                  i32 team_index) {
-    NUVEC shot_position = trooper->shot_position;
+    NUVEC shot_position;
+    shot_position.x = trooper->shot_position.x;
+    shot_position.y = trooper->shot_position.y;
+    shot_position.z = trooper->shot_position.z;
     NUVEC direction;
 
     if (droid_hack != 0) {
@@ -630,8 +595,7 @@ i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s 
 
         for (i32 i = 0; i < trooperteamcount; ++i) {
             minitrooperteam_s *candidate = &teams[i];
-            if (i == team_index || (candidate->state_flags & 1) == 0 ||
-                ((team->team_flags ^ candidate->team_flags) & 2) == 0)
+            if (i == team_index || (candidate->state_flags & 1) == 0 || team->team_side == candidate->team_side)
                 continue;
 
             const f32 x = candidate->position.x - team->position.x;
@@ -708,10 +672,7 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
 
     for (i32 i = 0; i < team_count; ++i) {
         minitrooperteam_s *team = &static_cast<minitrooperteam_s *>(world->mini_trooper_teams)[i];
-        u16 waypoint_data;
-        memcpy(&waypoint_data, &team->waypoint_state, sizeof(waypoint_data));
-        waypoint_data &= 0xfe3f;
-        memcpy(&team->waypoint_state, &waypoint_data, sizeof(waypoint_data));
+        team->waypoint_count = 0;
     }
 
     for (i32 team_index = 0; team_index < trooperteamcount; ++team_index) {
@@ -720,7 +681,7 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
         team->trooper_count = static_cast<u8>(trooper_count);
 
         const u8 side = trooper_side[team_index] & 1;
-        team->team_flags = (team->team_flags & ~2) | (side << 1);
+        team->team_side = side;
         team->bolt_type = trooper_boltid[side];
         team->debris_timer = static_cast<f32>(qrand()) * (10.0f / 65535.0f) + 4.0f;
 
@@ -733,11 +694,8 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
         }
 
         const u32 state_flags = team->state_flags;
-        u16 waypoint_data;
-        memcpy(&waypoint_data, &team->waypoint_state, sizeof(waypoint_data));
-        waypoint_data = (waypoint_data & 0xfe3f) | ((static_cast<u8>(team->path->length) & 7) << 6);
-        memcpy(&team->waypoint_state, &waypoint_data, sizeof(waypoint_data));
-        team->route_state = (team->route_state & 0x1f) | ((team_index % 5) << 5);
+        team->waypoint_count = team->path->length;
+        team->route_index = team_index % 5;
         team->route_point = &team->path->pts[0];
         team->state_flags = state_flags | 5;
         team->origin_x = team->route_point->x;
@@ -749,18 +707,18 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
             NUVEC direction;
             NuVecSub(&direction, &team->path->pts[0], &team->path->pts[1]);
             team->facing_angle = NuAtan2D(direction.x, direction.z);
-            team->formation_state = (team->formation_state & 0xf0) | 1;
+            team->formation_shape = 1;
         } else {
             team->facing_angle = static_cast<u16>(qrand());
-            team->formation_state = (team->formation_state & 0xf0) | (qrand() / (0xffff / 3 + 1) & 0xf);
+            team->formation_shape = qrand() / (0xffff / 3 + 1);
         }
 
         GenerateTrooperTeamShape(team, 1);
-        if ((team->formation_state & 0xf) == 1) {
-            team->formation_state &= 0xf;
+        if (team->formation_shape == 1) {
+            team->formation_mode = 0;
             team->state_timer = static_cast<f32>(qrand()) * (10.0f / 65535.0f);
         }
-        team->formation_state = (team->formation_state & 0xf) | 0x30;
+        team->formation_mode = 3;
 
         shadow_position.x = team->route_point->x;
         shadow_position.z = team->route_point->z;
@@ -784,7 +742,7 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
             team->troopers[i].speed_divisor = 6;
             troopers = team->troopers;
             minisnowtrooper_s *trooper = &troopers[i];
-            if ((team->formation_state & 0xf) == 1) {
+            if (team->formation_shape == 1) {
                 trooper->timer = 0.0f;
             } else {
                 trooper->timer = static_cast<f32>(i) * (1.0f / static_cast<f32>(static_cast<i32>(team->trooper_count)));
@@ -985,7 +943,7 @@ static inline void MiniTrooperMove(minisnowtrooper_s *trooper) {
     trooper->shot_position.x += movement.x;
     trooper->shot_position.z += movement.z;
 
-    if (trooper->timer >= 1.0f / static_cast<f32>(trooper->speed_divisor)) {
+    if (trooper->timer >= 1.0f / static_cast<f32>(static_cast<i32>(trooper->speed_divisor))) {
         trooper->timer = 0.0f;
         trooper->state_flags = (trooper->state_flags & ~0xc) | ((((trooper->state_flags >> 2) + 1) << 2) & 0xc);
     }
@@ -1125,13 +1083,13 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
             case 1: {
                 const i32 selected = MiniTrooperRandomIndex(team);
                 i32 shot = 0;
-                if ((team->route_state & 0x10) != 0) {
-                    team->route_state &= ~0x10;
+                if (team->mode_changed) {
+                    team->mode_changed = 0;
                     if (team->path != NULL) {
-                        team->waypoint_state = (team->waypoint_state & 0xf8) | ((team->waypoint_state >> 3) & 7);
-                        const NUVEC &point = team->path->pts[team->waypoint_state & 7];
+                        team->waypoint_current = team->waypoint_index;
+                        const NUVEC &point = team->path->pts[team->waypoint_current];
                         team->facing_angle = NuAtan2D(point.x - team->origin_x, point.z - team->origin_z);
-                        team->formation_state = (team->formation_state & 0xf0) | (droid_hack != 0 ? 4 : 1);
+                        team->formation_shape = droid_hack != 0 ? 4 : 1;
                         GenerateTrooperTeamShape(team, 0);
                         trooper = team->troopers;
                         for (i32 i = 0; i < team->trooper_count; ++i, ++trooper)
@@ -1237,7 +1195,7 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
             }
         }
 
-        const f32 count = static_cast<f32>(team->trooper_count);
+        const f32 count = static_cast<f32>(static_cast<i32>(team->trooper_count));
         team->position.x = total.x / count;
         team->position.y = total.y;
         team->position.z = total.z / count;
@@ -1263,7 +1221,7 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
             }
         }
 
-        team->route_state = (team->route_state & 0xf0) | (team->formation_state >> 4);
+        team->previous_mode = team->formation_mode;
     }
 }
 
@@ -1316,7 +1274,7 @@ void DrawMiniSnowTroopers(WORLDINFO_s *world) {
             }
             team->height += ground;
 
-            const i32 frame = TrooperStepFrames[(trooper->state_flags >> 2) & 3];
+            const i32 frame = TrooperStepFrames[trooper->step_frame];
             const u16 draw_rotation = static_cast<u16>(trooper->rotation + 0x8000);
             NUMTX *matrix = next[frame];
             const f32 cosine = NU_COS_LUT(draw_rotation);
@@ -1325,18 +1283,18 @@ void DrawMiniSnowTroopers(WORLDINFO_s *world) {
                               sine,   0.0f, cosine, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
             *matrix = rotation;
 
-            const f32 step_time = 1.0f / static_cast<f32>(trooper->speed_divisor);
+            const u16 frame_phase = static_cast<u16>(static_cast<u8>(trooper->state_flags >> 2) << 14);
+            const f32 step_time = 1.0f / static_cast<f32>(static_cast<i32>(trooper->speed_divisor));
             const f32 step =
                 1.0f -
                 (NU_SIN_LUT(static_cast<i32>(trooper->timer * (1.0f / step_time) * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
-            const u16 frame_phase = static_cast<u16>((trooper->state_flags >> 2) << 14);
-            const i32 phase = static_cast<i32>(static_cast<f32>(frame_phase) + step * 16384.0f);
-            position.y = ground + fabsf(NU_SIN_LUT(phase)) * 0.04f;
+            const u16 phase = static_cast<i32>(static_cast<f32>(static_cast<i32>(frame_phase)) + step * 16384.0f);
+            position.y = ground + fabsf(NuTrigTable[static_cast<u16>(phase / 2)]) * 0.04f;
             NuMtxTranslate(matrix, &position);
 
             next[frame] = matrix + 1;
             ++counts[frame];
-            if ((team->team_flags & 2) == 0) {
+            if (!team->team_side) {
                 ++first_side_counts[frame];
             }
         }
@@ -1344,11 +1302,12 @@ void DrawMiniSnowTroopers(WORLDINFO_s *world) {
         team->height /= static_cast<f32>(static_cast<i32>(team->trooper_count));
     }
 
+    NUMTX *second_side[3];
     for (i32 frame = 0; frame < 3; ++frame) {
         NuSpecialBurstDrawAt(&hothtroopers[frame], first_side_counts[frame], matrices[frame], 1);
+        second_side[frame] = matrices[frame] + first_side_counts[frame];
     }
     for (i32 frame = 0; frame < 3; ++frame) {
-        NuSpecialBurstDrawAt(&hothtroopers[frame + 3], counts[frame] - first_side_counts[frame],
-                             matrices[frame] + first_side_counts[frame], 1);
+        NuSpecialBurstDrawAt(&hothtroopers[frame + 3], counts[frame] - first_side_counts[frame], second_side[frame], 1);
     }
 }

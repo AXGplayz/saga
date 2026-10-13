@@ -268,12 +268,12 @@ void Players_InitPositions(WORLDINFO *world) {
     if (A != NULL) {
         NUVEC tmp;
         i32 n = ninit;
-        auto A_count = A->count;
         for (i32 i = 0; i < 8; i++) {
-            PlayerStart[i].pos = (NUVEC *)&A->positions[6 * n];
-            NuVecSub(&tmp, (NUVEC *)&A->positions[3 * (2 * n + 1)], (NUVEC *)&A->positions[6 * n]);
+            const i32 m = n * 2;
+            PlayerStart[i].pos = (NUVEC *)&A->positions[m * 3];
+            NuVecSub(&tmp, (NUVEC *)&A->positions[m * 3 + 3], PlayerStart[i].pos);
             PlayerStart[i].angle = NuAtan2D(tmp.x, tmp.z);
-            if (2 * n + 4 > A_count)
+            if (n * 2 + 4 > A->count)
                 n = ninit;
             else
                 n = n + 1;
@@ -361,10 +361,9 @@ void Players_InitPositions(WORLDINFO *world) {
     }
     Door_ExitCameraSplineName[0] = 0;
 
-    auto world_sock_sys = world->sock_sys;
     for (i32 i = 0; i < 8; i++) {
         SOCKPOSITION sp;
-        ComplexSockPosition(world_sock_sys, PlayerStart[i].pos, -1, -1, &sp);
+        ComplexSockPosition(world->sock_sys, PlayerStart[i].pos, -1, -1, &sp);
         PlayerStart[i].sock_location = sp.location;
         PlayerStart[i].sock_ratio = sp.ratio;
     }
@@ -457,8 +456,8 @@ void PreResetCode(GameObject_s *obj) {
         obj->field_0xe22 &= 0xf7;
         obj->weapon_trail_offset.x = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
         obj->weapon_trail_offset.y = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
-        obj->field_0xe20 &= 0xfb;
         obj->weapon_trail_offset.z = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
+        obj->field_0xe20 &= 0xfb;
         obj->incoming_bolt = NULL;
         obj->incoming_melee = NULL;
         obj->incoming_special = NULL;
@@ -532,38 +531,32 @@ void PreResetCode(GameObject_s *obj) {
 
                 {
                     f32 t1 = obj->contact_normal.y;
-                    if (t1 <= NuTrigTable[0x4000]) {
+                    if (!(t1 > NuTrigTable[0x4000])) {
                         goto finish_dfd;
                     }
                     f32 t2 = NuTrigTable[0x3000];
-                    if (t2 <= t1) {
+                    if (!(t2 > t1)) {
                         goto finish_dfd;
                     }
                     t1 = obj->apiobj.field_0x1e0 / sPreResetDivF;
                     f32 diff = obj->apiobj.collision_min.y - obj->apiobj.field_0x218;
                     t1 *= sPreResetMulG;
-                    if (diff <= t1) {
+                    if (!(diff > t1)) {
                         goto finish_dfd;
                     }
-                    if (f28v <= 0.0f) {
-                        NUVEC_ALIGNED16 dir;
+                    NUVEC_ALIGNED16 dir;
+                    if (!(f28v > 0.0f)) {
                         dir.x = obj->apiobj.velocity.x;
                         dir.y = 0.0f;
                         dir.z = obj->apiobj.velocity.z;
                         NuVecNorm(&dir, &dir);
-                        if ((obj->contact_position.x - obj->apiobj.position.x) * dir.x +
-                                (obj->contact_position.z - obj->apiobj.position.z) * dir.z <=
-                            0.0f) {
-                            goto finish_dfd;
-                        }
                     } else {
-                        NUVEC_ALIGNED16 dir;
                         NuVecRotateY(&dir, &v001, obj->apiobj.movement_facing_angle);
-                        if ((obj->contact_position.x - obj->apiobj.position.x) * dir.x +
-                                (obj->contact_position.z - obj->apiobj.position.z) * dir.z <=
-                            0.0f) {
-                            goto finish_dfd;
-                        }
+                    }
+                    if (!((obj->contact_position.x - obj->apiobj.position.x) * dir.x +
+                              (obj->contact_position.z - obj->apiobj.position.z) * dir.z >
+                          0.0f)) {
+                        goto finish_dfd;
                     }
                     obj->fall_acceleration_timer = 0.1f;
                 }
@@ -582,9 +575,7 @@ void PreResetCode(GameObject_s *obj) {
             {
                 u8 v = obj->apiobj.character_data->player_config->variant;
                 if (v != 0xff) {
-                    if (static_cast<u8>(obj->apiobj.field_0x27c) == 0xff) {
-                        obj->blade_index = v;
-                    } else {
+                    if (static_cast<u8>(obj->apiobj.field_0x27c) != 0xff) {
                         if (Cheat_IsOn(0x19) != 0) {
                             obj->blade_index = 0x00;
                         } else if (static_cast<u8>(obj->apiobj.field_0x27c) != 0xff &&
@@ -593,18 +584,18 @@ void PreResetCode(GameObject_s *obj) {
                         } else {
                             obj->blade_index = obj->apiobj.character_data->player_config->variant;
                         }
+                    } else {
+                        obj->blade_index = v;
                     }
                 } else {
                     obj->blade_index = 0xff;
                 }
 
                 {
-                    u32 mask = GAMEPAD_ACTION;
-                    f32 xmm0 = obj->hold_timer;
-                    if ((obj->pad_gamepad->buttons_held & mask) != 0) {
-                        obj->hold_timer = xmm0 + FRAMETIME;
+                    if ((obj->pad_gamepad->buttons_held & GAMEPAD_ACTION) != 0) {
+                        obj->hold_timer += FRAMETIME;
                     } else {
-                        if (xmm0 > 0.0f && sPreResetD18Scale > xmm0) {
+                        if (obj->hold_timer > 0.0f && sPreResetD18Scale > obj->hold_timer) {
                             obj->field_0xe24 |= 0x40;
                         }
                         obj->hold_timer = 0.0f;
@@ -646,18 +637,16 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
     if (VehicleArea != 0 || GAMEDEMO != 0) {
         return;
     }
-    if (a == 0) {
-        if ((WORLD->current_level->flags & 0x4e2) != 2) {
-            return;
+    if (a == 0 && (WORLD->current_level->flags & 0x4e2) != 2) {
+        return;
+    }
+    const i32 ids[2] = {b, c};
+    for (i32 i = 0; i < 2; ++i) {
+        const i32 id = ids[i];
+        if (id != -1 && (CDataList[id].model_flags & 0x2000) == 0 && PlayerID[i] != id && Collection_Got(id) == 1 &&
+            GCDataList[id].field275_0x116 != 0 && PlayerID[1 - i] != id) {
+            PlayerID[i] = id;
         }
-    }
-    if (b != -1 && (CDataList[b].model_flags & 0x2000) == 0 && PlayerID[0] != b && Collection_Got(b) == 1 &&
-        GCDataList[b].field275_0x116 != 0 && PlayerID[1] != b) {
-        PlayerID[0] = b;
-    }
-    if (c != -1 && (CDataList[c].model_flags & 0x2000) == 0 && PlayerID[1] != c && Collection_Got(c) == 1 &&
-        GCDataList[c].field275_0x116 != 0 && PlayerID[0] != c) {
-        PlayerID[1] = c;
     }
     if (b != c && PlayerID[1] == b && PlayerID[0] == c) {
         PlayerID[0] = b;
@@ -677,7 +666,7 @@ void *CutScenePlayer_Available(void) {
 void ChatterSfx(GameObject_s *g, i32 a, float b) {
     if (chattersfxwait <= 0.0f && ParticlesPerSecond(2.0f, FRAMETIME) > 0 && g->apiobj.field_0x287 == 0 &&
         g->character_context == -1) {
-        if (a == last_chatter_sfx && !(b <= 0.0f)) {
+        if (a == last_chatter_sfx && b > 0.0f) {
             chattersfxwait = b;
             last_chatter_sfx = -1;
         } else {
@@ -713,7 +702,7 @@ void DrawOffsetCode(GameObject_s *obj, i32 param) {
 
         const f32 distance = NuVecDist(&target, &obj->render_offset, &delta);
         const f32 step = 0.4f * FRAMETIME;
-        if (distance > step) {
+        if (!(distance <= step)) {
             NuVecNorm(&delta, &delta);
             NuVecScale(&delta, &delta, step);
             NuVecAdd(&obj->render_offset, &obj->render_offset, &delta);
@@ -734,16 +723,17 @@ float GetHoverPosY(GameObject_s *obj) {
         return vehicle_offset + obj->apiobj.water_height;
 
     f32 height = obj->apiobj.field_0x218;
-    if (height == 2000000.0f)
-        return 2000000.0f;
-    if (obj->apiobj.water_height != 2000000.0f)
-        height = MAX(obj->apiobj.water_height, height);
+    if (height != 2000000.0f) {
+        if (obj->apiobj.water_height != 2000000.0f)
+            height = MAX(obj->apiobj.water_height, height);
 
-    f32 hover_height = WORLD->current_level->hover_height;
-    if (hover_height != 0.0f)
-        return hover_height + height + vehicle_offset;
-    return height + static_cast<GAMECHARACTERDATA *>(obj->apiobj.character_data->field11_0x24)->field_0x28 +
-           vehicle_offset;
+        f32 hover_height = WORLD->current_level->hover_height;
+        if (hover_height != 0.0f)
+            return hover_height + height + vehicle_offset;
+        return height + static_cast<GAMECHARACTERDATA *>(obj->apiobj.character_data->field11_0x24)->field_0x28 +
+               vehicle_offset;
+    }
+    return 2000000.0f;
 }
 
 void PlayerTakeHit(GameObject_s *object, GameObject_s *attacker) {
@@ -752,26 +742,21 @@ void PlayerTakeHit(GameObject_s *object, GameObject_s *attacker) {
 
     const u8 state = object->field_0xe31;
     i32 animation;
+    void *animation_data;
     if (state != 1) {
         animation = 0x3d;
-        if (object->apiobj.character_model->model_data_b[0x3d] == NULL) {
-            if ((object->field_0xefb & 8) != 0) {
-                ResetAnimPacket(&object->apiobj.anim_packet, -1);
-                Player_ClearContext(object, 1);
-                Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-            }
-            return;
-        }
+        animation_data = object->apiobj.character_model->model_data_b[0x3d];
     } else {
         animation = 0x3e;
-        if (object->apiobj.character_model->model_data_b[0x3e] == NULL) {
-            if ((object->field_0xefb & 8) != 0) {
-                ResetAnimPacket(&object->apiobj.anim_packet, -1);
-                Player_ClearContext(object, 1);
-                Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-            }
-            return;
+        animation_data = object->apiobj.character_model->model_data_b[0x3e];
+    }
+    if (animation_data == NULL) {
+        if ((object->field_0xefb & 8) != 0) {
+            ResetAnimPacket(&object->apiobj.anim_packet, -1);
+            Player_ClearContext(object, 1);
+            Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
         }
+        return;
     }
 
     if (object->field_0x7a5 == 0x1b && object->field_0x780 != NULL) {
@@ -814,36 +799,17 @@ void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type) {
 }
 
 GameObject_s *Player_FindByID(i32 id) {
-    GameObject_s *object = Player[0];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[1];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[2];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[3];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[4];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[5];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[6];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
-    object = Player[7];
-    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
-        return object;
+    for (i32 i = 0; i < 8; i++) {
+        GameObject_s *object = Player[i];
+        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+            return object;
+    }
     return NULL;
 }
 
 NUVEC *Player_StartPos(GameObject_s *obj) {
     i32 index = obj->apiobj.field_0x27c;
-    if (index < 0 || index > 7) {
+    if (static_cast<u8>(index) > 7) {
         index = obj->apiobj.field_0x289;
     }
     index &= 7;
@@ -889,8 +855,8 @@ i32 Players_AveragePos(nuvec_s *position, SOCKPOSITION_s *socket_position) {
 }
 
 i32 Players_BothActive() {
-    return Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0 && Player[1] != NULL &&
-           static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0;
+    return Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
+           Player[1]->apiobj.player_controlled;
 }
 
 PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id) {
@@ -926,21 +892,19 @@ i32 Player_HasFastBuild(GameObject_s *player) {
 void PlayerItemTypes_Init(PLAYERITEMTYPE_s *types) {
     PlayerItemType = NULL;
     PLAYERITEMTYPECOUNT = 0;
-    if (types == NULL)
-        return;
-
-    PlayerItemType = types;
-    if (types->id == -1) {
-        PlayerItemType = NULL;
-        return;
+    if (types != NULL) {
+        PlayerItemType = types;
+        if (types->id != -1) {
+            i32 count = 0;
+            do {
+                types++;
+                count++;
+            } while (types->id != -1);
+            PLAYERITEMTYPECOUNT = count;
+        } else {
+            PlayerItemType = NULL;
+        }
     }
-
-    i32 count = 0;
-    do {
-        types++;
-        count++;
-    } while (types->id != -1);
-    PLAYERITEMTYPECOUNT = count;
 }
 
 void Player_ResetContexts(PLAYERPACKET_s *packet) {
@@ -953,15 +917,16 @@ void Player_ResetContexts(PLAYERPACKET_s *packet) {
     }
 
     packet->context_distance = 5.0f;
+    packet->field_0x670 = 0;
     packet->field_0x678 = 0;
     packet->field_0x668 = 0;
-    packet->field_0x670 = 0;
+    packet->field_0x77e = 0;
     packet->context_blend = context_blend;
     packet->build_context = -1;
     packet->action_movement_variant = 0;
     packet->action_movement_state = 0;
-    packet->field_0x77e = 0;
-    packet->gamepad->allocated_5a &= static_cast<u8>(~(0x04 | 0x10));
+    packet->gamepad->allocated_5a &= static_cast<u8>(~0x04);
+    packet->gamepad->allocated_5a &= static_cast<u8>(~0x10);
     packet->input_state = 0;
     packet->secondary_flags &= static_cast<u8>(~0x04);
     packet->field_0x648 = 0;
@@ -1198,8 +1163,10 @@ i32 Player_HasDoubleBoltDamage_FromBolt(BOLT_s *bolt) {
     else if (bolt->flags & 2)
         player = 1;
     else
-        return 0;
-    return Player_HasDoubleBoltDamage(Player[player]);
+        player = -1;
+    if (player != -1)
+        return Player_HasDoubleBoltDamage(Player[player]);
+    return 0;
 }
 
 void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &element, TouchHolder &) {
@@ -1245,14 +1212,10 @@ namespace {
     void SyncPlayerSpawnPosition(GameObject_s *obj) {
         const NUVEC &position = obj->apiobj.position;
 
-        obj->apiobj.pos_x = position.x;
-        obj->apiobj.pos_y = position.y;
-        obj->apiobj.pos_z = position.z;
-
         obj->apiobj.initial_position = position;
-        obj->apiobj.start_position = position;
-
+        obj->apiobj.collision_position = position;
         plr_lastpos = position;
+        obj->apiobj.start_position = position;
     }
 
 } // namespace
@@ -1279,8 +1242,8 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         ResetPlayerMoves(obj);
         SyncPlayerSpawnPosition(obj);
 
-        obj->apiobj.velocity = v000;
         obj->reset_velocity = v000;
+        obj->apiobj.velocity = v000;
 
         GetTopBot(obj);
         GameObjectDimensions(obj);
@@ -1388,12 +1351,8 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         }
 
         ResetPlayerAI(obj);
-        obj->apiobj.previous_position[0] = obj->apiobj.position.x;
-        obj->apiobj.previous_position[1] = obj->apiobj.position.y;
-        obj->apiobj.previous_position[2] = obj->apiobj.position.z;
-        obj->field_0x10c8 = obj->apiobj.position.x;
-        obj->field_0x10cc = obj->apiobj.position.y;
-        obj->field_0x10d0 = obj->apiobj.position.z;
+        obj->apiobj.last_safe_position = obj->apiobj.position;
+        obj->saved_position = obj->apiobj.position;
         if ((obj->apiobj.character_data->model_flags & 0x2000) != 0) {
             obj->in_narrow_socket = ObjInNarrowSock(obj, WORLD->sock_sys, WORLD->level_idx);
             f32 speed = GetVehicleSpeedMul(obj, 0.0f);
@@ -1526,24 +1485,24 @@ void InitPlayerAI(GameObject_s *object) {
 }
 
 void ResetPlayerAI(GameObject_s *object) {
-    object->field_0x109c = 0;
     object->ai.movement_flags &= 0x9f;
     object->field_0xefe &= 0xdf;
     object->ai.field_0x1e5 &= 0xfd;
+    object->ai.intersection_connection = NULL;
     object->ai.intersection_target_connection = NULL;
     object->ai.animation_override_from = -1;
     object->ai.animation_override_to = -1;
     object->ai.field_0x180 = NULL;
-    object->ai.intersection_connection = NULL;
+    object->field_0x1092 = 0;
     object->field_0x1093 = 0;
     object->field_0x1098 = 0;
     object->field_0x1094 = 0;
     object->field_0xf08 = 0;
     object->field_0xf0c = 0;
     object->field_0xf10 = 0;
-    object->field_0x1092 = 0;
     object->ai.frame_state = 0;
     object->field_0xf14 = 0;
+    object->field_0x109c = 0;
     memset(&object->ai.path_info, 0, sizeof(object->ai.path_info));
     object->ai.current_route = 0xff;
     object->ai.next_route = 0;
@@ -1585,8 +1544,7 @@ i32 MakePlayerList(i32 count) {
             PlayerList[player_count] = player->id;
         }
 
-        PLAYERPROGRESS *progress = &PlayerProgress[player_count];
-        progress->active = (u8)player->apiobj.field_0x1f8 >> 7;
+        PlayerProgress[player_count].active = player->apiobj.flags_low >> 7;
 
         bool unavailable = false;
         if (player->field_0x7a5 != 6 && player->field_0xe32 != 2) {
@@ -1595,20 +1553,20 @@ i32 MakePlayerList(i32 count) {
                 unavailable = player->field_0xe32 != 0;
             }
         }
-        progress->coins = player->coinpacket != NULL ? player->coinpacket->coins : 0;
-        progress->field_0x7 = unavailable;
-        progress->field_0xb = player->field_0xe31 == 1;
+        PlayerProgress[player_count].field_0x7 = unavailable;
+        PlayerProgress[player_count].coins = player->coinpacket != NULL ? player->coinpacket->coins : 0;
+        PlayerProgress[player_count].field_0xb = player->field_0xe31 == 1;
 
         if (player->apiobj.field_0x287 != 0) {
-            progress->hitpoints = player->hitpoints;
-            progress->field_0x9 = 4;
+            PlayerProgress[player_count].hitpoints = player->hitpoints;
+            PlayerProgress[player_count].field_0x9 = 4;
         } else {
-            progress->hitpoints = player->current_hp;
-            progress->field_0x9 = player->field_0xe38;
+            PlayerProgress[player_count].hitpoints = player->current_hp;
+            PlayerProgress[player_count].field_0x9 = player->field_0xe38;
         }
-        progress->field_0xa = player->field_0x108e;
-        progress->field_0x4 = player->field_0x106e;
-        progress->field_0xc = player->field_0xdec;
+        PlayerProgress[player_count].field_0xa = player->field_0x108e;
+        PlayerProgress[player_count].field_0x4 = player->field_0x106e;
+        PlayerProgress[player_count].field_0xc = player->field_0xdec;
 
         PlayerSuit[player_count] = player->suit;
         PlayerTorpedoCount[player_count] = player->torpedo != NULL ? player->torpedo->count : 0;
@@ -1623,7 +1581,7 @@ i32 MakePlayerList(i32 count) {
 }
 
 i32 DeactivatePlayer(GameObject_s *object, f32 duration, GameObject_s *source) {
-    if (object->character_context == 0x17 && duration <= object->context_animation_timer)
+    if (object->character_context == 0x17 && !(duration > object->context_animation_timer))
         return 0;
     f32 model_state = object->field_0xd24;
     Player_ClearContext(object, 1);
@@ -1636,20 +1594,18 @@ i32 DeactivatePlayer(GameObject_s *object, f32 duration, GameObject_s *source) {
     if (AIScriptSetBaseScriptStateByName(process, "BeenDeactivated")) {
         AIScriptProcess(WORLD->ai_sys, &object->apiobj, &object->ai, process, FRAMETIME);
     }
-    CHARACTERDATA *character = object->apiobj.character_data;
-    CHARACTERMODEL_s *model = object->apiobj.character_model;
-    GAMECHARACTERDATA *runtime = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-    if (source != NULL && (source->apiobj.character_data->model_flags & 0x40) != 0 && runtime->field275_0x116 == 1 &&
-        model->model_data_b[0x62] != NULL) {
+    if (source != NULL && (source->apiobj.character_data->model_flags & 0x40) != 0 &&
+        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field275_0x116 == 1 &&
+        object->apiobj.character_model->model_data_b[0x62] != NULL) {
         duration = 4.0f;
         object->context_animation = 0x62;
-    } else if (model->model_data_b[0x81] != NULL &&
-               (static_cast<CHARACTERANIM_s *>(model->model_data_a[0x81])->flags & 2) == 0) {
+    } else if (object->apiobj.character_model->model_data_b[0x81] != NULL &&
+               (static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[0x81])->flags & 2) == 0) {
         object->context_animation = 0x81;
     } else {
-        object->context_animation = model->model_data_b[0x41] != NULL ? 0x41 : 1;
+        object->context_animation = object->apiobj.character_model->model_data_b[0x41] != NULL ? 0x41 : 1;
     }
-    if ((character->model_flags & 0x20) != 0)
+    if ((object->apiobj.character_data->model_flags & 0x20) != 0)
         SetProtocolDroidDeactivatedAction(object);
     object->action_movement_state = 0;
     object->context_animation_timer = duration;
@@ -1698,65 +1654,29 @@ void SetToLastSafePos(GameObject_s *object) {
 }
 
 i32 AvailableToPlayer(u32 character_flags, i32 weapon_action, i32 context, i32 require_all) {
-    GameObject_s *object;
-#define CHECK_AVAILABLE_PLAYER(index, predicate)                                                                       \
-    ((object = Player[index]) != NULL && object->apiobj.character_data != NULL && (predicate))
-#define CHECK_AVAILABLE_PLAYERS(predicate)                                                                             \
-    if (CHECK_AVAILABLE_PLAYER(0, predicate) || CHECK_AVAILABLE_PLAYER(1, predicate) ||                                \
-        CHECK_AVAILABLE_PLAYER(2, predicate) || CHECK_AVAILABLE_PLAYER(3, predicate) ||                                \
-        CHECK_AVAILABLE_PLAYER(4, predicate) || CHECK_AVAILABLE_PLAYER(5, predicate) ||                                \
-        CHECK_AVAILABLE_PLAYER(6, predicate) || CHECK_AVAILABLE_PLAYER(7, predicate))                                  \
-    return 1
-#define PLAYER_HAS_FLAGS ((object->apiobj.character_data->model_flags & character_flags) == character_flags)
-#define PLAYER_HAS_WEAPON                                                                                              \
-    (static_cast<i8>(object->apiobj.character_data->game_character->uses_weapon_action) == weapon_action)
-#define PLAYER_HAS_CONTEXT (object->field_0x108e == context)
-
-    if (require_all == 0) {
-        if (character_flags == 0) {
-            if (context == 0) {
-                CHECK_AVAILABLE_PLAYERS(true);
-            } else if (weapon_action == -1) {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_CONTEXT);
-            } else {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_WEAPON || PLAYER_HAS_CONTEXT);
-            }
-        } else if (weapon_action == -1) {
-            if (context == 0) {
-                CHECK_AVAILABLE_PLAYERS(true);
-            } else {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_FLAGS || PLAYER_HAS_CONTEXT);
-            }
-        } else {
-            CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_FLAGS || PLAYER_HAS_WEAPON || context == 0 || PLAYER_HAS_CONTEXT);
-        }
-    } else {
+    for (i32 i = 0; i < 8; i++) {
+        GameObject_s *object = Player[i];
+        if (object == NULL || object->apiobj.character_data == NULL)
+            continue;
         if (character_flags != 0) {
-            if (weapon_action != -1) {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_FLAGS && PLAYER_HAS_WEAPON && (context == 0 || PLAYER_HAS_CONTEXT));
-            } else {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_FLAGS && (context == 0 || PLAYER_HAS_CONTEXT));
-            }
-        } else {
-            if (weapon_action == -1) {
-                if (context == 0) {
-                    CHECK_AVAILABLE_PLAYERS(true);
-                } else {
-                    CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_CONTEXT);
-                }
-            } else if (context == 0) {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_WEAPON);
-            } else {
-                CHECK_AVAILABLE_PLAYERS(PLAYER_HAS_WEAPON && PLAYER_HAS_CONTEXT);
+            if ((object->apiobj.character_data->model_flags & character_flags) == character_flags) {
+                if (require_all == 0)
+                    return 1;
+            } else if (require_all != 0) {
+                continue;
             }
         }
+        if (weapon_action != -1) {
+            if (static_cast<i8>(object->apiobj.character_data->game_character->uses_weapon_action) == weapon_action) {
+                if (require_all == 0)
+                    return 1;
+            } else if (require_all != 0) {
+                continue;
+            }
+        }
+        if (context == 0 || object->field_0x108e == context)
+            return 1;
     }
-
-#undef PLAYER_HAS_CONTEXT
-#undef PLAYER_HAS_WEAPON
-#undef PLAYER_HAS_FLAGS
-#undef CHECK_AVAILABLE_PLAYERS
-#undef CHECK_AVAILABLE_PLAYER
 
     if (FreePlay != 0) {
         for (i32 index = 0; index < apicharsys->character_count; ++index) {
@@ -1791,23 +1711,22 @@ i32 GetNumLocalPlayers() {
 }
 
 i32 UnderPlayerControl(GameObject_s *object) {
-    return static_cast<i8>(object->apiobj.flags_low) < 0 ||
-           (object->field_0xcc0 != NULL && static_cast<i8>(object->field_0xcc0->apiobj.flags_low) < 0);
+    return object->apiobj.player_controlled ||
+           (object->field_0xcc0 != NULL && object->field_0xcc0->apiobj.player_controlled);
 }
 
 i32 ActivePlayerInRange(nuvec_s *position, float range_squared, float *distance_squared) {
-    f32 distance;
-#define PLAYER_IN_RANGE(index)                                                                                         \
-    (Player[index] != NULL && static_cast<i8>(Player[index]->apiobj.flags_low) < 0 &&                                  \
-     (distance = NuVecDistSqr(&Player[index]->apiobj.collision_position, position, NULL)) < range_squared)
-    if (PLAYER_IN_RANGE(0) || PLAYER_IN_RANGE(1) || PLAYER_IN_RANGE(2) || PLAYER_IN_RANGE(3) || PLAYER_IN_RANGE(4) ||
-        PLAYER_IN_RANGE(5) || PLAYER_IN_RANGE(6) || PLAYER_IN_RANGE(7)) {
-        if (distance_squared != NULL) {
-            *distance_squared = distance;
+    for (i32 i = 0; i < 8; i++) {
+        if (Player[i] != NULL && Player[i]->apiobj.player_controlled) {
+            const f32 distance = NuVecDistSqr(&Player[i]->apiobj.collision_position, position, NULL);
+            if (distance < range_squared) {
+                if (distance_squared != NULL) {
+                    *distance_squared = distance;
+                }
+                return 1;
+            }
         }
-        return 1;
     }
-#undef PLAYER_IN_RANGE
     return 0;
 }
 
@@ -1977,6 +1896,16 @@ u32 AdjustLayerBits(u32 mask, GameObject_s *object) {
     return mask;
 }
 
+void SetPlayerGroupPosition(f32 x, f32 y, f32 z) {
+    NUVEC offset = {0.0f, 0.0f, 0.2f};
+    for (i32 i = 0; i < PLAYERCOUNT; i++) {
+        NUVEC position = {x, y, z};
+        NuVecAdd(&position, &position, &offset);
+        ResetPlayer(Player[i], 1, &position, 1);
+        NuVecRotateY(&offset, &offset, 0x2000);
+    }
+}
+
 bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, float &distance_squared,
                             bool require_character_flags, u32 character_flags) {
     *nearest_player = NULL;
@@ -1989,9 +1918,8 @@ bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, fl
             const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
             if (candidate_distance < distance_squared || *nearest_player == NULL) {                                    \
                 candidate = Player[index];                                                                             \
-                CHARACTERDATA *character = candidate == NULL ? NULL : candidate->apiobj.character_data;                \
-                GAMECHARACTERDATA *game_character = character == NULL ? NULL : character->game_character;              \
-                if (!(filtered) || (game_character != NULL && (game_character->flags_090 & character_flags) != 0)) {   \
+                if (!(filtered) ||                                                                                     \
+                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
                     distance_squared = candidate_distance;                                                             \
                     *nearest_player = candidate;                                                                       \
                 }                                                                                                      \
@@ -1999,39 +1927,13 @@ bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, fl
         }                                                                                                              \
     } while (0)
 
-    if (!require_character_flags) {
-        CONSIDER_PLAYER_DISTANCE(0, false);
-        CONSIDER_PLAYER_DISTANCE(1, false);
-        CONSIDER_PLAYER_DISTANCE(2, false);
-        CONSIDER_PLAYER_DISTANCE(3, false);
-        CONSIDER_PLAYER_DISTANCE(4, false);
-        CONSIDER_PLAYER_DISTANCE(5, false);
-        CONSIDER_PLAYER_DISTANCE(6, false);
-        CONSIDER_PLAYER_DISTANCE(7, false);
-    } else {
-        CONSIDER_PLAYER_DISTANCE(0, true);
-        CONSIDER_PLAYER_DISTANCE(1, true);
-        CONSIDER_PLAYER_DISTANCE(2, true);
-        CONSIDER_PLAYER_DISTANCE(3, true);
-        CONSIDER_PLAYER_DISTANCE(4, true);
-        CONSIDER_PLAYER_DISTANCE(5, true);
-        CONSIDER_PLAYER_DISTANCE(6, true);
-        CONSIDER_PLAYER_DISTANCE(7, true);
+    for (i32 i = 0; i < 8; i++) {
+        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
     }
 
 #undef CONSIDER_PLAYER_DISTANCE
 
     return *nearest_player != NULL;
-}
-
-void SetPlayerGroupPosition(f32 x, f32 y, f32 z) {
-    NUVEC offset = {0.0f, 0.0f, 0.2f};
-    for (i32 i = 0; i < PLAYERCOUNT; i++) {
-        NUVEC position = {x, y, z};
-        NuVecAdd(&position, &position, &offset);
-        ResetPlayer(Player[i], 1, &position, 1);
-        NuVecRotateY(&offset, &offset, 0x2000);
-    }
 }
 
 i32 (*LastSafePosExtraFn)(GameObject_s *) = NULL;
@@ -2068,9 +1970,8 @@ bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player
             const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
             if (candidate_distance > distance_squared || *furthest_player == NULL) {                                   \
                 candidate = Player[index];                                                                             \
-                CHARACTERDATA *character = candidate == NULL ? NULL : candidate->apiobj.character_data;                \
-                GAMECHARACTERDATA *game_character = character == NULL ? NULL : character->game_character;              \
-                if (!(filtered) || (game_character != NULL && (game_character->flags_090 & character_flags) != 0)) {   \
+                if (!(filtered) ||                                                                                     \
+                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
                     distance_squared = candidate_distance;                                                             \
                     *furthest_player = candidate;                                                                      \
                 }                                                                                                      \
@@ -2078,24 +1979,8 @@ bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player
         }                                                                                                              \
     } while (0)
 
-    if (!require_character_flags) {
-        CONSIDER_PLAYER_DISTANCE(0, false);
-        CONSIDER_PLAYER_DISTANCE(1, false);
-        CONSIDER_PLAYER_DISTANCE(2, false);
-        CONSIDER_PLAYER_DISTANCE(3, false);
-        CONSIDER_PLAYER_DISTANCE(4, false);
-        CONSIDER_PLAYER_DISTANCE(5, false);
-        CONSIDER_PLAYER_DISTANCE(6, false);
-        CONSIDER_PLAYER_DISTANCE(7, false);
-    } else {
-        CONSIDER_PLAYER_DISTANCE(0, true);
-        CONSIDER_PLAYER_DISTANCE(1, true);
-        CONSIDER_PLAYER_DISTANCE(2, true);
-        CONSIDER_PLAYER_DISTANCE(3, true);
-        CONSIDER_PLAYER_DISTANCE(4, true);
-        CONSIDER_PLAYER_DISTANCE(5, true);
-        CONSIDER_PLAYER_DISTANCE(6, true);
-        CONSIDER_PLAYER_DISTANCE(7, true);
+    for (i32 i = 0; i < 8; i++) {
+        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
     }
 
 #undef CONSIDER_PLAYER_DISTANCE
@@ -2104,35 +1989,36 @@ bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player
 }
 
 void AveragePlayerCurrentSpeedMul() {
-    avg_currentspeed_mul = 0.0f;
-    f32 total = avg_currentspeed_mul;
     i32 count = 0;
-    if (Player[0] != NULL && (Player[0]->apiobj.flags_low & 0x80) != 0) {
+    avg_currentspeed_mul = 0.0f;
+    f32 total = 0.0f;
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
         total += Player[0]->current_speed_mul;
         count = 1;
     }
-    if (Player[1] != NULL && (Player[1]->apiobj.flags_low & 0x80) != 0) {
+    if (Player[1] == NULL || !Player[1]->apiobj.player_controlled) {
+        avg_currentspeed_mul = total;
+    } else {
         total += Player[1]->current_speed_mul;
+        avg_currentspeed_mul = total;
         if (count == 1) {
-            total *= 0.5f;
+            avg_currentspeed_mul *= 0.5f;
         }
     }
-    avg_currentspeed_mul = total;
 }
 
 void SetPlayer() {
-    if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0) {
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
         player = Player[0];
-        if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0) {
+        if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
             player2 = Player[1];
-            return;
+        } else {
+            player2 = NULL;
         }
-    } else if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0) {
+    } else if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
         player = Player[1];
+        player2 = NULL;
     } else {
         player = NULL;
-        return;
     }
-
-    player2 = NULL;
 }

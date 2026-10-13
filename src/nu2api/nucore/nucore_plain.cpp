@@ -559,16 +559,17 @@ extern "C" {
         *reflect = global_reflect;
     }
     static void NuCameraBuildClipProjection(NUMTX *projection, NUCAMERA *camera, f32 x_scale, f32 y_scale) {
-        f32 far_clip = camera->unknown_64;
-        if (far_clip == 0.0f)
-            far_clip = camera->far_clip;
-        far_clip -= nucamera_farclip_hack;
+        f32 far_clip;
+        if (camera->unknown_64 == 0.0f)
+            far_clip = camera->far_clip - nucamera_farclip_hack;
+        else
+            far_clip = camera->unknown_64 - nucamera_farclip_hack;
         f32 near_clip = camera->unknown_60;
         if (near_clip == 0.0f)
             near_clip = camera->near_clip;
         const i32 angle = static_cast<i32>(camera->fov * 0.5f * 10430.378f);
         const f32 cotangent = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff] / NuTrigTable[angle >> 1 & 0x7fff];
-        const f32 x = camera->aspect * cotangent * x_scale;
+        const f32 x = x_scale * camera->aspect * cotangent;
         const f32 y = cotangent * y_scale;
         memset(projection, 0, sizeof(*projection));
         projection->m00 = x;
@@ -613,7 +614,7 @@ extern "C" {
             NuVecMtxTransformH(screen, world, &transform);
     }
     void NuCameraTransformScreenVU0(NUVEC4 *screen, NUVEC4 *world, i32 count, NUMTX *matrix) {
-        NUMTX transform;
+        NUMTX_ALIGNED16 transform; // The original realigns the frame for this matrix.
         NUVEC4 *end = world + count;
         if (matrix == NULL)
             transform = vpsmtx;
@@ -2702,15 +2703,15 @@ extern "C" {
         laser->width_wobble = width_wobble;
         laser->segment_length = segment_length;
         laser->arc = 0;
+        laser->end_width_ratio = end_width / width;
         laser->width = width;
-        laser->start = *start;
         laser->type = static_cast<u8>(type);
+        laser->start = *start;
         laser->length = length;
         laser->end.x = delta->x + start->x;
         laser->end.y = delta->y + start->y;
         laser->end.z = delta->z + start->z;
         laser->colour = colour;
-        laser->end_width_ratio = end_width / width;
         // The original tests the arc cursor here, even for a straight laser.
         if ((NuLgtArcLaserFrame & 1) == 0 || NuLgtLaserData[NuLgtArcLaserCnt].seed == 0) {
             NuLgtLaserData[NuLgtLaserCnt].seed = NuLgtRand();
@@ -3528,12 +3529,21 @@ extern "C" {
             return NULL;
 
         for (i32 render = 0; render < render_count; ++render) {
-            i32 node = render_indices == NULL ? 0 : render_indices[render];
-            if (node < 0)
-                continue;
-
-            NuLegacyDwaChunk *chunk = NuLegacyDwaGetChunk(animation, time.chunk);
-            nuanimcurveset_s *set = node < chunk->node_count ? chunk->curve_sets[node] : NULL;
+            i32 node = 0;
+            NuLegacyDwaChunk *chunk;
+            if (render_indices != NULL) {
+                node = render_indices[render];
+                if (node < 0)
+                    continue;
+                chunk = NuLegacyDwaGetChunk(animation, time.chunk);
+                if (node >= chunk->node_count) {
+                    weights_by_render[render] = NuRndrCreateBlendShapeDeformerWeightsArray(0);
+                    continue;
+                }
+            } else {
+                chunk = NuLegacyDwaGetChunk(animation, time.chunk);
+            }
+            nuanimcurveset_s *set = chunk->curve_sets[node];
             if (set == NULL) {
                 weights_by_render[render] = NuRndrCreateBlendShapeDeformerWeightsArray(0);
                 continue;
@@ -3595,7 +3605,7 @@ extern "C" {
             i32 curve_offset = animation->curve_count * node;
             i8 *types = reinterpret_cast<i8 *>(animation->curve_types) + curve_offset;
             nuanimcurve2_s *curves = animation->curves + curve_offset;
-            if (weights == NULL || curve_count <= 0) {
+            if (weights == NULL) {
                 continue;
             }
             for (i32 curve = 0; curve < curve_count; ++curve, ++curves) {
@@ -3610,15 +3620,13 @@ extern "C" {
     }
     void **NuHGobjEvalDwaBlend(i32 render_count, i16 *render_indices, void *animation_a, f32 frame_a, void *animation_b,
                                f32 frame_b, f32 blend) {
-        bool has_a = animation_a != NULL;
-        bool has_b = animation_b != NULL;
-        if ((!has_a && !has_b) || render_count == 0)
+        if ((animation_a == NULL && animation_b == NULL) || render_count == 0)
             return NULL;
         nuanimtime_s time_a __attribute__((aligned(16)));
         nuanimtime_s time_b __attribute__((aligned(16)));
-        if (has_a)
+        if (animation_a != NULL)
             NuAnimDataCalcTime(animation_a, frame_a, &time_a);
-        if (has_b)
+        if (animation_b != NULL)
             NuAnimDataCalcTime(animation_b, frame_b, &time_b);
         f32 **weights_by_render;
         if (render_indices != NULL) {
@@ -3636,13 +3644,13 @@ extern "C" {
             if (node < 0)
                 continue;
             i32 count_a = 0;
-            if (has_a) {
+            if (animation_a != NULL) {
                 NuLegacyDwaChunk *chunk = NuLegacyDwaGetChunk(animation_a, time_a.chunk);
                 if (node < chunk->node_count && chunk->curve_sets[node])
                     count_a = static_cast<i8>(chunk->curve_sets[node]->curve_count);
             }
             i32 count_b = 0;
-            if (has_b) {
+            if (animation_b != NULL) {
                 NuLegacyDwaChunk *chunk = NuLegacyDwaGetChunk(animation_b, time_b.chunk);
                 if (node < chunk->node_count && chunk->curve_sets[node])
                     count_b = static_cast<i8>(chunk->curve_sets[node]->curve_count);
@@ -3672,18 +3680,16 @@ extern "C" {
     }
     void **NuHGobjEvalDwaBlend2(i32 render_count, i16 *render_indices, nuanimdata2_s *animation_a, f32 frame_a,
                                 nuanimdata2_s *animation_b, f32 frame_b, f32 blend) {
-        const bool has_a = animation_a != NULL;
-        const bool has_b = animation_b != NULL;
-        if ((!has_a && !has_b) || render_count == 0) {
+        if ((animation_a == NULL && animation_b == NULL) || render_count == 0) {
             return NULL;
         }
 
         nuanimtime_s time_a;
         nuanimtime_s time_b;
-        if (has_a) {
+        if (animation_a != NULL) {
             NuAnimData2CalcTime(animation_a, frame_a, &time_a);
         }
-        if (has_b) {
+        if (animation_b != NULL) {
             NuAnimData2CalcTime(animation_b, frame_b, &time_b);
         }
 
@@ -3700,47 +3706,53 @@ extern "C" {
         }
         memset(weights_by_render, 0, clear_size);
 
+        nuanimcurve2_s *curves_a = NULL;
+        u8 *types_a = NULL;
+        nuanimcurve2_s *curves_b = NULL;
+        u8 *types_b = NULL;
         for (i32 render = 0; render < render_count; ++render) {
             i32 node = render_indices == NULL ? 0 : render_indices[render];
             if (node < 0) {
                 continue;
             }
 
-            nuanimcurve2_s *curves_a = NULL;
-            i32 count_a = 0;
-            u8 *types_a = NULL;
-            if (has_a && node < NuAnimNumNodes(animation_a)) {
+            i32 count_a;
+            if (animation_a != NULL && node < NuAnimNumNodes(animation_a)) {
                 count_a = static_cast<i16>(animation_a->curve_count);
                 curves_a = animation_a->curves + count_a * node;
                 types_a = animation_a->curve_types + count_a * node;
+            } else {
+                count_a = 0;
             }
 
-            i32 count_b = 0;
-            nuanimcurve2_s *curves_b = NULL;
-            u8 *types_b = NULL;
-            if (has_b && node < NuAnimNumNodes(animation_b)) {
+            i32 count_b;
+            if (animation_b != NULL && node < NuAnimNumNodes(animation_b)) {
                 count_b = static_cast<i16>(animation_b->curve_count);
                 curves_b = animation_b->curves + count_b * node;
                 types_b = animation_b->curve_types + count_b * node;
+            } else {
+                count_b = 0;
             }
 
             i32 curve_count = count_a < count_b ? count_b : count_a;
             f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
             weights_by_render[render] = weights;
-            if (weights == NULL || curve_count <= 0) {
+            if (weights == NULL) {
                 continue;
             }
 
-            for (i32 curve = 0; curve < curve_count; ++curve) {
+            nuanimcurve2_s *curve_a = curves_a;
+            nuanimcurve2_s *curve_b = curves_b;
+            for (i32 curve = 0; curve < curve_count; ++curve, ++curve_a, ++curve_b) {
                 f32 value_a = 0.0f;
                 if (curve < count_a) {
-                    value_a = types_a[curve] == 0 ? curves_a[curve].data.constant
-                                                  : NuAnimCurve2CalcValEx(&curves_a[curve], &time_a, types_a[curve]);
+                    const i32 type = static_cast<i8>(types_a[curve]);
+                    value_a = type == 0 ? curve_a->data.constant : NuAnimCurve2CalcValEx(curve_a, &time_a, type);
                 }
                 f32 value_b = 0.0f;
                 if (curve < count_b) {
-                    value_b = types_b[curve] == 0 ? curves_b[curve].data.constant
-                                                  : NuAnimCurve2CalcValEx(&curves_b[curve], &time_b, types_b[curve]);
+                    const i32 type = static_cast<i8>(types_b[curve]);
+                    value_b = type == 0 ? curve_b->data.constant : NuAnimCurve2CalcValEx(curve_b, &time_b, type);
                 }
                 weights[curve + 1] = value_b * blend + (1.0f - blend) * value_a;
             }
@@ -3773,7 +3785,7 @@ extern "C" {
     // matrices, then build skin matrices for the smooth hierarchy pieces.
     i32 NuHGobjRndrMtxDwa(nuhgobj_s *object, NUMTX *world_matrix, i32 render_count, i16 *render_indices,
                           NUMTX *joint_matrices, void **blend_values, i32) {
-        NUMTX draw_matrix;
+        NUMTX_ALIGNED16 draw_matrix; // The original realigns the frame for this matrix.
         i32 clip_state = nuspecial_clip_state;
         if (clip_state == -1) {
             clip_state = NuCameraClipHGobj(reinterpret_cast<nugscn_s *>(object), world_matrix, joint_matrices);
@@ -4411,15 +4423,12 @@ extern "C" {
         for (i32 room_index = 0; room_index < scene->num_rooms; ++room_index) {
             NUROOM *room = &scene->rooms[room_index];
             f32 plane_distance = 0.0f;
-            i32 plane_count = room->plane_count;
             NUPLANE *plane = room->planes;
-            while (plane_count != 0) {
+            for (i32 plane_index = 0; plane_index < room->plane_count; ++plane_index, ++plane) {
                 plane_distance = plane->a * position->x + plane->b * position->y + plane->c * position->z + plane->d;
                 if (plane_distance > 0.0f) {
                     break;
                 }
-                ++plane;
-                --plane_count;
             }
             if (!(plane_distance <= 0.0f)) {
                 continue;

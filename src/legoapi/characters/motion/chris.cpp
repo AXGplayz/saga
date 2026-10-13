@@ -39,7 +39,8 @@ struct SHOPINPUT;
 
 extern f32 SpaceRumbleTimer;
 extern i32 LevFlag[4];
-spacelevel_scale_s STARFIGHTERDRAWSCALE;
+// The original keeps this scale in an aligned vector slot and copies it with movaps.
+static spacelevel_scale_s STARFIGHTERDRAWSCALE __attribute__((aligned(16)));
 NUVEC Jetpos = {0.15f, 0.08f, 0.32f};
 void DrawCross_Now(_vuv_s *position, f32 size, i32 colour, i32 mode);
 extern GameObject_s *Player[8];
@@ -669,13 +670,13 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         i32 valid0 = 0, valid1 = 0;
         f32 player0x, player0y, player0z;
         f32 player1x, player1y, player1z;
-        if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.object_flags) < 0) {
+        if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
             player0x = Player[0]->apiobj.field_0xb8.m30;
             player0y = Player[0]->apiobj.field_0xb8.m31;
             player0z = Player[0]->apiobj.field_0xb8.m32;
             valid0 = 1;
         }
-        if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.object_flags) < 0) {
+        if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
             player1x = Player[1]->apiobj.field_0xb8.m30;
             player1y = Player[1]->apiobj.field_0xb8.m31;
             player1z = Player[1]->apiobj.field_0xb8.m32;
@@ -1243,14 +1244,21 @@ set_door_timer:
 }
 
 void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
-    NUVEC position_delta = {position->x - RadialMoveCentre.x, 0.0f, position->z - RadialMoveCentre.z};
+    // The original keeps both deltas and the new target at 16-byte aligned stack addresses.
+    const f32 position_y = position->y;
+    const f32 target_y = target->y;
+    NUVEC position_delta
+        __attribute__((aligned(16))) = {position->x - RadialMoveCentre.x, 0.0f, position->z - RadialMoveCentre.z};
     const f32 position_radius = NuVecMag(&position_delta);
-    NUVEC origin_delta = {-RadialMoveCentre.x, 0.0f, -RadialMoveCentre.z};
+    NUVEC origin_delta __attribute__((aligned(16))) = {0.0f - RadialMoveCentre.x, 0.0f, 0.0f - RadialMoveCentre.z};
     const f32 origin_radius = NuVecMag(&origin_delta);
     RadialPlayerRadius[0] = origin_radius;
+    NUVEC new_target __attribute__((aligned(16)));
 
-    f32 base_radius = 120.0f;
-    if (origin_radius >= 120.0f) {
+    f32 base_radius;
+    if (origin_radius < 120.0f) {
+        base_radius = 120.0f;
+    } else {
         base_radius = MIN(150.0f, origin_radius);
     }
     const f32 extra_radius = origin_radius - base_radius;
@@ -1261,7 +1269,7 @@ void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
         position_delta.x *= scale;
     }
     position->x = RadialMoveCentre.x + position_delta.x;
-    position->y = position->y;
+    position->y = position_y;
     position->z = RadialMoveCentre.z + position_delta.z;
 
     if (base_radius <= origin_radius) {
@@ -1272,9 +1280,10 @@ void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
         origin_delta.x *= scale;
         origin_delta.z *= scale;
     }
-    target->x = RadialMoveCentre.x + origin_delta.x;
-    target->y = target->y;
-    target->z = RadialMoveCentre.z + origin_delta.z;
+    new_target.x = RadialMoveCentre.x + origin_delta.x;
+    new_target.y = target_y;
+    new_target.z = RadialMoveCentre.z + origin_delta.z;
+    memcpy(target, &new_target, sizeof(new_target));
 }
 
 void ChrisAnakinAInit(WORLDINFO_s *world) {
@@ -1556,8 +1565,11 @@ i32 ChrisExtraBoltCollision(BOLT_s *bolt, nuvec_s *points) {
     if (WORLD->has_level_specific_data == 0 || WORLD->space_level == NULL || (bolt->flags & 3) == 0)
         return 0;
     spacelevel_s *space = WORLD->space_level;
-    NUVEC4_ALIGNED16 velocity = {bolt->velocity.x, bolt->velocity.y, bolt->velocity.z, 0.0f};
-    NUVEC4_ALIGNED16 position = {points[1].x, points[1].y, points[1].z, 0.0f};
+    // Only the xyz parts of these aligned vectors are filled; the collision test ignores w.
+    NUVEC4_ALIGNED16 velocity;
+    NUVEC4_ALIGNED16 position;
+    *reinterpret_cast<NUVEC *>(&position) = points[1];
+    *reinterpret_cast<NUVEC *>(&velocity) = bolt->velocity;
 #define COLLIDE_SPACE_FIGHTER(group_index, fighter_index)                                                              \
     if (space->flight_groups[group_index].fighters[fighter_index].active != 0 &&                                       \
         CollideBoltStarFighter(bolt, &space->flight_groups[group_index].fighters[fighter_index],                       \

@@ -121,14 +121,14 @@ extern "C" void LocaledbitsDrawSolidCircleXY(NUVEC *centre, f32 radius, f32 lowe
 
 extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
     f32 corners[4][2] = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
-    NUMTX matrix = global_camera.mtx;
+    NUMTX_ALIGNED32 matrix = global_camera.mtx;
     matrix.m31 = centre->y;
     matrix.m30 = centre->x;
     matrix.m32 = centre->z;
     for (i32 remaining = 4; remaining > 0; --remaining) {
         const i32 i = 4 - remaining;
-        NUVEC end;
-        NUVEC start;
+        NUVEC_ALIGNED16 start;
+        NUVEC_ALIGNED16 end;
         if (i == 0) {
             start = NUVEC{-radius, -radius, 0.0f};
             end = NUVEC{radius, -radius, 0.0f};
@@ -147,50 +147,50 @@ extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
 }
 
 extern "C" void RndrOSphere(NUVEC *centre, f32 radius, i32 colour, i32 segments, i32) {
-    NUMTX matrix = global_camera.mtx;
+    NUMTX_ALIGNED32 matrix = global_camera.mtx;
     matrix.m30 = centre->x;
     matrix.m31 = centre->y;
     matrix.m32 = centre->z;
     i32 step = 65536 / segments;
-    NURND_VERTEX3D first, second;
-    first.position.x = radius;
-    first.position.y = 0.0f;
-    first.position.z = 0.0f;
-    first.colour = colour;
-    second.colour = colour;
-    NuVecRotateZ(&second.position, &first.position, step);
+    NURND_VERTEX3D vertices[2];
+    vertices[0].position.x = radius;
+    vertices[0].position.y = 0.0f;
+    vertices[0].position.z = 0.0f;
+    vertices[0].colour = colour;
+    vertices[1].colour = colour;
+    NuVecRotateZ(&vertices[1].position, &vertices[0].position, step);
     for (i32 i = 0; i < segments; ++i) {
-        NUVEC start = first.position;
-        NUVEC end = second.position;
+        NUVEC_ALIGNED16 start = vertices[0].position;
+        NUVEC_ALIGNED16 end = vertices[1].position;
         NuVecMtxTransform(&start, &start, &matrix);
         NuVecMtxTransform(&end, &end, &matrix);
-        NuRndrLine3dDbg(start.x, start.y, start.z, end.x, end.y, end.z, first.colour);
-        first.position = second.position;
-        NuVecRotateZ(&second.position, &second.position, step);
+        NuRndrLine3dDbg(start.x, start.y, start.z, end.x, end.y, end.z, vertices[0].colour);
+        vertices[0].position = vertices[1].position;
+        NuVecRotateZ(&vertices[1].position, &vertices[1].position, step);
     }
 }
 
 extern "C" void RndrCircleXZ(NUVEC *centre, f32 radius, i32 colour, i32 segments) {
-    NUMTX matrix = numtx_identity;
+    NUMTX_ALIGNED32 matrix = numtx_identity;
     matrix.m30 = centre->x;
     matrix.m31 = centre->y;
     matrix.m32 = centre->z;
     i32 step = 65536 / segments;
-    NURND_VERTEX3D first, second;
-    first.position.x = radius;
-    first.position.y = 0.0f;
-    first.position.z = 0.0f;
-    first.colour = colour;
-    second.colour = colour;
-    NuVecRotateY(&second.position, &first.position, step);
+    NURND_VERTEX3D vertices[2];
+    vertices[0].position.x = radius;
+    vertices[0].position.y = 0.0f;
+    vertices[0].position.z = 0.0f;
+    vertices[0].colour = colour;
+    vertices[1].colour = colour;
+    NuVecRotateY(&vertices[1].position, &vertices[0].position, step);
     for (i32 i = 0; i < segments; ++i) {
-        NUVEC start = first.position;
-        NUVEC end = second.position;
+        NUVEC_ALIGNED16 start = vertices[0].position;
+        NUVEC_ALIGNED16 end = vertices[1].position;
         NuVecMtxTransform(&start, &start, &matrix);
         NuVecMtxTransform(&end, &end, &matrix);
-        NuRndrLine3dDbg(start.x, start.y, start.z, end.x, end.y, end.z, first.colour);
-        first.position = second.position;
-        NuVecRotateY(&second.position, &second.position, step);
+        NuRndrLine3dDbg(start.x, start.y, start.z, end.x, end.y, end.z, vertices[0].colour);
+        vertices[0].position = vertices[1].position;
+        NuVecRotateY(&vertices[1].position, &vertices[1].position, step);
     }
 }
 
@@ -677,7 +677,9 @@ void DrawCables() {
             if (cable.slack > cable_slack) {
                 cable.slack = cable_slack;
             }
-        } else if (!(cable.total_length >= tow_length)) {
+        } else if (cable.total_length >= tow_length) {
+            cable.slack = 0.0f;
+        } else {
             f32 fraction = cable.total_length / tow_length;
             if (fraction > 1.0f) {
                 fraction = 0.0f;
@@ -685,8 +687,6 @@ void DrawCables() {
                 fraction = 1.0f - fraction;
             }
             cable.slack = fraction * cable_slack;
-        } else {
-            cable.slack = 0.0f;
         }
 
         f32 distance_along = 0.0f;
@@ -748,7 +748,7 @@ void DrawCables() {
                     NuVecAdd(&cursor, &cursor, &step);
                     end = cursor;
                     const f32 phase = NuFdiv(global_distance + step_length, cable.total_length);
-                    const i32 angle = phase <= 1.0f ? static_cast<i32>(phase * 32768.0f) : 32768;
+                    const i32 angle = !(phase > 1.0f) ? static_cast<i32>(phase * 32768.0f) : 32768;
                     local_distance += step_length;
                     const f32 end_sag = cable.slack * NU_SIN_LUT(angle);
                     end.y -= end_sag;
@@ -879,7 +879,7 @@ void Draw3DObject(WORLDINFO_s *world, i32 object_index, nuvec_s *position, u16 x
     if (world != NULL) {
         if (world->lev_objs[object_index].active != 0 && (scale_x != 0.0f || scale_y != 0.0f || scale_z != 0.0f)) {
             NUVEC scale = {scale_x, scale_y, scale_z};
-            NUMTX matrix;
+            NUMTX_ALIGNED16 matrix;
             NuMtxSetScale(&matrix, &scale);
             RotateGameMatrix(&matrix, rotate_order, x_rotation, y_rotation, z_rotation);
             NuMtxTranslate(&matrix, position);
@@ -1785,7 +1785,7 @@ void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
 void DrawGameObjects() {
     const f32 saved_far_clip = global_camera.unknown_64;
     const f32 object_far_clip = VehicleArea != 0 ? 50.0f : 20.0f;
-    if (object_far_clip <= global_camera.unknown_64) {
+    if (!(global_camera.unknown_64 < object_far_clip)) {
         global_camera.unknown_64 = object_far_clip;
     }
 
@@ -1807,55 +1807,21 @@ void DrawPaintLights() {
             NuSpecialDrawAt(&green_light, NuSpecialGetDrawMtx(light));
         }
     }
-    u8 first_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
-    u8 second_colour;
-    u8 third_colour;
-    if (first_colour == 3)
-        goto first_visible;
-    if (first_colour != 0)
-        goto first_hidden;
-first_visible:
-    NuSpecialSetVisibility(&painttargetcolour[0], 1);
-    goto first_done;
-first_done:
-    second_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
-    if (second_colour == 4)
-        goto second_visible;
-    if (second_colour != 0)
-        goto second_hidden;
-second_visible:
-    NuSpecialSetVisibility(&painttargetcolour[1], 1);
-    goto second_done;
-second_done:
-    third_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
-    if (third_colour == 5)
-        goto third_visible;
-    if (third_colour != 0)
-        goto third_hidden;
-third_visible:
-    NuSpecialSetVisibility(&painttargetcolour[2], 1);
-    return;
-first_hidden:
-    NuSpecialSetVisibility(&painttargetcolour[0], 0);
-    goto first_done;
-third_hidden:
-    NuSpecialSetVisibility(&painttargetcolour[2], 0);
-    return;
-second_hidden:
-    NuSpecialSetVisibility(&painttargetcolour[1], 0);
-    goto second_done;
+    for (i32 slot = 0; slot < 3; ++slot) {
+        const u8 colour = static_cast<const u8 *>(factoryb_netpacket)[3];
+        if (colour == slot + 3 || colour == 0) {
+            NuSpecialSetVisibility(&painttargetcolour[slot], 1);
+        } else {
+            NuSpecialSetVisibility(&painttargetcolour[slot], 0);
+        }
+    }
 }
 
 void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
-    f32 icon_alpha;
-    if (status->player0_active == 0) {
-        icon_alpha = 0.25f;
-    } else {
-        icon_alpha = 1.0f;
-    }
-    icon_alpha *= alpha;
+    const f32 x = ICONX;
+    const f32 icon_alpha = (status->player0_active == 0 ? 0.25f : 1.0f) * alpha;
     const f32 size = ICONSIZE;
-    DrawCharIcon(static_cast<i16>(status->player0_model), -ICONX, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
+    DrawCharIcon(static_cast<i16>(status->player0_model), -x, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
 }
 
 void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large) {
@@ -2107,7 +2073,7 @@ void Draw3DObjectAlpha(WORLDINFO_s *world, i32 object_index, nuvec_s *position, 
     if (world != NULL) {
         if (world->lev_objs[object_index].active != 0 && (scale_x != 0.0f || scale_y != 0.0f || scale_z != 0.0f)) {
             NUVEC scale = {scale_x, scale_y, scale_z};
-            NUMTX matrix;
+            NUMTX_ALIGNED16 matrix;
             NuMtxSetScale(&matrix, &scale);
             RotateGameMatrix(&matrix, rotate_order, x_rotation, y_rotation, z_rotation);
             NuMtxTranslate(&matrix, position);
@@ -3065,19 +3031,17 @@ void DrawGameMessage_Targets(GAMEMESSAGE_s *message, nuvec_s *position, float sc
 
 i32 DrawPanel3DObjectNoAlpha(float x, float y, float z, float scale_x, float scale_y, float scale_z, u16 rotate_x,
                              u16 rotate_y, u16 rotate_z, nuhspecial_s *special, i32 rotate_order) {
-    if (special == NULL || NuSpecialExistsFn(special) == 0)
-        return 0;
-    if (scale_y == 0.0f && scale_x == 0.0f && scale_z == 0.0f)
-        return 0;
-    NUVEC scale = {scale_x / CameraZoom, scale_y / CameraZoom, scale_z / CameraZoom};
-    NUMTX matrix;
-    NuMtxSetScale(&matrix, &scale);
-    RotateGameMatrix(&matrix, rotate_order, rotate_x, rotate_y, rotate_z);
-    matrix.m30 = x * PANEL3DMULX;
-    matrix.m31 = y * PANEL3DMULY;
-    matrix.m32 = z;
-    NuMtxMulVU0(&matrix, &matrix, NuCameraGetMtx());
-    NuSpecialDrawAt(special, &matrix);
+    if (special != NULL && NuSpecialExistsFn(special) != 0 && (scale_y != 0.0f || scale_x != 0.0f || scale_z != 0.0f)) {
+        NUVEC scale = {scale_x / CameraZoom, scale_y / CameraZoom, scale_z / CameraZoom};
+        NUMTX_ALIGNED16 matrix;
+        NuMtxSetScale(&matrix, &scale);
+        RotateGameMatrix(&matrix, rotate_order, rotate_x, rotate_y, rotate_z);
+        matrix.m30 = x * PANEL3DMULX;
+        matrix.m31 = y * PANEL3DMULY;
+        matrix.m32 = z;
+        NuMtxMulVU0(&matrix, &matrix, NuCameraGetMtx());
+        NuSpecialDrawAt(special, &matrix);
+    }
     return 0;
 }
 
@@ -3212,16 +3176,16 @@ SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDeca
     const f32 dx = current_x - swipe_x;
     const f32 dy = current_y - swipe_y;
     f32 target_width = NuFsqrt(dx * dx + dy * dy);
-    target_width = target_width < SwipeDecalRenderer_MaxWidth ? target_width : SwipeDecalRenderer_MaxWidth;
-    target_width = target_width < SwipeDecalRenderer_MinWidth ? SwipeDecalRenderer_MinWidth : target_width;
+    // MAX/MIN expand the inner MIN twice, which gives retail's re-tested clamp branches.
+    target_width = MAX(SwipeDecalRenderer_MinWidth, MIN(target_width, SwipeDecalRenderer_MaxWidth));
 
     width.Start(0.0f, target_width, 0.1f);
-    width.value = 0.0f;
-    y = swipe_y;
+    *width.target = 0.0f;
     x = swipe_x;
+    y = swipe_y;
     angle = NuAtan2D(dx, dy);
     alpha.Start(0.02f, 1.0f, 0.1f);
-    alpha.value = 0.02f;
+    *alpha.target = 0.02f;
 }
 
 extern i32 GetMenuID(void);
@@ -3527,6 +3491,11 @@ static void DrawParaphernalia(GameObject_s *object) {
     NUMTX shield_matrix, shield_reflected;
     NUMTX hand_matrix, hand_reflected;
     NUMTX attachment_matrices[16];
+    // Function-scope temporaries: the original keeps these in their own stack slots instead of sharing them with
+    // the per-block scaling vectors.
+    NUVEC position;
+    NUANGVEC rotation;
+    NUVEC effect_vector;
     GameObject_s *carried = object->field_0xcc0;
     if (!(carried != NULL && object->field_0x7a5 != 0x3b &&
           (object->apiobj.character_data->game_character->flags_098[0] & 0x40) == 0)) {
@@ -3536,7 +3505,9 @@ static void DrawParaphernalia(GameObject_s *object) {
             if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
                 matrix = object->joint_matrices[locator];
             } else {
-                NUANGVEC rotation = {-0x4000, object->apiobj.field_0x276, 0};
+                rotation.x = -0x4000;
+                rotation.y = object->apiobj.field_0x276;
+                rotation.z = 0;
                 NuMtxSetRotationXYVU0(&matrix, &rotation);
                 matrix.m30 = object->apiobj.position.x +
                              NuTrigTable[object->apiobj.field_0x276 >> 1] * object->apiobj.field_0x1dc * 1.75f;
@@ -3560,7 +3531,9 @@ static void DrawParaphernalia(GameObject_s *object) {
         } else {
             // The original fallback does not initialize its temporary Z component.
             // Zero gives this otherwise undefined path a deterministic position.
-            NUVEC position = {0.0f, object->apiobj.field_0x1e0, 0.0f};
+            position.x = 0.0f;
+            position.y = object->apiobj.field_0x1e0;
+            position.z = 0.0f;
             NuVecMtxRotate(&position, &position, &object->apiobj.field_0xb8);
             NuVecAdd(&position, &position, &object->apiobj.collision_position);
             matrix = object->apiobj.field_0xb8;
@@ -3700,8 +3673,8 @@ static void DrawParaphernalia(GameObject_s *object) {
                 model_id = (communicate_config->flags_094[0] & 0x80) ? 0x0e : -1;
                 communicate_matrix = joints[locator];
                 if (object->communicate_blend != 1.0f) {
-                    NUVEC scaling = {object->communicate_blend, object->communicate_blend, object->communicate_blend};
-                    NuMtxPreScale(&communicate_matrix, &scaling);
+                    effect_vector.x = effect_vector.y = effect_vector.z = object->communicate_blend;
+                    NuMtxPreScale(&communicate_matrix, &effect_vector);
                 }
             }
             if (model_id != -1 && WORLD->lev_objs[model_id].active) {
@@ -3720,11 +3693,10 @@ static void DrawParaphernalia(GameObject_s *object) {
     if (object->field_0x7a5 == 0x22) {
         if ((WORLD->area != NULL && WORLD->area == HUB_ADATA) || WORLD->current_level == BLOCKADERUNNERB_LDATA ||
             WORLD->current_level == DOOKUC_LDATA) {
-            NUVEC position;
-            position.x = object->apiobj.collision_position.x;
-            position.y = object->character_bottom * object->apiobj.field_0xa8 + object->apiobj.position.y +
-                         (object->character_top - object->character_bottom) * 0.5f * object->apiobj.field_0xa8;
-            position.z = object->apiobj.collision_position.z;
+            effect_vector.x = object->apiobj.collision_position.x;
+            effect_vector.y = object->character_bottom * object->apiobj.field_0xa8 + object->apiobj.position.y +
+                              (object->character_top - object->character_bottom) * 0.5f * object->apiobj.field_0xa8;
+            effect_vector.z = object->apiobj.collision_position.z;
             f32 radius = NuFmax(object->apiobj.field_0x1dc, object->apiobj.field_0x1e0) * 1.75f;
             f32 alpha;
             if (object->field_0x768 < 0.2f) {
@@ -3734,7 +3706,7 @@ static void DrawParaphernalia(GameObject_s *object) {
             } else {
                 alpha = 1.0f;
             }
-            DrawForceGlowSprite(&position, radius, 0xdf, alpha, object);
+            DrawForceGlowSprite(&effect_vector, radius, 0xdf, alpha, object);
         }
     } else if (object->field_0xd80 > 0.0f && object->field_0xd8c > 0.0f &&
                WORLD->lev_objs[object->field_0xe1e].active != 0 &&
@@ -4029,7 +4001,7 @@ extern f32 SeekLinearF(f32, f32, f32);
 
 static NUGSCN *backdrop_scene = nullptr;
 
-static nuhspecial_s s_backdrop_hspecial[4];
+static nuhspecial_s backdrop_hspecial[4];
 
 static f32 backdrop_back_wait = 0.0f;
 
@@ -4055,9 +4027,7 @@ static __used__ void BackDrop_Alpha(float *alpha) {
     extern STATUSPACKET_s StatusPacket;
     extern i32 selectmodemode;
     extern f32 selectmodetime;
-    if (alpha == nullptr)
-        return;
-    if (WORLD != NULL && WORLD->current_level != NULL) {
+    if (WORLD != NULL) {
         LEVELDATA *level = WORLD->current_level;
         if (level == TITLES_LDATA) {
             *alpha *= newgamealpha;
@@ -4067,38 +4037,45 @@ static __used__ void BackDrop_Alpha(float *alpha) {
             *alpha *= CreditsAlpha;
             return;
         }
-        if ((level->flags & 0x400) != 0 && StatusPacket.status_flags != 0 && StatusPacket.stage != NULL &&
-            StatusPacket.stage->type == 12 && (StatusPacket.mode_flags & 0x10) == 0) {
+        if ((level->flags & 0x400) != 0 && StatusPacket.status_flags != 0 && StatusPacket.stage->type == 12 &&
+            (StatusPacket.mode_flags & 0x10) == 0) {
             const f32 time = StatusPacket.stage->field_0x18;
-            *alpha = time < 0.5f ? 1.0f - (time + time) : 0.0f;
+            if (time < 0.5f) {
+                *alpha = 1.0f - (time + time);
+            } else {
+                *alpha = 0.0f;
+            }
             return;
         }
     }
     if (GetMenuID() == 15 && selectmodemode == 4) {
         const f32 time = selectmodetime;
-        *alpha = time < 0.5f ? 1.0f - (time + time) : 0.0f;
+        if (time < 0.5f) {
+            *alpha = 1.0f - (time + time);
+        } else {
+            *alpha = 0.0f;
+        }
     }
 }
 
 void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
-    NUGSCN *scene = backdrop_scene;
-    if (scene == NULL) {
-        scene = NuGScnRead(buf, *buf_end, path);
-        backdrop_scene = scene;
+    if (backdrop_scene == NULL) {
+        backdrop_scene = NuGScnRead(buf, *buf_end, path);
     }
-    memset(s_backdrop_hspecial, 0, sizeof(s_backdrop_hspecial));
-    if (scene == NULL) {
+    memset(backdrop_hspecial, 0, sizeof(backdrop_hspecial));
+    if (backdrop_scene == NULL) {
         return;
     }
-    NuSpecialFind(scene, &s_backdrop_hspecial[0], (char *)"ball1", 1);
-    NuSpecialFind(scene, &s_backdrop_hspecial[1], (char *)"ball2", 1);
-    NuSpecialFind(scene, &s_backdrop_hspecial[2], (char *)"ball3", 1);
-    NuSpecialFind(scene, &s_backdrop_hspecial[3], (char *)"ball4", 1);
+    NuSpecialFind(backdrop_scene, &backdrop_hspecial[0], (char *)"ball1", 1);
+    NuSpecialFind(backdrop_scene, &backdrop_hspecial[1], (char *)"ball2", 1);
+    NuSpecialFind(backdrop_scene, &backdrop_hspecial[2], (char *)"ball3", 1);
+    NuSpecialFind(backdrop_scene, &backdrop_hspecial[3], (char *)"ball4", 1);
 }
 
 void BackDrop_Dump() {
-    backdrop_scene = nullptr;
-    memset(s_backdrop_hspecial, 0, sizeof(s_backdrop_hspecial));
+    if (backdrop_scene != NULL) {
+        NuGScnRemove(backdrop_scene);
+    }
 }
 
 void BackDrop_Update(float dt) {
@@ -4184,19 +4161,20 @@ void BackDrop_Draw(float alpha, i32 flags) {
     }
 
     for (i32 special_index = 0; special_index < 2; ++special_index) {
-        nuhspecial_s *special = &s_backdrop_hspecial[special_index];
+        nuhspecial_s *special = &backdrop_hspecial[special_index];
         if (NuSpecialExistsFn(special) == 0) {
             continue;
         }
-        NUMTX mtx = *NuSpecialGetDrawMtx(special);
+        // Retail realigns the frame (and esp,-16) for this matrix.
+        NUMTX_ALIGNED16 mtx = *NuSpecialGetDrawMtx(special);
         NuSpecialDrawAtAlpha(special, &mtx, alpha);
         f32 x = mtx.m30;
         f32 y = mtx.m31;
         f32 z = mtx.m32;
         u16 angle = (u16)qrand();
         for (i32 i = 0; i < 3; ++i) {
-            mtx.m30 = NuTrigTable[angle >> 1] * 0.01f + x;
-            mtx.m31 = NuTrigTable[((i32)angle + 0x4000) >> 1 & 0x7fff] * 0.01f + y;
+            mtx.m30 = NU_SIN_LUT(angle) * 0.01f + x;
+            mtx.m31 = NU_COS_LUT(angle) * 0.01f + y;
             mtx.m32 = z;
             NuSpecialDrawAtAlpha(special, &mtx, alpha);
             angle = (u16)(angle + 0x5555);
@@ -4230,18 +4208,25 @@ extern "C" {
         special_handle.scene = gscene;
         for (i32 index = 0; index < scene->nspecials; ++index) {
             NUDISPLAYSPECIAL *special = &static_cast<NUDISPLAYSPECIAL *>(scene->specials)[index];
-            if ((special->flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) != 0) {
-                special_handle.display_special = special;
-                if ((!shadow_pass ||
-                     (scene->visibility_flags[special->instance_ix] & NUDL_INSTANCE_FLAG_CASTS_SHADOW)) &&
-                    (!portal_filter ||
-                     (scene->visibility_flags[special->instance_ix] & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) ||
-                     (visibility->portal_bits[special->instance_ix >> 3] & (1U << (special->instance_ix & 7))))) {
-                    if (special->draw_mtx_ptr != reinterpret_cast<NUMTX *>(-1) && special->draw_mtx_ptr != NULL)
-                        NuDisplayListRndrSpecial(&special_handle, special->draw_mtx_ptr, 0, NULL, NULL);
-                    else
-                        NuDisplayListRndrSpecial(&special_handle, &special->draw_mtx, 0, NULL, NULL);
-                }
+            if ((special->flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) == 0) {
+                continue;
+            }
+            special_handle.display_special = special;
+            if (shadow_pass && (scene->visibility_flags[special->instance_ix] & NUDL_INSTANCE_FLAG_CASTS_SHADOW) == 0) {
+                continue;
+            }
+            if (portal_filter &&
+                (scene->visibility_flags[special->instance_ix] & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0 &&
+                (visibility->portal_bits[special->instance_ix >> 3] & (1U << (special->instance_ix & 7))) == 0) {
+                continue;
+            }
+            NUMTX *draw_mtx = special->draw_mtx_ptr;
+            if (draw_mtx == reinterpret_cast<NUMTX *>(-1)) {
+                NuDisplayListRndrSpecial(&special_handle, &special->draw_mtx, 0, NULL, NULL);
+            } else if (draw_mtx == NULL) {
+                NuDisplayListRndrSpecial(&special_handle, &special->draw_mtx, 0, NULL, NULL);
+            } else {
+                NuDisplayListRndrSpecial(&special_handle, draw_mtx, 0, NULL, NULL);
             }
         }
     }
