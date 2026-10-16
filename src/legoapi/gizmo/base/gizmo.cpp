@@ -883,10 +883,10 @@ void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {
         GIZMOTYPE *type = gizmotypes->types;
         GIZMOSET *set = gizmo_sys->sets;
 
-        for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+        for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++set, ++type) {
             if (type->fns.reset_fn != NULL) {
                 if (progress_index >= 0) {
-                    if (type->buffer != NULL) {
+                    if (__builtin_expect(type->buffer != NULL, 1)) {
                         type->fns.reset_fn(world, set->unknown, type->buffer[progress_index].void_ptr);
                     } else {
                         type->fns.reset_fn(world, set->unknown, NULL);

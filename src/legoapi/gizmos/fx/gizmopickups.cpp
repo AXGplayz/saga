@@ -360,7 +360,7 @@ void MiniKitDetector(nuvec_s *position) {
 
 static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count) {
     NUMTX matrix;
-    if (world == NULL || pickups == NULL || world->lev_objs == NULL || GameCam == NULL) {
+    if (world == NULL || pickups == NULL) {
         return;
     }
 
@@ -501,10 +501,12 @@ static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 
     }
 }
 
-static void GizmoPickups_UpdateList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count, i32 play_nearby_sfx) {
-    if (world == NULL || pickups == NULL) {
-        return;
-    }
+// Retail keeps this body as GCC's split-out clone; the inline head stays in
+// the caller.
+static __attribute__((noinline, noclone)) void GizmoPickups_UpdateListBody(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count, i32 play_nearby_sfx)
+    __asm__("_ZL23GizmoPickups_UpdateListP11WORLDINFO_sP13GIZMOPICKUP_sii.part.9");
+
+static void GizmoPickups_UpdateListBody(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count, i32 play_nearby_sfx) {
 
     const bool detector_phase =
         play_nearby_sfx && FadeSys.fade == 0.0f && NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
@@ -605,6 +607,13 @@ static void GizmoPickups_UpdateList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i3
     }
 }
 
+static inline void GizmoPickups_UpdateList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count, i32 play_nearby_sfx) {
+    if (world == NULL || pickups == NULL) {
+        return;
+    }
+    GizmoPickups_UpdateListBody(world, pickups, count, play_nearby_sfx);
+}
+
 i32 gizmopickup_typeid = -1;
 f32 AreaPickupScale;
 i32 PickUpFlickerTest = 3;
@@ -628,10 +637,11 @@ static void GizmoPickups_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *data,
 
 static void GizmoPickups_Update(void *world_ptr, void *, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world == NULL || world->gizmo_pickup_sys == NULL) {
+    if (world == NULL) {
         return;
     }
 
+    // Retail does not test gizmo_pickup_sys for NULL here.
     GIZMOPICKUPRUNTIMESYS_s *pickup_sys = world->gizmo_pickup_sys;
     if (pickup_sys->pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
         GizmoPickups_UpdateList(world, pickup_sys->pickups, pickup_sys->pickup_count, 1);
@@ -643,7 +653,7 @@ static void GizmoPickups_Update(void *world_ptr, void *, float) {
 
 static void GizmoPickups_Draw(void *world_ptr, void *, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world == NULL || world->gizmo_pickup_sys == NULL) {
+    if (world == NULL) {
         return;
     }
 
@@ -652,12 +662,18 @@ static void GizmoPickups_Draw(void *world_ptr, void *, float) {
         TBOPENFN(const_cast<char *>("Coins"), 5);
     }
 
-    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = world->gizmo_pickup_sys;
-    if (pickup_sys->pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
-        GizmoPickups_DrawList(world, pickup_sys->pickups, pickup_sys->pickup_count);
+    GIZMOPICKUP_s *pickups = world->gizmo_pickup_sys->pickups;
+    const i32 pickup_count = world->gizmo_pickup_sys->pickup_count;
+    if (pickups != NULL) {
+        if (Missions_PickupsOff(MissionSys) != 0) {
+            // Mission pickups are hidden.
+        } else {
+            GizmoPickups_DrawList(world, pickups, pickup_count);
+        }
     }
-    if (pickup_sys->temporary_pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
-        GizmoPickups_DrawList(world, pickup_sys->temporary_pickups, GIZMOPICKUP_TEMPORARY_CAPACITY);
+    GIZMOPICKUP_s *temporary_pickups = world->gizmo_pickup_sys->temporary_pickups;
+    if (temporary_pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
+        GizmoPickups_DrawList(world, temporary_pickups, GIZMOPICKUP_TEMPORARY_CAPACITY);
     }
 
     if (TimingBarSet == 5) {

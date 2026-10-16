@@ -1302,7 +1302,7 @@ static f32 Condition_PlayerOnObject(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *
     if (player != NULL && platform != -1 && (player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0)) {
         if (player->apiobj.supporting_platform_id == platform) {
             NUMTX *transform = static_cast<NUMTX *>(CurTerr->platforms[platform].scene_object);
-            result = player->apiobj.position.y >= transform->m31 ? 1.0f : 0.0f;
+            result = transform->m31 > player->apiobj.position.y ? 0.0f : 1.0f;
         }
     }
     return result;
@@ -2240,13 +2240,24 @@ f32 timetogetlos;
 void GameCreatureOpponentSelection(AISYS_s *, i32, APIOBJECT **, i32, APIOBJECT **, i32, APIOBJECT **, u64, f32);
 void GizTurrets_OpponentSelection(GIZTURRETSYS_s *, i32, APIOBJECT **, i32, APIOBJECT **);
 
-static void TestWalkAround(APIOBJECT *object, APIOBJECT *other, NUVEC *difference, f32 radius) {
+#if defined(__i386__)
+#define GAMEOBJECTS_CLONE_ATTR2_SSE __attribute__((noinline, noclone, regparm(2), sseregparm))
+#else
+#define GAMEOBJECTS_CLONE_ATTR2_SSE __attribute__((noinline, noclone))
+#endif
+
+// Retail keeps only the IPA-SRA clone, which takes the other object's x and z by address.
+static GAMEOBJECTS_CLONE_ATTR2_SSE void TestWalkAround(APIOBJECT *object, f32 *other_x, f32 *other_z,
+                                                       NUVEC *difference, f32 radius)
+    __asm__("_ZL14TestWalkAroundP11APIOBJECT_sS0_P7nuvec_sf.isra.10");
+
+static void TestWalkAround(APIOBJECT *object, f32 *other_x, f32 *other_z, NUVEC *difference, f32 radius) {
     if (difference->x * difference->x + difference->z * difference->z < radius * radius) {
-        difference->x = object->position.x - other->position.x;
-        difference->z = object->position.z - other->position.z;
+        difference->x = object->position.x - *other_x;
+        difference->z = object->position.z - *other_z;
         i32 angle = NuAtan2D(difference->x, difference->z);
-        difference->x = object->ai->movement_destination.x - other->position.x;
-        difference->z = object->ai->movement_destination.z - other->position.z;
+        difference->x = object->ai->movement_destination.x - *other_x;
+        difference->z = object->ai->movement_destination.z - *other_z;
         i32 turn = NuAngSub(NuAtan2D(difference->x, difference->z), angle);
         i32 limit = static_cast<i32>((ai_moveradius / radius) * 10430.378f);
         if (turn > limit)
@@ -2258,9 +2269,9 @@ static void TestWalkAround(APIOBJECT *object, APIOBJECT *other, NUVEC *differenc
         difference->y = 0.0f;
         difference->z = radius;
         NuVecRotateY(difference, difference, angle);
-        object->ai->movement_position.x = difference->x + other->position.x;
+        object->ai->movement_position.x = difference->x + *other_x;
         object->ai->movement_position.y = object->ai->movement_destination.y;
-        object->ai->movement_position.z = difference->z + other->position.z;
+        object->ai->movement_position.z = difference->z + *other_z;
     }
 }
 
@@ -2362,6 +2373,7 @@ void GameAIProcess() {
     GameObject_s *active_player = player;
     APIOBJECT **volatile neutral_cursor = neutral_objects;
     APIOBJECT **volatile goody_cursor = goodies;
+    APIOBJECT **baddy_cursor = baddies;
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object;
         if (index < 2 && (object = Player[1]) == active_player) {
@@ -2386,7 +2398,8 @@ void GameAIProcess() {
                 object->ai.pending_opponent_metric = 1.0e9f;
                 object->ai.field_0x1e5 &= ~0x10;
             } else if ((object->apiobj.field_0x1f4 & 1) != 0) {
-                baddies[baddy_count++] = &object->apiobj;
+                ++baddy_count;
+                *baddy_cursor++ = &object->apiobj;
             } else if ((object->apiobj.field_0x1f4 & 4) != 0) {
                 ++neutral_count;
                 *neutral_cursor++ = &object->apiobj;
@@ -2409,7 +2422,6 @@ void GameAIProcess() {
     u8 cleared_flag;
     object = Obj;
     APIOBJECT **interactive_cursor = interactive_objects;
-    APIOBJECT **baddy_cursor = baddies + baddy_count;
     for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
         NUVEC direction;
         i32 ground_checks;
@@ -2907,16 +2919,16 @@ void GameAIProcess() {
                             first->resolved_collision_priority = second->collision_priority;
                             difference.x = -difference.x;
                             difference.z = -difference.z;
-                            TestWalkAround(second, first, &difference, radius);
+                            TestWalkAround(second, &first->position.x, &first->position.z, &difference, radius);
                         } else if (second->collision_priority > first->resolved_collision_priority) {
                             first->resolved_collision_priority = second->collision_priority;
-                            TestWalkAround(first, second, &difference, radius);
+                            TestWalkAround(first, &second->position.x, &second->position.z, &difference, radius);
                         }
                     } else if (first->collision_priority > second->resolved_collision_priority) {
                         second->resolved_collision_priority = first->collision_priority;
                         difference.x = -difference.x;
                         difference.z = -difference.z;
-                        TestWalkAround(second, first, &difference, radius);
+                        TestWalkAround(second, &first->position.x, &first->position.z, &difference, radius);
                     }
                     AIPACKET *first_ai = first->ai;
                     AIPACKET *second_ai = second->ai;
@@ -4006,18 +4018,19 @@ void GameObjectDimensionsExtra_LSW(GameObject_s *object);
 
 void GameObjectDimensions(GameObject_s *object) {
     APIOBJECT &api = object->apiobj;
-    PLAYERCHARACTERCONFIG_s *config = api.character_data->player_config;
-    const i32 collision_origin_joint = config->collision_origin_joint;
-    if (object->use_model_origin != 0 && object->field_0xd24 == 1.0f && collision_origin_joint != -1 &&
-        api.character_model->points_of_interest[collision_origin_joint] != NULL && api.field_0x288 != 0) {
-        const f32 radius = object->field_0x1004 * config->collision_origin_radius;
+    if (object->use_model_origin != 0 && object->field_0xd24 == 1.0f &&
+        api.character_data->player_config->collision_origin_joint != -1 &&
+        api.character_model->points_of_interest[api.character_data->player_config->collision_origin_joint] != NULL &&
+        api.field_0x288 != 0) {
+        const f32 radius = object->field_0x1004 * api.character_data->player_config->collision_origin_radius;
         api.field_0x1dc = radius;
         api.field_0x1e0 = radius;
     } else {
-        api.field_0x1e0 = api.collision_height;
         api.field_0x1dc = api.collision_radius;
+        api.field_0x1e0 = api.collision_height;
     }
-    GameObjectDimensionsExtra_LSW(object);
+    if (GameObjectDimensionsExtraFn != NULL)
+        GameObjectDimensionsExtraFn(object);
 }
 
 void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special) {

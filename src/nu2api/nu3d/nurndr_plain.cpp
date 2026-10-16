@@ -200,9 +200,9 @@ extern "C" {
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
         for (i32 i = 0; i < scene->clip_objects[clip_index].nmaterials; ++i) {
             const u32 material = scene->clip_objects[clip_index].material_ids[i];
-            scene->mtl_used[scene->render_buffer >> 7][material >> 3] |= static_cast<u8>(1U << (material & 7));
+            scene->mtl_used[NuDisplaySceneCurrentBuffer(scene)][material >> 3] |= static_cast<u8>(1U << (material & 7));
         }
-        scene->clip_used[scene->render_buffer >> 7][clip_index >> 2] |=
+        scene->clip_used[NuDisplaySceneCurrentBuffer(scene)][clip_index >> 2] |=
             static_cast<u8>(clip_result << ((clip_index & 3) * 2));
     }
 
@@ -275,10 +275,24 @@ extern "C" {
     i32 NuDynamicLightTestShadowExtrusionExtent(NuDynamicLight *light, const NUVEC *center, const NUVEC *extent,
                                                 i32 render_set);
 
+    // Retail partially inlines the clipping test into NuDisplaySceneRndr and
+    // keeps the body as its stack-argument .part clone.
+#if defined(__i386__)
+#define NUDISPLAYSCENERNDR_BODY_ATTR __attribute__((noinline, noclone, regparm(0)))
+#else
+#define NUDISPLAYSCENERNDR_BODY_ATTR __attribute__((noinline, noclone))
+#endif
+    static NUDISPLAYSCENERNDR_BODY_ATTR void NuDisplaySceneRndrBody(NUDLDLISTSCENE *scene)
+        __asm__("NuDisplaySceneRndr.part.101");
+
     void NuDisplaySceneRndr(void *display_scene) {
         NUDLDLISTSCENE *scene = static_cast<NUDLDLISTSCENE *>(display_scene);
         if ((scene->flags & NUDL_SCENE_FLAG_CLIPPING) != 0)
             return;
+        NuDisplaySceneRndrBody(scene);
+    }
+
+    static void NuDisplaySceneRndrBody(NUDLDLISTSCENE *scene) {
 
         u8 visibility_context[0x2800];
         RndrStateCopyGlobalState(scene->local_state);

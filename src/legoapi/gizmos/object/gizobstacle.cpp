@@ -620,31 +620,32 @@ static i32 GizObstacles_BoltHit(void *world, void *data, void *attacker_ptr, NUV
             continue;
         const NUVEC &position = obstacle->evaluated_position;
         const f32 obstacle_radius = obstacle->field_0x58;
-        if (position.x - obstacle_radius > maximum->x || minimum->x > position.x + obstacle_radius ||
-            position.z - obstacle_radius > maximum->z || minimum->z > position.z + obstacle_radius ||
-            position.y - obstacle_radius > maximum->y || minimum->y > position.y + obstacle_radius) {
+        if (__builtin_expect(position.x - obstacle_radius > maximum->x || minimum->x > position.x + obstacle_radius ||
+                                 position.z - obstacle_radius > maximum->z ||
+                                 minimum->z > position.z + obstacle_radius ||
+                                 position.y - obstacle_radius > maximum->y || minimum->y > position.y + obstacle_radius,
+                             1)) {
             continue;
         }
         for (i32 point_index = point_count - 1; point_index >= 0; --point_index) {
             NUVEC *point = &points[point_index];
-            if (SphereSphereOverlap(&obstacle->evaluated_position, obstacle->field_0x58, point, radius) == 0) {
-                continue;
+            if (SphereSphereOverlap(&obstacle->evaluated_position, obstacle->field_0x58, point, radius) != 0) {
+                if (attacker != NULL) {
+                    point = &attacker->apiobj.collision_position;
+                }
+                const f32 distance = NuVecDistSqr(point, &obstacle->evaluated_position, 0);
+                if (distance < nearest_distance) {
+                    nearest_distance = distance;
+                    nearest = obstacle;
+                }
+                break;
             }
-            if (attacker != NULL) {
-                point = &attacker->apiobj.collision_position;
-            }
-            const f32 distance = NuVecDistSqr(point, &obstacle->evaluated_position, 0);
-            if (distance < nearest_distance) {
-                nearest_distance = distance;
-                nearest = obstacle;
-            }
-            break;
         }
     } while (system->active_gizmo_count > ++index);
     if (nearest == NULL) {
         return 0;
     }
-    if (hit_type != 7 && hit_type != 2 && bolt != NULL) {
+    if (__builtin_expect(hit_type != 7, 0) && hit_type != 2 && bolt != NULL) {
         BoltType_FindByID(bolt->type_id, WORLD);
         Cheats_CheckFlags(2);
     }
@@ -1017,7 +1018,8 @@ namespace {
 } // namespace
 
 static void GizObstacleUpdate_Proximity(GIZOBSTACLE_s *obstacle);
-static i32 GizObstacle_SatisfyingTerrainChecks(GIZOBSTACLE_s *obstacle, GameObject_s *object);
+// Retail places this in .text.unlikely and never partially inlines it.
+__attribute__((cold)) static i32 GizObstacle_SatisfyingTerrainChecks(GIZOBSTACLE_s *obstacle, GameObject_s *object);
 
 static i32 GizObstacle_PosWithinBox(GIZOBSTACLE_s *obstacle, NUVEC *position) {
     if (obstacle == NULL || position == NULL) {
@@ -1106,11 +1108,10 @@ GIZOBSTACLE_s *GizObstacle_FindNearest(GIZOBSTACLESYS_s *system, NUVEC *position
         } else {
             distance = NuVecDistSqr(position, &obstacle->position, NULL);
         }
-        if (!(distance < best)) {
-            continue;
+        if (distance < best) {
+            best = distance;
+            nearest = obstacle;
         }
-        best = distance;
-        nearest = obstacle;
     }
     if (distance_squared != NULL)
         *distance_squared = best;
@@ -1118,18 +1119,17 @@ GIZOBSTACLE_s *GizObstacle_FindNearest(GIZOBSTACLESYS_s *system, NUVEC *position
 }
 
 GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *system, char *name) {
-    if (system == NULL || name == NULL) {
-        return NULL;
-    }
-
-    for (i32 index = 0; index < system->count; ++index) {
-        GIZOBSTACLE_s *obstacle = &system->obstacles[index];
-        if (NuStrICmp(obstacle->name, name) == 0) {
-            return obstacle;
+    GIZOBSTACLE_s *obstacle = NULL;
+    if (name != NULL && system != NULL) {
+        obstacle = system->obstacles;
+        for (i32 index = 0; index < system->count; ++index, ++obstacle) {
+            if (NuStrICmp(obstacle->name, name) == 0) {
+                return obstacle;
+            }
         }
     }
-
-    return NULL;
+    // The original returns the end pointer when no obstacle has this name.
+    return obstacle;
 }
 
 void GizObstacle_JumpToStart(GIZOBSTACLE_s *obstacle) {

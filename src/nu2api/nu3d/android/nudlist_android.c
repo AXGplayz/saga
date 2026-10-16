@@ -128,7 +128,8 @@ extern "C" {
     // Original 0x29aa49: private to this display-list translation unit.
     static void NuDisplayListResetBuffer(void) {
         display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
-        display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
+        // Retail copies the VARIPTR union as a whole into the end pointer.
+        *reinterpret_cast<VARIPTR *>(&display_list_buffer_end) = rndrstream_end;
     }
 }
 
@@ -218,8 +219,7 @@ extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void *) {
     NuDisplayListSetItem(item, 0x87, 0, nullptr);
 }
 
-extern "C" void DisplayListCreatePS(void) {
-    STUBBED();
+extern "C" void DisplayListCreatePS(NUDLDLISTSCENE *, VARIPTR *, VARIPTR) {
 }
 
 extern "C" void NuDisplayListLinkItem(nudisplaylist_s *list, u8 type, void *call_addr) {

@@ -156,7 +156,7 @@ extern "C" {
     void DebrisSetFacing(i32, u8, i16, i16);
     void DebrisStartOffset(i32, f32);
     void DebrisSetGroupID(i32, i16);
-    void DebrisSetPriority(i32, i16, u8);
+    void DebrisSetPriority(i32, u16, u8);
     void DebrisSetRoomID(i32, NUGSCN *);
     void DebrisSetDetailLevels(i32, i32);
     void DebrisSetTrigger(i32, i32, i32, f32);
@@ -407,7 +407,7 @@ i32 edppPtlPlace(i32 index, NUVEC *position) {
 }
 
 void EdDrawPolyTri(VuVec const &a, VuVec const &b, VuVec const &c, i32 colour) {
-    if (NewPrim == 1) {
+    if (__builtin_expect(NewPrim == 1, 0)) {
         NuPrim3DBegin(0, 5, EdDrawMtl[NewMtl], NewMtx ? const_cast<NUMTX *>(&NewMtx->matrix) : NULL);
         NewPrim = 3;
     }
@@ -602,43 +602,42 @@ i32 edbriFileSave(char *path) {
     EdFileWriteInt(1);
     EdFileWriteInt(count);
     for (i32 i = 0; i < 64; ++i) {
-        edbridge_s &bridge = edBridges[i];
-        if (bridge.connection_index == 0xff)
+        if (edBridges[i].connection_index == 0xff)
             continue;
-        EdFileWriteNuVec(&bridge.position);
-        EdFileWriteFloat(bridge.length);
-        EdFileWriteFloat(bridge.field_14);
-        EdFileWriteShort(bridge.rotation_z);
-        EdFileWriteShort(bridge.rotation_y);
-        EdFileWriteChar(bridge.field_1d);
-        EdFileWriteChar(bridge.field_1e);
+        EdFileWriteNuVec(&edBridges[i].position);
+        EdFileWriteFloat(edBridges[i].length);
+        EdFileWriteFloat(edBridges[i].field_14);
+        EdFileWriteShort(edBridges[i].rotation_z);
+        EdFileWriteShort(edBridges[i].rotation_y);
+        EdFileWriteChar(edBridges[i].field_1d);
+        EdFileWriteChar(edBridges[i].field_1e);
         char name[20];
-        if (bridge.special_20 == -1)
+        if (edBridges[i].special_20 == -1)
             name[0] = '\0';
         else {
             nuhspecial_s special;
-            NuGScnGetSpecial(&special, edbits_base_scene, bridge.special_20);
+            NuGScnGetSpecial(&special, edbits_base_scene, edBridges[i].special_20);
             strncpy(name, NuSpecialGetName(&special), sizeof(name));
         }
         EdFileWrite(name, sizeof(name));
-        if (bridge.special_24 == -1)
+        if (edBridges[i].special_24 == -1)
             name[0] = '\0';
         else {
             nuhspecial_s special;
-            NuGScnGetSpecial(&special, edbits_base_scene, bridge.special_24);
+            NuGScnGetSpecial(&special, edbits_base_scene, edBridges[i].special_24);
             strncpy(name, NuSpecialGetName(&special), sizeof(name));
         }
         EdFileWrite(name, sizeof(name));
-        EdFileWriteFloat(bridge.field_28);
-        EdFileWriteFloat(bridge.field_2c);
-        EdFileWriteFloat(bridge.field_30);
-        EdFileWriteFloat(bridge.field_34);
-        EdFileWriteFloat(bridge.field_38);
-        EdFileWriteFloat(bridge.field_3c);
-        EdFileWriteChar(bridge.red);
-        EdFileWriteChar(bridge.green);
-        EdFileWriteChar(bridge.blue);
-        EdFileWriteChar(bridge.field_43);
+        EdFileWriteFloat(edBridges[i].field_28);
+        EdFileWriteFloat(edBridges[i].field_2c);
+        EdFileWriteFloat(edBridges[i].field_30);
+        EdFileWriteFloat(edBridges[i].field_34);
+        EdFileWriteFloat(edBridges[i].field_38);
+        EdFileWriteFloat(edBridges[i].field_3c);
+        EdFileWriteChar(edBridges[i].red);
+        EdFileWriteChar(edBridges[i].green);
+        EdFileWriteChar(edBridges[i].blue);
+        EdFileWriteChar(edBridges[i].field_43);
     }
     EdFileClose();
     return 1;
@@ -671,20 +670,15 @@ i32 edppPtlCreate(NUVEC *position, i32 effect_index) {
     particle->render_group = 0;
     particle->page = edbits_particle_level_page;
     particle->detail_levels = 7;
-    switch (debtab[effect_index]->particle_type) {
-        case 0:
-            particle->render_priority = 20000;
-            break;
-        case 2:
-            particle->render_priority = static_cast<i16>(40000);
-            break;
-        case 3:
-            particle->render_priority = 30000;
-            break;
-        case 7:
-            particle->render_priority = 10000;
-            break;
-    }
+    const u8 particle_type = debtab[effect_index]->particle_type;
+    if (particle_type == 2)
+        particle->render_priority = static_cast<i16>(40000);
+    else if (particle_type == 3)
+        particle->render_priority = 30000;
+    else if (particle_type == 0)
+        particle->render_priority = 20000;
+    else if (particle_type == 7)
+        particle->render_priority = 10000;
     particle = &edpp_ptls[index];
     particle->dynamic_priority = 0;
     particle->facing_mode = 0;
@@ -732,46 +726,43 @@ i32 edgraFileSave(char *path) {
     EdFileWriteInt(element_count);
 
     for (i32 i = 0; i < EDGRA_MAX_CLUMPS; ++i) {
-        edgra_clump_s &clump = GrassClumps[i];
-        if (!clump.element_count)
+        if (!GrassClumps[i].element_count)
             continue;
         nuhspecial_s special;
-        NuGScnGetSpecial(&special, edbits_base_scene, clump.special_index);
+        NuGScnGetSpecial(&special, edbits_base_scene, GrassClumps[i].special_index);
         char name[20];
         strncpy(name, NuSpecialGetName(&special), sizeof(name));
         name[19] = '\0';
         EdFileWrite(name, sizeof(name));
-        EdFileWriteInt(clump.element_count);
-        EdFileWriteNuVec(&clump.position);
-        EdFileWriteFloat(clump.size);
-        EdFileWriteFloat(clump.field_18);
-        EdFileWriteInt(clump.flags);
-        EdFileWriteFloat(clump.field_20);
-        EdFileWriteChar(clump.unknown_25);
-        EdFileWriteChar(clump.unknown_26);
-        EdFileWriteChar(clump.kind);
-        EdFileWriteInt(clump.seed);
-        EdFileWriteFloat(clump.field_2c);
-        EdFileWriteFloat(clump.field_30);
-        EdFileWriteShort(clump.rotation_z);
-        EdFileWriteShort(clump.rotation_y);
-        EdFileWriteFloat(clump.near_distance);
-        EdFileWriteFloat(clump.far_distance);
-        EdFileWriteChar(clump.field_42);
-        EdFileWriteChar(clump.field_43);
-        EdFileWriteFloat(clump.field_44);
-        if (clump.kind == 3) {
-            for (i32 j = 0; j < clump.element_count; ++j) {
-                edgra_individual_s *individual = GetIndGrassClump(clump.individual_index, j);
-                EdFileWriteNuVec(&individual->position);
-                EdFileWriteFloat(individual->field_0c);
-                EdFileWriteShort(individual->field_10);
-                EdFileWriteShort(individual->field_12);
+        EdFileWriteInt(GrassClumps[i].element_count);
+        EdFileWriteNuVec(&GrassClumps[i].position);
+        EdFileWriteFloat(GrassClumps[i].size);
+        EdFileWriteFloat(GrassClumps[i].field_18);
+        EdFileWriteInt(GrassClumps[i].flags);
+        EdFileWriteFloat(GrassClumps[i].field_20);
+        EdFileWriteChar(GrassClumps[i].unknown_25);
+        EdFileWriteChar(GrassClumps[i].unknown_26);
+        EdFileWriteChar(GrassClumps[i].kind);
+        EdFileWriteInt(GrassClumps[i].seed);
+        EdFileWriteFloat(GrassClumps[i].field_2c);
+        EdFileWriteFloat(GrassClumps[i].field_30);
+        EdFileWriteShort(GrassClumps[i].rotation_z);
+        EdFileWriteShort(GrassClumps[i].rotation_y);
+        EdFileWriteFloat(GrassClumps[i].near_distance);
+        EdFileWriteFloat(GrassClumps[i].far_distance);
+        EdFileWriteChar(GrassClumps[i].field_42);
+        EdFileWriteChar(GrassClumps[i].field_43);
+        EdFileWriteFloat(GrassClumps[i].field_44);
+        if (GrassClumps[i].kind == 3) {
+            for (i32 j = 0; j < GrassClumps[i].element_count; ++j) {
+                EdFileWriteNuVec(&GetIndGrassClump(GrassClumps[i].individual_index, j)->position);
+                EdFileWriteFloat(GetIndGrassClump(GrassClumps[i].individual_index, j)->field_0c);
+                EdFileWriteShort(GetIndGrassClump(GrassClumps[i].individual_index, j)->field_10);
+                EdFileWriteShort(GetIndGrassClump(GrassClumps[i].individual_index, j)->field_12);
             }
         }
-        NUVEC *vectors = static_cast<NUVEC *>(clump.vector_buffer);
-        for (i32 j = 0; j < clump.element_count; ++j)
-            EdFileWriteNuVec(&vectors[j]);
+        for (i32 j = 0; j < GrassClumps[i].element_count; ++j)
+            EdFileWriteNuVec(&static_cast<NUVEC *>(GrassClumps[i].vector_buffer)[j]);
     }
 
     EdFileSetReadWrongEndianess(0);
@@ -780,10 +771,11 @@ i32 edgraFileSave(char *path) {
 }
 
 void edppPtlShelve(i32 index) {
-    edpp_particle_s *particle = &edpp_ptls[index];
-    if (particle->instance_id != -1 && particle->instance_id != 99999) {
-        DebFreeInstantly(&particle->instance_id);
-        particle->instance_id = 99999;
+    if (edpp_ptls[index].instance_id != -1) {
+        if (edpp_ptls[index].instance_id != 99999) {
+            DebFreeInstantly(&edpp_ptls[index].instance_id);
+            edpp_ptls[index].instance_id = 99999;
+        }
     }
 }
 
@@ -823,7 +815,7 @@ void EdDrawLineCube(VuMtx const &transform, float size, i32 colour) {
 
 void EdDrawPolyAxis(VuMtx const &transform, float size, i32 opacity) {
     const NUMTX &matrix = transform.matrix;
-    const VuVec origin(matrix.m30, matrix.m31, matrix.m32, matrix.m33);
+    const VuVec &origin = *reinterpret_cast<const VuVec *>(&matrix.m30);
     VuVec tip(matrix.m30 + matrix.m00 * size, matrix.m31 + matrix.m01 * size, matrix.m32 + matrix.m02 * size, 0.0f);
     const float width = size * 0.02f;
     EdDrawPolyArrow(origin, tip, 8, static_cast<i32>(0xff000000 | (opacity & 0xff)), width, width, 0.02f, 0.0f);
@@ -850,40 +842,40 @@ i32 edanimFileSave(char *path) {
     EdFileWriteInt(6);
     EdFileWriteInt(parameter_count);
 
-    for (const auto &param : AnimParams) {
-        if (param.instance_id == -1) {
+    for (i32 i = 0; i < 64; ++i) {
+        if (AnimParams[i].instance_id == -1) {
             continue;
         }
         nuhspecial_s special;
-        NuGScnGetSpecial(&special, edbits_base_scene, param.instance_id);
+        NuGScnGetSpecial(&special, edbits_base_scene, AnimParams[i].instance_id);
         char name[20];
         strncpy(name, NuSpecialGetName(&special), sizeof(name));
         name[sizeof(name) - 1] = '\0';
         EdFileWrite(name, sizeof(name));
-        EdFileWriteInt(param.effect_count);
-        EdFileWriteInt(param.sound_count);
-        EdFileWriteInt(param.field_00c);
-        EdFileWriteInt(param.field_010);
-        EdFileWriteFloat(param.field_014);
-        EdFileWriteFloat(param.field_018);
+        EdFileWriteInt(AnimParams[i].effect_count);
+        EdFileWriteInt(AnimParams[i].sound_count);
+        EdFileWriteInt(AnimParams[i].field_00c);
+        EdFileWriteInt(AnimParams[i].field_010);
+        EdFileWriteFloat(AnimParams[i].field_014);
+        EdFileWriteFloat(AnimParams[i].field_018);
 
-        for (i32 effect = 0; effect < param.effect_count; ++effect) {
-            EdFileWrite(const_cast<char *>(param.effect_names[effect]), sizeof(param.effect_names[effect]));
-            EdFileWriteInt(param.effect_intervals[effect]);
-            EdFileWriteInt(param.effect_flags[effect]);
-            EdFileWriteNuVec(reinterpret_cast<NUVEC *>(const_cast<f32 *>(param.effect_positions[effect])));
-            EdFileWriteShort(param.effect_angles[effect]);
-            EdFileWriteShort(param.effect_angle_ranges[effect]);
+        for (i32 effect = 0; effect < AnimParams[i].effect_count; ++effect) {
+            EdFileWrite(const_cast<char *>(AnimParams[i].effect_names[effect]), sizeof(AnimParams[i].effect_names[effect]));
+            EdFileWriteInt(AnimParams[i].effect_intervals[effect]);
+            EdFileWriteInt(AnimParams[i].effect_flags[effect]);
+            EdFileWriteNuVec(reinterpret_cast<NUVEC *>(const_cast<f32 *>(AnimParams[i].effect_positions[effect])));
+            EdFileWriteShort(AnimParams[i].effect_angles[effect]);
+            EdFileWriteShort(AnimParams[i].effect_angle_ranges[effect]);
         }
-        for (i32 sound = 0; sound < param.sound_count; ++sound) {
-            EdFileWrite(const_cast<char *>(param.sound_names[sound]), sizeof(param.sound_names[sound]));
-            EdFileWriteInt(param.sound_flags[sound]);
-            EdFileWriteFloat(param.sound_values[sound]);
-            EdFileWriteNuVec(reinterpret_cast<NUVEC *>(const_cast<f32 *>(param.sound_positions[sound])));
+        for (i32 sound = 0; sound < AnimParams[i].sound_count; ++sound) {
+            EdFileWrite(const_cast<char *>(AnimParams[i].sound_names[sound]), sizeof(AnimParams[i].sound_names[sound]));
+            EdFileWriteInt(AnimParams[i].sound_flags[sound]);
+            EdFileWriteFloat(AnimParams[i].sound_values[sound]);
+            EdFileWriteNuVec(reinterpret_cast<NUVEC *>(const_cast<f32 *>(AnimParams[i].sound_positions[sound])));
         }
-        EdFileWriteFloat(param.bounce_impulse);
-        EdFileWriteFloat(param.bounce_spring);
-        EdFileWriteFloat(param.bounce_damping);
+        EdFileWriteFloat(AnimParams[i].bounce_impulse);
+        EdFileWriteFloat(AnimParams[i].bounce_spring);
+        EdFileWriteFloat(AnimParams[i].bounce_damping);
     }
 
     EdFileClose();
@@ -1470,9 +1462,11 @@ void edgraDrawCursor() {
 }
 
 void edpartPtlShelve(i32 index) {
-    if (part_emits[index].instance_id != -1 && part_emits[index].instance_id != 99999) {
-        DebFreeInstantly(&part_emits[index].instance_id);
-        part_emits[index].instance_id = 99999;
+    if (part_emits[index].instance_id != -1) {
+        if (part_emits[index].instance_id != 99999) {
+            DebFreeInstantly(&part_emits[index].instance_id);
+            part_emits[index].instance_id = 99999;
+        }
     }
 }
 
@@ -2405,7 +2399,7 @@ void EdDrawLineCircleY(VuVec const &centre, float radius, i32 colour, i32 segmen
 }
 
 void EdDrawLineSegment(VuVec const &a, VuVec const &b, i32 colour) {
-    if (NewPrim == 1) {
+    if (__builtin_expect(NewPrim == 1, 0)) {
         NuPrim3DBegin(2, 5, EdDrawMtl[NewMtl], NewMtx ? const_cast<NUMTX *>(&NewMtx->matrix) : NULL);
         NewPrim = 2;
     }
@@ -3217,13 +3211,11 @@ void edgraInstanceDestroy(i32 index) {
 
 void edppDetermineNearest(float max_distance_squared) {
     NUVEC delta;
-    if (edpp_nearest != -1) {
-        if (edpp_ptls[edpp_nearest].instance_id != -1 && edpp_ptls[edpp_nearest].instance_id != 99999) {
-            NuVecSub(&delta, &edpp_cam_pos, &edpp_ptls[edpp_nearest].position);
-            if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z == 0.0f) {
-                return;
-            }
-        }
+    if (edpp_nearest != -1 && edpp_ptls[edpp_nearest].instance_id != -1 &&
+        edpp_ptls[edpp_nearest].instance_id != 99999) {
+        NuVecSub(&delta, &edpp_cam_pos, &edpp_ptls[edpp_nearest].position);
+        if (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z == 0.0f)
+            return;
     }
     edpp_nearest = -1;
     for (i32 i = 0; i < 512; ++i) {
@@ -3518,8 +3510,7 @@ void edanimDetermineNearestAnim(float distance) {
 
     edanim_nearest = -1;
     edanim_nearest_param_id = -1;
-    const i32 special_count = NuGScnNumSpecials(edbits_base_scene);
-    for (i32 i = 0; i < special_count; ++i) {
+    for (i32 i = 0; i < NuGScnNumSpecials(edbits_base_scene); ++i) {
         NuGScnGetSpecial(&special, edbits_base_scene, i);
         NuVecSub(&delta, &edanim_cam_pos, NuSpecialGetPos(&special));
         const f32 candidate = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
@@ -4928,22 +4919,35 @@ i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
     VuVec *delta = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x40);
     VuVec *cursor = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x50);
     if (input.GetPress(3) != 0.0f) {
-        *delta = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
+        delta->x = 0.0f;
+        delta->y = 0.0f;
+        delta->z = 0.0f;
+        delta->w = 1.0f;
+        last_point->x = point.x;
+        last_point->y = point.y;
+        last_point->z = point.z;
+        last_point->w = 0.0f;
     } else {
+        delta->w = 0.0f;
+        last_point->w = 0.0f;
         delta->x = point.x - last_point->x;
         delta->y = point.y - last_point->y;
         delta->z = point.z - last_point->z;
-        delta->w = 0.0f;
+        last_point->x = point.x;
+        last_point->y = point.y;
+        last_point->z = point.z;
     }
-    *last_point = point;
-    last_point->w = 0.0f;
     VuVec *ray_cursor = reinterpret_cast<VuVec *>(input.reserved_00);
     cursor->x = ray_cursor->x;
     cursor->y = ray_cursor->y;
     cursor->z = ray_cursor->z;
     cursor->w = ray_cursor->w;
-    if (EdTerrRay(*cursor, *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30)) == 0)
-        *cursor = *last_point;
+    if (EdTerrRay(*cursor, *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30)) == 0) {
+        cursor->x = last_point->x;
+        cursor->y = last_point->y;
+        cursor->z = last_point->z;
+        cursor->w = last_point->w;
+    }
     last_point->w = 1.0f;
     delta->w = 1.0f;
     cursor->w = 1.0f;
@@ -4965,7 +4969,13 @@ void EdManipulator::Render(ClassObjectList &selected) {
 }
 
 i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &plane) {
-    VuVec near_point;
+    // The original keeps the sphere hits and axis planes in one block whose address escapes.
+    struct {
+        VuVec far_point;
+        VuVec near_point;
+        VuVec normals[3];
+    } hits;
+    VuVec &near_point = hits.near_point;
     f32 scale = Scale;
     i32 *selected_axis = reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(this) + 0x0c);
     i32 *start_angle = reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(this) + 0x60);
@@ -4975,10 +4985,11 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
     VuVec *secondary_plane = reinterpret_cast<VuVec *>(reinterpret_cast<u8 *>(this) + 0x20);
     f32 pressed = input.GetPress(3);
     if (pressed != 0.0f || input.GetHold(3) == 0.0f) {
-        VuVec far_point;
-
-        VuVec normals[3] = {VuVec(1.0f, 0.0f, 0.0f, -center.x), VuVec(0.0f, 1.0f, 0.0f, -center.y),
-                            VuVec(0.0f, 0.0f, 1.0f, -center.z)};
+        VuVec &far_point = hits.far_point;
+        VuVec *normals = hits.normals;
+        normals[0] = VuVec(1.0f, 0.0f, 0.0f, -center.x);
+        normals[1] = VuVec(0.0f, 1.0f, 0.0f, -center.y);
+        normals[2] = VuVec(0.0f, 0.0f, 1.0f, -center.z);
         i32 axis = 0;
         VuVec chosen;
         f32 nearest_distance = __FLT_MAX__;
@@ -4986,8 +4997,14 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
         if (LineToSphereIntersection(*reinterpret_cast<VuVec *>(input.reserved_00 + 0x20),
                                      *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30), center, scale + 0.01f,
                                      &far_point, &near_point) != 0) {
-            SpherePos1 = far_point;
-            SpherePos2 = near_point;
+            SpherePos1.x = far_point.x;
+            SpherePos1.y = far_point.y;
+            SpherePos1.z = far_point.z;
+            SpherePos1.w = far_point.w;
+            SpherePos2.x = near_point.x;
+            SpherePos2.y = near_point.y;
+            SpherePos2.z = near_point.z;
+            SpherePos2.w = near_point.w;
             VuVec screen_point;
             VuVec projection;
             VuVec difference;
@@ -5038,7 +5055,10 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
         }
         if (input.GetPress(3) != 0.0f) {
             *selected_axis = axis;
-            *selected_plane = plane;
+            selected_plane->x = plane.x;
+            selected_plane->y = plane.y;
+            selected_plane->z = plane.z;
+            selected_plane->w = plane.w;
             *start_angle = angle;
             *last_angle = angle;
             *angle_delta = 0;
@@ -5053,7 +5073,10 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
         return axis;
     }
     i32 axis = *selected_axis;
-    plane = *selected_plane;
+    plane.x = selected_plane->x;
+    plane.y = selected_plane->y;
+    plane.z = selected_plane->z;
+    plane.w = selected_plane->w;
     VuVec intersection;
     if (LineToPlaneIntersecion(*reinterpret_cast<VuVec *>(input.reserved_00 + 0x20),
                                *reinterpret_cast<VuVec *>(input.reserved_00 + 0x30), plane, &intersection) == 0) {
@@ -6259,17 +6282,18 @@ void EdFileInputStream::Open(i32 handle, i32) {
 
 i32 EdFileInputStream::SerialiseBuffer(void *data, i32 size, i32 count) {
     i32 result = NuFileRead(file, data, size * count);
-    if (swap_endianness && size > 1 && count > 0) {
-        if (size == 2) {
-            for (i32 i = 0; i < count; ++i) {
-                EdFileSwapEndianess16(data);
-                data = static_cast<u8 *>(data) + 2;
+    if (swap_endianness && size > 1) {
+        u8 *cursor = static_cast<u8 *>(data);
+        for (i32 i = 0; i < count; i++) {
+            switch (size) {
+                case 2:
+                    EdFileSwapEndianess16(cursor);
+                    break;
+                case 4:
+                    EdFileSwapEndianess32(cursor);
+                    break;
             }
-        } else if (size == 4) {
-            for (i32 i = 0; i < count; ++i) {
-                EdFileSwapEndianess32(data);
-                data = static_cast<u8 *>(data) + 4;
-            }
+            cursor += size;
         }
     }
     return result;
@@ -6311,25 +6335,30 @@ i32 EdFileOutputStream::SerialiseBuffer(void *data, i32 size, i32 count) {
     if (swap_endianness && size > 1) {
         u8 *cursor = static_cast<u8 *>(data);
         for (i32 i = 0; i < count; i++) {
-            if (size == 2) {
-                EdFileSwapEndianess16(cursor);
-                cursor += 2;
-            } else if (size == 4) {
-                EdFileSwapEndianess32(cursor);
-                cursor += 4;
+            switch (size) {
+                case 2:
+                    EdFileSwapEndianess16(cursor);
+                    break;
+                case 4:
+                    EdFileSwapEndianess32(cursor);
+                    break;
             }
+            cursor += size;
         }
     }
     i32 result = NuFileWrite(file, data, size * count);
-    if (swap_endianness) {
+    if (swap_endianness && size > 1) {
+        u8 *cursor = static_cast<u8 *>(data);
         for (i32 i = 0; i < count; i++) {
-            if (size == 2) {
-                EdFileSwapEndianess16(data);
-                data = static_cast<u8 *>(data) + 2;
-            } else if (size == 4) {
-                EdFileSwapEndianess32(data);
-                data = static_cast<u8 *>(data) + 4;
+            switch (size) {
+                case 2:
+                    EdFileSwapEndianess16(cursor);
+                    break;
+                case 4:
+                    EdFileSwapEndianess32(cursor);
+                    break;
             }
+            cursor += size;
         }
     }
     return result;
@@ -6374,7 +6403,7 @@ EdSpecialObjectControl::EdSpecialObjectControl() {
 static EdSpecialObjectControl *active_special_object_control;
 
 static i32 SpecialObjectFilter(void *object) {
-    return static_cast<Placeable *>(object)->scene_id == theSceneObjectHelper.scene_id;
+    return theSceneObjectHelper.scene_id == static_cast<Placeable *>(object)->scene_id;
 }
 
 void EdSpecialObjectControl::cbButton(eduimenu_s *parent, eduiitem_s *item, u32) {
@@ -6635,20 +6664,20 @@ EdRef::EdRef(char *type_name, char *member_name, i32 offset, i32 member_size, i3
 }
 
 i32 EdRef::GetAttributeData(void *object, i32 attribute, i32 requested_type, void *data, i32 data_size) {
-    if (attributes & attribute) {
+    if (__builtin_expect((attributes & attribute) != 0, 0)) {
         if ((attribute & 8) && type_id == EdType_VuMtx) {
             NUMTX_ALIGNED16 matrix;
             GetMemberData(object, type_id, &matrix, 0);
             *static_cast<VuVec *>(data) = *reinterpret_cast<VuVec *>(&matrix.m30);
             return 1;
         }
-        if (!(attribute & 0x100)) {
-            GetMemberData(object, requested_type, data, data_size);
+        if (attribute & 0x100) {
+            i16 value;
+            GetMemberData(object, EdType_Short, &value, 0);
+            *static_cast<i16 *>(data) = value;
             return 1;
         }
-        i16 value;
-        GetMemberData(object, EdType_Short, &value, 0);
-        *static_cast<i16 *>(data) = value;
+        GetMemberData(object, requested_type, data, data_size);
         return 1;
     }
     return 0;

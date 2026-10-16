@@ -1162,21 +1162,19 @@ static AILOCATOR *AISysLoadFindLocator(AISYS *system, char *name) {
     return NULL;
 }
 
-static AIAREA *AISysLoadAreaReference(AISYS *system) {
-    char name[16];
+static AIAREA *AISysLoadAreaReference(AISYS *system, char *name) {
     if (EdFileReadInt() == 0) {
         return NULL;
     }
-    EdFileRead(name, sizeof(name));
+    EdFileRead(name, 16);
     return AISysLoadFindArea(system, name);
 }
 
-static AILOCATOR *AISysLoadLocatorReference(AISYS *system) {
-    char name[16];
+static AILOCATOR *AISysLoadLocatorReference(AISYS *system, char *name) {
     if (EdFileReadInt() == 0) {
         return NULL;
     }
-    EdFileRead(name, sizeof(name));
+    EdFileRead(name, 16);
     return AISysLoadFindLocator(system, name);
 }
 
@@ -1273,7 +1271,7 @@ static void AISysLoadLocatorSets(AISYS *system, i32 version) {
     }
 }
 
-static void AISysLoadCreatures(AISYS *system, i32 version) {
+static void AISysLoadCreatures(AISYS *system, i32 version, char *character_name, char *area_name) {
     system->creature_count = EdFileReadInt();
     if (system->creature_count == 0) {
         return;
@@ -1289,8 +1287,10 @@ static void AISysLoadCreatures(AISYS *system, i32 version) {
         if (creature->script_name[0] == '\0') {
             strcpy(creature->script_name, "default");
         }
-        char character_name[32];
-        EdFileRead(character_name, version < 14 ? 16 : 32);
+        if (version < 14)
+            EdFileRead(character_name, 16);
+        else
+            EdFileRead(character_name, 32);
         if (GlobalCharacterTypeIDFn != NULL)
             creature->type = static_cast<i16>(GlobalCharacterTypeIDFn(character_name));
 
@@ -1322,13 +1322,13 @@ static void AISysLoadCreatures(AISYS *system, i32 version) {
         }
 
         if (version > 3) {
-            creature->area = AISysLoadAreaReference(system);
+            creature->area = AISysLoadAreaReference(system, area_name);
         }
         if (version > 5) {
-            creature->locator = AISysLoadLocatorReference(system);
+            creature->locator = AISysLoadLocatorReference(system, area_name);
         }
         if (version > 16) {
-            creature->respawn_locator = AISysLoadLocatorReference(system);
+            creature->respawn_locator = AISysLoadLocatorReference(system, area_name);
         }
 
         if (version > 7) {
@@ -1351,8 +1351,7 @@ static void AISysLoadCreatures(AISYS *system, i32 version) {
             creature->start_stagger = default_stagger_start;
         }
         if (creature->activate_type == 1) {
-            char area_name[16];
-            EdFileRead(area_name, sizeof(area_name));
+            EdFileRead(area_name, 16);
             creature->activate_area = AISysLoadFindArea(system, area_name);
         }
         if (version > 10) {
@@ -2040,8 +2039,22 @@ static AICONDITION *AIScriptFinishStateConditions(NULISTHDR *conditions, AIPACKE
     return condition;
 }
 
-static AICONDITION *AIScriptProcessStateConditions(AISYS *system, NULISTHDR *conditions, APIOBJECT *, AIPACKET *packet,
-                                                   AISCRIPTPROCESS *processor, f32, i32 stack_index) {
+#if defined(__i386__)
+#define AI_SYS_STUBS_CLONE_ATTR2 __attribute__((noinline, noclone, regparm(2)))
+#else
+#define AI_SYS_STUBS_CLONE_ATTR2 __attribute__((noinline, noclone))
+#endif
+
+// Retail keeps only the IPA-SRA clone, without the unused object and elapsed time.
+static AI_SYS_STUBS_CLONE_ATTR2 AICONDITION *AIScriptProcessStateConditions(AISYS *system, NULISTHDR *conditions,
+                                                                           AIPACKET *packet,
+                                                                           AISCRIPTPROCESS *processor,
+                                                                           i32 stack_index)
+    __asm__("_ZL30AIScriptProcessStateConditionsP7AISYS_sP11nulisthdr_sP11APIOBJECT_s"
+            "P10AIPACKET_sP17AISCRIPTPROCESS_sfi.isra.77");
+
+static AICONDITION *AIScriptProcessStateConditions(AISYS *system, NULISTHDR *conditions, AIPACKET *packet,
+                                                   AISCRIPTPROCESS *processor, i32 stack_index) {
     if (processor == NULL || conditions == NULL) {
         return NULL;
     }
@@ -2148,8 +2161,7 @@ extern "C" {
         for (i32 index = 0; index < processor->active_ref_count; ++index) {
             AIREFSCRIPT *reference = processor->active_refs[index];
             if (NuLinkedListGetHead(&reference->conditions) != NULL &&
-                AIScriptProcessStateConditions(system, &reference->conditions, object, packet, processor, elapsed, 1) ==
-                    NULL) {
+                AIScriptProcessStateConditions(system, &reference->conditions, packet, processor, 1) == NULL) {
                 processor->active_ref_count = index;
                 if (index == 0) {
                     AICREATURE *creature = packet->field_0x134 != 0xff ? &system->creatures[packet->field_0x134] : NULL;
@@ -2265,8 +2277,7 @@ extern "C" {
                 processor->param_stack[1].force_complex_eval = 1;
 
                 if (NuLinkedListGetHead(&reference->conditions) != NULL &&
-                    AIScriptProcessStateConditions(system, &reference->conditions, object, packet, processor, elapsed,
-                                                   1) == NULL) {
+                    AIScriptProcessStateConditions(system, &reference->conditions, packet, processor, 1) == NULL) {
                     continue;
                 }
                 if (reference->script == NULL) {
@@ -2276,7 +2287,7 @@ extern "C" {
                 processor->param_stack[0].is_first_time_state = 1;
                 processor->param_stack[0].force_complex_eval = 1;
                 AICONDITION *entry_condition = AIScriptProcessStateConditions(
-                    system, &reference->script->base_state->conditions, object, packet, processor, elapsed, 0);
+                    system, &reference->script->base_state->conditions, packet, processor, 0);
                 if (entry_condition != NULL && entry_condition->next_state != reference->script->base_state) {
                     const i32 reference_index = processor->active_ref_count;
                     processor->active_refs[reference_index] = reference;
@@ -2296,8 +2307,7 @@ extern "C" {
                     processor->param_stack[1].force_complex_eval = 1;
 
                     if (NuLinkedListGetHead(&reference->conditions) != NULL &&
-                        AIScriptProcessStateConditions(system, &reference->conditions, object, packet, processor,
-                                                       elapsed, 1) == NULL) {
+                        AIScriptProcessStateConditions(system, &reference->conditions, packet, processor, 1) == NULL) {
                         continue;
                     }
                     if (reference->script == NULL) {
@@ -2307,7 +2317,7 @@ extern "C" {
                     processor->param_stack[0].is_first_time_state = 1;
                     processor->param_stack[0].force_complex_eval = 1;
                     AICONDITION *entry_condition = AIScriptProcessStateConditions(
-                        system, &reference->script->base_state->conditions, object, packet, processor, elapsed, 0);
+                        system, &reference->script->base_state->conditions, packet, processor, 0);
                     if (entry_condition != NULL && entry_condition->next_state != reference->script->base_state) {
                         const i32 reference_index = processor->active_ref_count;
                         processor->active_refs[reference_index] = reference;
@@ -2331,8 +2341,8 @@ extern "C" {
         }
 
         if (processor->state != NULL) {
-            AICONDITION *transition = AIScriptProcessStateConditions(system, &processor->state->conditions, object,
-                                                                     packet, processor, elapsed, 0);
+            AICONDITION *transition =
+                AIScriptProcessStateConditions(system, &processor->state->conditions, packet, processor, 0);
             if (transition != NULL) {
                 processor->unknown_flag_4 = transition->keep_blocked;
                 AIScriptSetState(processor, transition->next_state);
@@ -2647,10 +2657,10 @@ extern "C" {
 
         AIPATH *path = packet->path_info.path;
         if (path == NULL) {
-            path = (packet->navigation_flags & AIPACKET_NAVIGATION_FLAG_SEARCH_ALL_PATHS) != 0
-                       ? system->path_sys->paths[0]
-                       : system->path_sys->active_path;
-            AISysCharacterSetPath(packet, path);
+            if ((packet->navigation_flags & AIPACKET_NAVIGATION_FLAG_SEARCH_ALL_PATHS) != 0)
+                AISysCharacterSetPath(packet, system->path_sys->paths[0]);
+            else
+                AISysCharacterSetPath(packet, system->path_sys->active_path);
             AISysCharacterSetPathCnx(packet, &object->position, NULL, 0);
             packet->path_info.next_check = 0;
             packet->path_info.path_index = 0;
@@ -2929,6 +2939,8 @@ extern "C" {
         char ai2_path[128];
         char script_path[128];
         char packed_name[256];
+        char character_name[32];
+        char area_name[16];
 
         if (ai_usepackfile != 0) {
             sprintf(pak_path, "%sLevels\\%s\\%s\\ai.pak", AiLevelPathName, directory, parameter);
@@ -2978,7 +2990,7 @@ extern "C" {
                     AISysLoadLocators(system, version);
                     AISysLoadLocatorSets(system, version);
                 }
-                AISysLoadCreatures(system, version);
+                AISysLoadCreatures(system, version, character_name, area_name);
                 if (version > 12)
                     AISysLoadAntinodes(system, version, gscene, packed_name);
                 if (version > 6 && GameAILoadFn != NULL) {

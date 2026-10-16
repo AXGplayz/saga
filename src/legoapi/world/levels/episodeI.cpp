@@ -108,7 +108,9 @@ void CalcSplinePointFromDist(flightspline_s *, _vuv_s *, float);
 
 // --- File-local layout types -----------------------------------------------
 
-static void RacePodAlign(racepod_s *pod, _vuv_s *direction, float amount, i32 mode);
+// Every caller passes mode 0, so retail keeps only this constprop clone.
+static __attribute__((noinline, noclone)) void RacePodAlign(racepod_s *pod, _vuv_s *direction, float amount)
+    __asm__("_ZL12RacePodAlignP9racepod_sP6_vuv_sfi.constprop.39");
 
 // Pacemaker display data stored at LevObjs[0] for the pacemaker object.
 struct PACEMAKERDATA_s {
@@ -328,7 +330,7 @@ static void *CreatePodRaceMine(nuvec_s *pos) {
     return entry;
 }
 
-static void RacePodAlign(racepod_s *pod, _vuv_s *direction, float blend, i32) {
+static void RacePodAlign(racepod_s *pod, _vuv_s *direction, float blend) {
     NUVEC local __attribute__((aligned(16)));
     NuVecInvMtxRotate(&local, (NUVEC *)direction, &pod->matrix);
     i32 yaw = (i16)NuAtan2D(local.x, local.z);
@@ -373,52 +375,77 @@ void Mine_Kill(PART_s *part, i32) {
         AddFiniteShotPART(minesys.mine_part, &part->position, 1);
 }
 
-static void PodSprint_InitAISpline(WORLDINFO_s *world, PODSPRINT_AISPLINE_s *ai, char *name) {
+// PodSprint_InitAISpline is partially inlined into PodSprintA_Init: the
+// clear, lookup and spline checks are inlined and the crossing scan is the
+// split-out body.
+#if defined(__i386__)
+#define PODSPRINT_AISPLINE_BODY_ATTR __attribute__((noinline, regparm(1)))
+#else
+#define PODSPRINT_AISPLINE_BODY_ATTR __attribute__((noinline))
+#endif
+static PODSPRINT_AISPLINE_BODY_ATTR void PodSprint_InitAISplineBody(PODSPRINT_AISPLINE_s *ai) __asm__(
+    "_ZL22PodSprint_InitAISplineP11WORLDINFO_sP20PODSPRINT_AISPLINE_sPc.part.0");
+
+static PODSPRINT_AISPLINE_BODY_ATTR void PodSprint_InitAISplineBody(PODSPRINT_AISPLINE_s *ai) {
+    i32 count = 0;
+    for (i32 i = 0; i < (i32)(i16)ai->spline->length - 1; i++) {
+        if (count > 5)
+            break;
+        NUVEC *pts = ai->spline->pts;
+        NUVEC *pts2 = ((count & 1) ? podsprint.finish_line : podsprint.halfway)->pts;
+        if (XZLinesIntersect(&pts[i], &pts[i + 1], &pts2[0], &pts2[1], NULL, NULL)) {
+            ai->vals[count] = (i16)i;
+            count++;
+        }
+    }
+    if (ai->vals[5] == 0)
+        ai->vals[5] = ai->spline->length;
+}
+#undef PODSPRINT_AISPLINE_BODY_ATTR
+
+static inline void PodSprint_InitAISpline(WORLDINFO_s *world, PODSPRINT_AISPLINE_s *ai, char *name) {
     memset(ai, 0, sizeof(*ai));
     ai->spline = NuSplineFind(world->current_gscn, name);
     if (ai->spline != NULL && podsprint.finish_line != NULL && podsprint.halfway != NULL) {
-        i32 count = 0;
-        auto ai_spline = ai->spline;
-        for (i32 i = 0; i < (i32)(i16)ai_spline->length - 1; i++) {
-            if (count > 5)
-                break;
-            NUVEC *pts = ai_spline->pts;
-            NUVEC *pts2 = ((count & 1) ? podsprint.finish_line : podsprint.halfway)->pts;
-            if (XZLinesIntersect(&pts[i], &pts[i + 1], &pts2[0], &pts2[1], NULL, NULL)) {
-                ai->vals[count] = (i16)i;
-                count++;
-            }
-        }
-        if (ai->vals[5] == 0)
-            ai->vals[5] = ai->spline->length;
+        PodSprint_InitAISplineBody(ai);
     }
 }
 
-static void UpdatePacemakerDisplay(WORLDINFO_s *world) {
+// UpdatePacemakerDisplay is inlined into its callers apart from the message
+// update, which retail keeps as the split-out body of the IPA-SRA clone (it
+// only needs &world->lev_objs).
+static __attribute__((noinline, noclone)) void UpdatePacemakerDisplayBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) __asm__(
+    "_ZL22UpdatePacemakerDisplayP11WORLDINFO_s.isra.7.part.8");
+
+static void UpdatePacemakerDisplayBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) {
+    GameObject_s *pacemaker = pod_pacemaker;
+    float v[3];
+    v[0] = pacemaker->apiobj.field_0x190;
+    v[1] = 0.75f + pacemaker->apiobj.field_0x194;
+    v[2] = pacemaker->apiobj.field_0x198;
+    GAMEMESSAGE_s *msg =
+        (GAMEMESSAGE_s *)AddGameMessage(" ", (nuvec_s *)v, 0.08f, NULL, 0.0f, 0xff, 0x3f, 0x3f, 0x10083, 0);
+    if (msg != NULL) {
+        i32 idx = ((i32)(16384.0f * pod_pacemaker_alpha) >> 1) & 0x7fff;
+        msg->alpha = (u8)(128.0f * pacemaker_alpha_table[idx]);
+        msg->icon = 0x134;
+        PACEMAKERDATA_s *data = (PACEMAKERDATA_s *)*lev_objs;
+        if (data->enabled != 0) {
+            msg->color1 = data->color1;
+            msg->color2 = data->color2;
+            msg->color3 = data->color3;
+        }
+    }
+}
+
+static inline void UpdatePacemakerDisplay(WORLDINFO_s *world) {
     if (pod_pacemaker != NULL) {
         if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
             pod_pacemaker_alpha += FRAMETIME + FRAMETIME;
             if (pod_pacemaker_alpha > 1.0f)
                 pod_pacemaker_alpha = 1.0f;
             if (NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f) {
-                GameObject_s *pacemaker = pod_pacemaker;
-                float v[3];
-                v[0] = pacemaker->apiobj.field_0x190;
-                v[1] = 0.75f + pacemaker->apiobj.field_0x194;
-                v[2] = pacemaker->apiobj.field_0x198;
-                GAMEMESSAGE_s *msg =
-                    (GAMEMESSAGE_s *)AddGameMessage(" ", (nuvec_s *)v, 0.08f, NULL, 0.0f, 0xff, 0x3f, 0x3f, 0x10083, 0);
-                if (msg != NULL) {
-                    i32 idx = ((i32)(16384.0f * pod_pacemaker_alpha) >> 1) & 0x7fff;
-                    msg->icon = 0x134;
-                    msg->alpha = (u8)(128.0f * pacemaker_alpha_table[idx]);
-                    PACEMAKERDATA_s *data = (PACEMAKERDATA_s *)world->lev_objs;
-                    if (data->enabled != 0) {
-                        msg->color1 = data->color1;
-                        msg->color2 = data->color2;
-                        msg->color3 = data->color3;
-                    }
-                }
+                UpdatePacemakerDisplayBody(&world->lev_objs);
             }
         } else {
             pod_pacemaker_alpha = 0.0f;
@@ -854,15 +881,19 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                 pod->matrix.m30 += direction.x;
                 pod->matrix.m31 += direction.y;
                 pod->matrix.m32 += direction.z;
-                RacePodAlign(pod, &direction, length / 5.0f, 0);
+                RacePodAlign(pod, &direction, length / 5.0f);
                 pod->previous_displacement = direction;
             }
             object = pod->object;
-            if (world->current_level == PODRACEA_LDATA && object != NULL && pod->model_id == id_SEBULBASPOD &&
-                NuSpecialExistsFn(&minesys.mine_special) != 0) {
+            if (__builtin_expect(world->current_level == PODRACEA_LDATA && object != NULL &&
+                                     pod->model_id == id_SEBULBASPOD && NuSpecialExistsFn(&minesys.mine_special) != 0,
+                                 0)) {
                 object->special_move_timer -= FRAMETIME;
                 if (object->special_move_timer < 0.0f && player != NULL) {
-                    NUVEC origin = object->apiobj.position;
+                    NUVEC origin;
+                    origin.x = object->apiobj.position.x;
+                    origin.y = object->apiobj.position.y;
+                    origin.z = object->apiobj.position.z;
                     origin.y += 1.0f;
                     // The reference leaves the close-range velocity uninitialized.
                     // A stationary mine keeps that path deterministic and safe.
@@ -909,7 +940,7 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
         }
         pod->matrix.m33 = 1.0f;
         object = pod->object;
-        if (object != NULL) {
+        if (__builtin_expect(object != NULL, 0)) {
             object->vehicle_orientation = pod->matrix;
             object->apiobj.position = *NUMTX_GET_ROW_VEC(&pod->matrix, 3);
             object->saved_position = object->apiobj.position;
@@ -1199,8 +1230,7 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
     PodRaceSnipersUpdate();
     if (LevFlag.podrace_state == 0) {
         CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
-        if (cs != NULL &&
-            (static_cast<instNUGCUTSCENE_s *>(cs->instance)->flags_89 & 0x10) != 0)
+        if (cs != NULL && (static_cast<instNUGCUTSCENE_s *>(cs->instance)->flags_89 & 0x10) != 0)
             LevFlag.podrace_state = 1;
     }
     if (LevFlag.podrace_state == 1) {
@@ -1316,7 +1346,7 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     pod->matrix.m33 = position.w;
     _vuv_s direction __attribute__((aligned(16))) = {next_position.x - position.x, next_position.y - position.y,
                                                      next_position.z - position.z, 0.0f};
-    RacePodAlign(pod, &direction, 1.0f, 0);
+    RacePodAlign(pod, &direction, 1.0f);
     pod->previous_axis = {0.0f, 0.0f, 0.0f, 1.0f};
     pod->previous_position = position;
     pod->distance = start;
@@ -1395,7 +1425,10 @@ i32 Action_Sebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **, 
                 if (CreatePodRaceMine(&object->apiobj.lower_position) != NULL)
                     packet->script_process.action_timer = 0.0f;
             } else if (NuSpecialExistsFn(&special) != 0) {
-                NUVEC origin = object->apiobj.position;
+                NUVEC origin;
+                origin.x = object->apiobj.position.x;
+                origin.y = object->apiobj.position.y;
+                origin.z = object->apiobj.position.z;
                 origin.y += 1.0f;
                 NUVEC target_delta;
                 NuVecSub(&target_delta, &target->apiobj.velocity, &target->apiobj.collision_position);
@@ -1670,7 +1703,7 @@ void PodSprintA_Update(WORLDINFO_s *world) {
         goto speed_section;
     }
     // netclient == 0: react to cutscene / free-play flag.
-    if (CutScene_PlayingOrRequested(NULL))
+    if (__builtin_expect(!!(CutScene_PlayingOrRequested(NULL)), 0))
         return;
     if ((ps->flags & 0xc) != 0) {
         if (!(ps->flags & 0x10)) {
@@ -1723,7 +1756,7 @@ speed_section:
             ps->field_0x78 = GetNamedGameObject(world->ai_sys, "SebulbasPod");
         GameObject_s *pacemaker = static_cast<GameObject_s *>(ps->field_0x78);
         if (pacemaker != NULL && (pacemaker->apiobj.field_0x1f8 & 0x1000) != 0 && pacemaker->apiobj.field_0x287 == 0) {
-            if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
+            if (__builtin_expect(FadeSys.fade == 0.0f && pause_rndr_on == 0, 1)) {
                 ps->field_0x80 = FRAMETIME * 2.0f + ps->field_0x80;
                 if (ps->field_0x80 > 1.0f)
                     ps->field_0x80 = 1.0f;
@@ -1749,7 +1782,7 @@ speed_section:
                 ps->field_0x80 = 0.0f;
             }
         }
-        if (netclient != 0) {
+        if (__builtin_expect(netclient != 0, 1)) {
             PodRaceSnipersUpdate();
         } else {
             if (ps->finish_line != NULL && ps->halfway != NULL) {

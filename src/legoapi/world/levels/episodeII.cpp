@@ -182,8 +182,6 @@ struct KAMINO_E_s {
 DECOMP_ASSERT(sizeof(KAMINO_E_s) == 120, "Kamino E state ABI");
 static KAMINO_E_s kamino_e;
 
-
-
 extern i16 id_PADMECLAWED, id_BATTLEDROIDSECURITY, id_SUPERBATTLEDROID, id_JARJAR, id_LUMINARA, id_SHAAKTI,
     id_BATTLEDROIDGEONOSIAN;
 void RemoveGameObject(GameObject_s *, i32);
@@ -425,7 +423,7 @@ void KaminoC_Update(WORLDINFO_s *world) {
             NUVEC *position = NuSpecialGetPos(&kaminodisco.pending[kaminodisco.first_tile]);
             for (i32 i = 0; i < 8; ++i) {
                 GameObject_s *object = Player[i];
-                if (KaminoDiscoOccupied(object, position)) {
+                if (__builtin_expect(!!(KaminoDiscoOccupied(object, position)), 0)) {
                     first_occupied = true;
                     if (object == player)
                         occupied_by_player = kaminodisco.first_tile;
@@ -441,7 +439,7 @@ void KaminoC_Update(WORLDINFO_s *world) {
             position = NuSpecialGetPos(&kaminodisco.pending[kaminodisco.second_tile]);
             for (i32 i = 0; i < 8; ++i) {
                 GameObject_s *object = Player[i];
-                if (KaminoDiscoOccupied(object, position)) {
+                if (__builtin_expect(!!(KaminoDiscoOccupied(object, position)), 0)) {
                     second_occupied = true;
                     if (object == player)
                         occupied_by_player = kaminodisco.second_tile;
@@ -469,7 +467,7 @@ void KaminoC_Update(WORLDINFO_s *world) {
                 break;
             }
             kaminodisco.timer += FRAMETIME;
-            if (kaminodisco.timer > 2.5f) {
+            if (__builtin_expect(kaminodisco.timer > 2.5f, 1)) {
                 kaminodisco.timer = 0.0f;
                 for (i32 i = 0; i < 2; ++i) {
                     i32 tile = KaminoDiscoChooseTile(-1, 3);
@@ -502,7 +500,7 @@ void KaminoC_Update(WORLDINFO_s *world) {
             for (i32 i = 0; i < kaminodisco.tile_count; ++i)
                 kaminodisco.tile_state[i] = 4;
             kaminodisco.timer += FRAMETIME;
-            if (kaminodisco.timer > 20.0f) {
+            if (__builtin_expect(kaminodisco.timer > 20.0f, 0)) {
                 KaminoC_Reset(world);
                 return;
             }
@@ -1203,13 +1201,17 @@ static JEDIB_PHASE_s jedi_b_phase3[8] = {
 // Pushes `position` out of any antinode it falls inside, then resolves it to a
 // path point and fills in `locator` for it. Returns 0 when the point is off the
 // arena or off the path network.
-static i32 JediBInitLocator(WORLDINFO_s *world, nuvec_s *position, i32 angle, AILOCATOR *locator, f32 radius) {
-    if (netclient != 0) {
-        return 0;
-    }
-    if (world->ai_sys != NULL) {
-        i32 count = world->ai_sys->antinode_count;
-        AIANTINODE *node = world->ai_sys->antinodes;
+// JediBInitLocator is inlined into JediB_Init apart from everything after
+// the network check, which retail keeps as the split-out body of the IPA-SRA
+// clone (it only needs &world->ai_sys).
+static __attribute__((noinline, noclone)) i32
+JediBInitLocatorBody(AISYS_s **ai_sys, nuvec_s *position, i32 angle, AILOCATOR *locator,
+                     f32 radius) __asm__("_ZL16JediBInitLocatorP11WORLDINFO_sP7nuvec_siP11AILOCATOR_sf.isra.5.part.6");
+
+static i32 JediBInitLocatorBody(AISYS_s **ai_sys, nuvec_s *position, i32 angle, AILOCATOR *locator, f32 radius) {
+    if ((*ai_sys) != NULL) {
+        i32 count = (*ai_sys)->antinode_count;
+        AIANTINODE *node = (*ai_sys)->antinodes;
         for (i32 index = 0; index < count; index++, node++) {
             if (node->radius != 0.0f) {
                 f32 dx = position->x - node->position.x;
@@ -1233,13 +1235,20 @@ static i32 JediBInitLocator(WORLDINFO_s *world, nuvec_s *position, i32 angle, AI
     if (floor_y != 2000000.0f) {
         position->y = floor_y;
     }
-    AISysGetPathPos(world->ai_sys, position, &locator->path_info, NULL, 0xff);
+    AISysGetPathPos((*ai_sys), position, &locator->path_info, NULL, 0xff);
     if ((locator->path_info.flags & AIPATHINFO_FLAG_ON_PATH) == 0) {
         return 0;
     }
     locator->position = *position;
     locator->direction = angle;
     return 1;
+}
+
+static inline i32 JediBInitLocator(WORLDINFO_s *world, nuvec_s *position, i32 angle, AILOCATOR *locator, f32 radius) {
+    if (__builtin_expect(netclient != 0, 0)) {
+        return 0;
+    }
+    return JediBInitLocatorBody(&world->ai_sys, position, angle, locator, radius);
 }
 
 // Killed-object callback installed on every generated Jedi_B combatant

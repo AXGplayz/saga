@@ -178,10 +178,10 @@ extern "C" {
         NUMTX transform;
         NUVEC corners[8];
         NUVEC view[8];
-        char results[8];
-        if (far_clip == 0.0f)
+        u8 results[8];
+        if (__builtin_expect(far_clip == 0.0f, 0))
             far_clip = global_camera.far_clip;
-        if (world_mtx == NULL || world_mtx == &numtx_identity)
+        if (__builtin_expect(world_mtx == NULL || world_mtx == &numtx_identity, 0))
             transform = vmtx;
         else
             NuMtxMul(&transform, world_mtx, &vmtx);
@@ -894,7 +894,13 @@ extern "C" {
         // Original local helper cloned as DisplayListProcessSkin.isra.36 by GCC.
         // It appends the world transform, skin palette, and geometry calls as one
         // contiguous run in the material display list.
-        static void DisplayListProcessSkin(NUMTL *, NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+        static void DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
                                            NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix,
                                            void **transform_packet, NUMTX *skin_matrices,
                                            DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster) {
@@ -931,7 +937,13 @@ extern "C" {
         // Lightmapped geometry carries an AE/AF/B0 setup command two entries before
         // its geometry command. Keep that setup command adjacent to the dynamic
         // transform and geometry entries when the special is submitted.
-        static void DisplayListProcessLightmapped(NUMTL *, NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+        static void DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
                                                   NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix,
                                                   void **transform_packet, f32 alpha) {
             display_list_buffer->addr = ALIGN(display_list_buffer->addr, 0x10);
@@ -1054,7 +1066,7 @@ extern "C" {
                     NUDLDLISTSCENE *material_scene = list->dlist;
                     material_scene->flags |= NUDL_SCENE_FLAG_CLIP_MATERIALS;
                     const i32 used_material = list->mtl_id;
-                    u8 *used = material_scene->mtl_used[material_scene->render_buffer >> 7];
+                    u8 *used = material_scene->mtl_used[NuDisplaySceneCurrentBuffer(material_scene)];
                     used[used_material >> 3] |= static_cast<u8>(1U << (used_material & 7));
                     RndrStateSetConstAlphaTint(nuspecial_const_alpha_enabled, nuspecial_const_tint_enabled,
                                                nuspecial_const_alpha, &nuspecial_const_tint, material);
@@ -1079,12 +1091,12 @@ extern "C" {
                         DisplayListSetAlphaPS(first, last, distance_alpha);
                     } else if (skin_matrices != NULL) {
                         NUDISPLAYLISTITEM *first_and_last[3];
-                        DisplayListProcessSkin(material, list, geometry, first_and_last, mtx, &transform_packet,
+                        DisplayListProcessSkin(list, geometry, first_and_last, mtx, &transform_packet,
                                                skin_matrices, blend_values, shadow_caster);
                     } else if (static_cast<i32>(material->shader_desc.flags) < 0 && clip_object->indices[i] > 1 &&
                                (geometry[-2].type == 0xae || geometry[-2].type == 0xb0 || geometry[-2].type == 0xaf)) {
                         NUDISPLAYLISTITEM *first_and_last[3];
-                        DisplayListProcessLightmapped(material, list, geometry, first_and_last, mtx, &transform_packet,
+                        DisplayListProcessLightmapped(list, geometry, first_and_last, mtx, &transform_packet,
                                                       distance_alpha);
                     } else {
                         VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
@@ -1142,14 +1154,14 @@ extern "C" {
                                 DisplayListSetAlphaPS(first, last, distance_alpha);
                             } else if (skin_matrices != NULL) {
                                 NUDISPLAYLISTITEM *first_and_last[3];
-                                DisplayListProcessSkin(material, shadow_list, geometry, first_and_last, mtx,
+                                DisplayListProcessSkin(shadow_list, geometry, first_and_last, mtx,
                                                        &transform_packet, skin_matrices, blend_values, 1);
                             } else if (static_cast<i32>(material->shader_desc.flags) < 0 &&
                                        clip_object->indices[i] > 1 &&
                                        (geometry[-2].type == 0xae || geometry[-2].type == 0xb0 ||
                                         geometry[-2].type == 0xaf)) {
                                 NUDISPLAYLISTITEM *first_and_last[3];
-                                DisplayListProcessLightmapped(material, shadow_list, geometry, first_and_last, mtx,
+                                DisplayListProcessLightmapped(shadow_list, geometry, first_and_last, mtx,
                                                               &transform_packet, distance_alpha);
                             } else {
                                 VARIPTR *buffer = NuDisplayListLinkItems(shadow_list, 2);
@@ -1421,7 +1433,7 @@ extern "C" {
                                               first_joint, root_translation);
         }
     }
-    void *NuAnimBuffCreate(i32 max_joints, VARIPTR *buf) {
+    void *NuAnimBuffCreate(i32 max_joints, VARIPTR *buf, VARIPTR) {
         u32 *anim_buffer = reinterpret_cast<u32 *>(ALIGN(buf->addr, 0x10));
         buf->void_ptr = anim_buffer + 4;
         anim_buffer[2] = buf->addr;
@@ -1443,8 +1455,6 @@ extern "C" {
         nuanimbuff_s *global = static_cast<nuanimbuff_s *>(globalbuffer);
         buffer->joint_count = 0;
         buffer->max_joints = global->max_joints;
-        buffer->use_quaternions = 0;
-        buffer->pad_07 = 0;
         buffer->joints = static_cast<nuanimbuffjoint_s *>(NuScratchAlloc32((buffer->max_joints * 3 + 3) * 0x10));
         buffer->joints = reinterpret_cast<nuanimbuffjoint_s *>(ALIGN(reinterpret_cast<usize>(buffer->joints), 0x10));
         buffer->joint_flags = static_cast<u8 *>(NuScratchAlloc32(buffer->max_joints));
@@ -2087,12 +2097,16 @@ extern "C" {
         NuAnimCurve2SetApplyToMatrix_3(reinterpret_cast<ani3_animheader_s *>(animation), node, frame, matrix);
     }
     void NuAnimData2CalcTime(nuanimdata2_s *anim, f32 frame, nuanimtime_s *time) {
-        u32 magic = *reinterpret_cast<u32 *>(anim);
-        if (magic + 0xbeb1b6ccU < 2) {
+        union {
+            u32 magic;
+            f32 duration;
+        } header;
+        header.magic = reinterpret_cast<ani3_animheader_s *>(anim)->magic;
+        if (header.magic - 0x414e4934U <= 1) {
             ani3_animheader_s *ani3 = reinterpret_cast<ani3_animheader_s *>(anim);
             if (!(frame < 1.0f)) {
-                if (!(frame < static_cast<f32>(ani3->frame_count))) {
-                    time->time = static_cast<f32>(ani3->frame_count) - 0.01f;
+                if (frame >= ani3->frame_count) {
+                    time->time = static_cast<f32>(static_cast<u32>(ani3->frame_count)) - 0.01f;
                 } else {
                     time->time = frame;
                 }
@@ -2104,15 +2118,15 @@ extern "C" {
 
         f32 clamped_frame;
         i32 chunk;
-        if (anim->duration <= frame) {
-            if (anim->duration == 1.0f) {
+        if (header.duration <= frame) {
+            if (header.duration == 1.0f) {
                 time->time = 1.0f;
                 time->chunk = 0;
                 time->time_byte = 0;
                 time->time_mask = 1;
                 return;
             }
-            clamped_frame = anim->duration - 0.01f;
+            clamped_frame = header.duration - 0.01f;
             time->time = clamped_frame;
             chunk = (static_cast<i32>(clamped_frame) - 1) >> 5;
         } else if (frame < 1.0f) {
@@ -2125,16 +2139,15 @@ extern "C" {
             chunk = (static_cast<i32>(frame) - 1) >> 5;
         }
         time->chunk = chunk;
-        if (anim->chunk_count <= chunk) {
+        if (chunk >= anim->chunk_count) {
             chunk = anim->chunk_count - 1;
             time->chunk = chunk;
         }
         time->time_offset = clamped_frame - static_cast<f32>(chunk << 5);
         i32 chunk_frame = static_cast<i32>(NuFloor(time->time_offset)) - 1;
-        time->chunk_frame = static_cast<u32>(chunk_frame);
-        i32 byte_frame = chunk_frame < 0 ? chunk_frame + 7 : chunk_frame;
-        time->time_byte = static_cast<u32>((byte_frame >> 3) & 0xff);
-        time->time_mask = (1u << ((chunk_frame & 7) + 1)) - 1u;
+        time->chunk_frame = chunk_frame;
+        time->time_byte = (chunk_frame / 8) & 0xff;
+        time->time_mask = static_cast<u8>((1 << (chunk_frame % 8 + 1)) - 1);
     }
     void NuAnimDataCalcTime(void *animation, f32 frame, nuanimtime_s *time) {
         u8 *data = static_cast<u8 *>(animation);
@@ -2171,8 +2184,8 @@ extern "C" {
         time->time_offset = clamped_frame - static_cast<f32>(chunk << 5);
         const i32 chunk_frame = static_cast<i32>(NuFloor(time->time_offset)) - 1;
         time->chunk_frame = static_cast<u32>(chunk_frame);
-        time->time_byte = static_cast<u32>(((chunk_frame < 0 ? chunk_frame + 7 : chunk_frame) >> 3) & 0xff);
-        time->time_mask = (1u << ((chunk_frame % 8) + 1)) - 1u;
+        time->time_byte = (chunk_frame / 8) & 0xff;
+        time->time_mask = static_cast<u8>((1 << (chunk_frame % 8 + 1)) - 1);
     }
     void *NuAnimDataCreate(i32 chunk_count) {
         const u32 allocation_size = static_cast<u32>(chunk_count) * sizeof(void *) + 0x10;
@@ -2253,12 +2266,12 @@ extern "C" {
         return ForceEulerToQuat;
     }
     i32 NuAnimPushSetUseQuatsFlag(i32 enabled) {
-        const i32 previous = ForceEulerToQuat;
+        i32 previous = ForceEulerToQuat;
         if (NumQuatPushes > 3) {
             return 0;
         }
-        QuatPushes[NumQuatPushes++] = ForceEulerToQuat;
-        ForceEulerToQuat = static_cast<u8>(enabled);
+        QuatPushes[NumQuatPushes++] = previous;
+        ForceEulerToQuat = enabled;
         return previous;
     }
     i32 NuAnimSetUseQuatsFlag(i32 enabled) {
@@ -2763,7 +2776,7 @@ extern "C" {
             NuVec4ScaleXYZVU0(&vertices[5], &vertices[5], 1.0f / vertices[5].w);
             if (vertices[4].x < -1.0f && vertices[5].x < -1.0f)
                 continue;
-            if (vertices[4].x > 1.0f && vertices[5].x > 1.0f)
+            if (__builtin_expect(vertices[4].x > 1.0f && vertices[5].x > 1.0f, 0))
                 continue;
             if (vertices[4].y < -1.0f && vertices[5].y < -1.0f)
                 continue;
@@ -2821,7 +2834,7 @@ extern "C" {
                     vertices[5].y = next_fraction * vertices[7].y + vertices[6].y;
                     vertices[5].z = next_fraction * vertices[7].z + vertices[6].z;
                 } else {
-                    if (laser->arc)
+                    if (__builtin_expect(!!(laser->arc), 0))
                         end_alpha = 0;
                     vertices[5].x = vertices[6].x + vertices[7].x;
                     vertices[5].y = vertices[6].y + vertices[7].y;
@@ -3441,7 +3454,7 @@ extern "C" {
     void NuHGobjEvalAnimBlend2Root(nuhgobj_s *object, ani3_animheader_s *animation_a, f32 time_a,
                                    ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32 override_count,
                                    NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
-        if (animation_a == NULL || (animation_a->magic != 0x414e4934 && animation_a->magic != 0x414e4935)) {
+        if (animation_a->magic != 0x414e4934 && animation_a->magic != 0x414e4935) {
             return;
         }
         NuHGobjEvalAnimBlend2Root_3(reinterpret_cast<nugscn_s *>(object), animation_a, time_a, animation_b, time_b,
@@ -4499,7 +4512,11 @@ extern "C" {
     DECOMP_ASSERT(offsetof(NuInstanceTree_s, far_clips) == 0x24, "instance tree far clips offset");
     NuVisibilityResult *myvisi;
     extern "C++" {
-        static void ClipInstTree(NuInstanceTree_s *tree, i32 tree_index, NUDLDLISTSCENE *, char *) {
+        // Retail only has the IPA-SRA clone (the unused scene and bits arguments dropped).
+        static __attribute__((noinline, noclone)) void
+        ClipInstTree(NuInstanceTree_s *tree,
+                     i32 tree_index) __asm__("_ZL12ClipInstTreeP16NuInstanceTree_siP16nudisplayscene_sPc.isra.92");
+        static void ClipInstTree(NuInstanceTree_s *tree, i32 tree_index) {
             NuInstanceTreeNode *pending[100];
             NuInstanceTreeNode **end = pending;
             *end++ = &tree->nodes[tree->roots[tree_index]];
@@ -4549,9 +4566,7 @@ extern "C" {
             BuildWorldSpaceClipPlanes();
             NuInstanceTree_s *tree = static_cast<NuInstanceTree_s *>(result->instance_tree);
             for (i32 i = tree->tree_count - 1; i >= 0; --i) {
-                ClipInstTree(static_cast<NuInstanceTree_s *>(result->instance_tree), i,
-                             reinterpret_cast<NUDLDLISTSCENE *>(scene->display_list),
-                             reinterpret_cast<char *>(result->instance_tree_bits));
+                ClipInstTree(static_cast<NuInstanceTree_s *>(result->instance_tree), i);
             }
         }
     }

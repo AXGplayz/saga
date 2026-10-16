@@ -231,7 +231,11 @@ static void Hub_DrawBonusModeMenu(i32, f32);
 static void Hub_DrawSelectModeMenu(i32, f32);
 void Collection_Draw(COLLECTION_s *, f32, f32, f32, APICHARACTERMODELLIST_s *, f32, i32);
 
-static void Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode, i32) {
+// Retail only has the IPA-SRA clone (the unused fourth argument dropped).
+static __attribute__((noinline, noclone)) void
+Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode) __asm__("_ZL18Hub_DrawBonusStatsfiii.isra.3");
+
+static void Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode) {
     if (episode == -1 && area != -1)
         episode = static_cast<i8>(ADataList[area].episode_index);
     if (episode != -1) {
@@ -295,7 +299,7 @@ enum HUB_AUDIO_EVENT {
 };
 
 enum {
-    HUB_VEHICLE_ID_CAPACITY = 346,
+    HUB_VEHICLE_ID_CAPACITY = 344,
 };
 
 struct HUBAREAINFO_s {
@@ -517,14 +521,14 @@ static void Hub_UpdatePackObstacle(i32 pack) {
     if (LevGizObst[12 - pack] == NULL) {
         return;
     }
-    if (Store_IsPackUnlocked(pack)) {
-        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
-        obstacle->progress_flags |= 1;
-        obstacle->runtime_flags &= static_cast<u8>(~8);
-    } else {
+    if (!Store_IsPackUnlocked(pack)) {
         GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
         obstacle->progress_flags &= static_cast<u8>(~1);
         obstacle->runtime_flags |= 8;
+    } else {
+        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
+        obstacle->progress_flags |= 1;
+        obstacle->runtime_flags &= static_cast<u8>(~8);
     }
 }
 
@@ -664,8 +668,9 @@ void Hub_Update(WORLDINFO_s *world) {
     } else if (GetMenuID() != 12) {
         for (i32 player_index = 0; player_index < 2; ++player_index) {
             GameObject_s *player = Player[player_index];
-            if (player != NULL && player->apiobj.player_controlled && player->apiobj.field_0x27d != 0 &&
-                player->pad_gamepad->input_magnitude == 0.0f && player->pad_gamepad->previous_input_magnitude == 0.0f &&
+            if (player != NULL && player->apiobj.player_controlled &&
+                __builtin_expect(player->apiobj.field_0x27d != 0, 1) && player->pad_gamepad->input_magnitude == 0.0f &&
+                player->pad_gamepad->previous_input_magnitude == 0.0f &&
                 (player->field_0x7a5 == 0xff || player->field_0x7a5 == 0x31 || player->field_0x7a5 == 0x32)) {
                 shop_available = player->apiobj.field_0x281 == 0x0e;
             }
@@ -704,8 +709,9 @@ void Hub_Update(WORLDINFO_s *world) {
     if (Customiser_MenuAvailable(CharacterCustomiser) != 0) {
         for (i32 player_index = 0; player_index < 2; ++player_index) {
             GameObject_s *player = Player[player_index];
-            if (player != NULL && player->apiobj.player_controlled && player->apiobj.field_0x27d != 0 &&
-                player->pad_gamepad->input_magnitude == 0.0f && player->pad_gamepad->previous_input_magnitude == 0.0f &&
+            if (player != NULL && player->apiobj.player_controlled &&
+                __builtin_expect(player->apiobj.field_0x27d != 0, 1) && player->pad_gamepad->input_magnitude == 0.0f &&
+                player->pad_gamepad->previous_input_magnitude == 0.0f &&
                 (player->field_0x7a5 == 0xff || player->field_0x7a5 == 0x31 || player->field_0x7a5 == 0x32)) {
                 customiser_available = player->apiobj.field_0x281 == 0x0f;
             }
@@ -743,8 +749,9 @@ void Hub_Update(WORLDINFO_s *world) {
     if (missions_available != 0) {
         for (i32 player_index = 0; player_index < 2; ++player_index) {
             GameObject_s *player = Player[player_index];
-            if (player != NULL && player->apiobj.player_controlled && player->apiobj.field_0x27d != 0 &&
-                player->pad_gamepad->input_magnitude == 0.0f && player->pad_gamepad->previous_input_magnitude == 0.0f &&
+            if (player != NULL && player->apiobj.player_controlled &&
+                __builtin_expect(player->apiobj.field_0x27d != 0, 1) && player->pad_gamepad->input_magnitude == 0.0f &&
+                player->pad_gamepad->previous_input_magnitude == 0.0f &&
                 (player->field_0x7a5 == 0xff || player->field_0x7a5 == 0x31 || player->field_0x7a5 == 0x32)) {
                 mission_menu_available = player->apiobj.field_0x281 == 0x14;
             }
@@ -1296,7 +1303,7 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                 if (SENATE_ADATA && SENATE_ADATA->index == hub_area)
                     Hub_DrawArcadeStats(hub_area_time);
                 else
-                    Hub_DrawBonusStats(hub_area_time, hub_area, -1, -1);
+                    Hub_DrawBonusStats(hub_area_time, hub_area, -1);
             } else {
                 Hub_DrawAreaStats(hub_area_time, hub_area, -1);
             }
@@ -1876,18 +1883,15 @@ void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
     }
 
     f32 build_x = 0.0f;
-    if ((flags & 0x4000) != 0) {
+    if ((flags & 0x4000) != 0)
         build_x = 0.20100002f;
-        if ((flags & 0x800) == 0) {
-            const i32 gold_count = 1 + (save->true_hero_complete[0] || save->true_hero_complete[1]);
-            Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, phase, gold_count, 2);
-        } else {
-            Hub_DrawImportantBrick(251, build_x, HUB_EPISODESUBTITLEY - 0.05f, phase, -1, -1);
-        }
-    } else if ((flags & 0x800) == 0) {
-        Hub_DrawImportantBrick(211, -0.0f, HUB_EPISODESUBTITLEY + 0.05f, phase, -1, -1);
-    } else {
+    if ((flags & 0x800) != 0) {
         Hub_DrawImportantBrick(251, build_x, HUB_EPISODESUBTITLEY - 0.05f, phase, -1, -1);
+    } else if ((flags & 0x4000) != 0) {
+        const i32 gold_count = 1 + (save->true_hero_complete[0] || save->true_hero_complete[1]);
+        Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, phase, gold_count, 2);
+    } else {
+        Hub_DrawImportantBrick(211, -0.0f, HUB_EPISODESUBTITLEY + 0.05f, phase, -1, -1);
     }
     if ((area->flags & 0x4000) == 0) {
         return;
@@ -2150,7 +2154,14 @@ bool HubCustomiserUnlocked() {
 
 // All recovered callers use player zero and full opacity. Keeping this private
 // allows the compiler to specialize those constant arguments naturally.
-static void Hub_DrawIconCursors(COLLECTION_s *collection, i32 player, f32 scale, f32 alpha) {
+// Retail only keeps the player-one, full-alpha specialisation of the cursor
+// drawing body; its name records the partial-inlining and constprop clones.
+static __attribute__((noinline, noclone)) void
+Hub_DrawIconCursors(COLLECTION_s *collection,
+                    f32 scale) __asm__("_ZL19Hub_DrawIconCursorsP12COLLECTION_siff.part.9.constprop.51");
+static void Hub_DrawIconCursors(COLLECTION_s *collection, f32 scale) {
+    const i32 player = 0;
+    const f32 alpha = 1.0f;
     i32 model = MenuPacket.player_model[player];
     const i32 index = InCollectList_Index(model, collection->list, collection->count_y);
     if (index == -1)
@@ -2200,7 +2211,7 @@ void Hub_DrawFreePlaySelect() {
                     if (bonusmodearcade != 0) {
                         Hub_DrawArcadeStats(alpha);
                     } else {
-                        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode, -1);
+                        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
                     }
                     Hub_DrawBonusModeMenu(0, alpha);
                 } else {
@@ -2282,7 +2293,7 @@ void Hub_DrawFreePlaySelect() {
                     DrawCharIcon(model, x, y, 0.0f, grow * size, 0xa6, opacity, opacity, 1, NULL);
                 }
                 if (model != -1 && progress > 0.0f) {
-                    char name[16];
+                    char name[64];
                     char *text = GameObj_GetName(model, NULL, name);
                     SmartTextEx(text, base_x, 0.475f, 1.0f, 0.45f, 0.45f, 0.45f, 1, 255, 191, 0, 1.25f, 2, NULL, 0,
                                 static_cast<i32>(opacity * 128.0f * progress));
@@ -2302,14 +2313,14 @@ void Hub_DrawFreePlaySelect() {
             (COLLECTION_Y_HUB + offset) * NU_SIN_LUT(static_cast<i32>((freeplaytime / freeplayduration) * 16384.0f)) -
             offset;
         Collection_Draw(collection, 0.0f, y, collection->field_10, list, 1.0f, 1);
-        Hub_DrawIconCursors(collection, 0, 1.0f, 1.0f);
+        Hub_DrawIconCursors(collection, 1.0f);
         return;
     }
     if (freeplaymode == 1) {
         list[0].model_id = MenuPacket.player_model[0];
         list[1].model_id = -1;
         Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, 1.0f, 1);
-        Hub_DrawIconCursors(collection, 0, 1.0f, 1.0f);
+        Hub_DrawIconCursors(collection, 1.0f);
         i32 status = -1, select = -1, cancel = -1;
         if (freeplay_selected[0] == 0 && freeplay_time[0] <= 0.0f) {
             select = tSELECT;
@@ -2340,7 +2351,7 @@ void Hub_DrawFreePlaySelect() {
                 alpha = 1.0f - freeplaytime / (freeplayduration - 0.1f);
             Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
             if (alpha >= 0.0f)
-                Hub_DrawIconCursors(collection, 0, alpha, 1.0f);
+                Hub_DrawIconCursors(collection, alpha);
         }
         return;
     }
@@ -3110,34 +3121,23 @@ static __used__ void Hub_UpdateSelectMode() {
             const u32 up_mask = GAMEPAD_DUP;
             const u32 down_mask = GAMEPAD_DDOWN;
             i32 confirm = 0, cancel = 0, up = 0, down = 0;
-            if (MenuPacket.active_player[0]) {
-                const u32 pressed = GamePad[0].buttons_pressed;
+            for (i32 i = 0; i < 2; ++i) {
+                if (!MenuPacket.active_player[i])
+                    continue;
+                const u32 pressed = GamePad[i].buttons_pressed;
                 if ((pressed & select_mask) != 0) {
                     confirm = true;
-                } else if ((pressed & cancel_mask) != 0) {
-                    cancel = true;
-                } else {
-                    const u32 directions = pressed | GamePad[0].left_directions;
-                    if ((directions & up_mask) != 0) {
-                        up = true;
-                    } else if ((directions & down_mask) != 0) {
-                        down = true;
-                    }
+                    break;
                 }
-            }
-            if (!confirm && !cancel && MenuPacket.active_player[1]) {
-                const u32 pressed = GamePad[1].buttons_pressed;
-                if ((pressed & select_mask) != 0) {
-                    confirm = true;
-                } else if ((pressed & cancel_mask) != 0) {
+                if ((pressed & cancel_mask) != 0) {
                     cancel = true;
-                } else {
-                    const u32 directions = pressed | GamePad[1].left_directions;
-                    if ((directions & up_mask) != 0) {
-                        up = true;
-                    } else if ((directions & down_mask) != 0) {
-                        down = true;
-                    }
+                    break;
+                }
+                const u32 directions = pressed | GamePad[i].left_directions;
+                if ((directions & up_mask) != 0) {
+                    up = true;
+                } else if ((directions & down_mask) != 0) {
+                    down = true;
                 }
             }
             if (menu->input_activity != 0) {
@@ -3536,7 +3536,7 @@ void MenuUpdateEpisodes(MENU_s *) {
                 else if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL)
                     cancel = 1;
             }
-            if (menu->confirm_pressed || confirm) {
+            if (confirm || menu->confirm_pressed) {
                 const i16 clip = clips[i_clip[i_episodes]];
                 GameAudio_PlaySfx(0x30, NULL, 0, 0);
                 CutScenePlayer_Start(clip, hub_new_level);
@@ -3603,19 +3603,14 @@ extern i16 tSELECT, tBACK, tSELECTING;
 static void Hub_DrawSelectModeMenu(i32 selected, f32 alpha);
 
 void MenuDrawSelectMode(MENU_s *) {
-    if (MenuStopDraw)
+    if (__builtin_expect(MenuStopDraw, 1))
         return;
-    switch (selectmodemode) {
-        case 1:
-        case 2:
-        case 3:
-            if (FadeSys.fade > 0.0f)
-                return;
-            break;
-        case 4:
-            if (pFadeInfo->fade > 0.0f)
-                return;
-            break;
+    if (__builtin_expect(selectmodemode >= 1 && selectmodemode <= 3, 0)) {
+        if (FadeSys.fade > 0.0f)
+            return;
+    } else if (selectmodemode == 4) {
+        if (pFadeInfo->fade > 0.0f)
+            return;
     }
     f32 alpha = 1.0f;
     switch (selectmodemode) {
@@ -3634,7 +3629,7 @@ void MenuDrawSelectMode(MENU_s *) {
     if (area->flags & 0x100)
         Hub_DrawSuperBonusStats(area, alpha);
     else if (area->flags & 4)
-        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode, -1);
+        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
     else
         Hub_DrawAreaStats(alpha, last_hub_area, hub_selectmode);
 
@@ -3908,7 +3903,7 @@ void MenuDrawBonusMode(MENU_s *) {
     if (bonusmodearcade)
         Hub_DrawArcadeStats(alpha);
     else if (hub_bonusepisode != -1)
-        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode, -1);
+        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
     else
         Hub_DrawSuperBonusStats(hub_bonusarea == -1 ? NULL : &ADataList[hub_bonusarea], alpha);
 

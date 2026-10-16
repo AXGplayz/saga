@@ -184,9 +184,8 @@ static void *GizSpinner_ReserveBufferSpace(void *world_ptr) {
         }
 
         world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
-        return world->spinners;
     }
-    return NULL;
+    return world->spinners;
 }
 
 static void GizSpinner_StoreProgressData(void *world_ptr, void *, void *progress_ptr) {
@@ -367,15 +366,13 @@ static void GizSpinner_Draw(void *world_ptr, void *, float) {
 
 static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world->spinners != NULL && world->current_level->max_spinners != 0) {
-        i32 index = 0;
-        do {
+    if (world->spinners != NULL) {
+        for (i32 index = 0; index < world->current_level->max_spinners; ++index) {
             if ((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) != 0 &&
                 NuStrLen(world->spinners[index].name) != 0) {
                 AddGizmo(gizmo_sys, type_id, NULL, &world->spinners[index]);
             }
-            ++index;
-        } while (world->current_level->max_spinners > index);
+        }
     }
 }
 
@@ -940,8 +937,7 @@ int GizSpinner_Update(GIZSPINNER_s *spinner) {
 
 void GizSpinners_Update(void *world_ptr, void *, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world == NULL || world->spinners == NULL || world->current_level == NULL ||
-        world->current_level->max_spinners == 0)
+    if (world == NULL || world->spinners == NULL || world->current_level->max_spinners == 0)
         return;
     for (i32 index = 0; index < world->current_level->max_spinners; ++index) {
         GIZSPINNER_s *spinner = &world->spinners[index];
@@ -1456,38 +1452,18 @@ GIZSPINNER_s *GizSpinner_FindNearest(nuvec_s *position, WORLDINFO_s *world, f32 
 
 GIZSPINNER_s *GizSpinner_Find(WORLDINFO_s *world, nuvec_s *position, i32 alternate) {
     GIZSPINNER_s *nearest = NULL;
-    if (world->current_level->max_spinners != 0) {
-        f32 nearest_distance = 1.5625f;
-        if (alternate == 0) {
-            i32 index = 0;
-            do {
-                GIZSPINNER_s *spinner = &world->spinners[index];
-                if ((spinner->flags & 0x27) == GIZSPINNER_FLAG_VALID && (spinner->state_flags & 8) == 0) {
-                    NUVEC spinner_position;
-                    GizSpinner_GetSpinnerPos(spinner, &spinner_position);
-                    f32 distance = NuVecDistSqr(position, &spinner_position, NULL);
-                    if (distance < nearest_distance) {
-                        nearest_distance = distance;
-                        nearest = spinner;
-                    }
-                }
-                ++index;
-            } while (world->current_level->max_spinners > index);
-        } else {
-            i32 index = 0;
-            do {
-                GIZSPINNER_s *spinner = &world->spinners[index];
-                if ((spinner->flags & 0x27) == GIZSPINNER_FLAG_VALID && (spinner->state_flags & 8) != 0) {
-                    NUVEC spinner_position;
-                    GizSpinner_GetSpinnerPos(spinner, &spinner_position);
-                    f32 distance = NuVecDistSqr(position, &spinner_position, NULL);
-                    if (distance < nearest_distance) {
-                        nearest_distance = distance;
-                        nearest = spinner;
-                    }
-                }
-                ++index;
-            } while (world->current_level->max_spinners > index);
+    f32 nearest_distance = 1.5625f;
+    for (i32 index = 0; index < world->current_level->max_spinners; ++index) {
+        GIZSPINNER_s *spinner = &world->spinners[index];
+        if ((spinner->flags & 0x27) == GIZSPINNER_FLAG_VALID &&
+            (alternate == 0 ? (spinner->state_flags & 8) == 0 : (spinner->state_flags & 8) != 0)) {
+            NUVEC spinner_position;
+            GizSpinner_GetSpinnerPos(spinner, &spinner_position);
+            f32 distance = NuVecDistSqr(position, &spinner_position, NULL);
+            if (distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = spinner;
+            }
         }
     }
     return nearest;

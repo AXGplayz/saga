@@ -85,9 +85,12 @@ f32 CurrentHintAlpha() {
     return alpha * hintsys.alpha;
 }
 
-void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
-    if (hint == NULL || FadeSys.fade != 0.0f)
-        return;
+// Retail keeps this body as GCC's split-out clone; the inline head stays in
+// the caller.
+static __attribute__((noinline, noclone)) void DrawHint_LSWBody(HINT_s *hint, i32 max_lines)
+    __asm__("_Z12DrawHint_LSWP6HINT_si.part.19");
+
+static void DrawHint_LSWBody(HINT_s *hint, i32 max_lines) {
     const f32 alpha = CurrentHintAlpha();
     if (!(alpha > 0.0f))
         return;
@@ -153,6 +156,12 @@ void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
         const u16 mirrored_rotation = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
         DrawPanel3DObjectNoAlpha(-wave_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, mirrored_rotation, 0, &icon->special, 2);
     }
+}
+
+void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
+    if (hint == NULL || __builtin_expect(FadeSys.fade != 0.0f, 0))
+        return;
+    DrawHint_LSWBody(hint, max_lines);
 }
 
 i32 Dodge_UpdateHint(HINT_s *hint) {
@@ -572,17 +581,11 @@ void MenuUpdateHints(MENU_s *menu) {
 
     const i32 mode = MechInputTouchSystem::s_baseControlMode;
     i32 count = 0;
-    if (mode == 0) {
-        for (HINT_s *hint = Hints_LSW; hint->control_mode_ids[0] != -1; ++hint) {
-            if ((hint->flags & 0x2c) == 0 && (hint->flags & 0x10) == 0 && TTab[hint->control_mode_ids[0]] != NULL)
-                ++count;
-        }
-    } else {
-        for (HINT_s *hint = Hints_LSW; hint->control_mode_ids[0] != -1; ++hint) {
-            if ((hint->flags & 0x2c) == 0 && hint->control_mode_ids[1] != -1 &&
-                TTab[hint->control_mode_ids[mode]] != NULL)
-                ++count;
-        }
+    for (HINT_s *hint = Hints_LSW; hint->control_mode_ids[0] != -1; ++hint) {
+        if ((hint->flags & 0x2c) == 0 &&
+            (mode == 0 ? (hint->flags & 0x10) == 0 : hint->control_mode_ids[1] != -1) &&
+            TTab[hint->control_mode_ids[mode]] != NULL)
+            ++count;
     }
     if (count <= updatehints_target_y[mode])
         updatehints_target_y[mode] = count - 1;
