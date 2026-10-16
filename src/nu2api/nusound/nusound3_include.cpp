@@ -1,7 +1,5 @@
 #include "nu2api/nusound/nusound3_include.hpp"
-
 #include "decomp.h"
-
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nucore/nutime.h"
@@ -20,11 +18,9 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nusound/nusound_voice.hpp"
 #include "nu2api/nusound/nusound_decoder.hpp"
-
 #include <new>
 #include <stdarg.h>
 #include <string.h>
-
 // Stereo stream slot (0x10 bytes in the original):
 //   +0x0 stream            the streaming sample playing in this slot
 //   +0x4 pending_start     PlayStereoV sets it to 1, and NuSound3Update
@@ -42,7 +38,6 @@ struct NuSoundStream {
 };
 
 DECOMP_ASSERT(sizeof(NuSoundStream) == 0x10, "NuSoundStream size");
-
 // The single stereo-stream voice shared by all stream slots. This is a class
 // member in the original ABI, even though the slot bookkeeping lives here.
 class NuSound3Stream {
@@ -50,15 +45,9 @@ class NuSound3Stream {
     static NuSoundWeakPtr<NuSoundVoice> mVoice;
 };
 
-NuSoundWeakPtr<NuSoundVoice> NuSound3Stream::mVoice;
-
-DECOMP_ASSERT(sizeof(NuSound3Stream::mVoice) == 0x10, "NuSound3Stream voice pointer size");
-
-static NuSoundListener g_NuSoundListener;
 // The original focused the listener on the player object; the title screen
 // runs before gameplay, where it is NULL and the focus stays disabled.
 static nuvec_s g_NuSoundFocusPosition;
-
 extern "C" {
     const char *audio_ps2_music_ext = ".vag";
 }
@@ -73,21 +62,9 @@ extern "C" NuSoundVoice *NuSound3FindQuietestVoice(i32 sample_index, f32 *playba
     return NuSound.GetQuietestVoice(sample, *playback_position);
 }
 
-extern "C" void NuSound3Listener(VuMtx *matrix) {
-    g_NuSoundListener.SetHeadMatrix(matrix);
-}
-
 static NuSoundStream *g_NuSoundStreams[2] = {0};
-
-extern "C" f32 NuSound3GetStreamPlaybackTime(i32 stream_index) {
-    if (g_NuSoundStreams[stream_index] != NULL && NuSound3Stream::mVoice.obj != NULL) {
-        return reinterpret_cast<NuSoundVoice *>(NuSound3Stream::mVoice.obj)->GetPlaybackPositionSeconds();
-    }
-    return 0.0f;
-}
-
 static NuSoundLoadTrigger g_NuSoundLoadTrigger;
-
+static NuSoundCriticalSection g_NuSoundLoadCriticalSection;
 // 0x44-byte voice wrapper the NuSound3 API keeps per playing source. The
 // elists link these while they are pending playback / active / pending
 // destruction.
@@ -107,7 +84,6 @@ struct NuSound3Voice {
 };
 
 DECOMP_ASSERT(sizeof(NuSound3Voice) == 0x44, "NuSound3Voice size");
-
 // NuSound3Voice is itself the intrusive list node in the original. NuEList
 // owns two embedded sentinels, pointers to those sentinels, and a count; it
 // does not allocate a second wrapper node around each voice.
@@ -116,6 +92,9 @@ template <> class NuEList<NuSound3Voice, DefaultElist> {
     struct Links {
         NuSound3Voice *prev;
         NuSound3Voice *next;
+
+        Links() : prev(NULL), next(NULL) {
+        }
     };
 
     Links begin_sentinel;
@@ -126,15 +105,7 @@ template <> class NuEList<NuSound3Voice, DefaultElist> {
     NuSound3Voice *end;
     i32 length;
 
-    NuEList() {
-        begin_sentinel.prev = NULL;
-        end_sentinel.next = NULL;
-        begin = reinterpret_cast<NuSound3Voice *>(&begin_sentinel);
-        end = reinterpret_cast<NuSound3Voice *>(&end_sentinel);
-        begin_sentinel.next = reinterpret_cast<NuSound3Voice *>(&end_sentinel);
-        end_sentinel.prev = reinterpret_cast<NuSound3Voice *>(&begin_sentinel);
-        length = 0;
-    }
+    NuEList();
 
     ~NuEList() {
         while (length != 0) {
@@ -157,8 +128,17 @@ template <> class NuEList<NuSound3Voice, DefaultElist> {
     }
 };
 
-DECOMP_ASSERT(sizeof(NuEList<NuSound3Voice>) == 0x1c, "NuSound3Voice list size");
+// Defined out of line: the original emitted this constructor on its own and
+// called it from the static initialiser rather than inlining it.
+NuEList<NuSound3Voice, DefaultElist>::NuEList() {
+    begin = reinterpret_cast<NuSound3Voice *>(&begin_sentinel);
+    end = reinterpret_cast<NuSound3Voice *>(&end_sentinel);
+    begin_sentinel.next = reinterpret_cast<NuSound3Voice *>(&end_sentinel);
+    end_sentinel.prev = reinterpret_cast<NuSound3Voice *>(&begin_sentinel);
+    length = 0;
+}
 
+DECOMP_ASSERT(sizeof(NuEList<NuSound3Voice>) == 0x1c, "NuSound3Voice list size");
 namespace {
 
     void StreamListPushBack(NuEList<NuSound3Voice> *list, NuSound3Voice *voice) {
@@ -189,23 +169,33 @@ namespace {
     }
 
 } // namespace
-
 static NuEList<NuSound3Voice> g_NuSoundVoicesPendingPlayback{};
 static NuEList<NuSound3Voice> g_NuSoundVoicesActive{};
 static NuEList<NuSound3Voice> g_NuSoundVoicesPendingDestruction{};
 static i32 g_NuSoundNumReplaceableVoices;
-
+NuSoundWeakPtr<NuSoundVoice> NuSound3Stream::mVoice;
+DECOMP_ASSERT(sizeof(NuSound3Stream::mVoice) == 0x10, "NuSound3Stream voice pointer size");
 static NuSoundBuffer g_NuSoundStreamBuffers[4];
+static NuSoundListener g_NuSoundListener;
+
+extern "C" void NuSound3Listener(VuMtx *matrix) {
+    g_NuSoundListener.SetHeadMatrix(matrix);
+}
+
+extern "C" f32 NuSound3GetStreamPlaybackTime(i32 stream_index) {
+    if (g_NuSoundStreams[stream_index] != NULL && NuSound3Stream::mVoice.obj != NULL) {
+        return reinterpret_cast<NuSoundVoice *>(NuSound3Stream::mVoice.obj)->GetPlaybackPositionSeconds();
+    }
+    return 0.0f;
+}
 
 static NuSoundStreamer *g_NuSoundStreamer = NULL;
 static i16 *ActionPairTab;
 static i16 *AmbientPairTab;
-
 static u16 *g_NuSoundLoadBits = NULL;
 static u16 *g_NuSoundLoadBitsCache = NULL;
 static i32 g_NuSoundNumLoadBitShorts = 0;
 static NuThread *g_NuSoundLoadThread = NULL;
-static pthread_mutex_t g_NuSoundLoadCriticalSection = PTHREAD_MUTEX_INITIALIZER;
 
 extern "C" void NuSound3StopVoice(NuSoundVoice *voice) {
     if (voice == NULL) {
@@ -268,7 +258,7 @@ void NuSound3SampleLoadThread(void *arg) {
         pthread_mutex_unlock(&g_NuSoundLoadTrigger.mutex);
 
         if (g_NuSoundLoadBits != NULL) {
-            pthread_mutex_lock(&g_NuSoundLoadCriticalSection);
+            g_NuSoundLoadCriticalSection.Lock();
 
             for (u32 i = 0; i < g_NuSoundSamples.length; i++) {
                 nusound_filename_info_s &info = g_NuSoundSamples.data[i];
@@ -303,7 +293,7 @@ void NuSound3SampleLoadThread(void *arg) {
                 }
             }
 
-            pthread_mutex_unlock(&g_NuSoundLoadCriticalSection);
+            g_NuSoundLoadCriticalSection.Unlock();
         }
     }
 }
@@ -348,37 +338,6 @@ nusound_filename_info_s *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPT
     bufferStart->void_ptr = music_config + 0x40;
 
     return finfo;
-}
-
-NuSoundLoader *NuSoundSystem::CreateFileLoader(FileType type) {
-    NuSoundLoaderWAV *wav_loader;
-
-    switch (type) {
-        case FileType::WAV:
-            // libTTapp.so allocates the WAV loader from SCRATCH (0x1c bytes,
-            // nusound.cpp:1233) and placement-news it in place.
-            wav_loader =
-                (NuSoundLoaderWAV *)_AllocMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuSoundLoaderWAV), 4,
-                                                 "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1219");
-            if (wav_loader != NULL) {
-                new (wav_loader) NuSoundLoaderWAV();
-                return wav_loader;
-            }
-            break;
-        case FileType::OGG:
-
-            NuSoundLoaderOGG *ogg_loader =
-                (NuSoundLoaderOGG *)_AllocMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuSoundLoaderOGG), 4,
-                                                 "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1247");
-            if (ogg_loader != NULL) {
-                new (ogg_loader) NuSoundLoaderOGG();
-                return ogg_loader;
-            }
-
-            break;
-    }
-
-    return NULL;
 }
 
 void NuSound3Init(i32 zero) {

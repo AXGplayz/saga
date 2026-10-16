@@ -647,7 +647,6 @@ LEVELDATA *TEMPLEC_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
 LEVELDATA *TITLES_LDATA = NULL;
 TRENCHRUN_s trenchrun = {};
-SceneObjectHelper theSceneObjectHelper;
 LEVELDATA *VADERA_LDATA = NULL;
 LEVELDATA *VADERB_LDATA = NULL;
 LEVELDATA *VADERC_LDATA = NULL;
@@ -1270,12 +1269,10 @@ CHARVARIANT CharVariants_Game[23] = {
     {"walker_2legs"}, {"walker_4legs"}, {"hoverdroid"}, {"critter"},   {"naboostarfighter"},
     {"henchman"},     {NULL},           {NULL},
 };
-MemoryManager theMemoryManager;
 #include "legoapi/menus/core/lsw_text_data.inc"
 TEXTCRAWL_s TextCrawl_LSW = {&tCHAPTER, &tVEHICLEBONUS, &tCHARACTERBONUS, 3};
 
 void *theGameThings = NULL;
-void *theThingManager = NULL;
 
 NUGSCN *saveicon_scene = NULL;
 NUGSCN *button_scene = NULL;
@@ -1329,7 +1326,6 @@ i32 create_qfont3dz = 0;
 // Cutscene & system misc
 // ------------------------------------------------------------------------
 i32 BeenAttacked = 0;
-FadeSystem FadeSys;
 i32 Paused = 0;
 f32 PauseMenus_X;
 i32 PauseMenus_Align;

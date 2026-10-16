@@ -75,7 +75,6 @@ static inline i32 get_class_object_attribute(EdClass *ed_class, void *object, Ed
     return 0;
 }
 
-extern EdRegistry theRegistry;
 extern ClassEditor theClassEditor;
 extern eduimenu_s *edLevelNextMenu;
 void eduiSetPinnedMenu(eduimenu_s *);
@@ -95,12 +94,7 @@ extern ClassEditor theClassEditor;
 extern LevelEditor theLevelEditor;
 ClassEditor theClassEditor;
 CursorTool theCursorTool;
-extern SplineTool theSplineTool;
 static i32 class_editor_create_pending = -1;
-extern EdManipulator theDefaultManipulator;
-extern EdManMove theMoveManipulator;
-extern EdManRotate theRotateManipulator;
-extern EdManScale theScaleManipulator;
 extern MemoryManager theMemoryManager;
 extern eduimenu_s *edLevelNextMenu;
 void eduiSetPinnedMenu(eduimenu_s *);
@@ -123,7 +117,18 @@ extern "C" void NuRndrRect2di(i32, i32, i32, i32, i32, NUMTL *);
 extern "C" void eduiSetCursorColour(u32);
 extern "C" void eduiSetFontScale(f32, f32);
 
+EdManipulator theDefaultManipulator;
+EdManMove theMoveManipulator;
+EdManRotate theRotateManipulator;
+EdManScale theScaleManipulator;
+PlaceableHelper thePlaceableHelper;
 PropertyTool thePropertyTool;
+EdRegistry theRegistry;
+SceneObjectHelper theSceneObjectHelper;
+SplineHelper theSplineHelper;
+KnotHelper theKnotHelper;
+SplineTool theSplineTool;
+EdSystem theEdSystem;
 PropertyMenuMetrics menu_startmetrics __attribute__((aligned(16))) = {20, 5, 200, 400};
 eduiiattr_s EdLevelAttr = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
 i32 EdLevelFnt;
@@ -854,6 +859,8 @@ i32 ClassEditor::IsSelectedObject(void *object, EdRef *reference) {
 }
 
 i32 ClassEditor::IsUniqueName(char *name) {
+    EdMember member;
+    char candidate_name[128];
     for (i32 i = 0; i < theRegistry.class_count; ++i) {
         EdClass *ed_class = &theRegistry.classes[i];
         EdClassInterface *interface = ed_class->interface;
@@ -865,8 +872,6 @@ i32 ClassEditor::IsUniqueName(char *name) {
         if (object == NULL)
             continue;
         do {
-            EdMember member;
-            char candidate_name[128];
             if (ed_class->FindMember(&member, object, 2, 1)) {
                 member.reference->GetAttributeData(member.object, 2, EdType_String, candidate_name, 128);
                 if (NuStrICmp(name, candidate_name) == 0) {
@@ -1516,6 +1521,7 @@ void ClassEditor::cbEdClassToolsMenu(eduimenu_s *parent, eduiitem_s *item, u32) 
 void ClassEditor::cbEdClassViewMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
     eduimenu_s *menu = eduiMenuCreate(item->x + parent->width, item->y, 180, 250,
                                       reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbEdLevelDestroy, NULL);
+    const i32 shortcuts[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
     if (menu == NULL)
         return;
     eduiMenuAddItem(menu, eduiItemCheckCreate(0, &EdLevelAttr, 0, 0, cbEdClassSetPinned, const_cast<char *>("Pinned")));
@@ -1538,7 +1544,6 @@ void ClassEditor::cbEdClassViewMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
         eduiMenuAddItem(menu, eduiItemSelCreate(0, &EdLevelAttr, 0, 0, cbEdLevelDestroyOnSelect,
                                                 const_cast<char *>("No Registered Classes")));
     } else {
-        const i32 shortcuts[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
         char label[128];
         for (i32 index = 0; index < theRegistry.class_count; ++index) {
             EdClass *ed_class = &theRegistry.classes[index];
@@ -2894,10 +2899,8 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
 }
 
 PropertyTool::PropertyTool() {
-    next = NULL;
     active_menu = NULL;
     last_menu = NULL;
-    previous = NULL;
     menu_count = 0;
     show_type_names = 1;
     menu_attr.background = 0x80000000;
@@ -3017,12 +3020,10 @@ void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *menu) {
 }
 
 void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
-    menu_startmetrics.x = menu->x > 0 ? menu->x : 20;
-    if (menu->y > 0) {
-        menu_startmetrics.y = menu->y;
-    } else {
-        menu_startmetrics.y = 5;
-    }
+    const i32 x = menu->x;
+    const i32 y = menu->y;
+    menu_startmetrics.x = x > 0 ? x : 20;
+    menu_startmetrics.y = y > 0 ? y : 5;
     menu_startmetrics.width = menu->width;
     menu_startmetrics.height = menu->height;
 }
@@ -3365,8 +3366,8 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
                     continue;
                 }
             } else {
-                if ((member->attributes & 0x10000000) != 0 ||
-                    (class_mapping != NULL && member->attributes < 0 && class_mapping[member->type_id] == -1)) {
+                if ((class_mapping != NULL && member->attributes < 0 && class_mapping[member->type_id] == -1) ||
+                    (member->attributes & 0x10000000) != 0) {
                     continue;
                 }
             }
@@ -3379,8 +3380,8 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
                     continue;
                 }
             } else {
-                if ((member->attributes & 0x10000000) != 0 ||
-                    (class_mapping != NULL && member->attributes < 0 && class_mapping[member->type_id] == -1)) {
+                if ((class_mapping != NULL && member->attributes < 0 && class_mapping[member->type_id] == -1) ||
+                    (member->attributes & 0x10000000) != 0) {
                     continue;
                 }
             }
@@ -3416,13 +3417,15 @@ i32 EdClass::GetStreamClasses(EdStream &stream, i32 *classes, i32 &count, i32 ca
 
 EdRef *EdClass::FindTypeRef(char *member_name, i32 recursive) {
     for (EdRef *member = members; member != NULL; member = member->next) {
-        if (recursive != 0 && member->attributes < 0) {
+        if (recursive == 0 || member->attributes >= 0) {
+            if (NuStrICmp(member->name, member_name) == 0) {
+                return member;
+            }
+        } else {
             EdRef *reference = theRegistry.GetClass(member->type_id)->FindTypeRef(member_name, 1);
             if (reference != NULL) {
                 return reference;
             }
-        } else if (NuStrICmp(member->name, member_name) == 0) {
-            return member;
         }
     }
     return NULL;

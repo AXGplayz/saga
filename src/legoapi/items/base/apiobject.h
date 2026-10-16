@@ -153,8 +153,14 @@ enum GAMEOBJECT_MOVEMENT_FLAGS : u8 {
     GAMEOBJECT_MOVEMENT_FLAG_REVERSE_VELOCITY = 0x80,
 };
 struct CHARACTERMODEL_s {
-    i16 model_id;                         // 0x00
-    u8 flags;                             // 0x02
+    i16 model_id; // 0x00
+    union {
+        u8 flags; // 0x02
+        struct {
+            u8 flag_0 : 1;
+            u8 : 7;
+        };
+    };
     u8 field_0x3;                         // 0x03
     nuhgobj_s *hierarchy;                 // 0x04
     void **model_data_a;                  // 0x08
@@ -496,7 +502,15 @@ typedef struct APIOBJECT_s {
     union {
         u32 object_flags; // 0x1f8, complete flag word
         struct {
-            u8 flags_low;
+            union {
+                u8 flags_low;
+                struct {
+                    u8 : 1;
+                    // Objects with this bit are not pushed apart by 2D collision resolution.
+                    u8 flags_low_bit1 : 1;
+                    u8 : 6;
+                };
+            };
             union {
                 u8 flags_high;
                 struct {
@@ -663,7 +677,7 @@ extern "C" i32 InModelList(APICHARACTERMODELLIST_s *list, i32 id, i32 *out_index
 extern "C" void APIDumpCharacterModels(i32 mode);
 
 struct APIOBJECTSYS_s {
-    u32 object_size;
+    i32 object_size;
     APIOBJECT *objects;
     union SAGA_HOST_PACKED_ALIGN4 {
         u8 state[0x214 - 8];

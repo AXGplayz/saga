@@ -637,7 +637,7 @@ extern "C" void NuRndrBoundingBox(NUVEC *minimum, NUVEC *maximum, NUMTX *matrix,
 f32 circle_scale_radius = 0.5f;
 static inline void NuRndrPrimSetColour(i32 colour);
 static inline void NuRndrPrimUV(f32 u, f32 v);
-extern "C" i32 NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
+extern "C" __attribute__((force_align_arg_pointer)) i32 NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
                             numtl_s *material) {
     NuPrim2DBegin(0, 7, material);
     radius *= circle_scale_radius;
@@ -1545,10 +1545,6 @@ extern "C" void NuRndrWireTri(NUVEC *a, NUVEC *b, NUVEC *c, i32 colour) {
 // Shader / texture / vertex state
 extern "C" {
     void *g_boundCameraPacket;
-    ShaderPacketStateMapping g_packetToShaderStateMappings[2] = {
-        {{{0, 0, 0, 0}}, &g_boundLightPacket},
-        {{{0, 0, 0, 0}}, &g_boundCameraPacket},
-    };
 }
 extern "C" void NuShaderGetDirtyMask(NUSHADERUSAGEMASK *mask, NUSHADEROBJECT *shader) {
     memmove(mask, shader->usage_mask, sizeof(*mask));
@@ -1575,14 +1571,6 @@ extern "C" void NuShaderGetDirtyMask(NUSHADERUSAGEMASK *mask, NUSHADEROBJECT *sh
     } else {
         shader->last_camera_packet = camera_packet;
     }
-}
-extern "C" nu2api::ShaderUniformRecord *NuShaderUniformGetByString(const char *name) {
-    for (i32 i = 0; i < 101; ++i) {
-        if ((g_shaderUniforms[i].fragment_name && strcmp(g_shaderUniforms[i].fragment_name, name) == 0) ||
-            (g_shaderUniforms[i].vertex_name && strcmp(g_shaderUniforms[i].vertex_name, name) == 0))
-            return &g_shaderUniforms[i];
-    }
-    return NULL;
 }
 static void NuTexGenTexture(void) {
     STUBBED();

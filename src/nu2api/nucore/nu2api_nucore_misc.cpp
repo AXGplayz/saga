@@ -675,7 +675,7 @@ i32 NuIOS_AreInAppPurchasesAvailable() {
 }
 
 GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_height) {
-    extern i32 comeFromHash;
+    extern bool comeFromHash;
     extern i32 g_loadDefaultTexture;
     extern i32 g_loadingCharacterInHub;
 
@@ -684,7 +684,7 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
         GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
     };
 
-    *reinterpret_cast<u8 *>(&comeFromHash) = 0;
+    comeFromHash = false;
 
     u8 *header = (u8 *)data;
     const u32 pixel_format = *(u32 *)(header + 0x08);
@@ -1005,80 +1005,4 @@ void NuMemory::MemErrorHandler::HandleError(NuMemoryManager *, NuMemoryManager::
 }
 
 void NuMemory::MemErrorHandler::OpenDump(NuMemoryManager *, char const *, u32 &) {
-}
-
-void NuNetEmu::EmuPacket::AddPayload(void *data, i32 size) {
-    payload[payload_size] = size;
-    payload[payload_size + 1] = size >> 8;
-    memmove(payload + payload_size + 2, data, size);
-    payload_count++;
-    payload_size = payload_size + size + 2;
-}
-
-NuNetEmu::EmuPacket::EmuPacket(nunetaddr_s *net_address) {
-    if (this != NULL) {
-        next = NULL;
-        previous = NULL;
-    }
-    payload = static_cast<u8 *>(MemoryManagerAllocPool(&theMemoryManager, 0xbb8, 1));
-    payload_size = 0;
-    payload_count = 0;
-    address = *reinterpret_cast<u32 *>(net_address);
-}
-
-NuNetEmu::EmuPacket::~EmuPacket() {
-    MemoryManagerFreePool(&theMemoryManager, payload, 0xbb8);
-}
-
-void NuNetEmu::PackStats::Draw(float x, float y, float width, float height, NetSmallStats::eInfo info) const {
-    NetStats::Draw(x, y, width, height, info);
-
-    NuQFntPushCoordinateSystem(NUQFNT_CSMODE_NORMALISED);
-    NuQFntPushPrintMode(2);
-    NUQFNT *font = system_qfont;
-    const float font_height = NuQFntHeight(font);
-    y += font_height;
-    y += font_height;
-    y += font_height;
-    y += font_height;
-    y += font_height;
-    NuQFntSetColour(font, 0x80808080);
-    NuQFntSetScale(font, 0.75f, 0.75f);
-
-    char text[128];
-    y += font_height;
-    NuQFntMove(font, x, y, 0.0f);
-    sprintf(text, "Pack Ratio %.3f%%", pack_ratio);
-    NuQFntPrintU(font, text);
-
-    y += font_height;
-    float first_time = 0.0f;
-    float second_time = 0.0f;
-    if (total.values[2] != 0) {
-        first_time = static_cast<float>(packed_values[0]) / static_cast<float>(total.values[2]);
-    }
-    if (total.values[3] != 0) {
-        second_time = static_cast<float>(packed_values[1]) / static_cast<float>(total.values[3]);
-    }
-    NuQFntMove(font, x, y, 0.0f);
-    sprintf(text, "Pack Time %.2f : %.2f", first_time, second_time);
-    NuQFntPrintU(font, text);
-
-    y += font_height;
-    NuQFntMove(font, x, y, 0.0f);
-    sprintf(text, "Ave Packet %.1f", average_packet_size);
-    NuQFntPrintU(font, text);
-
-    y += font_height;
-    NuQFntMove(font, x, y, 0.0f);
-    sprintf(text, "Split Packets %d", split_packets);
-    NuQFntPrintU(font, text);
-
-    y += font_height;
-    NuQFntMove(font, x, y, 0.0f);
-    sprintf(text, "Held Packets %d", held_packets);
-    NuQFntPrintU(font, text);
-
-    NuQFntPopPrintMode();
-    NuQFntPopCoordinateSystem();
 }

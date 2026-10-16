@@ -209,9 +209,9 @@ void Players_Init(void) {
     if (p[0] != NULL) {
         COINPACKET *cp = p[0]->coinpacket = CoinPacket;
         cp->lastcoin = LEGOOBJ_DEFAULTLASTCOIN;
-        u32 coins = PlayerProgress[0].coins;
-        if (Area != last_area) {
-            coins = 0;
+        u32 coins = 0;
+        if (Area == last_area) {
+            coins = PlayerProgress[0].coins;
         }
         cp->coins = coins;
         p[0]->gizforce_los_info = GizForceLOSInfo;
@@ -230,8 +230,8 @@ void Players_Init(void) {
         memcpy(BackUpPlayers + 0x439, p[1], 0x439 * 4);
     }
 
-    i32 id0 = (p[0] != NULL) ? p[0]->id : -1;
     i32 id1 = (p[1] != NULL) ? p[1]->id : -1;
+    i32 id0 = (p[0] != NULL) ? p[0]->id : -1;
     RememberPlayerIDs(0, id0, id1);
 }
 
@@ -736,57 +736,6 @@ float GetHoverPosY(GameObject_s *obj) {
     return 2000000.0f;
 }
 
-void PlayerTakeHit(GameObject_s *object, GameObject_s *attacker) {
-    if (object->apiobj.field_0x27c != -1)
-        return;
-
-    const u8 state = object->field_0xe31;
-    i32 animation;
-    void *animation_data;
-    if (state != 1) {
-        animation = 0x3d;
-        animation_data = object->apiobj.character_model->model_data_b[0x3d];
-    } else {
-        animation = 0x3e;
-        animation_data = object->apiobj.character_model->model_data_b[0x3e];
-    }
-    if (animation_data == NULL) {
-        if ((object->field_0xefb & 8) != 0) {
-            ResetAnimPacket(&object->apiobj.anim_packet, -1);
-            Player_ClearContext(object, 1);
-            Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-        }
-        return;
-    }
-
-    if (object->field_0x7a5 == 0x1b && object->field_0x780 != NULL) {
-        GameObject_s *partner = static_cast<GameObject_s *>(object->field_0x780);
-        if (partner->field_0x7a5 == 0x1c)
-            partner->field_0x7a5 = 0xff;
-    }
-
-    object->context_animation = animation;
-    ResetAnimPacket(&object->apiobj.anim_packet, -1);
-    Player_ClearContext(object, 1);
-    Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-    object->field_0x7a5 = 0x15;
-
-    f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-    object->field_0xe31 = state;
-    object->context_animation_timer = duration;
-    if (duration <= 0.0f)
-        object->context_animation_timer = 1.0f;
-    SetFlicker(object, 0.4f);
-
-    if (attacker != NULL) {
-        const u16 angle = NuAtan2D(attacker->apiobj.collision_position.x - object->apiobj.collision_position.x,
-                                   attacker->apiobj.collision_position.z - object->apiobj.collision_position.z);
-        object->apiobj.field_0x276 = angle;
-        object->apiobj.movement_facing_angle = angle;
-        object->apiobj.facing_angle = angle;
-    }
-}
-
 void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type) {
     item->type = type;
     if (type != NULL) {
@@ -831,11 +780,11 @@ i32 Players_AveragePos(nuvec_s *position, SOCKPOSITION_s *socket_position) {
     NUVEC total = {0.0f, 0.0f, 0.0f};
     f32 player_count = 0.0f;
 
-    if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0) {
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
         NuVecAdd(&total, &total, &Player[0]->apiobj.position);
         player_count += 1.0f;
     }
-    if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0) {
+    if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
         NuVecAdd(&total, &total, &Player[1]->apiobj.position);
         player_count += 1.0f;
     }
@@ -1179,32 +1128,6 @@ void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &element, Touch
 
 u32 (*CanPushObstaclesFn)(GameObject_s *) = NULL;
 
-i32 KillPlayer(GameObject_s *object, i32 reason, i32 ignore_spawn_protection, nuvec_s *) {
-    if (object->apiobj.field_0x287 != 0)
-        return 0;
-
-    if (ignore_spawn_protection != 0)
-        object->spawn_protection_timer = 0.0f;
-    else if (object->spawn_protection_timer > 0.0f)
-        return 0;
-
-    if (Arcade != 0) {
-        i32 other_player = 1;
-        if (object->apiobj.field_0x27c != 0) {
-            if (object->apiobj.field_0x27c != 1)
-                return KillGameObject(object, reason, 0);
-            other_player = 0;
-        }
-
-        i32 active = 0;
-        if (Player[other_player] != NULL)
-            active = (Player[other_player]->apiobj.field_0x1f4 >> 18) & 1;
-        Arcade_PlayerKilled(other_player, active);
-    }
-
-    return KillGameObject(object, reason, 0);
-}
-
 namespace {
 
     constexpr f32 kInvalidSurfaceHeight = 2000000.0f;
@@ -1272,8 +1195,8 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
                         SOCK *sock = &WORLD->sock_sys->sock[obj->sock_position.location.sock];
                         if ((sock->flags & SOCK_FLAG_MISSING_C_OR_D) == 0) {
                             obj->apiobj.position = obj->sock_position.midpoint;
-                            if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x80) != 0 && Player[1] != NULL &&
-                                (Player[1]->apiobj.field_0x1f8 & 0x80) != 0) {
+                            if (Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
+                                Player[1]->apiobj.player_controlled) {
                                 NUVEC offset;
                                 f32 side = obj == Player[0] ? 1.0f : -1.0f;
                                 NuVecNorm(&offset, &sock->segments[obj->sock_position.location.segment].planes[4]);
@@ -1396,6 +1319,22 @@ void SetFlicker(GameObject_s *object, float duration) {
     object->flicker_flags &= ~7;
 }
 
+// Single-bit view of the AI flag bytes; the original resets them one field at a time.
+struct PlayerAIFlagBits {
+    u8 bit0 : 1;
+    u8 bit1 : 1;
+    u8 bit2 : 1;
+    u8 bit3 : 1;
+    u8 bit4 : 1;
+    u8 bit5 : 1;
+    u8 bit6 : 1;
+    u8 bit7 : 1;
+};
+
+static inline PlayerAIFlagBits *PlayerAIFlags(u8 *object, i32 offset) {
+    return reinterpret_cast<PlayerAIFlagBits *>(object + offset);
+}
+
 void InitPlayerAI(GameObject_s *object) {
     StarWars_AutoSetAICapabilities(object);
     u8 *b = reinterpret_cast<u8 *>(object);
@@ -1417,49 +1356,107 @@ void InitPlayerAI(GameObject_s *object) {
         }
     }
     b[0x370] = 0;
-    b[0xef8] = ((b[0xef8] | 0xa) & 0x2a) | ((object->apiobj.character_data->model_flags >> 5) & 4);
-    b[0xef9] &= 0xf4;
-    b[0xefa] = (b[0xefa] & 0xc3) | ((object->apiobj.character_data->model_flags >> 23) & 0x10);
-    b[0xefb] &= 0x20;
-    b[0xefc] &= 0xc0;
-    b[0xefd] &= 0xe6;
-    b[0xeff] &= 0xc6;
-    b[0xf00] &= 0x58;
-    b[0xf01] &= 0xe9;
-    b[0xf02] = (b[0xf02] & 0x53) | ((object->apiobj.field_0x1f4 & 0x400) ? 0 : 4);
-    b[0xf03] &= 0x30;
-    b[0xf04] &= 0xfc;
-    object->walk_speed_override = 1000000000.0f;
+    PlayerAIFlagBits *flags_ef8 = PlayerAIFlags(b, 0xef8);
+    PlayerAIFlagBits *flags_ef9 = PlayerAIFlags(b, 0xef9);
+    PlayerAIFlagBits *flags_efa = PlayerAIFlags(b, 0xefa);
+    PlayerAIFlagBits *flags_efb = PlayerAIFlags(b, 0xefb);
+    PlayerAIFlagBits *flags_efc = PlayerAIFlags(b, 0xefc);
+    PlayerAIFlagBits *flags_efd = PlayerAIFlags(b, 0xefd);
+    PlayerAIFlagBits *flags_eff = PlayerAIFlags(b, 0xeff);
+    PlayerAIFlagBits *flags_f00 = PlayerAIFlags(b, 0xf00);
+    PlayerAIFlagBits *flags_f01 = PlayerAIFlags(b, 0xf01);
+    PlayerAIFlagBits *flags_f02 = PlayerAIFlags(b, 0xf02);
+    PlayerAIFlagBits *flags_f03 = PlayerAIFlags(b, 0xf03);
+    PlayerAIFlagBits *flags_f04 = PlayerAIFlags(b, 0xf04);
+    PlayerAIFlagBits *flags_4a5 = PlayerAIFlags(b, 0x4a5);
+    PlayerAIFlagBits *flags_4a7 = PlayerAIFlags(b, 0x4a7);
+    PlayerAIFlagBits *flags_7b5 = PlayerAIFlags(b, 0x7b5);
+    flags_ef8->bit1 = 1;
+    object->doomed_escape_locator = NULL;
+    flags_ef8->bit2 = (object->apiobj.character_data->model_flags >> 7) & 1;
+    flags_ef8->bit3 = 1;
+    flags_ef8->bit4 = 0;
+    flags_ef8->bit6 = 0;
+    flags_ef8->bit7 = 0;
+    flags_eff->bit3 = 0;
+    flags_eff->bit4 = 0;
+    flags_eff->bit5 = 0;
+    flags_efc->bit0 = 0;
+    flags_efc->bit1 = 0;
+    flags_efc->bit2 = 0;
+    flags_efc->bit3 = 0;
+    flags_efc->bit4 = 0;
+    flags_efc->bit5 = 0;
+    flags_efd->bit0 = 0;
+    flags_efd->bit3 = 0;
+    flags_efd->bit4 = 0;
+    flags_ef9->bit0 = 0;
+    flags_ef9->bit1 = 0;
+    flags_f01->bit1 = 0;
+    flags_f01->bit2 = 0;
+    flags_f01->bit4 = 0;
+    flags_efb->bit1 = 0;
+    flags_efb->bit3 = 0;
+    flags_efb->bit4 = 0;
+    flags_efb->bit6 = 0;
+    flags_efb->bit7 = 0;
+    flags_f00->bit0 = 0;
+    flags_f00->bit1 = 0;
+    flags_f00->bit5 = 0;
+    flags_f00->bit7 = 0;
+    flags_f03->bit1 = 0;
+    flags_f03->bit2 = 0;
+    flags_f03->bit3 = 0;
+    flags_f03->bit6 = 0;
+    flags_f03->bit7 = 0;
     object->run_speed_override = 1000000000.0f;
-    object->field_0x1038 = 1000000000.0f;
+    object->walk_speed_override = 1000000000.0f;
     // The original scale-override sentinel; zero would hide the character.
     object->hover_height_override = 1000000000.0f;
-    *reinterpret_cast<f32 *>(b + 0x4ac) = DEFAULT_MOVE_RANGE;
-    b[0x4a7] = (b[0x4a7] & 0xe3) | ((DEFAULT_MOVE_RANGE > 0.0f) << 2);
-    b[0x7b5] &= 0xfd;
-    b[0x4a5] &= 0xaf;
-    // Scalar stores follow the original AI state layout.
-    *reinterpret_cast<f32 *>(b + 0xed4) = 1.0f;
-    *reinterpret_cast<f32 *>(b + 0x3a0) = 1000000000.0f;
-    *reinterpret_cast<f32 *>(b + 0x3b0) = 1000000000.0f;
-    object->doomed_escape_locator = NULL;
+    object->field_0x1038 = 1000000000.0f;
+    flags_f04->bit0 = 0;
+    flags_f04->bit1 = 0;
+    flags_f02->bit2 = ((object->apiobj.field_0x1f4 >> 10) & 1) == 0;
+    flags_f02->bit3 = 0;
     *reinterpret_cast<u32 *>(b + 0x1058) = 0;
+    *reinterpret_cast<f32 *>(b + 0x4ac) = DEFAULT_MOVE_RANGE;
+    flags_4a7->bit2 = DEFAULT_MOVE_RANGE > 0.0f;
+    flags_4a7->bit3 = 0;
+    flags_4a7->bit4 = 0;
+    flags_f02->bit5 = 0;
+    flags_f02->bit7 = 0;
+    flags_ef8->bit0 = 0;
+    flags_f03->bit0 = 0;
+    flags_efa->bit2 = 0;
+    flags_efa->bit3 = 0;
+    flags_efa->bit4 = (object->apiobj.character_data->model_flags >> 27) & 1;
+    flags_efa->bit5 = 0;
+    flags_7b5->bit1 = 0;
     *reinterpret_cast<u32 *>(b + 0xecc) = 0;
     *reinterpret_cast<u32 *>(b + 0x394) = 0;
     *reinterpret_cast<u32 *>(b + 0x39c) = 0;
-    *reinterpret_cast<u32 *>(b + 0xed0) = 0;
+    flags_efb->bit0 = 0;
+    flags_efb->bit2 = 0;
+    flags_eff->bit0 = 0;
+    *reinterpret_cast<f32 *>(b + 0xed4) = 1.0f;
+    *reinterpret_cast<f32 *>(b + 0xed0) = 0.0f;
+    *reinterpret_cast<f32 *>(b + 0x3a0) = 1000000000.0f;
+    flags_4a5->bit4 = 0;
+    flags_4a5->bit6 = 0;
     *reinterpret_cast<u32 *>(b + 0x3a4) = 0;
     *reinterpret_cast<u32 *>(b + 0x3ac) = 0;
     *reinterpret_cast<u32 *>(b + 0x2a0) = 0;
     *reinterpret_cast<u32 *>(b + 0x2a4) = 0;
+    flags_ef9->bit3 = 0;
     *reinterpret_cast<u32 *>(b + 0xebc) = 0;
+    *reinterpret_cast<f32 *>(b + 0x3b0) = 1000000000.0f;
     *reinterpret_cast<u32 *>(b + 0xec0) = 0;
     *reinterpret_cast<u32 *>(b + 0x10b0) = 0;
     *reinterpret_cast<u32 *>(b + 0x10b4) = 0;
     *reinterpret_cast<u32 *>(b + 0xec4) = 0;
-    *reinterpret_cast<u32 *>(b + 0x448) = 0;
+    *reinterpret_cast<f32 *>(b + 0x448) = 0.0f;
     *reinterpret_cast<u32 *>(b + 0xec8) = 0;
-    *reinterpret_cast<u32 *>(b + 0xed8) = 0;
+    *reinterpret_cast<f32 *>(b + 0xed8) = 0.0f;
     memset(b + 0xf48, 0, 0x68);
     b[0x1089] = 0;
     *reinterpret_cast<u32 *>(b + 0xfe4) = 0;
@@ -1473,14 +1470,18 @@ void InitPlayerAI(GameObject_s *object) {
     u8 *config = reinterpret_cast<u8 *>(object->apiobj.character_data->player_config);
     b[0x1f9] &= 0xf7;
     b[0x1fa] &= 0xe7;
-    b[0xeff] = (b[0xeff] & 0x7b) | ((*reinterpret_cast<u32 *>(config + 0x90) >> 6) & 0x80);
+    flags_f00->bit2 = 0;
     b[0xefe] &= 0xbf;
+    flags_eff->bit2 = 0;
+    flags_eff->bit7 = (*reinterpret_cast<u32 *>(config + 0x90) >> 13) & 1;
     b[0x108f] = 0;
     *reinterpret_cast<u32 *>(b + 0x10c0) = 0;
     *reinterpret_cast<u32 *>(b + 0x10d8) = 0;
     *reinterpret_cast<f32 *>(b + 0x1040) = 1.0f;
     *reinterpret_cast<u32 *>(b + 0x1044) = 0;
-    b[0xf04] = (b[0xf04] & 0x73) | (config[0x98] & 0x80);
+    flags_f04->bit2 = 0;
+    flags_f04->bit3 = 0;
+    flags_f04->bit7 = PlayerAIFlags(reinterpret_cast<u8 *>(object->apiobj.character_data->player_config), 0x98)->bit7;
     ResetPlayerAI(object);
 }
 
@@ -1511,17 +1512,6 @@ void ResetPlayerAI(GameObject_s *object) {
 }
 
 void StarWars_AutoSetAICapabilities(GameObject_s *object);
-
-void ActivatePlayer(GameObject_s *object) {
-    object->character_context = -1;
-    if (object->apiobj.character_model->model_data_b[0x80] != NULL) {
-        object->character_context = 0x41;
-        object->context_animation = 0x80;
-        f32 duration = AnimDuration(object->id, 0x80, 0.0f, 0.0f, 1);
-        object->airborne_action_duration = 0.0f;
-        object->context_animation_timer = duration;
-    }
-}
 
 i32 MakePlayerList(i32 count) {
     i32 player_count = 0;
@@ -1578,41 +1568,6 @@ i32 MakePlayerList(i32 count) {
     }
     makeplayerlist_freeplay = 0;
     return player_count;
-}
-
-i32 DeactivatePlayer(GameObject_s *object, f32 duration, GameObject_s *source) {
-    if (object->character_context == 0x17 && !(duration > object->context_animation_timer))
-        return 0;
-    f32 model_state = object->field_0xd24;
-    Player_ClearContext(object, 1);
-    if (object->character_context == 0x3e)
-        return 0;
-    Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-    object->character_context = 0x17;
-    object->field_0xd24 = model_state;
-    AISCRIPTPROCESS *process = reinterpret_cast<AISCRIPTPROCESS *>(&object->ai);
-    if (AIScriptSetBaseScriptStateByName(process, "BeenDeactivated")) {
-        AIScriptProcess(WORLD->ai_sys, &object->apiobj, &object->ai, process, FRAMETIME);
-    }
-    if (source != NULL && (source->apiobj.character_data->model_flags & 0x40) != 0 &&
-        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field275_0x116 == 1 &&
-        object->apiobj.character_model->model_data_b[0x62] != NULL) {
-        duration = 4.0f;
-        object->context_animation = 0x62;
-    } else if (object->apiobj.character_model->model_data_b[0x81] != NULL &&
-               (static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[0x81])->flags & 2) == 0) {
-        object->context_animation = 0x81;
-    } else {
-        object->context_animation = object->apiobj.character_model->model_data_b[0x41] != NULL ? 0x41 : 1;
-    }
-    if ((object->apiobj.character_data->model_flags & 0x20) != 0)
-        SetProtocolDroidDeactivatedAction(object);
-    object->action_movement_state = 0;
-    object->context_animation_timer = duration;
-    object->airborne_action_duration = 0.0f;
-    object->field_0x768 = 0.0f;
-    NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
-    return 1;
 }
 
 void ResetPlayerPacket(PLAYERPACKET_s *, CHARACTERDATA_s *);

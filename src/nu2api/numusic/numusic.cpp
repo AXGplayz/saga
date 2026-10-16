@@ -28,8 +28,6 @@
 
 static NuMusic *the_music_player = NULL;
 
-NuMusic music_man;
-
 NUFPCOMJMPCTX NuMusic::top_jmp_tab[11] = {
     {"ALBUM", NuMusic::xsAlbum},
     {"ACTION", NuMusic::xsAction},
@@ -359,7 +357,7 @@ void NuMusic::BuildSoundTable(variptr_u *buffer_start, variptr_u buffer_end) {
     nusound_filename_info_s *finfo = (nusound_filename_info_s *)buffer_start->void_ptr;
     this->fileinfo = finfo;
 
-    i32 count = 0;
+    i32 count __attribute__((aligned(16))) = 0;
 
     i32 i = 0;
     for (; i < this->track_count; i++) {

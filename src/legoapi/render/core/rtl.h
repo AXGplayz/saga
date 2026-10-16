@@ -32,12 +32,12 @@ struct rtl_s {
     };
     i16 pitch;
     i16 yaw;
-    i16 field_5e;
-    i16 field_60;
+    u16 field_5e;
+    u16 field_60;
     u8 pad_62[2];
     f32 field_64;
     u16 field_68;
-    i16 uid;
+    u16 uid;
     f32 intensity;
     f32 blend_rate;
     f32 blend;

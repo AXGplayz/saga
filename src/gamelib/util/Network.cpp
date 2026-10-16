@@ -16,6 +16,14 @@ i16 NetChangedReplicator::mCrc32Table[256];
 static i32 ForceDummySerialise;
 
 extern EdRegistry theRegistry;
+// The original cleared the shared empty address at start-up.
+static inline NetAddress MakeEmptyAddress() {
+    NetAddress address;
+    address.value = 0;
+    return address;
+}
+
+NetAddress NetAddress::EmptyAddress = MakeEmptyAddress();
 TTNetwork theNetwork;
 extern MemoryManager theMemoryManager;
 
@@ -40,7 +48,7 @@ __attribute__((weak)) void EdRefNosGuid::GetMemberData(void *object, i32 type, v
 
 static f32 NetworkFrameTime() {
     u32 time = UtilGetFrameStartTime();
-    return static_cast<f32>(time & 0xffff) + static_cast<f32>(time >> 16) * 65536.0f;
+    return static_cast<f32>(time);
 }
 
 static f32 ClampPrediction(NetPredictor const *predictor, f32 value) {
@@ -474,7 +482,7 @@ void NetChangedReplicator::CheckSumObject(EdClass const *object_class, void cons
             if (static_cast<u16>(member->replication_group) == replication_group) {
                 EdType *type = theRegistry.GetType(member->type_id);
                 i32 size = member->size > 0 ? member->size : type->size;
-                u8 data[256];
+                u8 data[256] __attribute__((aligned(16)));
                 member->GetMemberData(const_cast<void *>(object), member->type_id, data, sizeof(data));
                 CheckSum(data, static_cast<u32>(size), checksum);
             }
@@ -622,7 +630,7 @@ void NetworkObjectManager::ChangeContext(NOSContext &new_context) {
 }
 
 void NetworkObjectManager::ConstructObject(NetworkObject *object, NetworkObjectManager::NetPeerPush *peer_push) {
-    u8 constructor_data[256];
+    u8 constructor_data[256] __attribute__((aligned(16)));
     EdClassInterface *interface = object->object_class->interface;
     i16 size = static_cast<i16>(
         interface->vtable->get_constructor_data(interface, object->object, constructor_data, sizeof(constructor_data)));
@@ -841,11 +849,8 @@ void NetworkObjectManager::NotifyDestroyObject(void *object, EdClass *object_cla
     }
 }
 
-static inline NetMessage MakeObjectCallMessage(NetMessage const &message, i32 call_id, NetworkObject const *object) {
-    NetMessage outgoing(message);
+static inline void PrependObjectCallHeader(NetMessage &outgoing, i16 object_id, i16 class_id, i32 call_id) {
     if (outgoing.data != NULL) {
-        i16 object_id = object->id;
-        i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
         outgoing.read_offset -= 2;
         memcpy(outgoing.data->bytes + outgoing.read_offset, &class_id, sizeof(class_id));
         if (outgoing.swap_endianness != 0) {
@@ -859,7 +864,6 @@ static inline NetMessage MakeObjectCallMessage(NetMessage const &message, i32 ca
         outgoing.data->bytes[--outgoing.read_offset] = static_cast<u8>(call_id);
         outgoing.data->bytes[--outgoing.read_offset] = 8;
     }
-    return outgoing;
 }
 
 i32 NetworkObjectManager::ObjectCall(void *instance, i32 call_id, NetMessage message, NetPeer const *peer) {
@@ -868,7 +872,10 @@ i32 NetworkObjectManager::ObjectCall(void *instance, i32 call_id, NetMessage mes
         return 0;
     }
 
-    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
+    i16 object_id = object->id;
+    NetMessage outgoing(message);
+    PrependObjectCallHeader(outgoing, object_id, class_id, call_id);
     if (peer == NULL) {
         theNetwork.ReliableBroadcast(outgoing, 3);
         reinterpret_cast<void (*)(void *, NetMessage &)>(registered_calls[call_id - 1].callback)(instance, message);
@@ -889,7 +896,10 @@ i32 NetworkObjectManager::ObjectOtherCall(void *instance, i32 call_id, NetMessag
         return 1;
     }
 
-    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
+    i16 object_id = object->id;
+    NetMessage outgoing(message);
+    PrependObjectCallHeader(outgoing, object_id, class_id, call_id);
     theNetwork.ReliableBroadcast(outgoing, 3);
     return 1;
 }
@@ -904,7 +914,10 @@ i32 NetworkObjectManager::ObjectOwnerCall(void *instance, i32 call_id, NetMessag
         return 1;
     }
 
-    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
+    i16 object_id = object->id;
+    NetMessage outgoing(message);
+    PrependObjectCallHeader(outgoing, object_id, class_id, call_id);
     theNetwork.ReliableSend(outgoing, 3, *const_cast<NetPeer *>(object->owner), NULL, 0);
     return 1;
 }

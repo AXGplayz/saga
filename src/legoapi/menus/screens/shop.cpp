@@ -35,7 +35,7 @@
 extern "C" void NuIOS_RecordFlurryEvent(char *);
 void SetLevelLights(void *, f32);
 void DrawItem(nuhspecial_s *, nuvec_s *, float, float, float, u16, u16, u16);
-void Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32);
+i32 Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32);
 void *AddGameMessage(char *, NUVEC *, f32, NUVEC *, f32, u8, u8, u8, u32, f32);
 extern f32 HUB_EPISODETITLEY;
 extern f32 HUB_EPISODESUBTITLEY;
@@ -333,9 +333,10 @@ void SelectSubItem() {
 i32 SelectShopItem(shopitem_s *items, i32 index) {
     shopitem_s *item = &items[index];
     char event[128];
+    i32 id, area;
     switch (item->type) {
         case 0: {
-            const i32 id = static_cast<u16>(item->item_id);
+            id = static_cast<u16>(item->item_id);
             if (item->unlocked == 1 || item->price == 0)
                 return 1;
             if (!CheckCash(items, index))
@@ -343,11 +344,10 @@ i32 SelectShopItem(shopitem_s *items, i32 index) {
             AddToCompletionPoints(POINTS_PER_HINT);
             if (HINT_s *hint = Hint_FindHint(HintTab[id]))
                 hint->flags |= HINT_SHOP_PURCHASED;
-            BuyShopItem(items, index, 1);
-            return 1;
+            goto buy;
         }
         case 1: {
-            const i32 id = static_cast<u16>(item->item_id);
+            id = static_cast<u16>(item->item_id);
             if (item->unlocked == 1 || id >= CHARCOUNT)
                 return 0;
             if (!CollectIDUnlocked(id))
@@ -363,10 +363,10 @@ i32 SelectShopItem(shopitem_s *items, i32 index) {
             return 1;
         }
         case 2: {
-            const i32 id = static_cast<u16>(item->item_id);
+            id = static_cast<u16>(item->item_id);
             if (item->unlocked == 1 || ((Game.extra_purchased_bits[id >> 5] >> (id & 31)) & 1))
                 return 0;
-            const i32 area = static_cast<i8>(Cheat[id].area);
+            area = static_cast<i8>(Cheat[id].area);
             if (area != -1 && !Game.area_save[area].red_brick_collected)
                 goto locked;
             if (!CheckCash(items, index))
@@ -389,6 +389,7 @@ i32 SelectShopItem(shopitem_s *items, i32 index) {
             AddToGoldBricks();
             sprintf(event, "hubshop_buygoldbrick_%i", index + 1);
             NuIOS_RecordFlurryEvent(event);
+        buy:
             BuyShopItem(items, index, 1);
             return 1;
         case 5:
@@ -480,9 +481,9 @@ void BuyAllShopExtras() {
         Game.purchased_extra_bits[i >> 5] |= 1u << (i & 31);
         if (world->current_level == HUB_LDATA)
             item->unlocked = 1;
-        i32 area = static_cast<i8>(Cheat[i].area);
-        if (area != -1 && Game.area_save[area].field_0x5[1] == 0)
-            Game.area_save[area].field_0x5[1] = 1;
+        i8 area = static_cast<i8>(Cheat[i].area);
+        if (area != -1 && Game.area_save[area].red_brick_collected == 0)
+            Game.area_save[area].red_brick_collected = 1;
     }
     Game.unlocked_extra_bits[0] = 0xffffffff;
     Game.unlocked_extra_bits[1] = 0xffffffff;

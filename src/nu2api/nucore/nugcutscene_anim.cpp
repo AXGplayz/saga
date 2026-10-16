@@ -2,7 +2,7 @@
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/numtx.h"
 
-void NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *locator, numtx_s *mtx, float frame) {
+f32 *NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *locator, numtx_s *mtx, float frame) {
     ani3_animheader_s *animation = reinterpret_cast<ani3_animheader_s *>(locator->animation);
     f32 *values = NuAnimCurveExtractAllNodeCurves_3(animation, 0, frame, NULL);
     if ((*animation->node_flags & 1) != 0) {
@@ -24,16 +24,16 @@ void NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *locator, numtx_s *mtx, float frame)
     mtx->m23 = -mtx->m23;
     mtx->m32 = -mtx->m32;
     NuMtxTranslate(mtx, reinterpret_cast<NUVEC *>(&locator->base_matrix.m30));
+    return values;
 }
 
-extern "C" i32 NuGCutLocatorCalcMtx(NUGCUTLOCATOR_s *locator, float frame, NUMTX *mtx, nuanimtime_s *time) {
+extern "C" f32 *NuGCutLocatorCalcMtx(NUGCUTLOCATOR_s *locator, float frame, NUMTX *mtx, nuanimtime_s *time) {
     if (locator->animation == NULL) {
         *mtx = locator->base_matrix;
-        return 0;
+        return NULL;
     }
     if (*reinterpret_cast<u32 *>(locator->animation) + 0xbeb1b6ccU < 2) {
-        NuGCutLocatorCalcMtx_3(locator, mtx, frame);
-        return 0;
+        return NuGCutLocatorCalcMtx_3(locator, mtx, frame);
     }
     nuanimdata2_s *animation = locator->animation;
     u8 *curve_types = animation->curve_types;
@@ -65,18 +65,20 @@ extern "C" i32 NuGCutLocatorCalcMtx(NUGCUTLOCATOR_s *locator, float frame, NUMTX
     mtx->m23 = -mtx->m23;
     mtx->m32 = -mtx->m32;
     NuMtxTranslate(mtx, reinterpret_cast<NUVEC *>(&locator->base_matrix.m30));
-    return 0;
+    return NULL;
 }
 
+char CurveFilterLOCATORScale[] = {6, 7, 8, static_cast<char>(0xff)};
+char CurveFilterLOCATOR[] = {6, 7, static_cast<char>(0xff)};
+char CurveFilterSFX[] = {3, static_cast<char>(0xff)};
+
 i32 NuGCutLocatorIsVisble_3(NUGCUTLOCATOR_s *locator, float frame, float *scale, float *rate) {
-    static char locator_scale_filter[] = {6, 7, 8, static_cast<char>(0xff)};
-    static char locator_filter[] = {6, 7, static_cast<char>(0xff)};
-    static char sfx_filter[] = {3, static_cast<char>(0xff)};
-    ani3_animheader_s *animation = reinterpret_cast<ani3_animheader_s *>(locator->animation);
-    char *filter = animation->curve_count == 4 ? sfx_filter
-                                               : (animation->curve_count == 8 ? locator_filter : locator_scale_filter);
-    f32 *values = NuAnimCurveExtractAllNodeCurves_3(animation, 0, frame, filter);
-    if (animation->curve_count == 4) {
+    // The original rereads the locator's animation header for every test.
+    const u16 curve_count = reinterpret_cast<ani3_animheader_s *>(locator->animation)->curve_count;
+    char *filter = curve_count == 4 ? CurveFilterSFX : (curve_count == 8 ? CurveFilterLOCATOR : CurveFilterLOCATORScale);
+    f32 *values = NuAnimCurveExtractAllNodeCurves_3(reinterpret_cast<ani3_animheader_s *>(locator->animation), 0,
+                                                    frame, filter);
+    if (reinterpret_cast<ani3_animheader_s *>(locator->animation)->curve_count == 4) {
         f32 visible = values[3];
         return static_cast<i32>(visible < 0.0f ? visible - 0.5f : visible + 0.5f);
     }
@@ -86,7 +88,7 @@ i32 NuGCutLocatorIsVisble_3(NUGCUTLOCATOR_s *locator, float frame, float *scale,
         *scale = values[6];
     }
     if (rate != NULL) {
-        *rate = animation->curve_count < 9 ? 1.0f : values[8];
+        *rate = reinterpret_cast<ani3_animheader_s *>(locator->animation)->curve_count < 9 ? 1.0f : values[8];
     }
     return result;
 }

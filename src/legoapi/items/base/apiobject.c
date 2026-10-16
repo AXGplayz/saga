@@ -63,22 +63,22 @@ f32 character_farclip = 0.0f;
 static void GameObjectForceApart2D(APIOBJECT *first, APIOBJECT *second) {
     const u16 angle = static_cast<u16>(NuRandFloat() * 65536.0f);
 
-    if ((first->flags_low & 2) != 0 && (second->flags_low & 2) == 0) {
-        second->velocity.x = NuTrigTable[static_cast<u16>(angle >> 1)] * 4.0f;
+    if (first->flags_low_bit1 && !(second->flags_low_bit1)) {
+        second->velocity.x = NU_SIN_LUT(angle) * 4.0f;
         second->velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 4.0f;
         second->movement_direction.x = second->velocity.x;
         second->movement_direction.z = second->velocity.z;
         first->movement_direction.x = first->velocity.x;
         first->movement_direction.z = first->velocity.z;
-    } else if ((first->flags_low & 2) == 0 && (second->flags_low & 2) != 0) {
-        first->velocity.x = NuTrigTable[static_cast<u16>(angle >> 1)] * 4.0f;
+    } else if (!(first->flags_low_bit1) && second->flags_low_bit1) {
+        first->velocity.x = NU_SIN_LUT(angle) * 4.0f;
         first->velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 4.0f;
         first->movement_direction.x = first->velocity.x;
         first->movement_direction.z = first->velocity.z;
         second->movement_direction.x = second->velocity.x;
         second->movement_direction.z = second->velocity.z;
     } else {
-        first->velocity.x = NuTrigTable[static_cast<u16>(angle >> 1)] * 2.0f;
+        first->velocity.x = NU_SIN_LUT(angle) * 2.0f;
         first->velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 2.0f;
         first->movement_direction.x = first->velocity.x;
         first->movement_direction.z = first->velocity.z;
@@ -168,16 +168,14 @@ extern "C" {
 
     APIOBJECTSYS_s *APIObjectSysInit(i32 size, VARIPTR *buf, VARIPTR *buf_end) {
         APIOBJECTSYS_s *system = static_cast<APIOBJECTSYS_s *>(AISysBufferAlloc(buf, buf_end, sizeof(APIOBJECTSYS_s)));
-        if (system == NULL) {
-            return NULL;
-        }
-
-        memset(system, 0, sizeof(*system));
-        if (size != 0) {
-            system->objects = static_cast<APIOBJECT *>(AISysBufferAlloc(buf, buf_end, static_cast<u32>(size) * 64));
-            if (system->objects != NULL) {
-                system->object_size = static_cast<u32>(size);
-                memset(system->objects, 0, static_cast<u32>(size) * 64);
+        if (system != NULL) {
+            memset(system, 0, sizeof(*system));
+            if (size != 0) {
+                system->objects = static_cast<APIOBJECT *>(AISysBufferAlloc(buf, buf_end, size * 64));
+                if (system->objects != NULL) {
+                    system->object_size = size;
+                    memset(system->objects, 0, system->object_size * 64);
+                }
             }
         }
         return system;
@@ -188,8 +186,8 @@ extern "C" {
         f32 first_weight;
         f32 second_weight;
         i32 already_touching;
-        NUVEC *first_position = &first->initial_position;
-        NUVEC *second_position = &second->initial_position;
+        NUVEC *first_position;
+        NUVEC *second_position;
         f32 first_speed;
         f32 second_speed;
         f32 first_dot;
@@ -199,13 +197,15 @@ extern "C" {
         NUVEC first_component;
         NUVEC second_component;
         NUVEC average;
-        already_touching =
-            ((first->field_0x1ec & second->field_0x1e4) | (first->field_0x1f0 & second->field_0x1e8) |
-             (second->field_0x1ec & first->field_0x1e4) | (second->field_0x1f0 & first->field_0x1e8)) != 0;
-        first->field_0x1ec |= second->field_0x1e4;
-        first->field_0x1f0 |= second->field_0x1e8;
-        second->field_0x1ec |= first->field_0x1e4;
-        second->field_0x1f0 |= first->field_0x1e8;
+        first_position = &first->initial_position;
+        second_position = &second->initial_position;
+        if ((first->colliding_objects_mask & second->collision_identity_mask) ||
+            (second->colliding_objects_mask & first->collision_identity_mask))
+            already_touching = 1;
+        else
+            already_touching = 0;
+        first->colliding_objects_mask |= second->collision_identity_mask;
+        second->colliding_objects_mask |= first->collision_identity_mask;
         value = first->scaled_radius + second->scaled_radius;
         if (value > 0.0f) {
             first_weight = first->scaled_radius / value * 2.0f;
@@ -250,11 +250,11 @@ extern "C" {
             second_component.x = normal.x * value;
             second_component.y = normal.y * value;
             second_component.z = normal.z * value;
-            if ((first->flags_low & 2) != 0 && (second->flags_low & 2) == 0) {
+            if (first->flags_low_bit1 && !second->flags_low_bit1) {
                 second->velocity.x += (first_component.x - second_component.x) * first_weight * 2.0f;
                 second->velocity.y += (first_component.y - second_component.y) * first_weight * 2.0f;
                 second->velocity.z += (first_component.z - second_component.z) * first_weight * 2.0f;
-            } else if ((first->flags_low & 2) == 0 && (second->flags_low & 2) != 0) {
+            } else if (!first->flags_low_bit1 && second->flags_low_bit1) {
                 first->velocity.x += (second_component.x - first_component.x) * second_weight * 2.0f;
                 first->velocity.y += (second_component.y - first_component.y) * second_weight * 2.0f;
                 first->velocity.z += (second_component.z - first_component.z) * second_weight * 2.0f;
@@ -287,10 +287,10 @@ extern "C" {
             force = 3.0f;
             value *= force / 2.1f;
             NuVecScale(&normal, &normal, value);
-            if ((first->flags_low & 2) != 0 && (second->flags_low & 2) == 0) {
+            if (first->flags_low_bit1 && !second->flags_low_bit1) {
                 NuVecAdd(&second->velocity, &average, &normal);
                 NuVecAdd(&second->velocity, &average, &normal);
-            } else if ((first->flags_low & 2) == 0 && (second->flags_low & 2) != 0) {
+            } else if (!first->flags_low_bit1 && second->flags_low_bit1) {
                 NuVecSub(&first->velocity, &average, &normal);
                 NuVecSub(&first->velocity, &average, &normal);
             } else {
@@ -306,8 +306,8 @@ extern "C" {
         f32 first_weight;
         f32 second_weight;
         i32 already_touching;
-        NUVEC *first_position = &first->initial_position;
-        NUVEC *second_position = &second->initial_position;
+        NUVEC *first_position;
+        NUVEC *second_position;
         f32 distance;
         f32 first_speed;
         f32 second_speed;
@@ -318,6 +318,8 @@ extern "C" {
         NUVEC first_component;
         NUVEC second_component;
         NUVEC average;
+        first_position = &first->initial_position;
+        second_position = &second->initial_position;
         if ((first->collision_contact_mask & second->collision_identity_mask) != 0 ||
             (second->collision_contact_mask & first->collision_identity_mask) != 0)
             already_touching = 1;
@@ -377,10 +379,10 @@ extern "C" {
             value = second_dot * second_speed;
             second_component.x = normal.x * value;
             second_component.z = normal.z * value;
-            if ((first->flags_low & 2) != 0 && (second->flags_low & 2) == 0) {
+            if (first->flags_low_bit1 && !second->flags_low_bit1) {
                 second->velocity.x += (first_component.x - second_component.x) * first_weight * 2.0f;
                 second->velocity.z += (first_component.z - second_component.z) * first_weight * 2.0f;
-            } else if ((first->flags_low & 2) == 0 && (second->flags_low & 2) != 0) {
+            } else if (!first->flags_low_bit1 && second->flags_low_bit1) {
                 first->velocity.x += (second_component.x - first_component.x) * second_weight * 2.0f;
                 first->velocity.z += (second_component.z - first_component.z) * second_weight * 2.0f;
             } else {
@@ -427,10 +429,10 @@ extern "C" {
             value *= force / 2.1f;
             normal.x *= value;
             normal.z *= value;
-            if ((first->flags_low & 2) != 0 && (second->flags_low & 2) == 0) {
+            if (first->flags_low_bit1 && !second->flags_low_bit1) {
                 second->velocity.x = average.x + normal.x * 2.0f;
                 second->velocity.z = average.z + normal.z * 2.0f;
-            } else if ((first->flags_low & 2) == 0 && (second->flags_low & 2) != 0) {
+            } else if (!first->flags_low_bit1 && second->flags_low_bit1) {
                 first->velocity.x = average.x - normal.x * 2.0f;
                 first->velocity.z = average.z - normal.z * 2.0f;
             } else {
@@ -449,59 +451,67 @@ extern "C" {
 
     void APIObjectCollisions(i32 count, APIOBJECT **objects, NUVEC *minimums, NUVEC *maximums,
                              i32 (*collide)(APIOBJECT *, APIOBJECT *)) {
-        if (collide == NULL)
-            return;
-        i32 outer = 1;
-        APIOBJECT **second = objects + outer;
-        NUVEC *second_min = minimums + outer;
-        NUVEC *second_max = maximums + outer;
-        for (; outer < count; ++outer, ++second, ++second_min, ++second_max) {
-            NUVEC *second_position = &(*second)->collision_position;
-            i32 inner = 0;
-            APIOBJECT **first = objects + inner;
-            NUVEC *first_min = minimums + inner;
-            NUVEC *first_max = maximums + inner;
-            for (; inner < outer; ++inner, ++first, ++first_min, ++first_max) {
-                if ((*first)->collision_excluded_object == *second)
-                    goto no_collision;
-                if ((*second)->collision_excluded_object == *first)
-                    goto no_collision;
-                if ((((static_cast<u64>((*first)->collision_exclusion_mask_high) << 32) |
-                      (*first)->collision_exclusion_mask_low) >>
-                     (*second)->field_0x289) &
-                    1)
-                    goto no_collision;
-                if ((((static_cast<u64>((*second)->collision_exclusion_mask_high) << 32) |
-                      (*second)->collision_exclusion_mask_low) >>
-                     (*first)->field_0x289) &
-                    1)
-                    goto no_collision;
-                if (first_min->x > second_max->x || second_min->x > first_max->x || first_min->z > second_max->z ||
-                    second_min->z > first_max->z || first_min->y > second_max->y || second_min->y > first_max->y)
-                    goto no_collision;
-                {
-                    NUVEC *first_position = &(*first)->collision_position;
-                    f32 dx = second_position->x - first_position->x;
-                    f32 dy = second_position->y - first_position->y;
-                    f32 dz = second_position->z - first_position->z;
-                    if ((*first)->field_0x1dc != (*first)->field_0x1e0 ||
-                        (*second)->field_0x1dc != (*second)->field_0x1e0) {
-                        dy *= ((*first)->field_0x1dc + (*second)->field_0x1dc) /
-                              ((*first)->field_0x1e0 + (*second)->field_0x1e0);
-                    }
-                    f32 distance_squared = dx * dx + dy * dy + dz * dz;
-                    f32 radius = (*first)->field_0x1dc + (*second)->field_0x1dc;
-                    if (distance_squared < radius * radius) {
-                        collide(*first, *second);
-                        continue;
-                    }
+        i32 outer;
+        i32 inner;
+        APIOBJECT **first;
+        APIOBJECT **second;
+        NUVEC *first_min;
+        NUVEC *first_max;
+        NUVEC *second_min;
+        NUVEC *second_max;
+        f32 dy;
+        NUVEC *second_position;
+        NUVEC *first_position;
+        f32 dx;
+        f32 dz;
+        f32 distance_squared;
+        f32 radius;
+
+        if (collide != NULL) {
+            for (outer = 1, second = objects + outer, second_min = minimums + outer, second_max = maximums + outer;
+                 outer < count; outer++, second++, second_min++, second_max++) {
+                second_position = &(*second)->collision_position;
+                for (inner = 0, first = objects + inner, first_min = minimums + inner, first_max = maximums + inner;
+                     inner < outer; inner++, first++, first_min++, first_max++) {
+                    // Exclusions leave this block and clear the contact bits; a
+                    // resolved collision skips the clear and moves to the next pair.
+                    do {
+                        if ((*first)->collision_excluded_object == *second)
+                            continue;
+                        if ((*second)->collision_excluded_object == *first)
+                            continue;
+                        if (((*first)->collision_exclusion_mask >> (*second)->field_0x289) & 1)
+                            continue;
+                        if (((*second)->collision_exclusion_mask >> (*first)->field_0x289) & 1)
+                            continue;
+                        if (first_min->x > second_max->x || first_max->x < second_min->x ||
+                            first_min->z > second_max->z || first_max->z < second_min->z ||
+                            first_min->y > second_max->y || first_max->y < second_min->y)
+                            goto no_collision;
+                        first_position = &(*first)->collision_position;
+                        dx = second_position->x - first_position->x;
+                        dy = second_position->y - first_position->y;
+                        dz = second_position->z - first_position->z;
+                        if ((*first)->field_0x1dc != (*first)->field_0x1e0 ||
+                            (*second)->field_0x1dc != (*second)->field_0x1e0) {
+                            dy *= ((*first)->field_0x1dc + (*second)->field_0x1dc) /
+                                  ((*first)->field_0x1e0 + (*second)->field_0x1e0);
+                        }
+                        distance_squared = dx * dx + dy * dy + dz * dz;
+                        radius = (*first)->field_0x1dc + (*second)->field_0x1dc;
+                        if (radius * radius > distance_squared) {
+                            collide(*first, *second);
+                            goto next;
+                        }
+                    } while (0);
+                no_collision:
+                    (*first)->colliding_objects_mask &= ~(*second)->collision_identity_mask;
+                    (*second)->colliding_objects_mask &= ~(*first)->collision_identity_mask;
+                next:;
                 }
-            no_collision:
-                (*first)->field_0x1ec &= ~(*second)->field_0x1e4;
-                (*first)->field_0x1f0 &= ~(*second)->field_0x1e8;
-                (*second)->field_0x1ec &= ~(*first)->field_0x1e4;
-                (*second)->field_0x1f0 &= ~(*first)->field_0x1e8;
             }
+        } else {
+            return;
         }
     }
 
@@ -521,7 +531,7 @@ extern "C" {
             object = system->objects;
             for (index = 0; index < 64; ++index,
                 object = reinterpret_cast<APIOBJECT *>(reinterpret_cast<u8 *>(object) + system->object_size)) {
-                if ((object->flags_low & 1) == 0) {
+                if (!object->in_use) {
                     memset(object, 0, system->object_size);
                     APIObjectSetUsed(object, index, 1);
                     return object;
@@ -548,18 +558,21 @@ extern "C" {
     }
 
     void APIObjectDestroy(APIOBJECTSYS_s *system, APIOBJECT *object) {
-        if (system == NULL || object == NULL || system->object_size == 0) {
-            return;
-        }
-        for (i32 i = 0; i < 64; i++) {
-            APIOBJECT *other =
-                reinterpret_cast<APIOBJECT *>(reinterpret_cast<u8 *>(system->objects) + system->object_size * i);
-            if ((other->field_0x1f8 & APIOBJECT_FLAG_IN_USE) != 0) {
-                APIObjectRemoveFromLOSTable(system, other, object);
+        i32 i;
+        APIOBJECT *other;
+        if (system != NULL && object != NULL && system->object_size != 0) {
+            if (system->line_of_sight != NULL) {
+                other = system->objects;
+                for (i = 0; i < 64;
+                     i++, other = reinterpret_cast<APIOBJECT *>(reinterpret_cast<u8 *>(other) + system->object_size)) {
+                    if (other->in_use) {
+                        APIObjectRemoveFromLOSTable(system, other, object);
+                    }
+                }
+                APIObjectRemoveFromLOSTable(system, NULL, object);
             }
+            memset(object, 0, system->object_size);
         }
-        APIObjectRemoveFromLOSTable(system, NULL, object);
-        memset(object, 0, system->object_size);
     }
 
     i32 NewRayCast(NUVEC *position, NUVEC *movement, f32 radius, i32 scan_flags);
@@ -782,15 +795,14 @@ extern "C" {
 
     void APICharacterModelReset(APICHARACTERMODEL *model) {
         model->model_id = 0;
-        model->flags &= 0xfe;
+        model->flag_0 = 0;
         model->field_0x3 = 0;
         model->hierarchy = NULL;
 
         if (apicharsys->model_id_capacity != 0) {
-            usize table_size = (usize)apicharsys->model_id_capacity * sizeof(void *);
-            memset(model->model_data_a, 0, table_size);
-            memset(model->model_data_b, 0, table_size);
-            memset(model->model_data_c, 0, table_size);
+            memset(model->model_data_a, 0, apicharsys->model_id_capacity * sizeof(void *));
+            memset(model->model_data_b, 0, apicharsys->model_id_capacity * sizeof(void *));
+            memset(model->model_data_c, 0, apicharsys->model_id_capacity * sizeof(void *));
         }
         memset(model->points_of_interest, 0, sizeof(model->points_of_interest));
     }
@@ -805,55 +817,55 @@ static void NormalizeAnimPath(char *path) {
 }
 
 static nuanimdata2_s *LoadAnimFromPAK(char *path, i32 area_animation, char *data, i32 size) {
+    ANIMLIST_s *entry = apicharsys->animations;
+    i32 i;
     NormalizeAnimPath(path);
-    for (i32 i = 0; i < apicharsys->loaded_animation_count; ++i) {
-        if (NuStrCmp(path, apicharsys->animations[i].path) == 0) {
-            return apicharsys->animations[i].animation;
+    for (i = 0; i < apicharsys->loaded_animation_count; i++, entry++) {
+        if (NuStrCmp(path, entry->path) == 0) {
+            return entry->animation;
         }
     }
 
-    if (apicharsys->loaded_animation_count >= apicharsys->animation_capacity) {
-        ++apicharsys->animation_load_attempts;
-        return NULL;
-    }
-
-    ANIMLIST_s &entry = apicharsys->animations[apicharsys->loaded_animation_count];
-    NuStrCpy(entry.path, path);
-    entry.animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuffFromPAK(data, size));
-    if (entry.animation != NULL) {
-        if (area_animation != 0) {
-            ++apicharsys->area_animation_count;
+    if (apicharsys->animation_capacity > i) {
+        NuStrCpy(entry->path, path);
+        entry->animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuffFromPAK(data, size));
+        if (entry->animation != NULL) {
+            if (area_animation != 0) {
+                ++apicharsys->area_animation_count;
+            }
+            ++apicharsys->loaded_animation_count;
+            ++apicharsys->animation_load_attempts;
         }
-        ++apicharsys->loaded_animation_count;
-        ++apicharsys->animation_load_attempts;
+        return entry->animation;
     }
-    return entry.animation;
+    ++apicharsys->animation_load_attempts;
+    return NULL;
 }
 
 static nuanimdata2_s *LoadAnim(char *path, i32 area_animation, VARIPTR *buf, VARIPTR buf_end) {
+    ANIMLIST_s *entry = apicharsys->animations;
+    i32 i;
     NormalizeAnimPath(path);
-    for (i32 i = 0; i < apicharsys->loaded_animation_count; ++i) {
-        if (NuStrCmp(path, apicharsys->animations[i].path) == 0) {
-            return apicharsys->animations[i].animation;
+    for (i = 0; i < apicharsys->loaded_animation_count; i++, entry++) {
+        if (NuStrCmp(path, entry->path) == 0) {
+            return entry->animation;
         }
     }
 
-    if (apicharsys->loaded_animation_count >= apicharsys->animation_capacity) {
-        ++apicharsys->animation_load_attempts;
-        return NULL;
-    }
-
-    ANIMLIST_s &entry = apicharsys->animations[apicharsys->loaded_animation_count];
-    NuStrCpy(entry.path, path);
-    entry.animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuff(entry.path, buf, &buf_end));
-    if (entry.animation != NULL) {
-        if (area_animation != 0) {
-            ++apicharsys->area_animation_count;
+    if (apicharsys->animation_capacity > i) {
+        NuStrCpy(entry->path, path);
+        entry->animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuff(entry->path, buf, &buf_end));
+        if (entry->animation != NULL) {
+            if (area_animation != 0) {
+                ++apicharsys->area_animation_count;
+            }
+            ++apicharsys->loaded_animation_count;
+            ++apicharsys->animation_load_attempts;
         }
-        ++apicharsys->loaded_animation_count;
-        ++apicharsys->animation_load_attempts;
+        return entry->animation;
     }
-    return entry.animation;
+    ++apicharsys->animation_load_attempts;
+    return NULL;
 }
 
 static void GetAnimationPath(char *path, const char *default_dir, CHARACTERANIM_s *animation, const char *extension) {
@@ -1120,15 +1132,9 @@ extern "C" {
     }
 
     APICHARACTERMODEL *APICharacterLoaded(i32 character_id) {
-        if (character_id == -1) {
-            return NULL;
-        }
-
-        const i16 model_index = apicharsys->playermodelids[character_id];
-        if (model_index == -1) {
-            return NULL;
-        }
-        return &apicharsys->models[model_index];
+        return character_id != -1 && apicharsys->playermodelids[character_id] != -1
+                   ? &apicharsys->models[apicharsys->playermodelids[character_id]]
+                   : NULL;
     }
 
     // Original @0x3cd1ea. Destroy the area-loaded hierarchy tail in mode 0
@@ -1136,9 +1142,8 @@ extern "C" {
     void APIDumpCharacterModels(i32 mode) {
         i32 model_index = mode == 0 ? apicharsys->permanent_model_count : 0;
         while (model_index < apicharsys->loaded_model_count) {
-            APICHARACTERMODEL &model = apicharsys->models[model_index];
-            if (model.hierarchy != NULL) {
-                NuHGobjDestroy(model.hierarchy);
+            if (apicharsys->models[model_index].hierarchy != NULL) {
+                NuHGobjDestroy(apicharsys->models[model_index].hierarchy);
             }
             ++model_index;
         }
@@ -1158,23 +1163,20 @@ extern "C" {
     }
 
     f32 AnimDuration(i32 character_id, i32 animation, f32 start_frame, f32 end_frame, i32 subtract_frame_time) {
-        if (apicharsys == NULL || character_id < 0 || character_id >= apicharsys->character_count || animation < 0 ||
-            animation >= apicharsys->model_id_capacity) {
+        f32 duration;
+        CHARACTERMODEL_s *model;
+        if (character_id < 0 || character_id >= apicharsys->character_count)
             return 0.0f;
-        }
-
-        const i16 model_index = apicharsys->playermodelids[character_id];
-        if (model_index == -1) {
+        if (animation < 0 || animation >= apicharsys->model_id_capacity)
             return 0.0f;
-        }
-
-        CHARACTERMODEL_s *model = &apicharsys->models[model_index];
-        if (model->model_data_b == NULL || model->model_data_b[animation] == NULL || model->model_data_a == NULL ||
-            model->model_data_a[animation] == NULL) {
+        if (apicharsys->playermodelids[character_id] == -1)
             return 0.0f;
-        }
 
-        f32 duration = NuAnimEndFrame(model->model_data_b[animation]);
+        model = &apicharsys->models[apicharsys->playermodelids[character_id]];
+        if (model->model_data_b[animation] == NULL)
+            return 0.0f;
+
+        duration = NuAnimEndFrame(model->model_data_b[animation]);
         if (start_frame >= 1.0f && duration > start_frame) {
             if (end_frame >= 1.0f && duration > end_frame && end_frame > start_frame) {
                 duration = end_frame - start_frame;
@@ -1187,9 +1189,9 @@ extern "C" {
             duration -= 1.0f;
         }
 
-        CHARACTERANIM_s *animation_info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-        duration *= (1.0f / (animation_info->playback_rate / 30.0f)) * (1.0f / 30.0f);
-        animduration_blendouttime = animation_info->blend_out_time;
+        duration *= (1.0f / (static_cast<CHARACTERANIM_s *>(model->model_data_a[animation])->playback_rate / 30.0f)) *
+                    (1.0f / 30.0f);
+        animduration_blendouttime = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation])->blend_out_time;
         if (subtract_frame_time != 0) {
             duration -= animduration_blendouttime;
         }
@@ -1220,12 +1222,10 @@ extern "C" {
         if (positions != NULL || matrices != NULL) {
             for (i32 index = 0; index < 16; ++index) {
                 if (model->points_of_interest[index] != NULL) {
-                    NUMTX matrix;
+                    NUMTX_ALIGNED16 matrix;
                     NuHGobjPOIMtx(model->hierarchy, static_cast<u8>(index), world_matrix, joint_matrices, &matrix);
                     if (positions != NULL) {
-                        positions[index].x = matrix.m30;
-                        positions[index].y = matrix.m31;
-                        positions[index].z = matrix.m32;
+                        positions[index] = *reinterpret_cast<NUVEC *>(&matrix.m30);
                     }
                     if (matrices != NULL) {
                         matrices[index] = matrix;
@@ -1315,14 +1315,15 @@ extern "C" {
     }
 
     f32 BlendTimeBetweenAnims(CHARACTERMODEL_s *model, i32 source_animation, i32 target_animation) {
-        if (model->model_data_a[source_animation] == NULL || model->model_data_a[target_animation] == NULL) {
+        f32 time;
+        if (model->model_data_a[source_animation] == NULL)
             return 0.0f;
-        }
+        if (model->model_data_a[target_animation] == NULL)
+            return 0.0f;
 
-        f32 time = static_cast<CHARACTERANIM_s *>(model->model_data_a[target_animation])->blend_in_time;
-        const f32 source_time = static_cast<CHARACTERANIM_s *>(model->model_data_a[source_animation])->blend_out_time;
-        if (time > source_time) {
-            time = source_time;
+        time = static_cast<CHARACTERANIM_s *>(model->model_data_a[target_animation])->blend_in_time;
+        if (time > static_cast<CHARACTERANIM_s *>(model->model_data_a[source_animation])->blend_out_time) {
+            time = static_cast<CHARACTERANIM_s *>(model->model_data_a[source_animation])->blend_out_time;
         }
         return time;
     }
@@ -1358,13 +1359,9 @@ extern "C" {
     }
 
     void SetAnimTimeRandom(CHARACTERMODEL_s *model, ANIMPACKET_s *packet) {
-        if (model != NULL && packet != NULL) {
-            void *animation = model->model_data_b[packet->field_0x3a];
-            if (animation != NULL) {
-                const f32 random = NuRandFloat();
-                const f32 end_frame = NuAnimEndFrame(model->model_data_b[packet->field_0x3a]);
-                packet->field_0x00 = 1.0f + random * (end_frame - 1.0f);
-            }
+        if (model != NULL && packet != NULL && model->model_data_b[packet->field_0x3a] != NULL) {
+            packet->field_0x00 =
+                1.0f + NuRandFloat() * (NuAnimEndFrame(model->model_data_b[packet->field_0x3a]) - 1.0f);
         }
     }
 
@@ -1755,11 +1752,9 @@ extern "C" {
     }
 
     f32 AnimListFrame(CHARACTERMODEL_s *model, i32 animation, i32 frame) {
-        if (animation == -1 || model->model_data_b[animation] == NULL || frame < 0 || frame > 3) {
-            return 0.0f;
-        }
-        CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-        return info->event_frames[frame];
+        return animation != -1 && model->model_data_b[animation] != NULL && frame >= 0 && frame <= 3
+                   ? static_cast<CHARACTERANIM_s *>(model->model_data_a[animation])->event_frames[frame]
+                   : 0.0f;
     }
 
     f32 AnimStopFrame(CHARACTERMODEL_s *model, i32 animation) {
@@ -1769,40 +1764,36 @@ extern "C" {
     }
 
     f32 *AnimListFrameArray(CHARACTERMODEL_s *model, i32 animation) {
-        if (animation == -1 || model->model_data_b[animation] == NULL) {
-            return NULL;
-        }
-        CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-        return info->event_frames;
+        return animation != -1 && model->model_data_b[animation] != NULL
+                   ? static_cast<CHARACTERANIM_s *>(model->model_data_a[animation])->event_frames
+                   : NULL;
     }
 
     i32 AnimsAvailableToBothCharacters(ANIMPACKET_s *packet, i32 first_character, i32 second_character) {
-        if (first_character == -1) {
-            return 0;
+        i32 model_index;
+        CHARACTERMODEL_s *first_model;
+        CHARACTERMODEL_s *second_model;
+        if ((first_character != -1 && (model_index = apicharsys->playermodelids[first_character]) != -1) ? true
+                                                                                                         : false) {
+            first_model = &apicharsys->models[model_index];
+            if ((second_character != -1 && (model_index = apicharsys->playermodelids[second_character]) != -1)
+                    ? true
+                    : false) {
+                second_model = &apicharsys->models[model_index];
+                if (packet->blending != 0) {
+                    if (first_model->model_data_b[packet->blend_animation_a] != NULL &&
+                        first_model->model_data_b[packet->blend_animation_b] != NULL &&
+                        second_model->model_data_b[packet->blend_animation_a] != NULL &&
+                        second_model->model_data_b[packet->blend_animation_b] != NULL) {
+                        return 1;
+                    }
+                } else if (first_model->model_data_b[packet->animation_index] != NULL &&
+                           second_model->model_data_b[packet->animation_index] != NULL) {
+                    return 1;
+                }
+            }
         }
-        i32 first_model_index = apicharsys->playermodelids[first_character];
-        if (first_model_index == -1) {
-            return 0;
-        }
-        CHARACTERMODEL_s *first_model = &apicharsys->models[first_model_index];
-
-        if (second_character == -1) {
-            return 0;
-        }
-        i32 second_model_index = apicharsys->playermodelids[second_character];
-        if (second_model_index == -1) {
-            return 0;
-        }
-        CHARACTERMODEL_s *second_model = &apicharsys->models[second_model_index];
-
-        if (packet->blending != 0) {
-            return first_model->model_data_b[packet->blend_animation_a] != NULL &&
-                   first_model->model_data_b[packet->blend_animation_b] != NULL &&
-                   second_model->model_data_b[packet->blend_animation_a] != NULL &&
-                   second_model->model_data_b[packet->blend_animation_b] != NULL;
-        }
-        return first_model->model_data_b[packet->animation_index] != NULL &&
-               second_model->model_data_b[packet->animation_index] != NULL;
+        return 0;
     }
 
 } // extern "C"
@@ -1830,12 +1821,20 @@ void RootFnEx(NUMTX *matrix, void *data, NUVEC *sampled_root, NUVEC *, NUVEC *tr
     object->previous_animation_root_time = object->anim_packet.current_time;
 
     if (object->anim_packet.requested_animation != -1) {
-        CHARACTERANIM_s *animation = static_cast<CHARACTERANIM_s *>(
-            object->character_model->model_data_a[object->anim_packet.requested_animation]);
-        matrix->m30 = translation->x + animation->root_translation.x;
-        matrix->m32 = translation->z + animation->root_translation.z;
+        NUVEC root;
+        root.x = static_cast<CHARACTERANIM_s *>(
+                     object->character_model->model_data_a[object->anim_packet.requested_animation])
+                     ->root_translation.x;
+        root.z = static_cast<CHARACTERANIM_s *>(
+                     object->character_model->model_data_a[object->anim_packet.requested_animation])
+                     ->root_translation.z;
+        matrix->m30 = translation->x + root.x;
+        matrix->m32 = translation->z + root.z;
         if (include_y) {
-            matrix->m31 = translation->y + animation->root_translation.y;
+            root.y = static_cast<CHARACTERANIM_s *>(
+                         object->character_model->model_data_a[object->anim_packet.requested_animation])
+                         ->root_translation.y;
+            matrix->m31 = translation->y + root.y;
         }
     } else {
         matrix->m30 = translation->x;
@@ -2048,13 +2047,11 @@ extern "C" {
 
     extern i32 EDPP_MAX_TYPES;
 
-    APIDEBRISSYS_s *InitGameDebris(VARIPTR *cursor, VARIPTR end, i32 count, i32 flags, char **names, char page) {
+    APIDEBRISSYS_s *InitGameDebris(VARIPTR *cursor, VARIPTR *end, i32 count, i32 flags, char **names, i32 page) {
+        APIDEBRISSYS_s *sys = NULL;
         (void)end;
-        if (cursor->addr == 0) {
-            return NULL;
-        }
 
-        APIDEBRISSYS_s *sys = reinterpret_cast<APIDEBRISSYS_s *>(ALIGN(cursor->addr, 0x10));
+        sys = reinterpret_cast<APIDEBRISSYS_s *>(ALIGN(cursor->addr, 0x10));
         cursor->addr = ALIGN(cursor->addr, 0x10);
         cursor->addr += sizeof(*sys);
         if (sys != NULL) {
@@ -2065,7 +2062,7 @@ extern "C" {
             cursor->addr = ALIGN(cursor->addr, 0x10);
             cursor->addr += static_cast<usize>(count) * sizeof(*sys->entries);
             if (sys->entries != NULL) {
-                memset(sys->entries, 0xff, static_cast<usize>(count) * sizeof(*sys->entries));
+                memset(sys->entries, -1, static_cast<usize>(count) * sizeof(*sys->entries));
 
                 i32 i;
                 for (i = 0; i < sys->named_count; i++) {
@@ -2565,8 +2562,8 @@ extern "C" {
             goto cleanup;
 
         {
-            NUVEC bounds_min = model->hierarchy->bounds_min;
-            NUVEC bounds_max = model->hierarchy->bounds_max;
+            NUVEC bounds_min __attribute__((aligned(16))) = model->hierarchy->bounds_min;
+            NUVEC bounds_max __attribute__((aligned(16))) = model->hierarchy->bounds_max;
             if ((object == NULL || (object->apiobj.field_0x1f4 & 0x200) == 0) &&
                 NuCameraClipTestExtents(&bounds_min, &bounds_max, matrix, character_farclip, 0) == 0) {
                 if (evaluate_only == 0)
@@ -2815,20 +2812,24 @@ extern "C" {
     }
 
     i32 ActionFromName(const char *name) {
-        if (apicharsys == NULL || name == NULL) {
+        EXTRAACTIONDATA_s *extra;
+        i32 action;
+
+        if (apicharsys == NULL) {
             return -1;
         }
 
         if (APIActionInfo != NULL) {
-            for (i32 action = 0; action < apicharsys->model_id_capacity; ++action) {
+            for (action = 0; action < apicharsys->model_id_capacity; action++) {
                 if (NuStrICmp(APIActionInfo[action].name, name) == 0) {
                     return action;
                 }
             }
         }
 
-        if (APIExtraActionData != NULL) {
-            for (EXTRAACTIONDATA_s *extra = APIExtraActionData; extra->name != NULL; ++extra) {
+        extra = APIExtraActionData;
+        if (extra != NULL) {
+            for (; extra->name != NULL; extra++) {
                 if (NuStrICmp(extra->name, name) == 0) {
                     return extra->action;
                 }
@@ -2839,120 +2840,114 @@ extern "C" {
 
     CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count,
                                           i32 *countDest, i32 count2, GAMECHARACTERDATA **dataList) {
-        bool bVar1;
-        bool bVar2;
+        CHARACTERDATA *cdata;
+        i32 i;
+        i32 in_char;
+        i32 offset;
+        i32 j;
         nufpar_s *fp;
         CHARACTERDATA *characterdata;
+        i32 len;
+        char buf[10000];
         i16 dirnameOffsets[500];
         i16 filenameOffsets[500];
-        char buf[10000];
-        CHARACTERDATA *cdatas;
-        i32 j;
-        usize offset;
-        i32 i;
-        CHARACTERDATA *cdata;
 
         fp = NuFParCreate(file);
-        if (500 < count) {
+        if (count > 500) {
             count = 500;
         }
-        bufferStart->void_ptr = (void *)ALIGN(bufferStart->addr, 4);
+        bufferStart->addr = ALIGN(bufferStart->addr, 4);
         characterdata = (CHARACTERDATA *)bufferStart->void_ptr;
+        cdata = characterdata;
         i = 0;
 
         memset(buf, 0, 10000);
 
         buf[0] = '\0';
         offset = 0;
-        bVar2 = false;
-        cdata = characterdata;
+        in_char = 0;
         while (NuFParGetLine(fp) != 0) {
             NuFParGetWord(fp);
             if (*fp->word_buf != '\0') {
-                if (bVar2) {
+                if (in_char) {
                     if (NuStrICmp(fp->word_buf, "char_end") == 0) {
-                        bVar2 = false;
-                        if ((dirnameOffsets[i] != -1) && (filenameOffsets[i] != -1)) {
-                            i = i + 1;
-                            cdata = cdata + 1;
+                        in_char = 0;
+                        if (dirnameOffsets[i] != -1 && filenameOffsets[i] != -1) {
+                            i++;
+                            cdata++;
                         }
-                    } else if (NuStrICmp(fp->word_buf, "dir") == 0 && NuFParGetWord(fp) != 0) {
-                        i32 len = NuStrLen(fp->word_buf);
-                        if ((len + offset + 1) < 10000) {
-                            NuStrCpy(buf + offset, fp->word_buf);
-                            dirnameOffsets[i] = (i16)offset;
-                            offset = offset + len + 1;
+                    } else if (NuStrICmp(fp->word_buf, "dir") == 0) {
+                        if (NuFParGetWord(fp) != 0) {
+                            len = NuStrLen(fp->word_buf);
+                            if (offset + len + 1 < 10000) {
+                                NuStrCpy(&buf[offset], fp->word_buf);
+                                dirnameOffsets[i] = (i16)offset;
+                                offset += len + 1;
+                            }
                         }
-                    } else if (NuStrICmp(fp->word_buf, "file") == 0 && NuFParGetWord(fp) != 0) {
-                        i32 len = NuStrLen(fp->word_buf);
-                        if ((len + offset + 1) < 10000) {
-                            NuStrCpy(buf + offset, fp->word_buf);
-                            filenameOffsets[i] = (i16)offset;
-                            offset = offset + len + 1;
+                    } else if (NuStrICmp(fp->word_buf, "file") == 0) {
+                        if (NuFParGetWord(fp) != 0) {
+                            len = NuStrLen(fp->word_buf);
+                            if (offset + len + 1 < 10000) {
+                                NuStrCpy(&buf[offset], fp->word_buf);
+                                filenameOffsets[i] = (i16)offset;
+                                offset += len + 1;
+                            }
                         }
                     }
-                } else {
-                    if (NuStrICmp(fp->word_buf, "char_start") == 0 && i < count) {
-                        bVar1 = true;
-                    } else {
-                        bVar1 = false;
-                    }
-
-                    if (bVar1) {
-                        bVar2 = true;
-                        dirnameOffsets[i] = -1;
-                        filenameOffsets[i] = -1;
-                        cdata->field0_0x0 = -1;
-                        cdata->model_flags = 0;
-                        cdata->dir = (char *)0x0;
-                        cdata->file = (char *)0x0;
-                        cdata->animations = NULL;
-                        cdata->field5_0x14 = 0;
-                        cdata->move_fn = NULL;
-                        cdata->animate_fn = NULL;
-                        cdata->draw_fn = NULL;
-                        cdata->field11_0x24 = 0;
-                        cdata->field12_0x28 = 0;
-                        cdata->field13_0x2c = 1.0f;
-                        cdata->field14_0x30 = 0.5f;
-                        cdata->field15_0x34 = -0.5f;
-                        cdata->field16_0x38 = 0.5f;
-                        cdata->field17_0x3c = 1.0f;
-                        cdata->flags = cdata->flags & 0xfe;
-                        cdata->field20_0x42 = -1;
-                        cdata->field21_0x44 = 0;
-                        cdata->field22_0x48 = 0;
-                    }
+                } else if ((NuStrICmp(fp->word_buf, "char_start") == 0 && i < count) ? true : false) {
+                    in_char = 1;
+                    dirnameOffsets[i] = -1;
+                    filenameOffsets[i] = -1;
+                    cdata->field0_0x0 = -1;
+                    cdata->model_flags = 0;
+                    cdata->dir = (char *)0x0;
+                    cdata->file = (char *)0x0;
+                    cdata->animations = NULL;
+                    cdata->field5_0x14 = 0;
+                    cdata->move_fn = NULL;
+                    cdata->animate_fn = NULL;
+                    cdata->draw_fn = NULL;
+                    cdata->field11_0x24 = 0;
+                    cdata->field12_0x28 = 0;
+                    cdata->field13_0x2c = 1.0f;
+                    cdata->field14_0x30 = 0.5f;
+                    cdata->field15_0x34 = -0.5f;
+                    cdata->field16_0x38 = 0.5f;
+                    cdata->field17_0x3c = 1.0f;
+                    cdata->flags = cdata->flags & 0xfe;
+                    cdata->field20_0x42 = -1;
+                    cdata->field21_0x44 = 0;
+                    cdata->field22_0x48 = 0;
                 }
             }
         }
         NuFParDestroy(fp);
-        if (!(i < 1)) {
+        if (i > 0) {
             bufferStart->void_ptr = cdata;
             memmove(bufferStart->void_ptr, buf, offset);
-            for (j = 0; j < i; j = j + 1) {
-                characterdata[j].dir = (char *)((i32)dirnameOffsets[j] + (usize)bufferStart->void_ptr);
-                characterdata[j].file = (char *)((i32)filenameOffsets[j] + (usize)bufferStart->void_ptr);
+            for (j = 0; j < i; j++) {
+                characterdata[j].dir = (char *)(bufferStart->addr + dirnameOffsets[j]);
+                characterdata[j].file = (char *)(bufferStart->addr + filenameOffsets[j]);
             }
-            bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + offset);
-            bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
-            if (0 < count2) {
+            bufferStart->addr += offset;
+            bufferStart->addr = ALIGN(bufferStart->addr, 4);
+            if (count2 > 0) {
                 if (dataList != NULL) {
                     *dataList = (GAMECHARACTERDATA_s *)bufferStart->void_ptr;
                 }
-                for (j = 0; j < i; j = j + 1) {
+                for (j = 0; j < i; j++) {
                     characterdata[j].field11_0x24 = bufferStart->void_ptr;
-                    bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + count2);
+                    bufferStart->addr += count2;
                 }
             }
-            bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
-            if (countDest != (i32 *)0x0) {
+            bufferStart->addr = ALIGN(bufferStart->addr, 4);
+            if (countDest != NULL) {
                 *countDest = i;
             }
-        } else {
-            characterdata = NULL;
+            return characterdata;
         }
-        return characterdata;
+        return NULL;
     }
 
 } // extern "C"

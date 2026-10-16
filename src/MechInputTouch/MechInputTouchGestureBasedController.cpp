@@ -124,17 +124,14 @@ bool MechInputTouchGestureBasedController::OnClick(GameObject_s &object, TouchHo
         return false;
     }
     holder.clicked = 1;
-    VuVec position(holder.down_position.x, holder.down_position.y, 0.0f, 1.0f);
+    VuVec position __attribute__((aligned(16)))(holder.down_position.x, holder.down_position.y, 0.0f, 1.0f);
     MechObjectInterface *target = holder.target_object.Get();
     if (target != NULL && (target->GetObjectType() == 5 || target->GetObjectType() == 6)) {
         i32 flags = 0x1f4f;
         if (object.field_0xcc0 != NULL && object.field_0xcc0->id != id_YODA) {
-            if (TouchHacks::CanShoot(object)) {
-                flags = 0x5c05;
-            } else if (TouchHacks::CanPoo(object) || object.apiobj.character_data->move_fn == Move_BEAST) {
-                flags = 1;
-            } else {
-                flags = 0;
+            flags = TouchHacks::CanShoot(object) ? 0x5c05 : 0;
+            if (TouchHacks::CanPoo(object) || object.apiobj.character_data->move_fn == Move_BEAST) {
+                flags |= 1;
             }
         }
         target = MechInputTouchSystem::FindTargetObject(object, position, flags, NULL, NULL);
@@ -424,7 +421,7 @@ bool MechInputTouchGestureBasedController::OnHold(GameObject_s &object, TouchHol
     if (target == NULL || object.touch_task != NULL) {
         return false;
     }
-    VuVec position(holder.down_position.x, holder.down_position.y, 0.0f, 1.0f);
+    VuVec position __attribute__((aligned(16)))(holder.down_position.x, holder.down_position.y, 0.0f, 1.0f);
     if (holder.target_object->GetObjectType() == 12) {
         void *force_target = object.force_glow_object;
         if (force_target != NULL && holder.target_object->GetPart() == force_target) {
@@ -697,7 +694,8 @@ void MechInputTouchGestureBasedController::ProcessAutoJumpOverGap(GameObject_s *
             object->apiobj.character_data->player_config != NULL
                 ? *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(object->apiobj.character_data->player_config) + 0x1c)
                 : 0.0f;
-        VuVec boosted_velocity(object->apiobj.velocity.x, object->apiobj.velocity.y, object->apiobj.velocity.z, 1.0f);
+        VuVec boosted_velocity __attribute__((aligned(16)))(object->apiobj.velocity.x, object->apiobj.velocity.y,
+                                                            object->apiobj.velocity.z, 1.0f);
         f32 magnitude_sq = boosted_velocity.x * boosted_velocity.x + boosted_velocity.y * boosted_velocity.y +
                            boosted_velocity.z * boosted_velocity.z;
         if (magnitude_sq < speed * speed) {
@@ -978,6 +976,9 @@ bool MechInputTouchGestureBasedController::TriggerJumpTask(JumpTriggerPacket con
     return true;
 }
 
+// Retail clears the four stick values with one unaligned vector store.
+typedef f32 StickValuesVec4 __attribute__((vector_size(16), aligned(4)));
+
 void MechInputTouchGestureBasedController::Update(NuInputTouchData const *data) {
     if (player != NULL && NewMode == 0 && NewLData == NULL && FadeSys.fade == 0.0f && Paused == 0 && CUTSTOPGAME == 0 &&
         !MenuDisable() && TouchHacks::TouchControlsActive && GetMenuID() == -1 && MiniCutCam != 2 &&
@@ -986,7 +987,7 @@ void MechInputTouchGestureBasedController::Update(NuInputTouchData const *data) 
     } else {
         Deactivate();
     }
-    memset(stick_values, 0, sizeof(stick_values));
+    *reinterpret_cast<StickValuesVec4 *>(stick_values) = StickValuesVec4{0.0f, 0.0f, 0.0f, 0.0f};
     if (!active || data == NULL) {
         return;
     }

@@ -8,6 +8,7 @@
 #include "legoapi/world/world_shared.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nulgtlaser.h"
 #include "nu2api/nu3d/nutex.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/gamepads.h"
@@ -80,7 +81,7 @@ extern "C" {
     void DebrisSetup(VARIPTR *, VARIPTR, char *, i32, i32, i32);
     void DebrisRegisterCutoffCameraVec(void *);
     void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
-    void InitParts(i32, VARIPTR *, VARIPTR);
+    void InitParts(i32, VARIPTR *, VARIPTR *);
     void ParticleReset(void);
     i32 NuFileExists(char *);
     i32 NuStrCpy(char *, const char *);
@@ -606,7 +607,9 @@ CHARACTERDATA *CDataFromName(char *name) {
     return nullptr;
 }
 
-i32 RedirectAnim(char *path, ANIMREDIRECT *redirects, ANIMLIST_s *animation_list, char *directory) {
+// Retail copies the first argument into the fourth and appends the animation name there.
+// Retail also returns 0 for a NULL redirect table; that check is not reproduced yet.
+i32 RedirectAnim(char *directory, ANIMREDIRECT *redirects, ANIMLIST_s *animation_list, char *path) {
     CHARACTERANIM_s *animation = reinterpret_cast<CHARACTERANIM_s *>(animation_list);
     for (ANIMREDIRECT *redirect = redirects; redirect->name != NULL; ++redirect) {
         if (!(redirect->animation_id == animation->animation_id && NuStrICmp(redirect->name, animation->name) == 0)) {
@@ -1274,7 +1277,7 @@ void UpdateCharacterIDs() {
 
 void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_u buf_end) {
     char path[128];
-    if (CharScene_Area == NULL || apicharsys->loaded_model_count == 0) {
+    if (CharScene_Area == NULL) {
         return;
     }
 
@@ -1282,9 +1285,8 @@ void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_
         const i32 model_id = apicharsys->models[i].model_id;
         CHARSCENE_s &entry = CharScene_Area[model_id];
         if (entry.scene == NULL && (CDataList[model_id].flags & 1) != 0) {
-
-            i32 list_index;
-            if (InModelList(list, model_id, &list_index) == 0 || list[list_index].count == 0) {
+            // The original reuses the loop counter as InModelList's output index.
+            if (InModelList(list, model_id, &i) == 0 || list[i].count == 0) {
                 continue;
             }
 
@@ -1506,7 +1508,7 @@ static i32 playedappearsfx;
 static i32 playedmovesfx;
 
 void CollectCharcters_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 active) {
-    COLLECTION_s *collection = (packet->field_0xb0 & 0x80) != 0 ? &VehicleCollection : &CharacterCollection;
+    COLLECTION_s *collection = packet->vehicle_area ? &VehicleCollection : &CharacterCollection;
     if (active == 0)
         return;
     if (stage->field_0x14 == 0) {
@@ -1786,24 +1788,6 @@ void CollectCharcters_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, floa
     }
 }
 
-void RegisterGizmoTypes_Indy(variptr_u *buffer, variptr_u *buffer_end) {
-    REGISTERGIZMOTYPEFN gizmo_types[] = {
-        GizObstacles_RegisterGizmo, GizBuildIts_RegisterGizmo,
-        NewBlowup_RegisterGizmo,    GizmoPickups_RegisterGizmo,
-        Grapples_RegisterGizmo,     TightRopes_RegisterGizmo,
-        Levers_RegisterGizmo,       Spinner_RegisterGizmo,
-        Technos_RegisterGizmo,      MiniCut_RegisterGizmo,
-        Tubes_RegisterGizmo,        ZipUps_RegisterGizmo,
-        GizTurrets_RegisterGizmo,   AI_RegisterGizmo,
-        GizTimer_RegisterGizmo,     GizRandom_RegisterGizmo,
-        GizSpecial_RegisterGizmo,   Door_RegisterGizmo,
-        Plugs_RegisterGizmo,        GizAIMessage_RegisterGizmo,
-        Push_RegisterGizmo,         EdGizShadowMachine_RegisterGizmo,
-        Portal_RegisterGizmo,       NULL,
-    };
-    RegisterGizmoTypes(buffer, buffer_end, gizmo_types, 12);
-}
-
 i32 SetProtocolDroidFallAnim(GameObject_s *object) {
     switch (object->field_0xe38) {
         case 1:
@@ -1818,7 +1802,7 @@ i32 SetProtocolDroidFallAnim(GameObject_s *object) {
 }
 
 void CollectCharactersOff_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 active) {
-    COLLECTION_s *collection = (packet->field_0xb0 & 0x80) != 0 ? &VehicleCollection : &CharacterCollection;
+    COLLECTION_s *collection = packet->vehicle_area ? &VehicleCollection : &CharacterCollection;
     if (active == 0)
         return;
     f32 alpha = 1.0f;
@@ -1886,6 +1870,11 @@ void SetProtocolDroidDeactivatedAction(GameObject_s *object) {
         object->context_animation = 0x44;
 }
 
+NUMTL *lightningmat;
+extern NUMTL *DebMat[10];
+extern "C" void NuWaterInit(void);
+extern "C" void NuBridgeInit(void);
+
 void LoadPerm1() {
     char buf[0x100];
 
@@ -1896,7 +1885,24 @@ void LoadPerm1() {
     if (Grass_Available != 0) {
         edgraSetup(&permbuffer_ptr, permbuffer_end, 0x200, 0x20, 0x40);
     }
-    InitParts(0x40, &permbuffer_ptr, permbuffer_end);
+    lightningmat = NuMtlCreateEx(1, 10);
+    lightningmat->diffuse_color.b = 1.0f;
+    lightningmat->diffuse_color.g = 1.0f;
+    lightningmat->diffuse_color.r = 1.0f;
+    lightningmat->attribs.alpha_mode = 2;
+    lightningmat->attribs.filter_mode = 1;
+    lightningmat->attribs.unknown_1_1_2 = 1;
+    lightningmat->attribs.unknown_1_4_8 = 1;
+    lightningmat->attribs.cull_mode = 2;
+    lightningmat->attribs.z_mode = 1;
+    lightningmat->opacity = 0.999f;
+    lightningmat->tex_id = DebMat[5]->tex_id;
+    lightningmat->attribs.alpha_fail = 1;
+    NuMtlUpdate(lightningmat);
+    NuLgtSetArcMat(lightningmat, 0.0f, 0.50390625f, 0.25f, 0.5625f);
+    NuWaterInit();
+    NuBridgeInit();
+    InitParts(0x40, &permbuffer_ptr, &permbuffer_end);
     ParticleReset();
 
     NuStrCpy(buf, (char *)"stuff\\general.ptl");
@@ -1907,7 +1913,7 @@ void LoadPerm1() {
     if (NuFileExists(buf) != 0) {
         DEBPAGE_CHARACTER = edppLoadPage(buf, 5, 0);
     }
-    perm_debrissys = InitGameDebris(&permbuffer_ptr, permbuffer_end, 0x190, 0x93, debris_name, 0);
+    perm_debrissys = InitGameDebris(&permbuffer_ptr, &permbuffer_end, 0x190, 0x93, debris_name, 0);
 
     permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
     InitStreaks(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\streak.pnt");

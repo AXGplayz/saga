@@ -55,7 +55,7 @@ extern void Customiser_Update(CUSTOMISER *, WORLDINFO_s *);
 void Hub_ResetPanel();
 extern void InitShop(WORLDINFO_s *);
 extern void DrawShop3D(WORLDINFO_s *);
-extern void Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
+extern i32 Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
 extern void CutScenePlayer_Reset();
 extern FadeSystem FadeSys;
 extern GAMESAVE_s TempGame;
@@ -818,7 +818,10 @@ void Hub_Update(WORLDINFO_s *world) {
                     }
                     for (i32 piece = 0; piece < buildit->anim_object_count; ++piece) {
                         if (buildit->anim_objects[piece] != NULL) {
-                            NuSpecialSetVisibility(&buildit->anim_objects[piece]->special, piece < gold_bricks);
+                            if (piece < gold_bricks)
+                                NuSpecialSetVisibility(&buildit->anim_objects[piece]->special, 1);
+                            else
+                                NuSpecialSetVisibility(&buildit->anim_objects[piece]->special, 0);
                         }
                     }
                 }
@@ -2097,12 +2100,13 @@ void Hub_LockUnlockDoors(WORLDINFO_s *) {
 }
 
 void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
-    if ((*level)->area_index == -1) {
+    const i32 index = (*level)->area_index;
+    if (index == -1) {
         return;
     }
 
     const i32 area = last_hub_area;
-    if (area != (*level)->area_index) {
+    if (area != index) {
         *level = NULL;
         return;
     }
@@ -2118,12 +2122,10 @@ void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
 
     i32 menu_id;
     if (area != -1 && (ADataList[area].flags & AREAFLAG_BONUS_AREA) != 0) {
-        menu_id = HUB_DOOR_MENU_BONUS;
-        if (ADataList[area].episode_index != -1) {
-            menu_id = HUB_DOOR_MENU_EPISODE_BONUS;
-        }
+        menu_id = ADataList[area].episode_index != 0xff ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_BONUS;
     } else if (VEHICLES_ADATA != NULL && area == VEHICLES_ADATA->index) {
-        i16 vehicle_ids[HUB_VEHICLE_ID_CAPACITY];
+        // The original sizes this list for 340 vehicle ids.
+        i16 vehicle_ids[340];
         i32 vehicle_count;
         Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED, HUB_VEHICLE_COLLECTION_REQUIRED,
                              vehicle_ids, &vehicle_count, NULL, 0);
@@ -2132,8 +2134,8 @@ void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
         Hub_InitFreePlaySelect(area, vehicle_count, -1);
     } else {
         menu_id = HUB_DOOR_MENU_STANDARD;
-        if (LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index) {
-            menu_id = HUB_DOOR_MENU_EPISODE_BONUS;
+        if (LOSTTEMPLE_ADATA != NULL) {
+            menu_id = area == LOSTTEMPLE_ADATA->index ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_STANDARD;
         }
     }
 
@@ -2851,18 +2853,6 @@ void Hub_Load(WORLDINFO_s *world, variptr_u *, variptr_u *) {
     Customiser_LoadAll(CharacterCustomiser, world);
 }
 
-static void Hub_SetDoorState(GIZMO *door, nuhspecial_s *lock, i32 open) {
-    if (door != NULL && door->object != NULL) {
-        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(door->object);
-        if (open == 0) {
-            obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
-        } else {
-            obstacle->runtime_flags &= static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
-        }
-    }
-    NuSpecialSetVisibility(lock, open != 0);
-}
-
 void Hub_Reset(WORLDINFO_s *world) {
     Customiser_Reset(CharacterCustomiser);
     if (Hub_ResetAIFn != NULL) {
@@ -2870,11 +2860,11 @@ void Hub_Reset(WORLDINFO_s *world) {
     }
 
     for (i32 i = 20; i < 52; ++i) {
-        if (((LevHSpecialExists >> (i & 63)) & 1) != 0) {
+        if (((LevHSpecialExists >> i) & 1) != 0) {
             NuSpecialSetVisibility(&LevHSpecial[i], 1);
         }
         const i32 hidden = i + 32;
-        if (((LevHSpecialExists >> (hidden & 63)) & 1) != 0) {
+        if (((LevHSpecialExists >> hidden) & 1) != 0) {
             NuSpecialSetVisibility(&LevHSpecial[hidden], 0);
         }
     }
@@ -2883,23 +2873,39 @@ void Hub_Reset(WORLDINFO_s *world) {
         NuSpecialSetVisibility(&LevHSpecial[84], 0);
     }
 
-    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
-        if (info->door == NULL || info->area == NULL) {
+    for (i32 i = 0; HubAreaInfo[i].area_name != NULL; ++i) {
+        if (HubAreaInfo[i].door == NULL) {
             continue;
         }
-        i32 open = Episode_CountOpenAreas(info->area->episode_index, info->area->index, Game_AreaSave);
-        Hub_SetDoorState(info->door, &info->lock, open);
+        AREADATA_s *area = HubAreaInfo[i].area;
+        i32 open = Episode_CountOpenAreas(static_cast<i8>(area->episode_index), area->index, Game_AreaSave);
+        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(HubAreaInfo[i].door->object);
+        if (open != 0) {
+            obstacle->runtime_flags &= static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
+            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 1);
+        } else {
+            obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
+            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 0);
+        }
     }
 
-    for (HUBEPISODEINFO_s *info = HubEpisodeInfo; info->episode != -1; ++info) {
-        if (info->door == NULL) {
+    for (i32 i = 0; static_cast<u16>(HubEpisodeInfo[i].episode) <= 8; ++i) {
+        if (HubEpisodeInfo[i].door == NULL) {
             continue;
         }
-        i32 open = Episode_CountOpenAreas(info->episode, -1, Game_AreaSave);
+        i32 open = Episode_CountOpenAreas(HubEpisodeInfo[i].episode, -1, Game_AreaSave);
         if (open == 0) {
-            open = info->force_open;
+            open = HubEpisodeInfo[i].force_open;
         }
-        Hub_SetDoorState(info->door, &info->lock_on, open);
+        if (open == 0) {
+            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags |=
+                GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
+            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 0);
+        } else {
+            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags &=
+                static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
+            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
+        }
     }
     if (Store_IsPackUnlocked(6) == 0) {
         NuSpecialSetVisibility(&HubEpisodeInfo[8].lock_on, 0);
@@ -3599,20 +3605,30 @@ static void Hub_DrawSelectModeMenu(i32 selected, f32 alpha);
 void MenuDrawSelectMode(MENU_s *) {
     if (MenuStopDraw)
         return;
-    if (selectmodemode >= 1 && selectmodemode <= 3) {
-        if (FadeSys.fade > 0.0f)
-            return;
-    } else if (selectmodemode == 4) {
-        if (pFadeInfo->fade > 0.0f)
-            return;
+    switch (selectmodemode) {
+        case 1:
+        case 2:
+        case 3:
+            if (FadeSys.fade > 0.0f)
+                return;
+            break;
+        case 4:
+            if (pFadeInfo->fade > 0.0f)
+                return;
+            break;
     }
     f32 alpha = 1.0f;
-    if (selectmodemode >= 1 && selectmodemode <= 4) {
-        if (!(selectmodetime < 0.5f))
-            return;
-        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((selectmodetime / selectmodeduration) * 16384.0f));
-        if (!(alpha > 0.0f))
-            return;
+    switch (selectmodemode) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            if (!(selectmodetime < 0.5f))
+                return;
+            alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((selectmodetime / selectmodeduration) * 16384.0f));
+            if (!(alpha > 0.0f))
+                return;
+            break;
     }
     AREADATA *area = &ADataList[last_hub_area];
     if (area->flags & 0x100)
@@ -3630,7 +3646,9 @@ void MenuDrawSelectMode(MENU_s *) {
         const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
         Hub_DrawSelectModeMenu(0, menu_alpha * alpha);
     }
-    if (MainRenderTime <= 0.0f && selectmodemode == 0 && alpha == 1.0f)
+    if (MainRenderTime > 0.0f)
+        return;
+    if (selectmodemode == 0 && alpha == 1.0f)
         DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
                               MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
 }

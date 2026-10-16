@@ -9,31 +9,29 @@
 #include "legoapi/render/light/fade.h"
 #include "legoapi/render/core/screen.h"
 #include "legoapi/core/input/qrand.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+// The file is built with -ftree-vectorize for the VuVec initializers; the
+// functions below were compiled without it.
+#define SCALAR_FN __attribute__((optimize("omit-frame-pointer", "no-tree-vectorize")))
 extern f32 FRAMETIME;
 extern i32 pause_rndr_on;
 extern i32 wait_till_next_frame;
 extern void DrawFadeScreenWipe(void);
 extern "C" void NuRndrRect2di(i32, i32, i32, i32, i32, numtl_s *);
 
+extern NUMTL *ScreenFadeMtl;
+extern NUMTL *FadeMtl2;
+extern NUMTL *FadeMtl;
+
 static u32 FRAMES_TO_WAIT = 1;
 
-// The four global fade effect objects handed to FadeSystem::AddFade() during
-// LoadPermData (original bss @0x127bf08 / 0x127bf00 / 0x127bef8 / 0x127bef0).
-Fade fade;
-FadeWipe fadeWipe;
-FadeStillWipe fadeStillWipe;
-FadeStill fadeStill;
-
-// Material handles used by the original 2-D fade paths.
-NUMTL *ScreenFadeMtl;
-NUMTL *FadeMtl2;
-NUMTL *FadeMtl;
 
 void FadeStillWipe::DrawFade() {
     if (wait_till_next_frame != 0)
@@ -46,24 +44,26 @@ void FadeStillWipe::DrawFade() {
 
 void FadeStillWipe::InitFade() {
     const u32 old_direction = info->direction;
-    if ((info->stage & 1) != 0) {
-        info->rate = -1.3333334f;
-        info->fade = 1.0f;
-    } else {
+    if ((info->stage & 1) == 0) {
+        pause_rndr_on = 0;
         info->fade = 1.0f;
         info->rate = 2.0f;
-        pause_rndr_on = 0;
-        if (info->field_28 == 0)
-            info->field_28 = 1;
-        else
+        if (FadeSys.field_28 == 0) {
+            FadeSys.field_28 = 1;
+        } else {
             NeedScreenGrab(1);
-        wait_till_next_frame = 1;
+        }
+        wait_till_next_frame = FRAMES_TO_WAIT;
+    } else {
+        info->fade = 1.0f;
+        info->rate = -1.3333334f;
+        if (CUTSTOPGAME == 0 && WORLD->current_level != NULL && (WORLD->current_level->flags & 0xe0) == 0 &&
+            WORLD->current_level != TITLES_LDATA) {
+            PlaySfx(const_cast<char *>("WipeScreen"), NULL);
+        }
     }
     do {
-        i32 value = qrand();
-        if (value < 0)
-            value += 0x3fff;
-        info->direction = 1u << (value >> 14);
+        info->direction = 1u << (qrand() / 0x4000);
     } while (info->direction == old_direction);
 }
 
@@ -76,7 +76,8 @@ void FadeStillWipe::UpdateFade() {
 
 void Fade::DrawFade() {
     if (info->fade > 0.0f && FadeMtl != NULL) {
-        const i32 index = (static_cast<i32>(info->fade * 16384.0f + 65536.0f) >> 1) & 0x7fff;
+        const f32 angle = info->fade * 16384.0f + 49152.0f;
+        const i32 index = (static_cast<i32>(angle + 16384.0f) >> 1) & 0x7fff;
         NuRndrRect2di(0, 0, 0x2800, 0xe00, static_cast<i32>(NuTrigTable[index] * 128.0f) << 24, ScreenFadeMtl);
     }
 }
@@ -86,13 +87,17 @@ void Fade::Init(FADEINFO_s *state) {
 }
 
 void Fade::InitFade() {
+    f32 fade_value;
+    f32 rate;
     if ((info->stage & 1) != 0) {
-        info->fade = 1.0f;
-        info->rate = -1.3333334f;
+        fade_value = 1.0f;
+        rate = -1.3333334f;
     } else {
-        info->fade = 0.0f;
-        info->rate = 2.0f;
+        fade_value = 0.0f;
+        rate = 2.0f;
     }
+    info->rate = rate;
+    info->fade = fade_value;
 }
 
 void Fade::UpdateFade() {
@@ -108,18 +113,19 @@ void FadeWipe::Init(FADEINFO_s *state) {
 
 void FadeWipe::InitFade() {
     const u32 old = info->direction;
+    f32 fade_value;
+    f32 rate;
     if ((info->stage & 1) != 0) {
-        info->fade = 1.0f;
-        info->rate = -1.3333334f;
+        fade_value = 1.0f;
+        rate = -1.3333334f;
     } else {
-        info->fade = 0.0f;
-        info->rate = 2.0f;
+        fade_value = 0.0f;
+        rate = 2.0f;
     }
+    info->rate = rate;
+    info->fade = fade_value;
     do {
-        i32 value = qrand();
-        if (value < 0)
-            value += 0x3fff;
-        info->direction = 1u << (value >> 14);
+        info->direction = 1u << (qrand() / 0x4000);
     } while (info->direction == old);
 }
 
@@ -131,12 +137,14 @@ void FadeStillWipe::Init(FADEINFO_s *state) {
 }
 
 void FadeStill::DrawFade() {
-    if (wait_till_next_frame != 0)
-        return;
-    if (info->stage & 2)
-        DrawStillScreen(1);
-    else
-        DrawPauseScreenWipe();
+    if (wait_till_next_frame == 0) {
+        if (info->stage & 2)
+            DrawStillScreen(1);
+        else
+            DrawPauseScreenWipe();
+    } else {
+        --wait_till_next_frame;
+    }
 }
 
 void FadeStill::Init(FADEINFO_s *state) {
@@ -149,16 +157,13 @@ void FadeStill::InitFade() {
         info->fade = 1.0f;
         info->rate = 2.0f;
         NeedScreenGrab(1);
-        wait_till_next_frame = 1;
+        wait_till_next_frame = FRAMES_TO_WAIT;
     } else {
         info->fade = 0.0f;
         info->rate = 0.0f;
     }
     do {
-        i32 value = qrand();
-        if (value < 0)
-            value += 0x3fff;
-        info->direction = 1u << (value >> 14);
+        info->direction = 1u << (qrand() / 0x4000);
     } while (info->direction == old_direction);
 }
 
@@ -172,10 +177,7 @@ void SetFramesToWait(u32 frames) {
 }
 
 void FadeSystem::Init() {
-    fades[0] = NULL;
-    fades[1] = NULL;
-    fades[2] = NULL;
-    fades[3] = NULL;
+    memset(fades, 0, sizeof(fades));
     field_28 = 1;
     pending_type = FADE_TYPE_NONE;
 }
@@ -199,10 +201,10 @@ void FadeSystem::Update() {
 
     if (fades[type] != NULL)
         fades[type]->UpdateFade();
-    if (fade == 0.0f || fade == 1.0f)
-        rate = 0.0f;
     if (fade == 0.0f)
         pending_type = FADE_TYPE_NONE;
+    if (fade == 0.0f || fade == 1.0f)
+        rate = 0.0f;
 }
 
 void FadeSystem::Draw() {
@@ -226,7 +228,7 @@ i32 FadeSystem::AddFade(FadeBase *o) {
     return 1;
 }
 
-i32 FadeSystem::SetFade(FADETYPE const &t, u32 frames) {
+SCALAR_FN i32 FadeSystem::SetFade(FADETYPE const &t, u32 frames) {
     FADETYPE_VALUE type = t.type;
     if (type != FADE_TYPE_NONE && fades[type] != NULL) {
         direction = frames;
@@ -235,93 +237,4 @@ i32 FadeSystem::SetFade(FADETYPE const &t, u32 frames) {
     }
     pending_type = FADE_TYPE_NONE;
     return 0;
-}
-
-nugscn_s *FadeLoop_ObjScene;
-nuhspecial_s FadeLoop_ObjHSpecial;
-
-void FadeLoop_SetObj(nugscn_s *scene, char *name) {
-    FadeLoop_ObjScene = scene;
-    if (scene != NULL && NuSpecialFind(scene, &FadeLoop_ObjHSpecial, name, 1) == 0) {
-        FadeLoop_ObjScene = NULL;
-    }
-}
-
-void FadeLoop_DrawObj(float alpha) {
-    if (FadeLoop_ObjScene != NULL && NuSpecialExistsFn(&FadeLoop_ObjHSpecial)) {
-        NUVEC scale = {0.125f, 0.125f, 0.125f};
-        NUMTX matrix;
-        NuMtxSetScale(&matrix, &scale);
-        matrix.m32 = 1.0f;
-        NuSpecialDrawAtAlpha(&FadeLoop_ObjHSpecial, &matrix, alpha);
-    }
-}
-
-i32 FadeLoop_UsingObj() {
-    return FadeLoop_ObjScene != NULL;
-}
-
-void CreateFadeMaterials() {
-    ScreenFadeMtl = NuMtlCreate(1);
-    u8 *attrib = reinterpret_cast<u8 *>(&ScreenFadeMtl->attribs);
-    attrib[1] = static_cast<u8>((attrib[1] & 0x30) | 0xc5);
-    attrib[0] = static_cast<u8>((attrib[0] & 0xc0) | 0x13);
-    attrib[2] = static_cast<u8>((attrib[2] & 0xfc) | 0x06);
-    NuMtlUpdate(ScreenFadeMtl);
-
-    FadeMtl2 = NuMtlCreate(1);
-    attrib = reinterpret_cast<u8 *>(&FadeMtl2->attribs);
-    attrib[1] = static_cast<u8>((attrib[1] & 0x30) | 0xc5);
-    attrib[0] = static_cast<u8>((attrib[0] & 0xc0) | 0x11);
-    attrib[2] = static_cast<u8>((attrib[2] & 0xfc) | 0x06);
-    NuMtlUpdate(FadeMtl2);
-
-    FadeMtl = NuMtlCreate(1);
-    FadeMtl->opacity = 1.0f;
-    FadeMtl->tex_id = 0;
-    FadeMtl->sort_pri = 0x7ffe;
-    attrib = reinterpret_cast<u8 *>(&FadeMtl->attribs);
-    attrib[1] = static_cast<u8>((attrib[1] & 0x30) | 0xc5);
-    attrib[2] = static_cast<u8>((attrib[2] & 0xfc) | 0x06);
-    attrib[0] = static_cast<u8>((attrib[0] & 0xc0) | 0x11);
-    NuMtlUpdate(FadeMtl);
-}
-
-void FadeLoop(char *text, i32 direction, float duration, void (*draw)(float)) {
-    f32 alpha = 0.0f;
-    f32 target = 1.0f;
-    if (direction != 0) {
-        alpha = 1.0f;
-        target = 0.0f;
-    }
-    f32 rate = 10.0f;
-    if (duration != 0.0f) {
-        rate = 1.0f / duration;
-    }
-    FRAMETIME = DEFAULTFRAMETIME;
-    while (alpha != target) {
-        NuFrameBegin();
-        alpha = SeekLinearF(alpha, target, rate * FRAMETIME);
-        NuRndrBeginScene(-1);
-        NuRndrClear(0xb00, 0, 1.0f);
-        if (FadeLoop_ObjScene != NULL) {
-            FadeLoop_DrawObj(alpha);
-        }
-        if (text != NULL) {
-            SetQFont2D();
-            Text3D(text, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0, static_cast<u8>(alpha * 0.0f),
-                   static_cast<u8>(alpha * 191.0f), static_cast<u8>(alpha * 255.0f));
-        }
-        if (draw != NULL) {
-            draw(alpha);
-        }
-        NuRndrEndScene();
-        edGraEnableTerrainSwap();
-        FRAMETIME = NuFrameEnd();
-        edGraDisableTerrainSwap();
-    }
-    if (direction == 1) {
-        FadeLoop_SetObj(NULL, NULL);
-        FinishLoop(2);
-    }
 }

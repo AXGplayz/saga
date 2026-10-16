@@ -264,7 +264,7 @@ static __used__ void PodRaceSnipersReset(void) {
     max_nsnipers = (g_lowEndLevelBehaviour != 0) ? 2 : 5;
     PodRace_nsnipers = 0;
     if (Lap != 0) {
-        char buf[0x18];
+        char buf[16];
         sprintf(buf, "Sniper%d", Lap);
         NUGSPLINE *spline = NuSplineFind(WORLD->current_gscn, buf);
         if (spline != NULL && spline->length > 0 && PodRace_nsnipers <= 9) {
@@ -277,7 +277,7 @@ static __used__ void PodRaceSnipersReset(void) {
                 dst->fire_timer = NuRandFloat() * PodRace_sniper_fire_time + half_time;
                 PodRace_snipers[PodRace_nsnipers++].state = 0.0f;
                 npts += 2;
-            } while (spline->length > npts && PodRace_nsnipers <= 9);
+            } while (npts < spline->length && PodRace_nsnipers <= 9);
         }
     }
 }
@@ -431,6 +431,7 @@ static void UpdatePacemakerDisplay(WORLDINFO_s *world) {
 // Client: present, unacknowledged mines report every overlapping vehicle.
 static __used__ void UpdatePodRaceMines(void) {
     GameObject_s *minesarr[64];
+    NUVEC_ALIGNED16 delta;
     i32 minecount = 0;
 
     // The shared pool contains 64 canonical GameObject records.
@@ -449,7 +450,6 @@ static __used__ void UpdatePodRaceMines(void) {
             if (entry->active == 0)
                 continue;
 
-            NUVEC_ALIGNED16 delta;
             NuVecSub(&delta, &entry->pos, &GameCam->pos);
             GAMECAMERA_s *cam = GameCam;
             float along = delta.x * cam->dir.x + delta.y * cam->dir.y + delta.z * cam->dir.z;
@@ -465,10 +465,9 @@ static __used__ void UpdatePodRaceMines(void) {
             }
 
             entry->grow += FRAMETIME;
+            entry->grow_alpha = entry->grow;
             if (entry->grow > 1.0f)
                 entry->grow_alpha = 1.0f;
-            else
-                entry->grow_alpha = entry->grow;
 
             float r = entry->grow_alpha * mines->mine_radius;
             if (minecount == 0)
@@ -478,10 +477,10 @@ static __used__ void UpdatePodRaceMines(void) {
                 GameObject_s *obj = minesarr[i];
                 if (obj == NULL)
                     continue;
-                float dx = obj->apiobj.pos_x - entry->pos.x;
-                float dz = obj->apiobj.pos_z - entry->pos.z;
+                delta.x = obj->apiobj.pos_x - entry->pos.x;
+                delta.z = obj->apiobj.pos_z - entry->pos.z;
                 float rr = obj->apiobj.field_0x1dc + r;
-                if (!(rr * rr > dx * dx + dz * dz))
+                if (!(rr * rr > delta.x * delta.x + delta.z * delta.z))
                     continue;
 
                 if ((u8)obj->apiobj.field_0x27c == 0xff) {
@@ -528,10 +527,10 @@ static __used__ void UpdatePodRaceMines(void) {
                 GameObject_s *obj = minesarr[i];
                 if (obj == NULL)
                     continue;
-                float dx = obj->apiobj.pos_x - mine_pos->x;
-                float dz = obj->apiobj.pos_z - mine_pos->z;
+                delta.x = obj->apiobj.pos_x - mine_pos->x;
+                delta.z = obj->apiobj.pos_z - mine_pos->z;
                 float rr = obj->apiobj.field_0x1dc + radius;
-                if (!(rr * rr > dx * dx + dz * dz))
+                if (!(rr * rr > delta.x * delta.x + delta.z * delta.z))
                     continue;
                 if (mines->mine_debris != -1)
                     AddGameDebris(WORLD->debris_sys, mines->mine_debris, mine_pos);
@@ -1200,7 +1199,7 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
     PodRaceSnipersUpdate();
     if (LevFlag.podrace_state == 0) {
         CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
-        if (cs != NULL && cs->instance != NULL &&
+        if (cs != NULL &&
             (static_cast<instNUGCUTSCENE_s *>(cs->instance)->flags_89 & 0x10) != 0)
             LevFlag.podrace_state = 1;
     }
@@ -1500,15 +1499,14 @@ void PodRaceAReset(WORLDINFO_s *world) {
             break;
     }
     pod_pacemaker = 0;
-    MINESYS_s *mines = &minesys;
-    mines->spawn_timer = 1000000000.0f;
+    memset(minesys.mines, 0, sizeof(minesys.mines));
+    memset(&client_mines, 0, sizeof(client_mines));
+    minesys.spawn_timer = 1000000000.0f;
     clients_mines_bitfield[0] = 0;
     clients_mines_bitfield[1] = 0;
-    mines->update_timer = 0.0f;
+    minesys.update_timer = 0.0f;
     pod_mines_bitfield[0] = 0;
     pod_mines_bitfield[1] = 0;
-    memset(mines->mines, 0, sizeof(mines->mines));
-    memset(&client_mines, 0, sizeof(client_mines));
     mine_count = 0;
     if (Lap == 3 && nethost == 0 && netclient == 0)
         NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_sebulba", 1);
@@ -1660,10 +1658,9 @@ void PodSprintA_Update(WORLDINFO_s *world) {
     if (nethost != 0) {
         PODSPRINTNETPACKET_s *net = podsprint_netpacket;
         net->ai_state = (i16)(i8)ps->ai_state;
-        const i32 client = netclient;
         net->speed = (i16)ps->speed;
         net->speed2 = (i16)ps->field_0x88;
-        if (client != 0)
+        if (netclient != 0)
             goto speed_section;
     } else if (netclient != 0) {
         PODSPRINTNETPACKET_s *net = podsprint_netpacket;
@@ -1689,23 +1686,23 @@ speed_section:
             ps->speed -= FRAMETIME;
         float remaining = ps->speed;
         if (Player[0] != NULL) {
-            if (remaining > 0.0f) {
+            if (remaining <= 0.0f) {
+                Player[0]->field_0xee0 = 1000000000.0f;
+            } else {
                 Player[0]->field_0xdc8 = 0.0f;
                 Player[0]->apiobj.velocity.z = 0.0f;
                 Player[0]->apiobj.velocity.x = 0.0f;
                 Player[0]->field_0xee0 = 0.0f;
-            } else {
-                Player[0]->field_0xee0 = 1000000000.0f;
             }
         }
         if (Player[1] != NULL) {
-            if (remaining > 0.0f) {
+            if (remaining <= 0.0f) {
+                Player[1]->field_0xee0 = 1000000000.0f;
+            } else {
                 Player[1]->field_0xdc8 = 0.0f;
                 Player[1]->apiobj.velocity.z = 0.0f;
                 Player[1]->apiobj.velocity.x = 0.0f;
                 Player[1]->field_0xee0 = 0.0f;
-            } else {
-                Player[1]->field_0xee0 = 1000000000.0f;
             }
         }
         if (remaining < 2.9f && v >= 2.9f) {
@@ -1776,13 +1773,10 @@ speed_section:
                             StoreLevelProgress(world);
                             ResetLevel(world, "ep1_podsprint_sebulba", 1);
                         } else if ((i8)ps->ai_state > 3) {
-                            if (FreePlay != 0) {
+                            if (FreePlay != 0 ||
+                                (NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podrace_Outro1", 1) == 0 &&
+                                 NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podsprint_Outro1", 1) == 0)) {
                                 CompleteLevel(world);
-                            } else {
-                                if (NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podrace_Outro1", 1) == 0 &&
-                                    NewCutScene(NULL, WORLD->cutscene_sys, "Ep1_Podsprint_Outro1", 1) == 0) {
-                                    CompleteLevel(world);
-                                }
                             }
                         }
                     }

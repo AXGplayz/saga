@@ -16,13 +16,25 @@ NUMTL *OccluderSet::ms_pZOnlyMtl3D;
 NUMTL *OccluderSet::ms_pZOnlyMtl2D;
 NUMTL *OccluderSet::ms_pAlphaMtl2D;
 
+namespace {
+struct OccluderVertex {
+    f32 x, y, z, w;
+    OccluderVertex(f32 vx, f32 vy, f32 vz, f32 vw) : x(vx), y(vy), z(vz), w(vw) {
+    }
+};
+} // namespace
+
 void OccluderSet::AddOccluder(const NUVEC *a, const NUVEC *b, const NUVEC *c, const NUVEC *d) {
     if (count < capacity) {
         queries_prepared = false;
-        occluders[count].vertices[0] = NUVEC4{a->x, a->y, a->z, 1.0f};
-        occluders[count].vertices[1] = NUVEC4{b->x, b->y, b->z, 1.0f};
-        occluders[count].vertices[2] = NUVEC4{c->x, c->y, c->z, 1.0f};
-        occluders[count].vertices[3] = NUVEC4{d->x, d->y, d->z, 1.0f};
+        const OccluderVertex va(a->x, a->y, a->z, 1.0f);
+        memcpy(&occluders[count].vertices[0], &va, sizeof(va));
+        const OccluderVertex vb(b->x, b->y, b->z, 1.0f);
+        memcpy(&occluders[count].vertices[1], &vb, sizeof(vb));
+        const OccluderVertex vc(c->x, c->y, c->z, 1.0f);
+        memcpy(&occluders[count].vertices[2], &vc, sizeof(vc));
+        const OccluderVertex vd(d->x, d->y, d->z, 1.0f);
+        memcpy(&occluders[count].vertices[3], &vd, sizeof(vd));
         ++count;
     }
 }
@@ -385,14 +397,15 @@ void OcclusionManager::AddOccluder(nuvec_s const *center, float radius) {
     NUVEC right = {view->m00 * radius, view->m10 * radius, view->m20 * radius};
     NUVEC up = {view->m01 * radius, view->m11 * radius, view->m21 * radius};
     NUVEC forward = {view->m02 * radius, view->m12 * radius, radius * view->m22};
-    NUVEC4 a = {((center->x + up.x) - right.x) - forward.x, ((center->y + up.y) - right.y) - forward.y,
-                ((center->z + up.z) - right.z) - forward.z, 1.0f};
-    NUVEC4 b = {((center->x + up.x) + right.x) + forward.x, ((center->y + up.y) + right.y) + forward.y,
-                ((center->z + up.z) + right.z) + forward.z, 1.0f};
-    NUVEC4 c = {(right.x + (center->x - up.x)) + forward.x, (right.y + (center->y - up.y)) + forward.y,
-                (right.z + (center->z - up.z)) + forward.z, 1.0f};
-    NUVEC4 d = {((center->x - up.x) - right.x) - forward.x, ((center->y - up.y) - right.y) - forward.y,
-                ((center->z - up.z) - right.z) - forward.z, 1.0f};
+    NUVEC origin = *center;
+    NUVEC4 a = {((up.x + origin.x) - right.x) - forward.x, ((up.y + origin.y) - right.y) - forward.y,
+                ((up.z + origin.z) - right.z) - forward.z, 1.0f};
+    NUVEC4 b = {((up.x + origin.x) + right.x) + forward.x, ((up.y + origin.y) + right.y) + forward.y,
+                ((up.z + origin.z) + right.z) + forward.z, 1.0f};
+    NUVEC4 c = {(right.x + (origin.x - up.x)) + forward.x, (right.y + (origin.y - up.y)) + forward.y,
+                (right.z + (origin.z - up.z)) + forward.z, 1.0f};
+    NUVEC4 d = {((origin.x - up.x) - right.x) - forward.x, ((origin.y - up.y) - right.y) - forward.y,
+                ((origin.z - up.z) - right.z) - forward.z, 1.0f};
     AddOccluder(reinterpret_cast<NUVEC *>(&a), reinterpret_cast<NUVEC *>(&b), reinterpret_cast<NUVEC *>(&c),
                 reinterpret_cast<NUVEC *>(&d));
 }

@@ -1098,6 +1098,9 @@ struct EdTool {
     virtual void Render() {
     }
 
+    EdTool() : next(NULL), previous(NULL) {
+    }
+
     EdTool *next;
     EdTool *previous;
 };
@@ -1208,6 +1211,7 @@ DECOMP_ASSERT(offsetof(FLOWBOX_s, state_flags_low) == 0xa, "FLOWBOX completion f
 DECOMP_ASSERT(offsetof(FLOWBOX_s, ai_trigger_group) == 4, "FLOWBOX AI trigger group offset");
 struct FS_FILEENTRYHDR {};
 struct FadeBase {
+    FadeBase() : info(NULL) {}
     virtual ~FadeBase() = default;
     virtual void Init(FADEINFO_s *) = 0;
     virtual void InitFade() = 0;
@@ -4047,14 +4051,6 @@ struct CursorTool : EdTool {
     i32 Process(EdInputContext &) override;
     void Render() override;
 };
-struct SplineTool : EdTool {
-    void Initialise(variptr_u &, variptr_u &, i32) override;
-    const char *GetName() override {
-        return "Spline Tool";
-    }
-    i32 Process(EdInputContext &) override;
-    void Render() override;
-};
 struct Fade : FadeBase {
     FADETYPE_VALUE GetFadeType() const override;
     void DrawFade();
@@ -4077,6 +4073,9 @@ struct FadeStillWipe : FadeBase {
     void UpdateFade();
 };
 struct FadeSystem : FADEINFO_s {
+    // User-declared: the original screen.cpp initializer registers FadeSys's
+    // destructor with __cxa_atexit.
+    ~FadeSystem() {}
     i32 AddFade(FadeBase *);
     void Draw();
     void Init();
@@ -5350,6 +5349,10 @@ struct MemoryManager {
     usize remaining;
     void *free_lists[139];
 
+    // The reference constructs theMemoryManager dynamically, clearing these
+    // four fields in the supportall static constructor.
+    MemoryManager() : cursor_cell(NULL), end_cell(NULL), allocated(0), remaining(0) {
+    }
     void *AllocPool(u32, i32);
     void FreePool(void *, u32);
 };
@@ -5774,6 +5777,14 @@ struct PropertyTool : EdTool {
     void ediMenuRetrieveMetrics(eduimenu_s *);
     void ediMenuStoreMetrics(eduimenu_s *);
 };
+struct SplineTool : PropertyTool {
+    void Initialise(variptr_u &, variptr_u &, i32) override;
+    const char *GetName() override {
+        return "Spline Tool";
+    }
+    i32 Process(EdInputContext &) override;
+    void Render() override;
+};
 DECOMP_ASSERT(sizeof(PropertyTool) == 0x4c, "PropertyTool ABI");
 DECOMP_ASSERT(offsetof(PropertyTool, active_menu) == 0xc, "PropertyTool menu list offset");
 DECOMP_ASSERT(offsetof(PropertyTool, selected_attr) == 0x2c, "PropertyTool selected attributes offset");
@@ -5826,6 +5837,14 @@ struct SceneObjectHelper {
         class_interface.vtable = const_cast<EdClassInterfaceVTable *>(&sceneObjectHelperVTable.methods);
         *reinterpret_cast<void **>(&subsystem) =
             const_cast<void *>(static_cast<void const *>(&sceneObjectHelperVTable.subsystem_methods));
+        class_interface.object_class = NULL;
+        scene_id = -1;
+        subsystem.next = NULL;
+        subsystem.previous = NULL;
+        owned_first = NULL;
+        owned_last = NULL;
+        owned_object_count = 0;
+        show_hidden_wire = 1;
     }
     ~SceneObjectHelper();
 
@@ -5944,11 +5963,25 @@ struct TELEPORT_s {
     MechObjectInterface *GetMechObjectInterface();
 };
 DECOMP_ASSERT(sizeof(TELEPORT_s) == 0x100, "TELEPORT_s size");
+// Buffered network log owned by TTNetwork at 0x20. Its inline destructor
+// appends any pending bytes to the log file when TTNetwork is destroyed.
+struct TTNetworkLogFile {
+    i32 mode;           // 0x000
+    char path[0x100];   // 0x004
+    i32 open_mode;      // 0x104
+    u8 reserved_108[8]; // 0x108
+    i32 size;           // 0x110
+    u8 data[0x2000];    // 0x114
+
+    TTNetworkLogFile() : mode(0) {
+        path[0] = '\0';
+    }
+    inline ~TTNetworkLogFile();
+};
+
 struct TTNetwork : NetTransporter, BaseThing {
   private:
-    i32 field_20;
-    u8 field_24;
-    u8 reserved_25[0x210f];
+    TTNetworkLogFile log_file;
     i32 field_2134;
     i32 field_2138;
     i32 field_213c;
