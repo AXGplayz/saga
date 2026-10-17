@@ -83,7 +83,7 @@ WORLDINFO *WorldInfo_CurrentlyLoading(void) {
 void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     VARIPTR *bufferEnd = (VARIPTR *)&WorldInfo[1].unknown_0108;
 
-    if (area1 == area2 || area1 == -1) {
+    if (__builtin_expect(area1 == area2 || area1 == -1, 0)) {
         if (area1 != -1 && (ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
             return;
         }
@@ -437,7 +437,7 @@ void WorldInfo_Dump(WORLDINFO *world) {
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     if (world->loaded != 0) {
         SetLevelExBlowupFlags(0);
-        if (world->level_idx == level_idx && (u8)LDataList[level_idx].area_index != 0xff && new_level_from_menu == 0) {
+        if (__builtin_expect(world->level_idx == level_idx && (u8)LDataList[level_idx].area_index != 0xff && new_level_from_menu == 0, 0)) {
             return 0;
         }
         WorldInfo_Dump(world);

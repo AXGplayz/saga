@@ -313,8 +313,8 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 fire_flags) {
     NUVEC delta, target_velocity, origin, direction;
     BoltSys->shoot_origin(object, &origin);
     u16 heading = BoltSys->shoot_direction(object, &direction);
-    if (object->character_context != -1 && object->context_animation != -1) {
-        if (object->context_animation == LEGOACT_SHOOTRIGHT)
+    if (__builtin_expect(object->character_context != -1 && object->context_animation != -1, 1)) {
+        if (__builtin_expect(object->context_animation == LEGOACT_SHOOTRIGHT, 0))
             heading += 0x4000;
         else if (object->context_animation == LEGOACT_SHOOTLEFT)
             heading -= 0x4000;
@@ -349,7 +349,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 fire_flags) {
                 adjusted_position.y += Bolt_ObjTargetPosYAdjust(target);
                 target_position = &adjusted_position;
             }
-        } else if ((object->field_0xe21 & 8) != 0) {
+        } else if (__builtin_expect((object->field_0xe21 & 8) != 0, 0)) {
             target_position = intercept_position = &aimed_position;
         }
     } else {
@@ -372,7 +372,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 fire_flags) {
             continue;
         NUVEC *shot_position;
         if (index == 4) {
-            if (used_locator != 0)
+            if (__builtin_expect(used_locator != 0, 0))
                 break;
             shot_position = &origin;
         } else {
@@ -382,7 +382,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 fire_flags) {
             i32 locator = data->weapon_shoot_joints[index];
             if (locator == -1 || object->apiobj.character_model->points_of_interest[locator] == NULL) {
                 locator = data->weapon_joints[index];
-                if (locator == -1 || object->apiobj.character_model->points_of_interest[locator] == NULL)
+                if (__builtin_expect(locator == -1 || object->apiobj.character_model->points_of_interest[locator] == NULL, 0))
                     continue;
             }
             used_locator = 1;
@@ -1325,7 +1325,7 @@ void Bolt_Init(void *storage, NetMessage &message) {
     bolt->hit_flags = hit_flags | 0x80;
     u32 flags = type->field_60;
     if (owner != NULL) {
-        if ((owner->apiobj.flags_low & 0x80) != 0) {
+        if (__builtin_expect((owner->apiobj.flags_low & 0x80) != 0, 0)) {
             if (owner->apiobj.field_0x27c == 0)
                 flags |= 0x29;
             else
@@ -1428,11 +1428,11 @@ void Bolt_Init(void *storage, NetMessage &message) {
     NuVecAdd(&movement, &movement, &back);
     bolt->ray_radius = bolt->collision_radius;
     bolt->ray_time = 0.2f;
-    if ((bolt->flags & 4) == 0 && Bolt_RayCast(bolt, &start, &movement, bolt->ray_radius)) {
+    if (__builtin_expect((bolt->flags & 4) == 0 && Bolt_RayCast(bolt, &start, &movement, bolt->ray_radius), 0)) {
         f32 offset_time = (back_distance / (initial_speed * initial_lifetime)) * bolt->lifetime;
         bolt->lifetime = bolt->ray_time + offset_time;
         bolt->lifetime = NewRayCastGetTOFI() * bolt->lifetime - offset_time;
-        if (bolt->lifetime <= 0.0f) {
+        if (__builtin_expect(bolt->lifetime <= 0.0f, 0)) {
             NuVecAdd(&start, &start, &movement);
             AddGameDebris(world->debris_sys, bolt->hit_debris, &start);
             AddGameDebris(world->debris_sys, bolt->hit_debris, &bolt->position);

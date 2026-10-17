@@ -921,7 +921,7 @@ void LegoCity_Reset(WORLDINFO_s *world) {
 }
 
 void LegoCity_Update(WORLDINFO_s *world) {
-    if (world == NULL || world->pickup_sys == NULL) {
+    if (__builtin_expect(world == NULL || world->pickup_sys == NULL, 0)) {
         return;
     }
     const u8 previousTractor = prevOnTractor;
@@ -962,7 +962,7 @@ void LegoCity_Update(WORLDINFO_s *world) {
     prevOnTaunTaun = onTaunTaun;
     prevOnTownCar = onTownCar;
     prevOnMoonCar = onMoonCar;
-    if (changed == 0) {
+    if (__builtin_expect(changed == 0, 0)) {
         return;
     }
     GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
@@ -1576,7 +1576,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
         packet = emperorfighta_netpacket;
     }
     bool floor_active = false;
-    if (hspecial_efloor != NULL && packet->player_floor_mask) {
+    if (__builtin_expect(hspecial_efloor != NULL && packet->player_floor_mask, 1)) {
         for (i32 floor = 0; floor < 20; ++floor) {
             nuinstanim_s *animation = NuSpecialGetInstAnim(&hspecial_efloor[floor]);
             if (animation == NULL || !(animation->ltime > 1.0f))
@@ -1604,7 +1604,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 if (!(player->apiobj.field_0x1f4 & 0x40000))
                     ObjHitObj(NULL, player, 1, 0, 0, 1);
                 player = Player[i];
-                if (dx > 0.0f)
+                if (__builtin_expect(dx > 0.0f, 0))
                     player->apiobj.velocity.x += 0.2f;
                 else
                     player->apiobj.velocity.x -= 0.2f;

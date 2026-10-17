@@ -200,20 +200,20 @@ extern "C" {
     }
 
     f32 instCutSceneTimeElapsed(instNUGCUTSCENE_s *instance) {
-        if (instance == NULL || instance->cutscene == NULL) {
+        if (__builtin_expect(instance == NULL || instance->cutscene == NULL, 0)) {
             return 0.0f;
         }
         f32 rate = instance->rate;
-        f32 accumulated = instance->accumulated_stream_duration;
         f32 frame = instance->current_frame;
-        if (rate == 0.0f) {
-            return 0.0f;
+        f32 accumulated = instance->accumulated_stream_duration;
+        f32 result = 0.0f;
+        if (rate != 0.0f) {
+            f32 elapsed = frame + accumulated - 1.0f;
+            if (elapsed != 0.0f) {
+                result = elapsed / rate;
+            }
         }
-        f32 elapsed = accumulated + frame - 1.0f;
-        if (elapsed == 0.0f) {
-            return 0.0f;
-        }
-        return elapsed / rate;
+        return result;
     }
 
     i32 instNuGCutSceneAddCamTgt(instNUGCUTSCENE_s *instance, NUVEC *target, f32 start_frame, f32 duration,
@@ -287,14 +287,14 @@ extern "C" {
     }
 
     void instNuGCutSceneCreateCamTgtArray(instNUGCUTSCENE_s *instance, i32 count, VARIPTR *buf) {
-        if (count == 0 || instance->camera_instance == NULL) {
+        instNUGCUTSCENECAMERA_s *camera = instance->camera_instance;
+        if (count == 0 || camera == NULL) {
             return;
         }
-        instNUGCUTSCENECAMERA_s *camera = instance->camera_instance;
         camera->target_capacity = static_cast<u8>(count);
         buf->addr = ALIGN(buf->addr, 0x10);
         camera->targets = reinterpret_cast<instNUGCUTCAMTGT_s *>(buf->void_ptr);
-        buf->void_ptr = camera->targets + count;
+        buf->addr += count * sizeof(instNUGCUTCAMTGT_s);
         memset(camera->targets, 0, count * sizeof(instNUGCUTCAMTGT_s));
     }
 
@@ -420,14 +420,17 @@ extern "C" {
     void instNuGCutSceneStop(instNUGCUTSCENE_s *instance) {
         instance->flags_88 &= ~6;
         instance->flags_89 &= ~0x10;
-        if ((instance->flags_8a & 4) == 0) {
+        if ((instance->flags_8a & 4) != 0) {
             instNUGCUTCHARSYS_s *runtime = instance->character_instance;
             if (runtime != NULL) {
                 NUGCUTCHARSYS_s *system = instance->cutscene->character_system;
-                for (i32 i = 0; i < system->character_count; ++i) {
+                u16 count = system->character_count;
+                for (i32 i = 0; i < count; ++i) {
+                    NUGCUTCHAR_s *characters = system->characters;
                     instNUGCUTCHAR_s *character = &runtime->characters[i];
                     if (character->character != NULL && NuCutSceneCharacterRelease != NULL)
-                        NuCutSceneCharacterRelease(character, &system->characters[i]);
+                        NuCutSceneCharacterRelease(character, &characters[i]);
+                    count = system->character_count;
                 }
             }
         } else {
@@ -436,8 +439,9 @@ extern "C" {
                 NUGCUTCHARSYS_s *system = instance->cutscene->character_system;
                 for (i32 i = 0; i < system->character_count; ++i) {
                     instNUGCUTCHAR_s *character = &runtime->characters[i];
+                    NUGCUTCHAR_s *characters = system->characters;
                     if (character->character != NULL && NuCutSceneCharacterRelease != NULL)
-                        NuCutSceneCharacterRelease(character, &system->characters[i]);
+                        NuCutSceneCharacterRelease(character, &characters[i]);
                 }
             }
         }
@@ -535,7 +539,7 @@ static void instNuGCutLookAtLocatorUpdate(i32 *effect_handle, NUGCUTLOCATOR_s *l
     // The locator's instance slot holds the look-at record pointer.
     GCutLookAtState *state = reinterpret_cast<GCutLookAtState *>(static_cast<uintptr_t>(*effect_handle));
     instGetLookAtLocatorInfo(instance, reinterpret_cast<instNUGCUTLOOKAT_s *>(state));
-    if (state->character_index == 0 || state->scene == NULL) {
+    if (__builtin_expect(state->character_index == 0 || state->scene == NULL, 0)) {
         return;
     }
     NUGSCN *scene = state->scene;
@@ -545,7 +549,7 @@ static void instNuGCutLookAtLocatorUpdate(i32 *effect_handle, NUGCUTLOCATOR_s *l
     {
         NUMTX matrix;
         values = NuGCutLocatorCalcMtx(locator, frame, &matrix, NULL);
-        if ((locator->flags & 4) != 0) {
+        if (__builtin_expect((locator->flags & 4) != 0, 0)) {
             NuMtxPreTranslate(&matrix, &locator->pivot);
         }
         if (parent_mtx != NULL) {

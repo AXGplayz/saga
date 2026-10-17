@@ -1173,7 +1173,7 @@ static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
         if ((info->flags & 0x10) == 0) {
             continue;
         }
-        if (alternate_idle == default_idle) {
+        if (__builtin_expect(alternate_idle == default_idle, 0)) {
             if ((info->flags & 0x800) != 0) {
                 candidates[candidate_count++] = animation;
             }
@@ -1182,7 +1182,7 @@ static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
         }
     }
 
-    if (candidate_count == 0) {
+    if (__builtin_expect(candidate_count == 0, 0)) {
         ResetCharacterIdle(object, 0, default_idle);
         return;
     }
@@ -1584,7 +1584,7 @@ void CollectCharcters_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
 
 nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id) {
     nuhspecial_s *special;
-    if (CharScene_Area != NULL && CharScene_Area[character_id].scene != NULL) {
+    if (__builtin_expect(CharScene_Area != NULL && CharScene_Area[character_id].scene != NULL, 1)) {
         special = &CharScene_Area[character_id].special_scene;
     } else if (world->minikit.character_scenes[character_id].scene != NULL) {
         special = &world->minikit.character_scenes[character_id].special_scene;
@@ -1754,11 +1754,11 @@ i32 newCharactersCollected(STATUSPACKET_s *) {
             ++previous;
         }
         if (previous == count) {
-            if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0) {
+            if (__builtin_expect(Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0, 1)) {
                 continue;
             }
             const i32 index = InCollectList_Index(id, MasterCollection.list, MasterCollection.count_y);
-            if (index != -1 && MasterCollection.list[index].can_buy == 0) {
+            if (__builtin_expect(index != -1 && MasterCollection.list[index].can_buy == 0, 0)) {
                 StatusCollectList.ids[count++] = player;
                 if (MasterCollection.list[index].field5_0x9 != 0) {
                     AddToCompletionPoints(POINTS_PER_CHARACTER);

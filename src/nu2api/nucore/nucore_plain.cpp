@@ -494,7 +494,7 @@ extern "C" {
             NuMtxMul(&vmtx, &vmtx, &camera_inverse);
         }
 
-        if (fast == 0) {
+        if (__builtin_expect(fast == 0, 0)) {
             NuCameraSetProjectionMtx(&pmtx, global_camera.fov, global_camera.aspect, global_camera.near_clip,
                                      global_camera.far_clip);
             pmtx.m00 *= global_camera.unknown_58;
@@ -978,7 +978,7 @@ extern "C" {
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special_handle, NUMTX *mtx, i32 skinned, NUMTX *skin_matrices,
                                  DEFORMERWEIGHTSARRAY *blend_values) {
         (void)skinned;
-        if (special_handle == NULL || mtx == NULL)
+        if (__builtin_expect(special_handle == NULL || mtx == NULL, 0))
             return 0;
         NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special_handle);
         NuSpecialBoundsDisplayLayout *special = static_cast<NuSpecialBoundsDisplayLayout *>(handle->display_special);
@@ -1026,16 +1026,16 @@ extern "C" {
         }
 
         f32 distance_alpha = 1.0f;
-        if (scene->fade_ranges != NULL && (scene->visibility_flags[special->instance_ix] & 0x40) != 0) {
+        if (__builtin_expect(scene->fade_ranges != NULL && (scene->visibility_flags[special->instance_ix] & 0x40) != 0, 0)) {
             const f32 fade_end = scene->fade_ranges[special->instance_ix * 2 + 1];
             const f32 fade_start = scene->fade_ranges[special->instance_ix * 2];
-            if (fade_end <= fade_start) {
+            if (__builtin_expect(fade_end <= fade_start, 0)) {
                 if (distance_sqr <= fade_end * fade_end)
                     return 0;
                 distance_alpha = (NuFsqrt(distance_sqr) - fade_end) / (fade_start - fade_end);
                 if (distance_alpha > 1.0f)
                     distance_alpha = 1.0f;
-            } else if (!(distance_sqr <= fade_start * fade_start)) {
+            } else if (__builtin_expect(!(distance_sqr <= fade_start * fade_start), 0)) {
                 distance_alpha = (fade_end - NuFsqrt(distance_sqr)) / (fade_end - fade_start);
                 distance_alpha = distance_alpha >= 0.0f ? distance_alpha : 0.0f;
             }
@@ -1047,11 +1047,11 @@ extern "C" {
         for (u32 i = 0; i < static_cast<u32>(clip_object->nmaterials); ++i) {
             NUMTL *material = scene->mtls[clip_object->material_ids[i]];
             NUMTL *replacement = NULL;
-            if (nurndr_forced_mtl_table != NULL && material->unknown_9a[0] != 0)
+            if (__builtin_expect(nurndr_forced_mtl_table != NULL && material->unknown_9a[0] != 0, 0))
                 replacement = nurndr_forced_mtl_table[material->unknown_9a[0]];
             else
                 replacement = nurndr_forced_mtl;
-            if (replacement != NULL) {
+            if (__builtin_expect(replacement != NULL, 1)) {
                 if (material->shader_desc.vtx_desc.flags != replacement->shader_desc.vtx_desc.flags)
                     material = NuMtlFindVariantMtl(material, replacement);
                 else
@@ -1479,7 +1479,7 @@ extern "C" {
     // hierarchy matrices while carrying scale through the parent chain.
     void NuAnimBuffEvaluate_3(nuanimbuff_s *buffer, nuhgobj_s *object, NUMTX *matrices, ani3_animheader_s *animation,
                               NUHGOBJROOTFN root_fn, NUVEC *root_translation, void *root_data) {
-        if (buffer == NULL) {
+        if (__builtin_expect(buffer == NULL, 1)) {
             buffer = static_cast<nuanimbuff_s *>(globalbuffer);
         }
 
@@ -2476,7 +2476,7 @@ extern "C" {
         vsprintf(text, format, arguments);
         va_end(arguments);
         i32 width = static_cast<i32>(NuQFntPrintLenU(font, text));
-        if (alignment == 0x20) {
+        if (__builtin_expect(alignment == 0x20, 1)) {
             x -= width;
         } else if (alignment == 0x40) {
             x -= width / 2;
@@ -3093,7 +3093,7 @@ extern "C" {
         NuMtxSetOrthoBlend(&light->projection, left, right, bottom, top, near_plane, far_plane);
     }
     void NuDynamicLightSetEnabled(NuDynamicLight *light, i32 enabled) {
-        if (enabled != 0 && light->enabled == 0 && light->render_set_count > 0) {
+        if (__builtin_expect(enabled != 0 && light->enabled == 0 && light->render_set_count > 0, 0)) {
             NuDynamicLight::RenderSet *set = light->render_sets;
             NuDynamicLight::RenderSet *end = set + light->render_set_count;
             do {
@@ -3609,7 +3609,7 @@ extern "C" {
             i32 curve_count = count_a < count_b ? count_b : count_a;
             f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
             weights_by_render[render] = weights;
-            if (weights == NULL || curve_count <= 0)
+            if (__builtin_expect(weights == NULL || curve_count <= 0, 0))
                 continue;
             for (i32 curve = 0; curve < curve_count; ++curve) {
                 f32 value_a = 0.0f;
@@ -3827,11 +3827,11 @@ extern "C" {
     u32 NuWindRand(void);
     i32 NuHGobjRndrRandShadowSurfacePoints(nuhgobj_s *object, NUMTX *world_matrix, NUMTX *joint_matrices, i32 count,
                                            NUVEC *positions, i32 exclusion_mask) {
-        if (NuCameraClipTestExtents(&object->bounds_min, &object->bounds_max, world_matrix, 0.0f, 0) == 0) {
+        if (__builtin_expect(NuCameraClipTestExtents(&object->bounds_min, &object->bounds_max, world_matrix, 0.0f, 0) == 0, 0)) {
             return 0;
         }
         nuhgobjshadowgroup_s *groups = object->shadow_groups;
-        if (groups == NULL || object->suppress_shadow_surface_points != 0) {
+        if (__builtin_expect(groups == NULL || object->suppress_shadow_surface_points != 0, 0)) {
             return 1;
         }
         i32 total = 0;
@@ -3869,11 +3869,11 @@ extern "C" {
             }
             i32 matrix_ready = 0;
             for (i32 i = 0; i < group->ellipse_count; ++i) {
-                if (exclusion_mask != 0 && (*reinterpret_cast<u32 *>(&group->ellipses[i][4]) & exclusion_mask) != 0) {
+                if (__builtin_expect(exclusion_mask != 0 && (*reinterpret_cast<u32 *>(&group->ellipses[i][4]) & exclusion_mask) != 0, 0)) {
                     continue;
                 }
                 i32 n = counts[index];
-                if (n != 0) {
+                if (__builtin_expect(n != 0, 1)) {
                     if (matrix_ready == 0) {
                         NuMtxMulVU0(&combined, &joint_matrices[group->joint_index], world_matrix);
                     }
@@ -4377,7 +4377,7 @@ extern "C" {
             NUPLANE *plane = room->planes;
             for (i32 plane_index = 0; plane_index < room->plane_count; ++plane_index, ++plane) {
                 plane_distance = plane->a * position->x + plane->b * position->y + plane->c * position->z + plane->d;
-                if (plane_distance > 0.0f) {
+                if (__builtin_expect(plane_distance > 0.0f, 0)) {
                     break;
                 }
             }
@@ -4386,7 +4386,7 @@ extern "C" {
             }
 
             // Later matches do not change the selected pair; avoid overflowing the candidate slots.
-            if (candidate_count >= 3) {
+            if (__builtin_expect(candidate_count >= 3, 0)) {
                 continue;
             }
 
@@ -4394,7 +4394,7 @@ extern "C" {
             NUROOM &first = scene->rooms[candidates[0]];
             NUROOM &second = scene->rooms[candidates[1]];
             if (candidate_count == 2) {
-                if (!(first.priority < second.priority)) {
+                if (__builtin_expect(!(first.priority < second.priority), 1)) {
                     candidates[1] = static_cast<i16>(room_index);
                 } else {
                     candidates[0] = static_cast<i16>(room_index);
@@ -4404,7 +4404,7 @@ extern "C" {
             }
 
             candidates[candidate_count++] = static_cast<i16>(room_index);
-            if (candidate_count != 2) {
+            if (__builtin_expect(candidate_count != 2, 0)) {
                 continue;
             }
 
@@ -4413,7 +4413,7 @@ extern "C" {
             }
         }
 
-        if (candidate_count == 1) {
+        if (__builtin_expect(candidate_count == 1, 0)) {
             return static_cast<u16>(candidates[0]);
         }
         if (candidate_count == 0) {
@@ -4425,7 +4425,7 @@ extern "C" {
         for (i32 first_portal = 0; first_portal < first.portal_count; ++first_portal) {
             const i16 portal_index = first.portal_indices[first_portal];
             for (i32 second_portal = 0; second_portal < second.portal_count; ++second_portal) {
-                if (second.portal_indices[second_portal] == portal_index) {
+                if (__builtin_expect(second.portal_indices[second_portal] == portal_index, 0)) {
 
                     const NUPORTAL &portal = scene->portals[portal_index];
                     const f32 side = portal.plane.a * position->x + portal.plane.b * position->y +

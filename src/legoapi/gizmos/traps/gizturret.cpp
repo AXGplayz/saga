@@ -98,7 +98,7 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
     NUVEC direction;
     bool should_fire;
     GIZTURRETSYS_s *system = static_cast<GIZTURRETSYS_s *>(system_ptr);
-    if (system != NULL) {
+    if (__builtin_expect(system != NULL, 1)) {
         GIZTURRET_s *turret = system->turrets;
         if (system->count != 0) {
             i32 index = 0;
@@ -140,7 +140,7 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                 base_yaw = static_cast<i16>(home_yaw);
                             }
                             turret->fire_cooldown -= frame_time;
-                            if (turret->fire_cooldown < 0.0f)
+                            if (__builtin_expect(turret->fire_cooldown < 0.0f, 0))
                                 turret->fire_cooldown = 0.0f;
                             i32 desired_pitch = 0, desired_yaw = base_yaw;
                             should_fire = false;
@@ -167,10 +167,10 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                         desired_yaw = turret->yaw;
                                     turret->pitch = SeekRot(turret->pitch, desired_pitch, pitch_rate);
                                     turret->yaw = SeekRot(turret->yaw, desired_yaw, yaw_rate);
-                                    if (turret->fire_cooldown > 0.0f &&
-                                        (turret->controller->pad_gamepad->buttons_pressed & GAMEPAD_ACTION)) {
+                                    if (__builtin_expect(turret->fire_cooldown > 0.0f &&
+                                        (turret->controller->pad_gamepad->buttons_pressed & GAMEPAD_ACTION), 0)) {
                                         f32 rapid_interval = turret->fire_interval * gizturret_rapid_fire_rate;
-                                        if (turret->fire_cooldown > rapid_interval)
+                                        if (__builtin_expect(turret->fire_cooldown > rapid_interval, 0))
                                             turret->fire_cooldown = rapid_interval;
                                         turret->rapid_fire_pending = 1;
                                     }
@@ -191,14 +191,14 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                     turret->rapid_fire_pending = 0;
                                 }
                             } else {
-                                if (turret->aim_locked)
+                                if (__builtin_expect(!!(turret->aim_locked), 0))
                                     goto autonomous_apply;
-                                if (turret->aim_at_fixed_angles) {
+                                if (__builtin_expect(!!(turret->aim_at_fixed_angles), 0)) {
                                     desired_pitch = turret->field_0x6c;
                                     desired_yaw = turret->field_0x70;
                                     goto autonomous_apply;
                                 }
-                                if ((turret->behavior_flags & 0xc0) == 0xc0) {
+                                if (__builtin_expect((turret->behavior_flags & 0xc0) == 0xc0, 0)) {
                                     if ((turret->behavior_flags & 0x100) && turret->primary_anim_obj != NULL &&
                                         NuSpecialExistsFn(&turret->primary_anim_obj->special) &&
                                         !NuSpecialGetOnScreenFn(&turret->primary_anim_obj->special))
@@ -244,8 +244,8 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                             goto autonomous_apply;
                                     }
                                     should_fire = bolt_type != NULL;
-                                    if ((turret->behavior_flags & 0x200) && target_velocity != NULL &&
-                                        bolt_type != NULL) {
+                                    if (__builtin_expect((turret->behavior_flags & 0x200) && target_velocity != NULL &&
+                                        bolt_type != NULL, 0)) {
                                         GizTurret_CalculateInterceptVector(
                                             reinterpret_cast<NUVEC *>(&reference->m30), primary_draw, target_position,
                                             target_velocity, bolt_type->field_10, &world_direction, NULL,
@@ -281,15 +281,15 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                                                              local_direction.z * local_direction.z)) *
                                                              10430.3779296875f),
                                                          0);
-                                            if (turret->field_0x58 != 0 && desired_pitch > turret->field_0x58)
+                                            if (__builtin_expect(turret->field_0x58 != 0 && desired_pitch > turret->field_0x58, 0))
                                                 desired_pitch = turret->field_0x58;
                                             else if (turret->field_0x5c != 0 && desired_pitch < turret->field_0x5c)
                                                 desired_pitch = turret->field_0x5c;
                                         }
                                     }
-                                    if ((turret->behavior_flags & 0x100) && turret->primary_anim_obj != NULL &&
+                                    if (__builtin_expect((turret->behavior_flags & 0x100) && turret->primary_anim_obj != NULL &&
                                         NuSpecialExistsFn(&turret->primary_anim_obj->special) &&
-                                        !NuSpecialGetOnScreenFn(&turret->primary_anim_obj->special))
+                                        !NuSpecialGetOnScreenFn(&turret->primary_anim_obj->special), 1))
                                         should_fire = false;
                                     else if (distance < turret->field_0xf0 * turret->field_0xf0 &&
                                              turret->fire_cooldown == 0.0f)
@@ -301,7 +301,7 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                 if (!(turret->primary_anim_obj != NULL &&
                                       NuSpecialExistsFn(&turret->primary_anim_obj->special)))
                                     desired_yaw = NuAngAdd(desired_yaw, turret->base_y_rotation);
-                                if (turret->behavior_flags & 0x400) {
+                                if (__builtin_expect(!!(turret->behavior_flags & 0x400), 0)) {
                                     turret->pitch = desired_pitch;
                                     turret->yaw = desired_yaw;
                                 } else {
@@ -338,7 +338,7 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                     delta.z = reference->m32 - player->apiobj.collision_position.z;
                                     nearby = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z < 9.0f &&
                                              player->apiobj.model_draw_result != 0;
-                                    if (!nearby && player2 != NULL) {
+                                    if (__builtin_expect(!nearby && player2 != NULL, 0)) {
                                         delta.x = reference->m30 - player2->apiobj.collision_position.x;
                                         delta.y = reference->m31 - player2->apiobj.collision_position.y;
                                         delta.z = reference->m32 - player2->apiobj.collision_position.z;
@@ -388,7 +388,7 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                     if (turret->behavior_flags & 0x40)
                                         NuMtxPreRotateX(&direction_matrix, turret->pitch);
                                     NuMtxPreRotateY(&direction_matrix, 0x8000);
-                                    if (bolt_type->field_40 != 0) {
+                                    if (__builtin_expect(bolt_type->field_40 != 0, 1)) {
                                         NuMtxPreRotateX(&direction_matrix, scatter_pitch);
                                         NuMtxPreRotateY(&direction_matrix, scatter_yaw);
                                     }

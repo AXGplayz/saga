@@ -369,7 +369,7 @@ static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 
     f32 shadow_distance_squared;
     if (g_lowEndLevelBehaviour != 0) {
         shadow_distance_squared = 0.0f;
-        if (CharClipToBlobShadows != 0 && maximum_distance > world->current_level->blob_shadow_fade_far) {
+        if (__builtin_expect(CharClipToBlobShadows != 0 && maximum_distance > world->current_level->blob_shadow_fade_far, 0)) {
             maximum_distance = static_cast<f32>(world->current_level->blob_shadow_fade_far);
         }
     } else {
@@ -468,7 +468,7 @@ static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 
                 NuMtxPreScaleU(&matrix, AreaPickupScale);
             }
 
-            if ((pickup.config_flags & GIZMOPICKUP_CONFIG_DISABLE_SHADOW_MAP) != 0) {
+            if (__builtin_expect((pickup.config_flags & GIZMOPICKUP_CONFIG_DISABLE_SHADOW_MAP) != 0, 1)) {
                 ResetShadowMapRendering();
             }
             const i32 drawn = NuSpecialDrawAt(&model.special, &matrix);
@@ -1231,7 +1231,7 @@ void SpecialMiniKits_Draw(WORLDINFO_s *world) {
                 continue;
             }
             position = GizmoGetPos(world->gizmo_sys, item->special_gizmo);
-            if (position == NULL) {
+            if (__builtin_expect(position == NULL, 1)) {
                 continue;
             }
             NuMtxSetScale(&matrix, &scale);
@@ -1243,14 +1243,14 @@ void SpecialMiniKits_Draw(WORLDINFO_s *world) {
 
             nuinstanim_s *animation = static_cast<nuinstanim_s *>(item->inst_anim);
             bool draw = (item->flags & 1) != 0 || animation == NULL || item->anim_data == NULL;
-            if (!draw && (animation->flags & NUINSTANIM_FLAG_REPEATING) == 0) {
+            if (__builtin_expect(!draw && (animation->flags & NUINSTANIM_FLAG_REPEATING) == 0, 1)) {
                 draw = ((item->flags & 2) != 0 && animation->ltime <= 1.0f) ||
                        ((item->flags & 8) != 0 && item->end_frame <= animation->ltime);
             }
             if (!draw && (item->flags & 4) != 0 && (animation->flags & NUINSTANIM_FLAG_PLAYING) != 0) {
                 draw = true;
             }
-            if (!draw) {
+            if (__builtin_expect(!draw, 0)) {
                 continue;
             }
 

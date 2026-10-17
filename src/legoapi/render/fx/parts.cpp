@@ -467,37 +467,37 @@ static __used__ void PartStolen_Coin(PART_s *part) {
 
 extern "C" void AddVariableShotDebrisEffect(i32, NUVEC *, i32, i16, i16);
 static __used__ void PartExtra_BlueCoin(PART_s *part) {
-    if ((part->render_flags & 2) == 0)
-        return;
-    i32 effect = WORLD->debris_sys->entries[56].effect;
-    if (effect == -1)
-        return;
-    f32 rate;
-    if (WORLD->area != NULL) {
-        rate = (WORLD->area->flags & 0x104) == 4 ? 2.5f : 5.0f;
-    } else {
-        rate = 5.0f;
+    if (__builtin_expect((part->render_flags & 2) != 0, 0)) {
+        i32 effect = WORLD->debris_sys->entries[56].effect;
+        if (effect == -1)
+            return;
+        f32 rate;
+        if (WORLD->area != NULL) {
+            rate = (WORLD->area->flags & 0x104) == 4 ? 2.5f : 5.0f;
+        } else {
+            rate = 5.0f;
+        }
+        i32 count = ParticlesPerSecond(rate, FRAMETIME);
+        if (count > 0)
+            AddVariableShotDebrisEffect(effect, &part->position, count, 0, 0);
     }
-    i32 count = ParticlesPerSecond(rate, FRAMETIME);
-    if (count > 0)
-        AddVariableShotDebrisEffect(effect, &part->position, count, 0, 0);
 }
 
 static __used__ void PartExtra_PurpleCoin(PART_s *part) {
-    if ((part->render_flags & 2) == 0)
-        return;
-    i32 effect = WORLD->debris_sys->entries[57].effect;
-    if (effect == -1)
-        return;
-    f32 rate;
-    if (WORLD->area != NULL) {
-        rate = (WORLD->area->flags & 0x104) == 4 ? 2.5f : 5.0f;
-    } else {
-        rate = 5.0f;
+    if (__builtin_expect((part->render_flags & 2) != 0, 0)) {
+        i32 effect = WORLD->debris_sys->entries[57].effect;
+        if (effect == -1)
+            return;
+        f32 rate;
+        if (WORLD->area != NULL) {
+            rate = (WORLD->area->flags & 0x104) == 4 ? 2.5f : 5.0f;
+        } else {
+            rate = 5.0f;
+        }
+        i32 count = ParticlesPerSecond(rate, FRAMETIME);
+        if (count > 0)
+            AddVariableShotDebrisEffect(effect, &part->position, count, 0, 0);
     }
-    i32 count = ParticlesPerSecond(rate, FRAMETIME);
-    if (count > 0)
-        AddVariableShotDebrisEffect(effect, &part->position, count, 0, 0);
 }
 
 void PowerUp_Particles(WORLDINFO_s *, NUVEC *);
@@ -539,10 +539,10 @@ static __used__ void PowerUp_UpdatePart(PART_s *part) {
 
 static __used__ void PowerUp_EndMsg(GAMEMESSAGE_s *message) {
     GameAudio_PlaySfx(0x26, NULL, 0, 0);
-    if (FindGameMsgsWithID(7, 0, message->player_index, message)) {
+    if (__builtin_expect(FindGameMsgsWithID(7, 0, message->player_index, message) != 0, 0)) {
         NUVEC position;
         const i32 player = message->player_index;
-        position.x = player == 0 ? -ICONX : ICONX;
+        position.x = player != 0 ? ICONX : -ICONX;
         position.y = PowerUp_GetPanelY(player) + STATSPOSY;
         position.z = 1.0f;
         ADDGAMEMSG_ALIGNED16 add = AddGameMsg_Default;
@@ -803,10 +803,10 @@ extern "C" {
 
     void AddFiniteShotDebrisEffect2(i32 *handle, i32 effect, NUVEC *position, NUVEC *emitter_momentum,
                                     NUVEC *particle_momentum, i32 count) {
-        if (debris_suspended != 0)
+        if (__builtin_expect(debris_suspended != 0, 0))
             return;
         AddDebrisEffect(handle, effect, position->x, position->y, position->z);
-        if (*handle == -1)
+        if (__builtin_expect(*handle == -1, 1))
             return;
         debkeydata[*handle].field_1d4 = count;
         const f32 now = debtab[effect]->time_group == 4 ? panelglobaltime : globaltime;
@@ -936,7 +936,7 @@ extern "C" {
         if (scanned == MAXPARTS)
             return NULL;
         if ((part->active & 1) != 0) {
-            if (part->replace_callback != NULL)
+            if (__builtin_expect(part->replace_callback != NULL, 0))
                 part->replace_callback(part);
             KillPart(part, 0);
         }
@@ -996,7 +996,7 @@ extern "C" {
             }
         }
         part->source_special = params->special;
-        if (params->special != NULL)
+        if (__builtin_expect(params->special != NULL, 1))
             part->special = *params->special;
         else
             memset(&part->special, 0, sizeof(part->special));
@@ -1057,7 +1057,7 @@ extern "C" {
             part->lighting_template = params->lighting_template;
             *params->lighting_template = rtlDynamicAllocTemplate(PartRTL, params->field_84);
         }
-        if (++i_part == MAXPARTS)
+        if (__builtin_expect(++i_part == MAXPARTS, 1))
             i_part = 0;
         return part;
     }
@@ -1245,7 +1245,7 @@ extern "C" {
             return;
         }
 
-        if (effect->time_group != 4) {
+        if (__builtin_expect(effect->time_group != 4, 1)) {
             // Retail realigns the frame (and esp,-16) and keeps both vectors 16-byte aligned.
             NUVEC_ALIGNED16 clipped_position;
             clipped_position.x = position->x;
@@ -1267,7 +1267,7 @@ extern "C" {
         if (emitter_orientation == NULL) {
             emitter_orientation = &numtx_identity;
         }
-        if (particle_orientation == NULL) {
+        if (__builtin_expect(particle_orientation == NULL, 0)) {
             particle_orientation = &numtx_identity;
         }
 
@@ -1375,7 +1375,7 @@ extern "C" {
                 const i32 total_chunk_count = debrischunks + debrischunksglass;                                        \
                 for (i32 i = 0; i < total_chunk_count; ++i) {                                                          \
                     particlechunkrendertype_s *render_chunk = &ParticleChunkToRender[i];                               \
-                    if (render_chunk->particle_chunk == NULL) {                                                        \
+                    if (__builtin_expect(render_chunk->particle_chunk == NULL, 1)) {                                                        \
                         render_chunk->particle_chunk = key->particle_chunks[0];                                        \
                         render_chunk->effect = effect;                                                                 \
                         render_chunk->key = key;                                                                       \
@@ -1416,7 +1416,7 @@ extern "C" {
                 key->emission_position.z = position->z;
                 key->emission_time = emission_time;
                 uv1deb *particle = key->generator(key, effect, emission_time);
-                if (effect->process_spheres != 0 && particle != NULL && i == 1) {
+                if (__builtin_expect(effect->process_spheres != 0 && particle != NULL && i == 1, 0)) {
                     DebrisProcessSpheres(particle, emission_time, effect, key, 1);
                 }
                 emission_time = key->emission_epoch + emission_interval;
@@ -1450,12 +1450,12 @@ extern "C" {
             ++key->controlled_chunk_count;
         }
 
-        if (key->controlled_chunk_count == key->allocated_chunk_count) {
+        if (__builtin_expect(key->controlled_chunk_count == key->allocated_chunk_count, 1)) {
             debris_chunk_control_s **stack = &debris_chunk_control_stack[control_stack_index];
             if (*stack != NULL) {
                 const dma_particle_chunk_s *last_chunk = key->particle_chunks[key->controlled_chunk_count - 1];
                 for (debris_chunk_control_s *control = *stack; control != NULL; control = control->next) {
-                    if (control->particle_chunk != last_chunk) {
+                    if (__builtin_expect(control->particle_chunk != last_chunk, 1)) {
                         continue;
                     }
                     RemoveChunkControlFromStack(control, stack);
@@ -1855,8 +1855,8 @@ extern "C" {
         PART_s *part = Part;
         for (i32 index = 0; index < MAXPARTS; ++index, ++part) {
             if ((part->active & 1) != 0 && part->source_special != NULL && part->special.scene == scene) {
-                part->active &= ~1;
                 memset(&part->special, 0, sizeof(part->special));
+                part->active &= ~1;
                 part->source_special = NULL;
             }
         }
@@ -2291,7 +2291,7 @@ i32 edpartLookupObjectInScene(char *name, nugscn_s *scene) {
         i32 i;
         for (i = 0; i < count; ++i) {
             NuGScnGetSpecial(&special, scene, i);
-            if (NuSpecialExistsFn(&special) && NuStrNCmp(name, NuSpecialGetName(&special), 16) == 0)
+            if (__builtin_expect(NuSpecialExistsFn(&special) && NuStrNCmp(name, NuSpecialGetName(&special), 16) == 0, 0))
                 break;
         }
         if (i < count)
@@ -2325,7 +2325,7 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
     for (i32 i = 0; i < variants; ++i) {
         EdFileRead(type->object_names[i], 16);
         type->effect_ids[i] = -1;
-        if (type->effect_pages[i] == 0 || type->effect_pages[i] == 1) {
+        if (__builtin_expect(type->effect_pages[i] == 0 || type->effect_pages[i] == 1, 1)) {
             const i32 scene_page = type->effect_pages[i] == 0 ? page : 0;
             for (i32 scene = 0; scene < 32; ++scene) {
                 if (part_scene_pageid[scene] == scene_page) {
@@ -2398,10 +2398,10 @@ void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
         type->trail_effects[0] = -1;
         type->trail_effects[1] = -1;
         type->attached_effect = -1;
-        if (version > 2) {
+        if (__builtin_expect(version > 2, 0)) {
             const char mode = EdFileReadChar();
             EdFileRead(name, 16);
-            if (mode == 0)
+            if (__builtin_expect(mode == 0, 0))
                 type->trail_effects[0] = edpartLookupDebrisEffect(name);
             else if (mode == 1)
                 type->attached_effect = edpartLookupDebrisEffect(name);
@@ -2493,7 +2493,7 @@ extern "C" {
 
     i32 edpartLoadPageEx(char *path, i8 mode, nugscn_s **scenes, i32 scene_count) {
         i32 page = 0;
-        if (mode != 0) {
+        if (__builtin_expect(mode != 0, 1)) {
             for (page = 1; page < 8; ++page) {
                 if (part_page_used[page] == 0)
                     break;
@@ -2590,7 +2590,7 @@ extern "C" {
             part_page_on[0] = 1;
         if (mode == 0)
             edbits_part_general_page = page;
-        else if (mode == 1)
+        else if (__builtin_expect(mode == 1, 1))
             edbits_part_level_page = page;
         return page;
     }

@@ -69,19 +69,19 @@ static void MakeWingFormation(_vuv_s *start, _vuv_s *target, f32 duration, i32 m
     i32 index;
     if (space->flight_groups[0].active == 0)
         index = 0;
-    else if (space->flight_groups[1].active == 0)
+    else if (__builtin_expect(space->flight_groups[1].active == 0, 0))
         index = 1;
-    else if (space->flight_groups[2].active == 0)
+    else if (__builtin_expect(space->flight_groups[2].active == 0, 0))
         index = 2;
-    else if (space->flight_groups[3].active == 0)
+    else if (__builtin_expect(space->flight_groups[3].active == 0, 0))
         index = 3;
-    else if (space->flight_groups[4].active == 0)
+    else if (__builtin_expect(space->flight_groups[4].active == 0, 0))
         index = 4;
     else if (space->flight_groups[5].active == 0)
         index = 5;
-    else if (space->flight_groups[6].active == 0)
+    else if (__builtin_expect(space->flight_groups[6].active == 0, 1))
         index = 6;
-    else if (space->flight_groups[7].active == 0)
+    else if (__builtin_expect(space->flight_groups[7].active == 0, 0))
         index = 7;
     else
         return;
@@ -191,7 +191,7 @@ static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
 
     NUVEC_ALIGNED16 local;
     NUMTX_ALIGNED16 aim_matrix;
-    if (Player[0] != NULL && Player[0]->sock_position.distance > 435.0f)
+    if (__builtin_expect(Player[0] != NULL && Player[0]->sock_position.distance > 435.0f, 0))
         MissileDist = 2.0f;
     if (fighter->hit_count != 0) {
         if (fighter->spline != NULL) {
@@ -301,7 +301,7 @@ static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
         }
         CalcSplinePoint(fighter_spline, reinterpret_cast<_vuv_s *>(&fighter->target_position),
                         fighter->spline_progress);
-        if (fighter_model_id == -307) {
+        if (__builtin_expect(fighter_model_id == -307, 0)) {
             fighter->target_position.x += fighter->matrix.m10 * MissileDist;
             fighter->target_position.y += fighter->matrix.m11 * MissileDist;
             fighter->target_position.z += fighter->matrix.m12 * MissileDist;
@@ -339,7 +339,7 @@ static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
         fighter->active = 0;
     } else {
         const f32 distance = NuFsqrt(distance_squared);
-        if (distance != 0.0f) {
+        if (__builtin_expect(distance != 0.0f, 1)) {
             const f32 speed = fighter->speed / distance;
             fighter->velocity.x = direction.x * speed;
             fighter->velocity.y = direction.y * speed;
@@ -356,7 +356,7 @@ static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
         }
     }
     fighter->matrix.m33 = 1.0f;
-    if (fighter->delete_when_done != 0)
+    if (__builtin_expect(fighter->delete_when_done != 0, 1))
         return 1;
     if (fighter->initial_delay != 0.0f) {
         fighter->initial_delay -= FRAMETIME;
@@ -387,7 +387,7 @@ static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
             starfighter_s *target = space->queued_fighters;
             fighter->target_id = -1;
             while (target->active == 0 || target->object_id != target_id) {
-                if (++target == space->queued_fighters + 96)
+                if (__builtin_expect(++target == space->queued_fighters + 96, 0))
                     return 1;
             }
             fighter->target = target;
@@ -500,7 +500,7 @@ fire: {
         spacelevel_s *space = WORLD->space_level;
         for (i32 i = 0; i != 96; ++i) {
             starfighter_s *missile = &space->queued_fighters[i];
-            if (missile->active == 0) {
+            if (__builtin_expect(missile->active == 0, 1)) {
                 --fighter->missile_count;
                 *missile = *fighter;
                 missile->model_id = -307;
@@ -511,7 +511,7 @@ fire: {
                 const f32 dx = missile->matrix.m30 - global_camera.mtx.m30;
                 const f32 dy = missile->matrix.m31 - global_camera.mtx.m31;
                 const f32 dz = missile->matrix.m32 - global_camera.mtx.m32;
-                if (dx * dx + dy * dy + dz * dz < 40000.0f)
+                if (__builtin_expect(dx * dx + dy * dy + dz * dz < 40000.0f, 1))
                     PlaySfx("Ep3_1_ProtoXWingMissile", reinterpret_cast<NUVEC *>(&missile->matrix.m30));
                 break;
             }
@@ -612,7 +612,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         }
         if (space->unknown_337c == 0) {
             space->action_timer -= FRAMETIME;
-            if (space->action_timer <= 0.0f)
+            if (__builtin_expect(space->action_timer <= 0.0f, 0))
                 space->unknown_337c = 4;
         }
     }
@@ -721,13 +721,13 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         if (spline->point_count == 0 || !(spline->spawn_time > space->door_elapsed) ||
             !(spline->spawn_time <= space->door_countdown))
             continue;
-        if (g_lowEndLevelBehaviour == 0) {
+        if (__builtin_expect(g_lowEndLevelBehaviour == 0, 1)) {
             i32 j;
             for (j = 0; j != 96; ++j) {
                 if (space->queued_fighters[j].active == 0)
                     break;
             }
-            if (j != 96) {
+            if (__builtin_expect(j != 96, 1)) {
                 starfighter_s *fighter = &space->queued_fighters[j];
                 fighter->spawn_time = spline->spawn_time;
                 NuMtxSetIdentity(&fighter->matrix);
@@ -800,9 +800,9 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
     i32 door_index = -1;
 #define DOOR_REACHED(player_index, door_index)                                                                         \
     (Player[player_index]->field_0x68c > DogFightDoors.doors[door_index].distance)
-    if (Player[0] == NULL) {
+    if (__builtin_expect(Player[0] == NULL, 1)) {
         if (Player[1] != NULL) {
-            if (DOOR_REACHED(1, 6))
+            if (__builtin_expect(!!(DOOR_REACHED(1, 6)), 0))
                 door_index = 6;
             else if (DOOR_REACHED(1, 5))
                 door_index = 5;
@@ -810,7 +810,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
                 door_index = 4;
             else if (DOOR_REACHED(1, 3))
                 door_index = 3;
-            else if (DOOR_REACHED(1, 2))
+            else if (__builtin_expect(!!(DOOR_REACHED(1, 2)), 0))
                 door_index = 2;
             else if (DOOR_REACHED(1, 1))
                 door_index = 1;
@@ -843,7 +843,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
             }
         }
     }
-    if (WORLD->area == DOGFIGHT_ADATA)
+    if (__builtin_expect(WORLD->area == DOGFIGHT_ADATA, 0))
         SpaceRumbleProcess();
 }
 
@@ -1665,9 +1665,9 @@ i32 ChrisExtraBoltCollision(BOLT_s *bolt, nuvec_s *points) {
     *reinterpret_cast<NUVEC *>(&position) = points[1];
     *reinterpret_cast<NUVEC *>(&velocity) = bolt->velocity;
 #define COLLIDE_SPACE_FIGHTER(group_index, fighter_index)                                                              \
-    if (space->flight_groups[group_index].fighters[fighter_index].active != 0 &&                                       \
+    if (__builtin_expect(space->flight_groups[group_index].fighters[fighter_index].active != 0 &&                                       \
         CollideBoltStarFighter(bolt, &space->flight_groups[group_index].fighters[fighter_index],                       \
-                               reinterpret_cast<_vuv_s *>(&position), reinterpret_cast<_vuv_s *>(&velocity)) != 0)     \
+                               reinterpret_cast<_vuv_s *>(&position), reinterpret_cast<_vuv_s *>(&velocity)) != 0, 0))     \
     return 1
 #define COLLIDE_SPACE_GROUP(group_index)                                                                               \
     do {                                                                                                               \

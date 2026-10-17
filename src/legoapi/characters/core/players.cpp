@@ -722,7 +722,7 @@ float GetHoverPosY(GameObject_s *obj) {
 
     f32 height = obj->apiobj.field_0x218;
     if (height != 2000000.0f) {
-        if (obj->apiobj.water_height != 2000000.0f)
+        if (__builtin_expect(obj->apiobj.water_height != 2000000.0f, 1))
             height = MAX(obj->apiobj.water_height, height);
 
         f32 hover_height = WORLD->current_level->hover_height;
@@ -807,14 +807,12 @@ i32 Players_BothActive() {
 }
 
 PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id) {
-    if (PlayerItemType != NULL && PLAYERITEMTYPECOUNT > 0) {
-        i32 i = 0;
-        while (PlayerItemType[i].id != id) {
-            i++;
-            if (i == PLAYERITEMTYPECOUNT)
-                return NULL;
+    PLAYERITEMTYPE_s *type = PlayerItemType;
+    if (type != NULL) {
+        for (i32 i = 0; i < PLAYERITEMTYPECOUNT; i++) {
+            if (type[i].id == id)
+                return &type[i];
         }
-        return &PlayerItemType[i];
     }
     return NULL;
 }
@@ -1152,7 +1150,7 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         if (position == NULL) {
             position = Player_StartPos(obj);
         }
-        if (position != NULL) {
+        if (__builtin_expect(position != NULL, 0)) {
             obj->apiobj.position = *position;
         }
 
@@ -1246,7 +1244,7 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
             surface_y = GetHoverPosY(obj);
         }
         if (snap_to_surface == 0 || (obj->apiobj.character_data->model_flags & 0x2000) != 0) {
-            if (surface_y != kInvalidSurfaceHeight) {
+            if (__builtin_expect(surface_y != kInvalidSurfaceHeight, 1)) {
                 obj->apiobj.position.y = surface_y;
                 SyncPlayerSpawnPosition(obj);
             }
@@ -1274,7 +1272,7 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         ResetPlayerAI(obj);
         obj->apiobj.last_safe_position = obj->apiobj.position;
         obj->saved_position = obj->apiobj.position;
-        if ((obj->apiobj.character_data->model_flags & 0x2000) != 0) {
+        if (__builtin_expect((obj->apiobj.character_data->model_flags & 0x2000) != 0, 1)) {
             obj->in_narrow_socket = ObjInNarrowSock(obj, WORLD->sock_sys, WORLD->level_idx);
             f32 speed = GetVehicleSpeedMul(obj, 0.0f);
             obj->field_0xdc8 = speed;
@@ -1532,7 +1530,7 @@ i32 MakePlayerList(i32 count) {
             PlayerList[player_count] = player->id;
         }
 
-        PlayerProgress[player_count].active = player->apiobj.flags_low >> 7;
+        PlayerProgress[player_count].active = player->apiobj.player_controlled;
 
         bool unavailable = false;
         if (player->field_0x7a5 != 6 && player->field_0xe32 != 2) {
@@ -1955,8 +1953,8 @@ void AveragePlayerCurrentSpeedMul() {
     } else {
         total += Player[1]->current_speed_mul;
         avg_currentspeed_mul = total;
-        if (count == 1) {
-            avg_currentspeed_mul *= 0.5f;
+        if (__builtin_expect(count == 1, 1)) {
+            avg_currentspeed_mul = total * 0.5f;
         }
     }
 }

@@ -490,13 +490,13 @@ static i32 Collide2Objects(APIOBJECT *first, APIOBJECT *second) {
         second->collision_contact_mask |= first->collision_identity_mask;
         return collision_result;
     }
-    if (WORLD->current_level == DOGFIGHTA_LDATA) {
+    if (__builtin_expect(WORLD->current_level == DOGFIGHTA_LDATA, 0)) {
         collision_result = APIObjectCollision(first, second);
     } else {
         collision_result = APIObjectCollision2D(first, second);
     }
 
-    if (collision_result == 2 && VehicleArea == 0) {
+    if (__builtin_expect(collision_result == 2 && VehicleArea == 0, 0)) {
         GAMECHARACTERDATA *second_data =
             static_cast<GAMECHARACTERDATA *>(second_object->apiobj.character_data->field11_0x24);
         GAMECHARACTERDATA *first_data =
@@ -506,8 +506,8 @@ static i32 Collide2Objects(APIOBJECT *first, APIOBJECT *second) {
             if ((second_data->flags_090 & 0x1000) != 0 &&
                 second->horizontal_velocity_magnitude > second_data->movement_speed * 0.5f) {
                 StartFlatten(second_object, first_object);
-            } else if (second_vertical_velocity < 0.0f && (first_data->flags_090 & 0x40) != 0 &&
-                       first_object->field_0x107c == -1) {
+            } else if (__builtin_expect(second_vertical_velocity < 0.0f && (first_data->flags_090 & 0x40) != 0 &&
+                       first_object->field_0x107c == -1, 0)) {
                 first->velocity.y += second_vertical_velocity * 0.5f;
             } else if (first_vertical_velocity < 0.0f && (second_data->flags_090 & 0x40) != 0 &&
                        second_object->field_0x107c == -1) {
@@ -1264,7 +1264,7 @@ i32 StunGameObject(GameObject_s *object, GameObject_s *attacker, float duration,
     void **animations = object->apiobj.character_model->model_data_b;
     i32 candidates[5];
     i32 candidate_count = 0;
-    if (animations[0xa7] != NULL && animations[0xaa] != NULL)
+    if (__builtin_expect(animations[0xa7] != NULL && animations[0xaa] != NULL, 0))
         candidates[candidate_count++] = 0xa7;
     if (animations[0xa8] != NULL && animations[0xab] != NULL)
         candidates[candidate_count++] = 0xa8;
@@ -1290,7 +1290,7 @@ i32 StunGameObject(GameObject_s *object, GameObject_s *attacker, float duration,
     if (object->context_animation != 0x3d && object->context_animation != 0xb9) {
         if (object->external_force.z <= 0.0f)
             object->external_force.z = 1.0f;
-        else if (object->external_force.z <= 0.8f)
+        else if (__builtin_expect(object->external_force.z <= 0.8f, 1))
             object->external_force.z = 0.8f;
     }
 
@@ -1310,9 +1310,9 @@ i32 StunGameObject(GameObject_s *object, GameObject_s *attacker, float duration,
     }
 
     const i16 stun_animation = object->context_animation;
-    if (object->apiobj.character_model->model_data_b[stun_animation] != NULL &&
+    if (__builtin_expect(object->apiobj.character_model->model_data_b[stun_animation] != NULL &&
         (static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[stun_animation])->flags & 2) !=
-            0) {
+            0, 0)) {
         object->context_animation_timer = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 0.5f + 1.0f;
     } else {
         object->context_animation_timer =
@@ -1889,7 +1889,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
                 angle = static_cast<u16>((pulse + pulse) * 65536.0f);
                 message.alpha = static_cast<u8>(
-                    static_cast<i32>((24.0f * NuTrigTable[angle >> 1] + 104.0f) * object->interaction_arrow_blend));
+                    static_cast<i32>((24.0f * NuTrigTable[static_cast<u16>(angle) / 2] + 104.0f) * object->interaction_arrow_blend));
                 message.flags = 0x1083;
                 message.field_0x4f = 4;
                 AddGameMsg(&message);
@@ -1998,7 +1998,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         message.blue = PlayerRGB[i][2];                                                                                \
         f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);                                                  \
         u16 angle = static_cast<u16>((pulse + pulse) * 65536.0f);                                                      \
-        message.alpha = static_cast<u8>(48.0f * NuTrigTable[angle >> 1] + 80.0f);                                      \
+        message.alpha = static_cast<u8>(48.0f * NuTrigTable[angle / 2] + 80.0f);                                      \
         message.flags = 0x83;                                                                                          \
         message.field_0x4f = 4;                                                                                        \
         AddGameMsg(&message);                                                                                          \
@@ -2256,8 +2256,8 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
                         momentum.y += object->reset_velocity.y * 0.75f;
                         momentum.z += object->reset_velocity.z * 0.75f;
                     } else if (angle_override != NULL) {
-                        momentum.z += NuTrigTable[((static_cast<u16>(*angle_override + 0x4000)) >> 1) & 0x7fff] * 2.0f;
-                        momentum.x += NuTrigTable[(*angle_override >> 1) & 0x7fff] * 2.0f;
+                        momentum.x += NuTrigTable[*angle_override / 2] * 2.0f;
+                        momentum.z += NuTrigTable[((*angle_override + 0x4000) >> 1) & 0x7fff] * 2.0f;
                     }
                     NuMtxMul(&matrix, &joint_matrices[joint], &object->apiobj.field_0xb8);
                     params = Default_ADDPART;
@@ -3199,11 +3199,11 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
     f32 nearest_distance = range_squared;
     i32 count = HIGHGAMEOBJECT;
     for (i32 i = 0; i < count; ++i, ++target) {
-        if (target == object || (target->apiobj.flags_high & 0x10) == 0 || target->apiobj.field_0x287 != 0 ||
-            (require_drawn != 0 && target->apiobj.model_draw_result == 0) || (target->field_0xf00 & 1) != 0)
+        if (__builtin_expect(target == object || (target->apiobj.flags_high & 0x10) == 0 || target->apiobj.field_0x287 != 0 ||
+            (require_drawn != 0 && target->apiobj.model_draw_result == 0) || (target->field_0xf00 & 1) != 0, 1))
             continue;
         i8 context = target->character_context;
-        if ((static_cast<u8>(context) & 0xfd) == 0x39 || context == 0x3c || (CInfo[context].flags & 0x8000) != 0)
+        if (__builtin_expect((static_cast<u8>(context) & 0xfd) == 0x39 || context == 0x3c || (CInfo[context].flags & 0x8000) != 0, 0))
             continue;
         if (model_mask != 0) {
             if ((target->apiobj.character_data->model_flags & model_mask) == 0)
@@ -3212,7 +3212,7 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
             continue;
         if (static_cast<u8>(context - 0x5f) <= 1)
             continue;
-        if (arcade == 0 && object->apiobj.player_controlled && (target->field_0xf02 & 0x80) == 0) {
+        if (__builtin_expect(arcade == 0 && object->apiobj.player_controlled && (target->field_0xf02 & 0x80) == 0, 0)) {
             u32 *mask = WORLD->api_object_sys->hostility_masks[object->apiobj.field_0x289];
             u64 hostility = static_cast<u64>(mask[0]) | (static_cast<u64>(mask[1]) << 32);
             if (((hostility >> target->apiobj.field_0x289) & 1) == 0)
@@ -3239,7 +3239,7 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
                             ? near_angle
                             : (mid_distance > distance ? mid_angle : far_angle);
             if (dot > NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff]) {
-                if (object->collision_target == target)
+                if (__builtin_expect(object->collision_target == target, 1))
                     previous = target;
                 else {
                     nearest_distance = distance;

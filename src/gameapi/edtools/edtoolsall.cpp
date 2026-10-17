@@ -3330,15 +3330,17 @@ void edgraSortVectorBuffer(i32 index) {
     usize bytes = GrassClumps[index].element_count * sizeof(NUVEC);
     memcpy(temporary, buffer, bytes);
     memmove(buffer, buffer + bytes, static_cast<u8 *>(edgra_free_vecbuffer) - (buffer + bytes));
-    memcpy(static_cast<u8 *>(edgra_free_vecbuffer) - bytes, temporary, bytes);
+    memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(edgra_free_vecbuffer) - bytes), temporary, bytes);
     edgra_last_clump_in_buffer = index;
     for (i32 i = 0; i < EDGRA_MAX_CLUMPS; ++i) {
         if (i != index && GrassClumps[i].element_count &&
             GrassClumps[i].vector_buffer > GrassClumps[index].vector_buffer) {
-            GrassClumps[i].vector_buffer = static_cast<u8 *>(GrassClumps[i].vector_buffer) - bytes;
+            GrassClumps[i].vector_buffer =
+                reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(GrassClumps[i].vector_buffer) - bytes);
         }
     }
-    GrassClumps[index].vector_buffer = static_cast<u8 *>(edgra_free_vecbuffer) - bytes;
+    GrassClumps[index].vector_buffer =
+        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(edgra_free_vecbuffer) - bytes);
     edgraInitAllClumps();
 }
 
@@ -3447,13 +3449,12 @@ void edpartMultipleCopyCopy() {
 
         NUVEC delta;
         NuVecSub(&delta, &edpart_cam_pos, &part_emits[index].position);
-        if (__builtin_fabsf(delta.x) > edpart_copy_size || __builtin_fabsf(delta.y) > edpart_copy_size ||
-            __builtin_fabsf(delta.z) > edpart_copy_size)
-            continue;
-
-        edpart_copy_source[edpart_copy_source_count++] = index;
-        if (edpart_copy_source_count == 8)
-            break;
+        if (__builtin_fabsf(delta.x) <= edpart_copy_size && __builtin_fabsf(delta.y) <= edpart_copy_size &&
+            __builtin_fabsf(delta.z) <= edpart_copy_size) {
+            edpart_copy_source[edpart_copy_source_count++] = index;
+            if (edpart_copy_source_count == 8)
+                break;
+        }
     }
     edpart_copy_source_vec = edpart_cam_pos;
     edpart_copyroty = 0;
@@ -3481,13 +3482,14 @@ void edanimRenderSoundEmitters(i32 parameter_index) {
     nuhspecial_s special;
     NuGScnGetSpecial(&special, edbits_base_scene, param.instance_id);
     const NUVEC *base_position = NuSpecialGetPos(&special);
-    for (i32 sound = 0; sound < param.sound_count; ++sound) {
+    const auto *offset_cursor = AnimParams[parameter_index].sound_positions;
+    for (i32 sound = 0; sound < param.sound_count; ++sound, ++offset_cursor) {
         // The original skips sounds by their flags slot rather than the sound id.
         if (param.sound_flags[sound] == -1) {
             continue;
         }
         const i32 colour = edanim_sound_mode && edanim_nearest_sound == sound ? 0xffff0000 : 0xffffffff;
-        const auto &offset = param.sound_positions[sound];
+        const auto &offset = *offset_cursor;
         edbitsDrawDiagonalCross(base_position->x + offset[0], base_position->y + offset[1],
                                 base_position->z + offset[2], 0.25f, colour, edanim_mtl);
     }
@@ -3564,22 +3566,22 @@ eduiitem_s *eduiItemFileSelectorCreate(u32 data, eduiiattr_s *colours, EdUiItemC
     DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(FileSelectorItem) == 0x64, "file selector item ABI");
 
     auto *item = static_cast<FileSelectorItem *>(NU_ALLOC(sizeof(FileSelectorItem), 4, 1, "", 0));
-    if (item == NULL)
-        return NULL;
-    memset(item, 0, sizeof(*item));
-    item->type = 0x10;
-    item->data = data;
-    memcpy(item->colours, colours, sizeof(item->colours));
-    item->destroy = eduicbItemDestroy;
-    item->text_alignment = 0x40;
-    item->selection_group = 0;
-    eduiItemSetText(item, text);
-    item->field_4c = 0.5f;
-    item->field_50 = 0.5f;
-    item->field_54 = 180.0f;
-    item->field_5c = 0.5f;
-    item->field_58 = 1.0f;
-    item->callback = callback;
+    if (__builtin_expect(item != NULL, 1)) {
+        memset(item, 0, sizeof(*item));
+        item->type = 0x10;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->destroy = eduicbItemDestroy;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->field_4c = 0.5f;
+        item->field_50 = 0.5f;
+        item->field_54 = 180.0f;
+        item->field_5c = 0.5f;
+        item->field_58 = 1.0f;
+        item->callback = callback;
+    }
     return item;
 }
 
@@ -3747,9 +3749,9 @@ __attribute__((force_align_arg_pointer)) i32 EdManScale::Process(EdInputContext 
         for (ClassObjectListEntry *entry = selected.first; entry != NULL; entry = entry->next) {
             average = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
             matrix_type = EdType_VuMtx;
-            if (entry->reference == NULL ||
-                entry->reference->GetAttributeData(entry->object, 0x20, matrix_type, &transform, 0) == 0) {
-                if (entry->ed_class->FindMember(&member, entry->object, 0x20, 1) != 0)
+            if (__builtin_expect(entry->reference == NULL ||
+                entry->reference->GetAttributeData(entry->object, 0x20, matrix_type, &transform, 0) == 0, 0)) {
+                if (__builtin_expect(entry->ed_class->FindMember(&member, entry->object, 0x20, 1) != 0, 1))
                     member.reference->GetAttributeData(member.object, 0x20, matrix_type, &transform, 0);
             }
 
@@ -3845,17 +3847,18 @@ __attribute__((force_align_arg_pointer)) void EdManScale::Render(ClassObjectList
     if (selected.count > 2)
         EdManipulator::Render(selected);
     VuVec average;
-    if (selected.GetAveragePosition(average) == 0)
-        return;
-    VuMtx transform;
-    ClassObjectListEntry *entry = selected.first;
-    if (entry->reference == NULL ||
-        entry->reference->GetAttributeData(entry->object, 0x20, EdType_VuMtx, &transform, 0) == 0) {
-        EdMember member;
-        if (entry->ed_class->FindMember(&member, entry->object, 0x20, 1) != 0)
-            member.reference->GetAttributeData(member.object, 0x20, EdType_VuMtx, &transform, 0);
+    if (selected.GetAveragePosition(average) != 0) {
+        VuMtx transform;
+        ClassObjectListEntry *entry = selected.first;
+        const i32 type = EdType_VuMtx;
+        if (entry->reference == NULL ||
+            entry->reference->GetAttributeData(entry->object, 0x20, type, &transform, 0) == 0) {
+            EdMember member;
+            if (entry->ed_class->FindMember(&member, entry->object, 0x20, 1) != 0)
+                member.reference->GetAttributeData(member.object, 0x20, type, &transform, 0);
+        }
+        DrawAxis(average, &transform);
     }
-    DrawAxis(average, &transform);
 }
 
 i32 EdRegistry::AddMapping(char *source, char *destination) {
@@ -4364,8 +4367,8 @@ __attribute__((force_align_arg_pointer)) i32 EdManRotate::RotateItem(EdInputCont
         if (entry->reference == NULL ||
             entry->reference->GetAttributeData(entry->object, 0x10, matrix_type, &matrix, 0) == 0) {
             EdMember member;
-            if (entry->ed_class->FindMember(&member, entry->object, 0x10, 1) == 0 ||
-                member.reference->GetAttributeData(member.object, 0x10, matrix_type, &matrix, 0) == 0)
+            if (__builtin_expect(entry->ed_class->FindMember(&member, entry->object, 0x10, 1) == 0 ||
+                member.reference->GetAttributeData(member.object, 0x10, matrix_type, &matrix, 0) == 0, 1))
                 continue;
         }
         switch (axis) {
@@ -4445,28 +4448,32 @@ void EdRefSpline::GetMemberData(void *object, i32 type, void *data, i32 data_siz
 }
 
 void EdRefSpline::SetMemberData(void *object, i32 type, void *data, i32 data_size, i16 *) {
-    SplineObject *spline = static_cast<SplineObject *>(object);
     CheckType(type);
     switch (member_offset) {
         case static_cast<i32>(0x80000001):
-            spline->step = *static_cast<f32 *>(data);
+            static_cast<SplineObject *>(object)->step = *static_cast<f32 *>(data);
+            if (theSplineHelper.auto_generate_points)
+                static_cast<SplineObject *>(object)->points.Clear();
             break;
         case static_cast<i32>(0x80000002):
-            spline->height = *static_cast<f32 *>(data);
+            static_cast<SplineObject *>(object)->height = *static_cast<f32 *>(data);
+            if (theSplineHelper.auto_generate_points)
+                static_cast<SplineObject *>(object)->points.Clear();
             break;
         case static_cast<i32>(0x80000003):
-            spline->drop = *static_cast<i32 *>(data) != 0;
+            static_cast<SplineObject *>(object)->drop = *static_cast<i32 *>(data) != 0;
+            if (theSplineHelper.auto_generate_points)
+                static_cast<SplineObject *>(object)->points.Clear();
             break;
         case static_cast<i32>(0x80000004):
-            spline->closed = *static_cast<i32 *>(data);
+            static_cast<SplineObject *>(object)->closed = *static_cast<i32 *>(data);
+            if (theSplineHelper.auto_generate_points)
+                static_cast<SplineObject *>(object)->points.Clear();
             break;
         default:
             // The original setter delegates unrecognized members to the getter.
             EdRef::GetMemberData(object, type, data, data_size);
-            return;
-    }
-    if (theSplineHelper.auto_generate_points) {
-        spline->points.Clear();
+            break;
     }
 }
 
@@ -4633,14 +4640,13 @@ void EdEnumControl::Refresh() {
 static EdEnumControl *active_enum_control;
 
 void EdEnumControl::cbButton(eduimenu_s *menu, eduiitem_s *item, u32) {
-    EdEnumControl *control = static_cast<EdEnumControl *>(item->data_ptr);
-    active_enum_control = control;
+    active_enum_control = static_cast<EdEnumControl *>(item->data_ptr);
     eduimenu_s *choices =
         eduiMenuCreate(item->x + menu->width, item->y, 180, 250,
                        reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbEdLevelDestroy, NULL);
     if (choices == NULL)
         return;
-    for (Item *entry = control->items; entry != NULL && entry->name != NULL; ++entry)
+    for (Item *entry = active_enum_control->items; entry->name != NULL; ++entry)
         eduiMenuAddItem(
             choices, eduiItemSelCreate(reinterpret_cast<usize>(entry), item->colours, 0, 0, cbSelectItem, entry->name));
     choices->flags |= 1;
@@ -5675,13 +5681,15 @@ void EdMatrixControl::SetMenuItemAttr(i32 mask, eduiitem_s *menu_item, eduiiattr
 }
 
 void EdMatrixControl::cbButton(eduimenu_s *menu, eduiitem_s *item, u32 value) {
-    nupad_s *pad = EdControl::Input->pad;
     static_cast<edui_prop_s *>(item)->unknown_property_flags |= 0x20;
-    f32 current = NuAToF(static_cast<edui_prop_s *>(item)->property_text);
+    nupad_s *pad = EdControl::Input->pad;
+    f32 changed = NuAToF(static_cast<edui_prop_s *>(item)->property_text);
     f32 dx;
     f32 dy;
     eduiGetCursorDelta(&dx, &dy);
-    f32 changed = current - dy * 100.0f - eduiGetAnalougePadValue(pad);
+    changed -= dy * 100.0f;
+    dy = eduiGetAnalougePadValue(pad);
+    changed -= dy;
     char text[128];
     sprintf(text, "%.2f", changed);
     eduiItemPropSetText(static_cast<edui_prop_s *>(item), text);
@@ -6001,13 +6009,15 @@ void EdVectorControl::Refresh() {
 }
 
 void EdVectorControl::cbButton(eduimenu_s *menu, eduiitem_s *item, u32 value) {
-    nupad_s *pad = EdControl::Input->pad;
     static_cast<edui_prop_s *>(item)->unknown_property_flags |= 0x20;
-    f32 current = NuAToF(static_cast<edui_prop_s *>(item)->property_text);
+    nupad_s *pad = EdControl::Input->pad;
+    f32 changed = NuAToF(static_cast<edui_prop_s *>(item)->property_text);
     f32 dx;
     f32 dy;
     eduiGetCursorDelta(&dx, &dy);
-    f32 changed = current - dy * 100.0f - eduiGetAnalougePadValue(pad);
+    changed -= dy * 100.0f;
+    dy = eduiGetAnalougePadValue(pad);
+    changed -= dy;
     char text[128];
     sprintf(text, "%.2f", changed);
     eduiItemPropSetText(static_cast<edui_prop_s *>(item), text);
@@ -6460,11 +6470,12 @@ void EdSpecialObjectControl::cbSelectObject(eduimenu_s *, eduiitem_s *item, u32)
         return;
     nuhspecial_s selected;
     nuhspecial_s *choice;
-    if (item->data == -1) {
+    void *data = item->data_ptr;
+    if (reinterpret_cast<uintptr_t>(data) == static_cast<uintptr_t>(-1)) {
         NuSpecialClear(&selected);
         choice = &selected;
     } else {
-        choice = &static_cast<SpecialObject *>(item->data_ptr)->special;
+        choice = &static_cast<SpecialObject *>(data)->special;
         char *name = NuSpecialGetName(choice);
         if (name != NULL)
             eduiItemPropSetText(reinterpret_cast<edui_prop_s *>(active_special_object_control->item), name);
@@ -6615,10 +6626,12 @@ void EdClassObjectNameControl::cbSelectObject(eduimenu_s *menu, eduiitem_s *item
     if (control != NULL) {
         control->selected.object = item->data_ptr;
         char name[128];
-        const char *value = "None";
-        if (control->selected.object != NULL) {
+        const char *value;
+        if (__builtin_expect(control->selected.object != NULL, 1)) {
             control->selected.GetName(name, sizeof(name));
             value = name;
+        } else {
+            value = "None";
         }
         eduiItemPropSetText(static_cast<edui_prop_s *>(edClassObjectNameControl->item), const_cast<char *>(value));
         edClassObjectNameControl->SetVal(value);
@@ -6668,7 +6681,12 @@ i32 EdRef::GetAttributeData(void *object, i32 attribute, i32 requested_type, voi
         if ((attribute & 8) && type_id == EdType_VuMtx) {
             NUMTX_ALIGNED16 matrix;
             GetMemberData(object, type_id, &matrix, 0);
-            *static_cast<VuVec *>(data) = *reinterpret_cast<VuVec *>(&matrix.m30);
+            u32 *out = static_cast<u32 *>(data);
+            const u32 *row = reinterpret_cast<const u32 *>(&matrix.m30);
+            out[0] = row[0];
+            out[1] = row[1];
+            out[2] = row[2];
+            out[3] = row[3];
             return 1;
         }
         if (attribute & 0x100) {

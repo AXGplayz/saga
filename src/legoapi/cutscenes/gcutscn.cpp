@@ -192,7 +192,7 @@ void CutScenePlayer_DrawGrid(COLLECTION_s *collection, i16 *ids, float x, float 
             COLLECTID *item = &collection->list[i];
             item->grid_y = y;
             item->grid_x = x;
-            if (alpha <= 0.0f)
+            if (__builtin_expect(alpha <= 0.0f, 0))
                 continue;
             i32 object = i == selected ? (menu_flash ? 168 : 166) : 167;
             f32 opacity = CutScenePlayer_CanStart(ids[i]) ? alpha : 0.375f * alpha;
@@ -204,7 +204,7 @@ void CutScenePlayer_DrawGrid(COLLECTION_s *collection, i16 *ids, float x, float 
             char text[32];
             sprintf(text, "%i", i + 1);
             i32 area = LDataList[player->clips[ids[i]].level_id].area_index;
-            if (area != previous_area) {
+            if (__builtin_expect(area != previous_area, 1)) {
                 previous_area = area;
                 if (++colour > 7)
                     colour = 7;
@@ -297,12 +297,12 @@ i32 CutScenePlayer_CountEpisodeClips(i32 episode, i32 include_guests, i16 *ids) 
     CUTSCENEPLAYER_s *player = CutScenePlayer;
     if (player != NULL) {
         i32 clip_count = player->clip_count;
-        if (clip_count != 0) {
+        if (__builtin_expect(clip_count != 0, 1)) {
             LEVELDATA *levels = LDataList;
             CUTSCENEPLAYERCLIP *clip = player->clips;
             for (i32 i = 0; i < clip_count; ++i, ++clip) {
-                if (levels[clip->level_id].episode_index == episode ||
-                    (include_guests != 0 && clip->guest_episode == episode)) {
+                if (__builtin_expect(levels[clip->level_id].episode_index == episode ||
+                    (include_guests != 0 && clip->guest_episode == episode), 1)) {
                     if (ids != NULL) {
                         ids[count++] = i;
                         clip_count = player->clip_count;
@@ -421,7 +421,7 @@ i32 instNuGCutGetNextRigidInfo(instNUGCUTSCENE_s *instance, float frame, i32 ind
 }
 
 i32 instNuGCutSceneSwapBuffers(instNUGCUTSCENE_s *instance, i32 force) {
-    if (static_cast<i8>(instance->flags_8c) >= 0 || force != 0) {
+    if (__builtin_expect(static_cast<i8>(instance->flags_8c) >= 0, 0) || force != 0) {
         if (instance->pending_stream_buffer == NULL) {
             u8 flags = instance->flags_8b;
             if ((flags & 0x10) != 0) {

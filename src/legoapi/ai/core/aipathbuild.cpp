@@ -11,7 +11,7 @@ static f32 ***distance_tables;
 static void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visited, i32 previous, i32 current,
                                         f32 distance, i32 route_mask) {
     ++iterator_count;
-    if ((visited[current / 8] & (1 << (current % 8))) != 0) {
+    if (__builtin_expect((visited[current / 8] & (1 << (current % 8))) != 0, 0)) {
         return;
     }
     visited[current / 8] |= 1 << (current % 8);
@@ -20,7 +20,7 @@ static void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visi
     distance += NuVecDist(&path->nodes[previous].position, &node->position, &difference);
     if (distances[current] >= distance) {
         distances[current] = distance;
-        if (route_mask != 0) {
+        if (__builtin_expect(route_mask != 0, 1)) {
             for (i32 index = 0; index < node->connection_count; ++index) {
                 AIPATHCNX_s *connection = node->connections[index];
                 bool direction = connection->node_indices[0] != current;
@@ -34,7 +34,7 @@ static void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visi
             for (i32 index = 0; index < node->connection_count; ++index) {
                 AIPATHCNX_s *connection = node->connections[index];
                 bool direction = connection->node_indices[0] != current;
-                if ((connection->traversal_flags[direction] & 0x40000000) == 0) {
+                if (__builtin_expect((connection->traversal_flags[direction] & 0x40000000) == 0, 1)) {
                     pathEditorCalcRouteIterator(path, distances, visited, current, connection->node_indices[!direction],
                                                 distance, 0);
                 }
@@ -99,16 +99,19 @@ static void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s *editor_
     memset(path->routes, 0, path->route_count * sizeof(AIPATHROUTE_s));
     for (i32 slot = 0; slot < 16; ++slot) {
         EDAIPATHROUTE_s *editor_route = &editor_path->routes[slot];
-        if (!(editor_route->flags & 1)) {
+        if (__builtin_expect(!(editor_route->flags & 1), 1)) {
             continue;
         }
         AIPATHROUTE_s *route = &path->routes[route_indices[slot]];
         i32 name_length = strlen(editor_route->name);
-        if (name_length != 0) {
+        if (__builtin_expect(name_length != 0, 1)) {
             route->name = (char *)AISysBufferAlloc(cursor, end, name_length + 1);
             strcpy(route->name, editor_route->name);
         }
-        route->character_masks[0] = (editor_route->user_mask & (1ULL << 63)) ? ~0ULL : editor_route->user_mask;
+        route->character_masks[0] = editor_route->user_mask;
+        if (editor_route->user_mask & (1ULL << 63)) {
+            route->character_masks[0] = ~0ULL;
+        }
         route->character_masks[1] = editor_route->user_mask;
     }
 
@@ -152,7 +155,7 @@ static void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s *editor_
     for (i32 route_index = 0; route_index < path->route_count; ++route_index) {
         AIPATHROUTE_s *route = &path->routes[route_index];
         for (i32 node = 0; node < path->node_count; ++node) {
-            if (route_members[route_index][node >> 3] & (1u << (node & 7))) {
+            if (__builtin_expect(!!(route_members[route_index][node >> 3] & (1u << (node & 7))), 0)) {
                 ++route->route_count;
             }
             if (path->nodes[node].route_boundary_mask & (1ULL << route_indices[route_index])) {
@@ -218,7 +221,7 @@ static void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s *editor_
                 for (i32 edge = 0; edge < node->connection_count; ++edge) {
                     AIPATHCNX_s *connection = node->connections[edge];
                     i32 direction = connection->node_indices[0] != source;
-                    if (connection->traversal_flags[direction] & 0x40000000) {
+                    if (__builtin_expect(!!(connection->traversal_flags[direction] & 0x40000000), 0)) {
                         continue;
                     }
                     if (!(connection->route_mask & (1ULL << route_index))) {
@@ -252,7 +255,7 @@ extern "C" {
             return nullptr;
         }
         EDAIPATH_s *first_editor_path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
-        if (first_editor_path == nullptr) {
+        if (__builtin_expect(first_editor_path == nullptr, 0)) {
             distance_tables = nullptr;
             return nullptr;
         }
@@ -369,11 +372,11 @@ extern "C" {
                         runtime->min_height_offset = runtime->min_height - runtime->position.y;
                         runtime->max_height_offset = runtime->max_height - runtime->position.y;
                         for (i32 slot = 0; slot < 8; ++slot) {
-                            if (node->connections[slot].node != nullptr) {
+                            if (__builtin_expect(node->connections[slot].node != nullptr, 1)) {
                                 ++runtime->connection_count;
                             }
                         }
-                        if (path->connections != nullptr) {
+                        if (__builtin_expect(path->connections != nullptr, 1)) {
                             if (runtime->connection_count != 0) {
                                 runtime->connections = (AIPATHCNX_s **)AISysBufferAlloc(
                                     cursor, end, runtime->connection_count * sizeof(AIPATHCNX_s *));
@@ -463,12 +466,12 @@ extern "C" {
                             for (i32 edge = 0; edge < node->connection_count; ++edge) {
                                 AIPATHCNX_s *connection = node->connections[edge];
                                 bool direction = connection->node_indices[0] != source;
-                                if (connection->traversal_flags[direction] & 0x40000000) {
+                                if (__builtin_expect(!!(connection->traversal_flags[direction] & 0x40000000), 0)) {
                                     continue;
                                 }
                                 i32 neighbor = connection->node_indices[!direction];
                                 f32 distance = distances[source][neighbor] + distances[neighbor][destination];
-                                if (distance < best) {
+                                if (__builtin_expect(distance < best, 1)) {
                                     best = distance;
                                     route_matrix[source][destination] = edge;
                                 }
@@ -501,7 +504,9 @@ extern "C" {
                         node->runtime_flags &= ~u8(1);
                     }
                 }
-                if (!(path->flags & 2) || distance_tables == nullptr || distance_tables[path_index] == nullptr) {
+                if (__builtin_expect(!(path->flags & 2) || distance_tables == nullptr ||
+                                         distance_tables[path_index] == nullptr,
+                                     0)) {
                     continue;
                 }
                 for (i32 node_index = 0; node_index < path->node_count; ++node_index) {

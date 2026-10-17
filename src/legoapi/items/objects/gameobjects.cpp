@@ -1299,8 +1299,8 @@ static f32 Condition_IAmPlayer2(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *pack
 static f32 Condition_PlayerOnObject(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
     i32 platform = reinterpret_cast<intptr_t>(argument);
     f32 result = 0.0f;
-    if (player != NULL && platform != -1 && (player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0)) {
-        if (player->apiobj.supporting_platform_id == platform) {
+    if (__builtin_expect(player != NULL && platform != -1 && (player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0), 0)) {
+        if (__builtin_expect(player->apiobj.supporting_platform_id == platform, 0)) {
             NUMTX *transform = static_cast<NUMTX *>(CurTerr->platforms[platform].scene_object);
             result = transform->m31 > player->apiobj.position.y ? 0.0f : 1.0f;
         }
@@ -1841,7 +1841,7 @@ static i32 GameFindAlternativeSpecialObject(AISYS *, nuhspecial_s *special) {
 }
 
 static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *, VARIPTR *) {
-    if (version < 12 && system->path_sys != NULL && system->path_sys->path_count != 0) {
+    if (__builtin_expect(version < 12 && system->path_sys != NULL && system->path_sys->path_count != 0, 1)) {
         AIPATHSYS *path_system = system->path_sys;
         AIPATH **paths = path_system->paths;
         for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
@@ -1858,7 +1858,7 @@ static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *, VARIPTR 
     }
 
     i32 tag_length = static_cast<i8>(EdFileReadChar());
-    if (tag_length <= 8 && tag_length != 0) {
+    if (__builtin_expect(tag_length <= 8 && tag_length != 0, 0)) {
         char tag[16];
         EdFileRead(tag, tag_length);
         if (NuStrICmp(tag, "LEGO") == 0) {
@@ -2144,10 +2144,10 @@ extern "C" i32 screendump;
 
 void GameTiming(WORLDINFO_s *world, float *game_time) {
     f32 level_name_target = 1.0f;
-    if (LevelNameTime <= 0.0f)
-        level_name_target = 0.0f;
-    else
+    if (LevelNameTime > 0.0f)
         LevelNameTime -= FRAMETIME;
+    else
+        level_name_target = 0.0f;
     LevelNameMul = SeekLinearF(LevelNameMul, level_name_target, FRAMETIME + FRAMETIME);
 
     if (Paused != 0) {
@@ -2206,9 +2206,9 @@ void GameTiming(WORLDINFO_s *world, float *game_time) {
     UpdateTimer(&GlobalTimer);
     menu_flash = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
     f32 pulse_time = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
-    game_pulse = NuTrigTable[static_cast<u32>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) >> 1 & 0x7fff];
+    game_pulse = NuTrigTable[static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) / 2];
     pulse_time = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f);
-    global_pulse = NuTrigTable[static_cast<u32>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) >> 1 & 0x7fff];
+    global_pulse = NuTrigTable[static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) / 2];
     MainRenderTime = SeekLinearF(MainRenderTime, MainRenderTargetTime, FRAMETIME);
     qrand();
 }
@@ -3777,7 +3777,7 @@ void GameAnimSys_Update(GAMEANIMSYS_s *system) {
 
 CABLE_s cables[8];
 CABLE_s *GameObjIsCableTied(GameObject_s *object) {
-    if (cables[0].target != object)
+    if (__builtin_expect(cables[0].target != object, 1))
         return NULL;
 
     if ((cables[0].flags_1e9 & 1) != 0)
@@ -3845,12 +3845,12 @@ void GameAISysStartFrame(AISYS_s *system) {
             for (i32 connection_index = 0; connection_index < path->connection_count; ++connection_index) {
                 AIPATHCNX *connection = &path->connections[connection_index];
                 AIPATHNODE *node = &path->nodes[connection->direction_a];
-                if (node->has_special != 0) {
+                if (__builtin_expect(node->has_special != 0, 0)) {
                     AIPathNodeUpdatePos(system, path, node);
                 }
                 path = system->path_sys->paths[path_index];
                 node = &path->nodes[connection->direction_b];
-                if (node->has_special != 0) {
+                if (__builtin_expect(node->has_special != 0, 0)) {
                     AIPathNodeUpdatePos(system, path, node);
                     path = system->path_sys->paths[path_index];
                 }
@@ -3861,7 +3861,7 @@ void GameAISysStartFrame(AISYS_s *system) {
     // Spread the object/area overlap work across frames. Area runtime flags
     // summarize the kinds of live characters inside it, while every object
     // retains a 64-area occupancy mask for script queries.
-    if (system->next_area_check < system->area_count) {
+    if (__builtin_expect(system->next_area_check < system->area_count, 0)) {
         AIAREA *area = &system->areas[system->next_area_check];
         const i32 area_index = static_cast<i32>(area - WORLD->ai_sys->areas);
         area->runtime_flags &= static_cast<u8>(
@@ -3910,7 +3910,7 @@ void GameAISysStartFrame(AISYS_s *system) {
         }
 
         ++system->next_area_check;
-        if (system->next_area_check >= system->area_count) {
+        if (__builtin_expect(system->next_area_check >= system->area_count, 0)) {
             system->next_area_check = 0;
         }
     }
@@ -3992,7 +3992,7 @@ void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char actio
 
 CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
     // The original checks the first cable's owner for the entire array.
-    if (cables[0].source != object)
+    if (__builtin_expect(cables[0].source != object, 1))
         return NULL;
 
     if ((cables[0].flags_1e9 & 1) != 0)
@@ -4160,8 +4160,8 @@ i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUM
                 }
             }
         }
-    } else if (result != 0 && object != NULL && (object->field_0xeff & 4) == 0 &&
-               (object->apiobj.character_data->model_flags & 0x10000) == 0) {
+    } else if (__builtin_expect(result != 0 && object != NULL && (object->field_0xeff & 4) == 0 &&
+               (object->apiobj.character_data->model_flags & 0x10000) == 0, 0)) {
         draw_shadow = 1;
     }
     if (g_lowEndLevelBehaviour != 0 && object != NULL && (object->apiobj.flags_low & 0x80) == 0)
@@ -4176,7 +4176,7 @@ i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUM
                 special_matrix = *secondary_matrix;
                 NuSpecialDrawAtAlpha(&WORLD->lev_objs[0xa2].special, &special_matrix,
                                      object->shadow_opacity * object->surface_normal.y);
-            } else if (CHARSHADOWS_ON) {
+            } else if (__builtin_expect(!!(CHARSHADOWS_ON), 1)) {
                 PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
                 i32 alpha = config->blob_shadow_alpha;
                 if (alpha == 0xff)
@@ -5454,7 +5454,9 @@ ThingManager::ThingManager(i32 max_things) {
     theThingManager = this;
 }
 
-ThingManager::~ThingManager() {
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
 }
 
 static eduimenu_s *edTimingMenu;

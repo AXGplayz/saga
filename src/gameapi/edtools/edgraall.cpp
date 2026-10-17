@@ -46,7 +46,7 @@ static edui_slider_s *globalfadeinitem;
 static edui_slider_s *globalfadeoutitem;
 static edui_slider_s *fadeinitem;
 static edui_slider_s *fadeoutitem;
-static i32 edgra_superscale = 64;
+static i32 edgra_superscale = 1;
 
 // The original editor kept these local callback symbols in one translation unit.
 // The current split leaves some menu entry paths in another unit, so retain the
@@ -218,13 +218,13 @@ static void edgracbGlobalsMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (!edgra_globals_menu)
         return;
     eduiMenuAddItem(edgra_globals_menu,
-                    eduiItemSliderCreate(0, edblack, 0, edgracbSetGlobalFadeIn, 0.0f, edgra_superscale * 2.0f,
+                    eduiItemSliderCreate(0, edblack, 0, edgracbSetGlobalFadeIn, 0.0f, edgra_superscale * 100.0f,
                                          edgra_global_fadein, "Global Start of Fade"));
     globalfadeinitem = static_cast<edui_slider_s *>(edui_last_item);
     eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
     eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
     eduiMenuAddItem(edgra_globals_menu,
-                    eduiItemSliderCreate(0, edblack, 0, edgracbSetGlobalFadeOut, 0.0f, edgra_superscale * 2.0f,
+                    eduiItemSliderCreate(0, edblack, 0, edgracbSetGlobalFadeOut, 0.0f, edgra_superscale * 100.0f,
                                          edgra_global_fadeout, "Global End of Fade"));
     globalfadeoutitem = static_cast<edui_slider_s *>(edui_last_item);
     eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
@@ -360,13 +360,13 @@ static void edgracbClumpFadeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         edgra_clumpfade_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edgracbCancelClumpFadeMenu, "Clump Fading");
         if (edgra_clumpfade_menu) {
             eduiMenuAddItem(edgra_clumpfade_menu,
-                            eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeIn, 0.0f, edgra_superscale * 2.0f,
+                            eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeIn, 0.0f, edgra_superscale * 100.0f,
                                                  GrassClumps[edgra_nearest].near_distance, "Start of Fade"));
             fadeinitem = static_cast<edui_slider_s *>(edui_last_item);
             eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
             eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
             eduiMenuAddItem(edgra_clumpfade_menu,
-                            eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeOut, 0.0f, edgra_superscale * 2.0f,
+                            eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeOut, 0.0f, edgra_superscale * 100.0f,
                                                  GrassClumps[edgra_nearest].far_distance, "End of Fade"));
             fadeoutitem = static_cast<edui_slider_s *>(edui_last_item);
             eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
@@ -558,10 +558,10 @@ static void edgracbChangeInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         nuhspecial_s special;
         const i32 selected = i == GrassClumps[edgra_nearest].special_index;
         NuGScnGetSpecial(&special, edbits_base_scene, i);
-        if (NuSpecialExistsFn(&special))
+        if (__builtin_expect(!!(NuSpecialExistsFn(&special)), 1))
             name = NuSpecialGetName(&special);
-        if (edgra_filter && NuStrNCmp(edgra_filter_string, name, NuStrLen(edgra_filter_string))) {
-            if (!selected)
+        if (__builtin_expect(edgra_filter && NuStrNCmp(edgra_filter_string, name, NuStrLen(edgra_filter_string)), 1)) {
+            if (__builtin_expect(!selected, 1))
                 continue;
             eduiMenuAddItem(edgra_changeinstance_menu,
                             eduiItemCheckCreate(i, edblack, selected, 1, edgracbChangeInstanceType, name));
