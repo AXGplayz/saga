@@ -5,12 +5,10 @@
 #include "gameapi/edtools/edcam.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "legoapi/render/core/rtl.h"
-#include "legoapi/world/world.h"
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/numtl.h"
-#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/android/nutimebar_plain.h"
@@ -28,22 +26,14 @@
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
+#include "legoapi/render/core/rtl_types.h"
+#include "gameapi/edtools/edtoolsall.h"
+#include "legoapi/render/light/lighting.h"
+#include "nu2api/nu3d/nu3d_includes.h"
 
 struct nuqtdim_s;
 struct nuqthdr_s;
 struct rtl_s;
-struct rtlindex_s {
-    i32 enabled;
-    u8 reserved_04[8];
-    i32 width;
-    i32 depth;
-    f32 scale;
-    f32 offset_x;
-    f32 offset_z;
-    char **cells;
-    u8 reserved_24[4];
-};
-DECOMP_ASSERT(sizeof(rtlindex_s) == 0x28, "RTL index size");
 struct NUFRUSTRUM;
 
 static NULSTHDR *rtl_dynamic_pool;
@@ -63,7 +53,6 @@ f32 edrtl_text_scale = 1.0f;
 static f32 default_modifiers = 1.0f;
 f32 *modifiers = &default_modifiers;
 i32 modifier_cnt = 1;
-extern char **modifier_names;
 static i32 curFogLoc = -1;
 f32 rtltimer1adv = 2500.0f;
 static i32 numsegs = 16;
@@ -196,9 +185,6 @@ void edrtlInitBurnset(burnset_s *set) {
 }
 
 extern "C" {
-    void rtlSetAssocName(i32 index, char *name);
-    void rtlSetUserIdName(i32 index, char *name);
-
     i32 rtlFindByUserId(usize rtl_set, i32 user_id) {
         if (rtl_set != 0) {
             rtlset *set = reinterpret_cast<rtlset *>(rtl_set);
@@ -1092,7 +1078,6 @@ extern "C" {
         rtlCalcShadow(lighting_data);
         _NuTimeBarSlotEnd(0, 6);
     }
-
 } // extern "C"
 
 static __used__ void rtlApplyModifiersToChainLight(rtl_s *light) {
@@ -1204,19 +1189,6 @@ static __used__ void rtlProcessLight(rtl_s *light, f32 elapsed) {
 }
 
 extern "C" {
-
-    char *rtlGetEnvPath(void) {
-        return const_cast<char *>("_new");
-    }
-
-    char *rtlGetEnvSceneName(void) {
-        return WORLD->config_file;
-    }
-
-    rtlset *rtlGetEnvSet(void) {
-        return WORLD->rtl_set;
-    }
-
     void rtlProcessLights(void *set, f32 frame_time) {
         rtl_s *light;
         i32 i;
@@ -1240,7 +1212,6 @@ extern "C" {
             }
         }
     }
-
 } // extern "C"
 
 static void RefreshUI();
@@ -1451,18 +1422,10 @@ extern "C" {
         }
         return NULL;
     }
-
 } // extern "C"
 
 // RTL editor state and callbacks from the same original rtl.c text/data run.
 
-// Debug line vertex layout used by the RTL editor line helper.
-struct nuvtx_tc1_s {
-    NUVEC position; // 0x00
-    NUVEC normal;   // 0x0c
-    i32 colour;     // 0x18
-    f32 uv[2];      // 0x1c
-};
 struct numtl_s;
 struct numtx_s;
 
@@ -1471,7 +1434,6 @@ typedef rtlfog_s EDRTLFOG_s;
 rtlfog_s *curr_fog;
 rtl_s clipboard_light;
 rtlfog_s clipboard_fog;
-extern f32 *modifiers;
 static f32 game_nearclip;
 static f32 game_farclip;
 static i32 rtl_zoff;
@@ -1479,15 +1441,8 @@ static i32 ctl_ix = 1;
 static rtl_s menu_undo;
 i32 delete_menu_active;
 
-extern NUQFNT *system_qfont;
 extern "C" {
-    void AddColourPick(eduimenu_s *, eduiitem_s *, f32 *, f32 *, f32 *, u32 *);
-    void CreateColourPicker();
-    void cbCancelSubMenu(eduimenu_s *, eduimenu_s *);
-    void cbCancelSubMenuFromItem(eduimenu_s *, eduiitem_s *, u32);
-    void cbTriggerSubMenu(eduimenu_s *, eduiitem_s *, u32);
     void cbModifierAdjust(eduimenu_s *, eduiitem_s *, u32);
-    void cbNearClipAtCursor(eduimenu_s *, eduiitem_s *, u32);
 }
 
 static char *default_modifier_names[] = {"default"};
@@ -2301,8 +2256,6 @@ static __used__ void InitUI() {
     NuQFntPopCoordinateSystem();
 }
 
-// RTL editor callbacks from the same original text run.
-
 // Burnset persistence and editing state from the same original RTL editor run.
 
 burnset_s *edrtl_edit_burnset;
@@ -2361,7 +2314,6 @@ i32 edrtlBurnoutSave(char *filename, burnset_s *set) {
     }
     return 0;
 }
-void edrtlDetermineNearestBurn(float distance, burnset_s *set);
 
 i32 edrtlBurnoutLoadSet(char *filename, burnset_s *set) {
     i32 max_version = 5;
@@ -3661,8 +3613,6 @@ extern "C" void edrtlCalculateBurnoutEx(burnset_s *set, NuBloomParameters *param
                           camera_position, frame_time);
 }
 
-extern "C" void NuRndrRect2di(i32, i32, i32, i32, i32, numtl_s *);
-
 static void edrtlRndrLine3d(nuvtx_tc1_s *vertices, numtl_s *, numtx_s *matrix) {
     NUMTX *transform;
     NUVEC start;
@@ -3729,8 +3679,6 @@ static void edrtlDrawCursor() {
     line[1].colour = -1;
     edrtlRndrLine3d(line, mtls[0], NULL);
 }
-
-extern "C" void edrtlDrawLightEx(i32, i32);
 
 extern "C" void edrtlDrawLight(i32 index) {
     edrtlDrawLightEx(index, 0);

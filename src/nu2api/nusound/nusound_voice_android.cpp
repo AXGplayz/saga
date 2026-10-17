@@ -12,7 +12,6 @@
 #include <new>
 #include <stdio.h>
 #include <string.h>
-#include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nusound/nusound_android.hpp"
 #include "nu2api/nusound/opensles_abi.hpp"
 #include "nu2api/nusound/nusound_streamer.hpp"
@@ -38,30 +37,7 @@ namespace {
     typedef u32 (*VolumeEnableStereoPositionFn)(void *, u32);
     typedef u32 (*VolumeSetStereoPositionFn)(void *, i32);
 
-    struct OpenSLBufferQueueLocator {
-        u32 locator_type;
-        u32 num_buffers;
-    };
-
-    struct OpenSLPcmFormat {
-        u32 format_type;
-        u32 channels;
-        u32 sample_rate;
-        u32 bits;
-        u32 container_bits;
-        u32 speaker_mask;
-        u32 endianness;
-    };
-
-    struct OpenSLDataEndpoint {
-        void *locator;
-        void *format;
-    };
-
-    struct OpenSLOutputMixLocator {
-        u32 locator_type;
-        void *output_mix;
-    };
+#include "nu2api/nusound/nusound_voice_android_types.h"
 
 #define SL_SLOT(itf, fn_type, byte_offset) (*(fn_type *)((char *)(*(void **)(itf)) + (byte_offset)))
 
@@ -591,16 +567,3 @@ u64 NuVoiceAndroid::GetPlaybackPositionSamples() {
     return *reinterpret_cast<u64 *>(&this->field11_0x174);
 }
 
-// ---------------------------------------------------------------------------
-// voice factory
-// ---------------------------------------------------------------------------
-
-NuSoundVoice *NuSoundVoiceFactoryAndroid_PCM::CreateVoice(NuSoundSource *source, bool loop) {
-    NuVoiceAndroid *voice = (NuVoiceAndroid *)NuSoundSystem::_AllocMemory(
-        NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuVoiceAndroid), 4,
-        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/android/nusound_android.cpp:292");
-    if (voice != NULL) {
-        new (voice) NuVoiceAndroid(source, loop);
-    }
-    return voice;
-}

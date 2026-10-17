@@ -44,7 +44,7 @@
 #include "legoapi/world/levels/levels.h"
 
 // ----------------------------------------------------------------------
-// Main game loop (module batman.cpp).
+// Main game loop (module main.cpp).
 //
 // NuMain is the TCS application entry point installed from the platform
 // layer: it owns the full main loop (area setup, per-frame update/draw of
@@ -306,7 +306,7 @@ extern "C" {
     extern GAMEPAD_s GamePad[64];
     extern MENUFNINFO MenuInfo[100];
     extern OPTIONSSAVE TempOptions;
-    extern volatile i32 abort_load;
+    extern "C++" volatile i32 abort_load;
     extern f32 AddCoinDelay[2];
     extern i32 adaptivedifficulty[3];
     extern i32 back_rgba[2];
@@ -331,7 +331,7 @@ extern "C" {
     extern i32 FinishLoop_On;
     extern LANGUAGEDATA Game_LanguageList[7];
     extern OPTIONSSAVE *Game_OptionsSave;
-    extern i32 (*GamePads_IgnoreInputFn)(void);
+    extern "C++" i32 (*GamePads_IgnoreInputFn)(void);
     extern i32 g_introState;
     extern i32 Grass_Available;
     extern f32 g_val;

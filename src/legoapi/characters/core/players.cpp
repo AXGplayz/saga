@@ -1,12 +1,12 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/world/world.h"
-struct HINT_s;
 
 #include <stdio.h>
 #include <string.h>
 
-#include "gameapi/edtools/edstubs.h"
-#include "gameapi/gui/apimenu.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
 #include "legoapi/world/area.h"
@@ -14,8 +14,6 @@ struct HINT_s;
 #include "legoapi/characters/core/charconfig.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/cutscenes/cutscenes.h"
-#include "legoapi/gizmos/transport/gizportal.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/levels/levels.h"
@@ -23,223 +21,486 @@ struct HINT_s;
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/actions/movement/carrying.h"
-#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/props/system/socksys.h"
-#include "legoapi/render/fx.h"
-#include "legoapi/render/light/lighting.h"
 #include "legoapi/core/input/timer.h"
-#include "legogame/game.h"
 #include "nu2api/nu3d/nutex.h"
-#include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuhgobj.h"
-#include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/audio/sfx.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numusic/sfx.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include <math.h>
+#include <stdlib.h>
+#include "nu2api/nu3d/nuportal.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "legoapi/actions/character/specialmoves.h"
+#include "legoapi/audio/audio.h"
+#include "gameapi/edtools/edui.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameframework/saveload.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/numath/nufloat.h"
+#include "batman.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "nu2api/nucore/numemory.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include <stddef.h>
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/nu3d/nuspline.h"
+#include <new>
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuang.h"
+#include "legoapi/render/light/shadow.h"
+#include "nu2api/nucore/nulist.h"
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/actions/combat/whip.h"
 
-struct MechTouchUIElement;
-struct PLAYERITEM_s;
-struct PLAYERITEMTYPE_s;
 struct PLAYERPACKET_s;
 struct SOCKPOSITION_s;
-struct TouchHolder;
-
-void CheckForPlayersTurnedOff();
-
-extern NUVEC plr_lastpos;
-
-extern void GetTopBot(GameObject_s *obj);
-extern f32 FindGunshipHoverHeight(GameObject_s *obj);
-extern f32 GetVehicleSpeedMul(GameObject_s *obj, f32 input);
-extern i32 ObjInNarrowSock(GameObject_s *obj, SOCKSYS *socks, i32 level);
-extern i32 complexsockposition_forcesock;
-extern i32 movegamecamera_forcesock;
-extern AREADATA *BONUS_GUNSHIP_ADATA;
-extern AREADATA *BATTLEOVERCORUSCANT_ADATA;
-extern i32 LevFlag[4];
-extern void GameObjectDimensions(GameObject_s *obj);
-extern void GameObjectOrigin(GameObject_s *obj);
-extern void ResetRumble(RUMBLEPACKET *packet);
-extern void CurrentStart(GameObject_s *obj, i32 mode, i32 start);
-extern void InitSurfaceInfo(GameObject_s *obj);
-extern i32 SetObjOnSurface(GameObject_s *obj, i32 mode);
-extern void GizForce_ResetLOS(GameObject_s *obj);
-void Arcade_PlayerKilled(i32 player, i32 active);
-void ResetPlayerAI(GameObject_s *obj);
-void ResetPlayerMoves(GameObject_s *obj);
-void SetProtocolDroidDeactivatedAction(GameObject_s *);
-i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode);
-void NewBuzz(nupad_s *, f32, i32);
-void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
-f32 VehicleTurnOrLoopOffset(GameObject_s *object);
-void Player_ClearContext(GameObject_s *object, i32 mode);
-void Player_ResetContexts(PLAYERPACKET_s *packet);
-extern "C" f32 chattersfxwait;
-
-void Players_Init(void) {
-    memset(Player, 0, sizeof(Player));
-    GameObject_s **p = Player;
-
-    if (netclient != 0) {
-        return;
-    }
-
-    PLAYERCOUNT = 0;
-
-    if ((WORLD->current_level->flags & 2) != 0) {
-        i16 *list;
-        i16 list0;
-
-        if (FreePlay == 0 && (Hub_UsePlayerList == 0 || HUB_ADATA == NULL || HUB_ADATA != WORLD->area) &&
-            (UsePlayerList != 1 ||
-             (PlayerList[0] != -1 && (apicharsys->playermodelids[PlayerList[0]] == -1 ||
-                                      (PlayerList[1] != -1 && apicharsys->playermodelids[PlayerList[1]] == -1))))) {
-            list = Area_PlayerIDList;
-            list0 = Area_PlayerIDList[0];
-        } else {
-            list = PlayerList;
-            list0 = PlayerList[0];
-        }
-
-        if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].active == 0 &&
-            PlayerProgress[1].active != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
-            list0 == Area_StoryModelList[0].model_id && list[1] != -1 && list[1] == Area_StoryModelList[2].model_id &&
-            list0 != list[1]) {
-            list[0] = list[1];
-            list[1] = list0;
-        }
-
-        i32 idx = 0;
-        while (list[idx] != -1 && idx != 8) {
-            GameObject_s *g = AddCreature(list[idx], 1);
-            if (g != NULL) {
-                i32 pi;
-                u8 slot;
-                GAMECHARACTERDATA *cd;
-
-                PreResetCode(g);
-                PostResetCode(g);
-
-                pi = PLAYERCOUNT;
-                g->oldpos = &OldPlrSPos[PLAYERCOUNT];
-                p[PLAYERCOUNT] = g;
-                p[pi]->batarang = &Batarang[pi];
-                g->apiobj.field_0x27c = (char)pi;
-                p[pi]->torpedo = GetTorpedoPacket();
-
-                g->field_0x1050 |= 1;
-                g->field_0x108e = 0;
-                PLAYERCOUNT = PLAYERCOUNT + 1;
-                g->hitpoints = DEFAULT_PLAYERHITPOINTS;
-
-                if (UsePlayerList != 0) {
-                    char c = g->apiobj.field_0x27c;
-                    *(u8 *)&g->apiobj.field_0x1f8 =
-                        (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | (PlayerProgress[c].active << 7));
-
-                    if (Area == last_area) {
-                        if (UsePlayerList == 1) {
-                            g->field_0xe22 = (u8)((g->field_0xe22 & 0xfe) | (PlayerProgress[c].field_0x7 & 1));
-                            SetHitPoints(g, PlayerProgress[c].hitpoints);
-                            c = g->apiobj.field_0x27c;
-                            g->field_0x108e = PlayerProgress[c].field_0xa;
-                            g->field_0x106e = PlayerProgress[c].field_0x4;
-                            g->field_0xdec = PlayerProgress[c].field_0xc;
-                            g->suit = PlayerSuit[c];
-                            if (g->torpedo != NULL) {
-                                g->torpedo->count = PlayerTorpedoCount[c];
-                            }
-                        }
-                    } else {
-                        g->field_0xe22 &= 0xfe;
-                        g->field_0x106e = 0;
-                    }
-                } else {
-                    slot = g->apiobj.field_0x289;
-                    *(u8 *)&g->apiobj.field_0x1f8 = (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | ((slot == 0) << 7));
-                    PlayerProgress[slot].hitpoints = g->current_hp;
-                    g->field_0x106e = 0;
-                }
-
-                cd = (GAMECHARACTERDATA *)apicharsys->char_data[g->id].field11_0x24;
-                g->apiobj.viewdistance = cd->viewdistance;
-                g->apiobj.heardistance = cd->heardistance;
-                g->apiobj.maxviewheight = cd->maxviewheight;
-                g->apiobj.minviewheight = cd->minviewheight;
-
-                {
-                    g->ai.nearest_opponent = NULL;
-                    g->ai.field_0xdc = 0;
-                    g->ai.opponent = NULL;
-                    g->ai.field_0xec = 0;
-                    g->ai.field_0xe0 = 0x4e6e6b28;
-                    g->ai.field_0xf0 = 0x4e6e6b28;
-                    g->apiobj.field387_0x2a0 = 0;
-                    g->apiobj.field388_0x2a4 = 0;
-                    g->field_0xebc = 0;
-                    g->field_0xec0 = 0;
-                    g->opponent = NULL;
-                    g->last_attacker = NULL;
-                    g->field_0xecc = 0;
-                    g->field_0xed0 = 0;
-                    g->ai.antinode_timer = 0.0f;
-                    g->field_0xec4 = 0;
-                    g->field_0xed8 = 0;
-                    g->field_0xec8 = 0;
-                    g->ai.field_0x1e5 &= 0xaf;
-                    g->field_0xef9 &= 0xf7;
-                    g->field_0xf00 |= 0x40;
-                    g->field_0xef8 &= 0xfe;
-                }
-            }
-            idx++;
-            if (bonusmodearcade != 0 || (HUB_ADATA != NULL && HUB_ADATA == WORLD->area) || VehicleArea != 0)
-                break;
-        }
-    }
-
-    UsePlayerList = 0;
-
-    if (p[0] != NULL) {
-        COINPACKET *cp = p[0]->coinpacket = CoinPacket;
-        cp->lastcoin = LEGOOBJ_DEFAULTLASTCOIN;
-        u32 coins = 0;
-        if (Area == last_area) {
-            coins = PlayerProgress[0].coins;
-        }
-        cp->coins = coins;
-        p[0]->gizforce_los_info = GizForceLOSInfo;
-        memcpy(BackUpPlayers, p[0], 0x439 * 4);
-    }
-
-    if (p[1] != NULL) {
-        COINPACKET *cp = p[1]->coinpacket = CoinPacket + 1;
-        cp->lastcoin = LEGOOBJ_DEFAULTLASTCOIN;
-        u32 coins = 0;
-        if (Area == last_area) {
-            coins = PlayerProgress[1].coins;
-        }
-        cp->coins = coins;
-        p[1]->gizforce_los_info = &GizForceLOSInfo[1];
-        memcpy(BackUpPlayers + 0x439, p[1], 0x439 * 4);
-    }
-
-    i32 id1 = (p[1] != NULL) ? p[1]->id : -1;
-    i32 id0 = (p[0] != NULL) ? p[0]->id : -1;
-    RememberPlayerIDs(0, id0, id1);
-}
 
 // --- Helpers moved from world.cpp ---
 
-
 static NUVEC HubVehiclesDoorPos[2] = {{-24.21f, 0.0f, -25.36f}, {-23.63f, 0.0f, -25.68f}};
 static NUVEC HubMinikitDoorPos[2] = {{-27.14f, 0.0f, -24.92f}, {-26.77f, 0.0f, -24.94f}};
+
+// ---- Player start spawn entries ----
+PLAYERSTARTENTRY PlayerStart[8];
+
+void (*Player_ClearContextFn)(GameObject_s *, i32);
+
+i32 FULLDEBUGTOGGLE;
+i32 LIFTPLAYER;
+f32 TOGGLEREPEATTIME = 0.25f;
+i32 (*Player_ToggleSubCharacterFn)(GameObject_s *, i32, i32);
+void (*Player_ToggledCharacterFn)(GameObject_s *, i32);
+
+u32 (*CanPushObstaclesFn)(GameObject_s *) = NULL;
+
+namespace {
+
+} // namespace
+
+i32 (*LastSafePosExtraFn)(GameObject_s *) = NULL;
+void (*GameObjectDimensionsExtraFn)(GameObject_s *) = NULL;
+
+struct nuvec_s;
+
+CHARACTERDATA *CDataList = NULL;
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+}
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+// Original defaults: 0x668d30 and 0x668d40, each a four-byte integer.
 
 void Players_InitPositions(WORLDINFO *world) {
     i32 bonus = 0;
@@ -397,240 +658,6 @@ void Players_InitPositions(WORLDINFO *world) {
     }
 }
 
-static PLAYERITEMTYPE_s *PlayerItemType = NULL;
-static i32 PLAYERITEMTYPECOUNT = 0;
-
-extern i8 BoltType_FindIDByName(char *name, WORLDINFO *world);
-
-void PlayerItemTypes_Reset(WORLDINFO *world) {
-    if (PlayerItemType != 0 && PLAYERITEMTYPECOUNT > 0) {
-        for (i32 i = 0; i < PLAYERITEMTYPECOUNT; i++) {
-            PlayerItemType[i].field_0x9 = (u8)BoltType_FindIDByName(PlayerItemType[i].name, world);
-        }
-    }
-}
-
-GameObject_s *AddCreature(i32 id, i32 param) {
-    if ((u32)id >= 0x154) {
-        return NULL;
-    }
-    if (apicharsys->playermodelids[id] == -1) {
-        return NULL;
-    }
-    GameObject_s *g = AddGameObject(id);
-    if (g == NULL) {
-        return NULL;
-    }
-    InitCreature(g, id, param);
-    return g;
-}
-
-static f32 sPreResetMulA = 1.0f / 65535.0f;
-static f32 sPreResetMulB = 0.03f;
-static f32 sPreResetSubC = 0.015f;
-static f32 sPreResetD18Scale = 0.25f;
-static f32 sPreReset1048Scale = 0.5f;
-static f32 sPreResetDivF = 0.21f;
-static f32 sPreResetMulG = 0.035f;
-
-void PreResetCode(GameObject_s *obj) {
-    u8 t23 = (u8)(obj->field_0xe23 & 0xf8);
-    obj->field_0xe20 &= 0xef;
-    u8 t22 = (u8)(obj->field_0xe22 & 0x3f);
-    u8 t25 = (u8)(obj->movement_runtime_flags & 0xaf);
-    obj->field_0xe24 &= 0xcf;
-    obj->field_0xf03 &= 0xdf;
-    obj->quick_shoot_bolt_id = 0xff;
-    obj->slam_debris_effect = 0xff;
-    obj->reserved_e3c = 0x00;
-    obj->attack_locator = 0xff;
-    obj->movement_runtime_flags = t25;
-    obj->field_0xe22 = t22;
-    obj->field_0xe23 = t23;
-
-    DrawOffsetCode(obj, 0);
-
-    if ((obj->field_0xf00 & 8) != 0) {
-        obj->field_0xe22 &= 0xf7;
-        obj->weapon_trail_offset.x = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
-        obj->weapon_trail_offset.y = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
-        obj->weapon_trail_offset.z = (f32)qrand() * sPreResetMulA * sPreResetMulB - sPreResetSubC;
-        obj->field_0xe20 &= 0xfb;
-        obj->incoming_bolt = NULL;
-        obj->incoming_melee = NULL;
-        obj->incoming_special = NULL;
-        obj->incoming_part = NULL;
-        if (obj->field_0x7a5 != 0xa) {
-            obj->field_0xe21 &= 0xf7;
-        }
-        obj->field_0xe21 &= 0xdf;
-        obj->sabre_flags = 0x01;
-        obj->field_0xe22 &= 0xfd;
-        obj->blade_states[3] = 0xff;
-        obj->blade_states[2] = 0xff;
-        obj->blade_states[1] = 0xff;
-        obj->blade_states[0] = 0xff;
-        obj->force_glow_candidate = NULL;
-        obj->apiobj.anim_packet.overlay_animation = -1;
-        obj->terrain_origin_floor_offset = 0.0f;
-        if ((obj->apiobj.character_data->model_flags & 0x8040) == 0) {
-            obj->field_0xe31 = 0;
-        }
-
-        {
-            i32 e04 = obj->dynamic_light_id;
-            obj->field_0xe23 &= 0x7f;
-            if (e04 != -1) {
-                rtlDynamicEnable(e04, 0);
-            }
-        }
-
-        {
-            u8 al = obj->apiobj.field_0x27d;
-            obj->movement_runtime_flags &= 0xfd;
-            obj->field_0xe24 &= 0xbf;
-            obj->field_0x1089 = 0;
-
-            if (al != 0) {
-                obj->ground_contact_grace_timer = 0.2f;
-            } else if (obj->ground_contact_grace_timer > 0.0f) {
-                obj->ground_contact_grace_timer -= FRAMETIME;
-            }
-
-            if ((i8) static_cast<u8>(obj->apiobj.field_0x1f8) >= 0 || VehicleArea != 0) {
-                goto finish_dfd;
-            }
-
-            if (obj->field_0x7a5 == 0 && sPreReset1048Scale * obj->apiobj.character_data->player_config->reset_scale >
-                                             obj->context_animation_timer) {
-                goto finish_dfd;
-            }
-
-            {
-                f32 f28v = obj->pad_gamepad->input_magnitude;
-                if (f28v > 0.0f) {
-                    if ((al & 2) != 0) {
-                        goto finish_dfd;
-                    }
-                    if (obj->field_0x1084 == 0) {
-                        goto finish_dfd;
-                    }
-                } else {
-                    if (obj->apiobj.velocity.x == 0.0f && obj->apiobj.velocity.z == 0.0f) {
-                        goto finish_dfd;
-                    }
-                    if ((al & 2) != 0) {
-                        goto finish_dfd;
-                    }
-                    if (obj->field_0x1084 == 0) {
-                        goto finish_dfd;
-                    }
-                }
-
-                {
-                    f32 t1 = obj->contact_normal.y;
-                    if (!(t1 > NuTrigTable[0x4000])) {
-                        goto finish_dfd;
-                    }
-                    f32 t2 = NuTrigTable[0x3000];
-                    if (!(t2 > t1)) {
-                        goto finish_dfd;
-                    }
-                    t1 = obj->apiobj.field_0x1e0 / sPreResetDivF;
-                    f32 diff = obj->apiobj.collision_min.y - obj->apiobj.field_0x218;
-                    t1 *= sPreResetMulG;
-                    if (!(diff > t1)) {
-                        goto finish_dfd;
-                    }
-                    NUVEC_ALIGNED16 dir;
-                    if (!(f28v > 0.0f)) {
-                        dir.x = obj->apiobj.velocity.x;
-                        dir.y = 0.0f;
-                        dir.z = obj->apiobj.velocity.z;
-                        NuVecNorm(&dir, &dir);
-                    } else {
-                        NuVecRotateY(&dir, &v001, obj->apiobj.movement_facing_angle);
-                    }
-                    if (!((obj->contact_position.x - obj->apiobj.position.x) * dir.x +
-                              (obj->contact_position.z - obj->apiobj.position.z) * dir.z >
-                          0.0f)) {
-                        goto finish_dfd;
-                    }
-                    obj->fall_acceleration_timer = 0.1f;
-                }
-            }
-            goto finish_e1e;
-
-        finish_dfd:
-            if (obj->fall_acceleration_timer > 0.0f) {
-                obj->fall_acceleration_timer -= FRAMETIME;
-            }
-            goto finish_e1e;
-
-        finish_e1e:
-            GameObjectNearFloor(obj, 1.0f, &obj->nearby_floor_distance);
-            obj->pre_reset_hover_height = GetHoverPosY(obj);
-            {
-                u8 v = obj->apiobj.character_data->player_config->variant;
-                if (v != 0xff) {
-                    if (static_cast<u8>(obj->apiobj.field_0x27c) != 0xff) {
-                        if (Cheat_IsOn(0x19) != 0) {
-                            obj->blade_index = 0x00;
-                        } else if (static_cast<u8>(obj->apiobj.field_0x27c) != 0xff &&
-                                   Player_HasPurpleForce(obj) != 0) {
-                            obj->blade_index = 0x03;
-                        } else {
-                            obj->blade_index = obj->apiobj.character_data->player_config->variant;
-                        }
-                    } else {
-                        obj->blade_index = v;
-                    }
-                } else {
-                    obj->blade_index = 0xff;
-                }
-
-                {
-                    if ((obj->pad_gamepad->buttons_held & GAMEPAD_ACTION) != 0) {
-                        obj->hold_timer += FRAMETIME;
-                    } else {
-                        if (obj->hold_timer > 0.0f && sPreResetD18Scale > obj->hold_timer) {
-                            obj->field_0xe24 |= 0x40;
-                        }
-                        obj->hold_timer = 0.0f;
-                    }
-                }
-            }
-            obj->movement_runtime_flags &= 0x5f;
-        }
-    }
-
-    return;
-}
-
-void PostResetCode(GameObject_s *obj) {
-    u8 *p = (u8 *)obj;
-    void *pp = *(void **)(p + 0x54);
-    *(u8 *)(p + 0x1091) = 0;
-    void *q = *(void **)((u8 *)pp + 0x24);
-    i16 v = *(i16 *)((u8 *)q + 0xe8);
-    if (v != -1) {
-        u8 b = *(u8 *)((u8 *)q + 0x11e);
-        f32 f = (f32)(u32)b;
-        ChatterSfx(obj, v, f);
-    }
-    if (*(void **)(*(u8 **)(p + 0x54) + 0x18) != (void *)&Move_VEHICLE && *(u16 *)(p + 0xe1c) != 0 &&
-        (*(u8 *)(p + 0xe25) & 0x20) == 0) {
-        *(u16 *)(p + 0xe1c) = 0;
-    }
-}
-
-void SetHitPoints(GameObject_s *obj, i32 hp) {
-    obj->current_hp = (u8)hp;
-    if ((i8)hp > (i32)(u32)obj->hitpoints) {
-        obj->current_hp = obj->hitpoints;
-    }
-}
-
 void RememberPlayerIDs(i32 a, i32 b, i32 c) {
     if (VehicleArea != 0 || GAMEDEMO != 0) {
         return;
@@ -652,99 +679,6 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
     }
 }
 
-// ---- Player start spawn entries ----
-PLAYERSTARTENTRY PlayerStart[8];
-
-// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
-
-void *CutScenePlayer_Available(void) {
-    return CutScenePlayer;
-}
-
-void ChatterSfx(GameObject_s *g, i32 a, float b) {
-    if (chattersfxwait <= 0.0f && ParticlesPerSecond(2.0f, FRAMETIME) > 0 && g->apiobj.field_0x287 == 0 &&
-        g->character_context == -1) {
-        if (a == last_chatter_sfx && b > 0.0f) {
-            chattersfxwait = b;
-            last_chatter_sfx = -1;
-        } else {
-            GameAudio_PlaySfxById(a, &g->apiobj.collision_position, 0, 0);
-            const i32 random = qrand();
-            chattersfxwait = static_cast<f32>(random) * (1.0f / 65535.0f) * 2.0f + 3.0f;
-            last_chatter_sfx = a;
-        }
-    }
-}
-
-void DrawOffsetCode(GameObject_s *obj, i32 param) {
-    NUVEC delta;
-    NUVEC_ALIGNED16 target = v000;
-    u8 *bytes = reinterpret_cast<u8 *>(obj);
-    void *route = *reinterpret_cast<void **>(bytes + 0xcac);
-    if (route != NULL) {
-        const u16 flags = *reinterpret_cast<u16 *>(static_cast<u8 *>(route) + 0xc);
-        if ((flags & 0x10) != 0) {
-            target.y = 0.0076f;
-        } else if ((flags & 0x40) != 0) {
-            target.y = MAGNETOFFSET;
-        }
-    }
-    if ((obj->field_0x7a5 == 0x44 && static_cast<u16>(obj->context_animation - 5) >= 2) ||
-        (obj->movement_context_state & 0xffff00) == 0x54300) {
-        target = obj->context_position_offset;
-    }
-    if (param == 0) {
-        if (obj->render_offset.x == target.x && obj->render_offset.y == target.y && obj->render_offset.z == target.z) {
-            return;
-        }
-
-        const f32 distance = NuVecDist(&target, &obj->render_offset, &delta);
-        const f32 step = 0.4f * FRAMETIME;
-        if (!(distance <= step)) {
-            NuVecNorm(&delta, &delta);
-            NuVecScale(&delta, &delta, step);
-            NuVecAdd(&obj->render_offset, &obj->render_offset, &delta);
-            return;
-        }
-    }
-    obj->render_offset = target;
-}
-
-float GetHoverPosY(GameObject_s *obj) {
-    if ((obj->apiobj.character_data->model_flags & 0x2000) == 0 ||
-        (WorldInfo_CurrentlyActive()->current_level->flags & LEVEL_IN_SPACE) != 0) {
-        return 2000000.0f;
-    }
-
-    const f32 vehicle_offset = VehicleTurnOrLoopOffset(obj);
-    if (obj->apiobj.field_0x27f == 7 || obj->apiobj.field_0x27f == 0x10)
-        return vehicle_offset + obj->apiobj.water_height;
-
-    f32 height = obj->apiobj.field_0x218;
-    if (height != 2000000.0f) {
-        if (__builtin_expect(obj->apiobj.water_height != 2000000.0f, 1))
-            height = MAX(obj->apiobj.water_height, height);
-
-        f32 hover_height = WORLD->current_level->hover_height;
-        if (hover_height != 0.0f)
-            return hover_height + height + vehicle_offset;
-        return height + static_cast<GAMECHARACTERDATA *>(obj->apiobj.character_data->field11_0x24)->field_0x28 +
-               vehicle_offset;
-    }
-    return 2000000.0f;
-}
-
-void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type) {
-    item->type = type;
-    if (type != NULL) {
-        item->ammunition = type->field_0x2;
-        item->field_0x5 = type->field_0x3;
-    } else {
-        item->ammunition = 0;
-        item->field_0x5 = 0;
-    }
-}
-
 GameObject_s *Player_FindByID(i32 id) {
     for (i32 i = 0; i < 8; i++) {
         GameObject_s *object = Player[i];
@@ -761,17 +695,6 @@ NUVEC *Player_StartPos(GameObject_s *obj) {
     }
     index &= 7;
     return PlayerStart[index].pos != NULL ? PlayerStart[index].pos : PlayerStart[0].pos;
-}
-
-i32 PlayersDropInOut() {
-    CheckForPlayersTurnedOff();
-    return 0;
-}
-
-i32 PlayerItem_GotAmmo(PLAYERITEM_s *item) {
-    if (item != NULL && item->type != NULL && item->type->field_0x8 == 2)
-        return item->ammunition != 0;
-    return 1;
 }
 
 i32 Players_AveragePos(nuvec_s *position, SOCKPOSITION_s *socket_position) {
@@ -801,25 +724,36 @@ i32 Players_AveragePos(nuvec_s *position, SOCKPOSITION_s *socket_position) {
     return 0;
 }
 
-i32 Players_BothActive() {
-    return Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
-           Player[1]->apiobj.player_controlled;
-}
-
-PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id) {
-    PLAYERITEMTYPE_s *type = PlayerItemType;
-    if (type != NULL) {
-        for (i32 i = 0; i < PLAYERITEMTYPECOUNT; i++) {
-            if (type[i].id == id)
-                return &type[i];
+void SetPlayer() {
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
+        player = Player[0];
+        if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
+            player2 = Player[1];
+        } else {
+            player2 = NULL;
         }
+    } else if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
+        player = Player[1];
+        player2 = NULL;
+    } else {
+        player = NULL;
     }
-    return NULL;
 }
 
-void (*Player_ClearContextFn)(GameObject_s *, i32);
-void Whip_Release(GameObject_s *);
-i32 SpecialMove_ReleaseVictim(GameObject_s *);
+i32 CanPullLevers(i32 character_id) {
+    u32 flags = CDataList[character_id].model_flags;
+    if ((flags & 0x01000010) == 0x01000010) {
+        return 0;
+    }
+    return (flags & 0x00040088) != 0;
+}
+
+i32 CanWearHatsInFreePlay(i32 character_id) {
+    if ((GCDataList[character_id].flags_090 & 0x10) != 0) {
+        return 0;
+    }
+    return CanPullLevers(character_id) != 0;
+}
 
 void Player_ClearContext(GameObject_s *object, i32 mode) {
     if (Player_ClearContextFn != NULL)
@@ -828,28 +762,6 @@ void Player_ClearContext(GameObject_s *object, i32 mode) {
     SuperCarry_Release(object);
     SpecialMove_ReleaseVictim(object);
     object->movement_runtime_flags &= ~0x0c;
-}
-
-i32 Player_HasFastBuild(GameObject_s *player) {
-    return Cheats_CheckFlags(0x4000) != 0 || (player != NULL && player->field_0xdec > 0.0f);
-}
-
-void PlayerItemTypes_Init(PLAYERITEMTYPE_s *types) {
-    PlayerItemType = NULL;
-    PLAYERITEMTYPECOUNT = 0;
-    if (types != NULL) {
-        PlayerItemType = types;
-        if (types->id != -1) {
-            i32 count = 0;
-            do {
-                types++;
-                count++;
-            } while (types->id != -1);
-            PLAYERITEMTYPECOUNT = count;
-        } else {
-            PlayerItemType = NULL;
-        }
-    }
 }
 
 void Player_ResetContexts(PLAYERPACKET_s *packet) {
@@ -896,33 +808,133 @@ void Player_ResetContexts(PLAYERPACKET_s *packet) {
     packet->linked_object = NULL;
 }
 
-void Player_CopyEssentials(GameObject_s *source, GameObject_s *destination) {
-    destination->pad_gamepad = source->pad_gamepad;
-    destination->coinpacket = source->coinpacket;
-    destination->gizforce_los_info = source->gizforce_los_info;
-    destination->batarang = source->batarang;
-    destination->torpedo = source->torpedo;
-    destination->oldpos = source->oldpos;
-    destination->hitpoints = source->hitpoints;
-    destination->field_0xeb4 = source->field_0xeb4;
-    destination->apiobj.field_0x1f4 = source->apiobj.field_0x1f4;
+i32 MovingBackwards(GameObject_s *object) {
+    GAMEPAD_s *pad = object->pad_gamepad;
+    if (pad->operator_data == NULL || pad->input_magnitude == 0.0f) {
+        return 0;
+    }
+
+    const i32 difference = RotDiff(static_cast<u16>(pad->input_angle + GameCam->input_yaw), object->apiobj.field_0x276);
+    return static_cast<u32>(difference + 0x4000) > 0x8000;
 }
 
-i32 Player_HasDeflectBolts(GameObject_s *object) {
-    return Cheats_CheckFlags(0x80000) != 0 || (object != NULL && object->field_0xdec > 0.0f);
+void PushAway(NUVEC *position, f32 radius, NUVEC *minimum, NUVEC *maximum, GameObject_s *object, GameObject_s *excluded,
+              f32 speed_multiplier, u32 flags) {
+    i32 count = 1;
+    if (object == NULL) {
+        object = Obj;
+        count = HIGHGAMEOBJECT;
+    }
+    NUVEC bounds_min, bounds_max;
+    if (maximum == NULL || minimum == NULL) {
+        bounds_min.x = position->x - radius;
+        bounds_min.y = position->y - radius;
+        bounds_min.z = position->z - radius;
+        bounds_max.x = position->x + radius;
+        bounds_max.y = position->y + radius;
+        bounds_max.z = position->z + radius;
+        minimum = &bounds_min;
+        maximum = &bounds_max;
+    }
+    for (i32 i = 0; i < count; ++i, ++object) {
+        if (object == excluded || (object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
+            (object->field_0xe20 & 0x20) != 0)
+            continue;
+        if ((flags & 2) != 0 && object->apiobj.field_0x27d == 0)
+            continue;
+        if ((CInfo[object->character_context].flags & 0x40000000) != 0)
+            continue;
+        GAMECHARACTERDATA *character = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+        if ((character->flags_090 & 0x8000) != 0)
+            continue;
+        if (minimum->x > object->apiobj.collision_max.x || object->apiobj.collision_min.x > maximum->x ||
+            minimum->z > object->apiobj.collision_max.z || object->apiobj.collision_min.z > maximum->z)
+            continue;
+        if ((flags & 1) != 0 &&
+            (minimum->y > object->apiobj.collision_max.y || object->apiobj.collision_min.y > maximum->y))
+            continue;
+        f32 dx = object->apiobj.position.x - position->x;
+        f32 dz = object->apiobj.position.z - position->z;
+        f32 combined_radius = radius + object->apiobj.field_0x1dc;
+        if (dx * dx + dz * dz < combined_radius * combined_radius) {
+            u16 angle;
+            if (dz == 0.0f && dx == 0.0f)
+                angle = qrand();
+            else
+                angle = NuAtan2D(dx, dz);
+            f32 speed = speed_multiplier *
+                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->run_speed;
+            if (speed < 1.0f)
+                speed = 1.0f;
+            else if (speed > 3.0f)
+                speed = 3.0f;
+            f32 target_x = speed * NU_SIN_LUT(angle);
+            f32 target_z = speed * NU_COS_LUT(angle);
+            object->apiobj.velocity.x = SeekValF(object->apiobj.velocity.x, target_x, 10.0f);
+            object->apiobj.velocity.z = SeekValF(object->apiobj.velocity.z, target_z, 10.0f);
+        }
+    }
 }
 
-i32 FULLDEBUGTOGGLE;
-i32 LIFTPLAYER;
-f32 TOGGLEREPEATTIME = 0.25f;
-i32 (*Player_ToggleSubCharacterFn)(GameObject_s *, i32, i32);
-void (*Player_ToggledCharacterFn)(GameObject_s *, i32);
-extern FadeSystem FadeSys;
-extern i32 LEGOHINT_FREEPLAYTOGGLE;
-void Hint_SetComplete(i32 hint_id);
-void Move_DEFAULT(GameObject_s *object);
-void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode);
-void GameAudio_PlaySfx(i32 sfx, NUVEC *position, i32 flags, i32 volume);
+bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, float &distance_squared,
+                            bool require_character_flags, u32 character_flags) {
+    *nearest_player = NULL;
+    distance_squared = 0.0f;
+
+#define CONSIDER_PLAYER_DISTANCE(index, filtered)                                                                      \
+    do {                                                                                                               \
+        GameObject_s *candidate = Player[index];                                                                       \
+        if (candidate != NULL && static_cast<i8>(candidate->apiobj.flags_low) < 0) {                                   \
+            const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
+            if (candidate_distance < distance_squared || *nearest_player == NULL) {                                    \
+                candidate = Player[index];                                                                             \
+                if (!(filtered) ||                                                                                     \
+                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
+                    distance_squared = candidate_distance;                                                             \
+                    *nearest_player = candidate;                                                                       \
+                }                                                                                                      \
+            }                                                                                                          \
+        }                                                                                                              \
+    } while (0)
+
+    for (i32 i = 0; i < 8; i++) {
+        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
+    }
+
+#undef CONSIDER_PLAYER_DISTANCE
+
+    return *nearest_player != NULL;
+}
+
+bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player, float &distance_squared,
+                               bool require_character_flags, u32 character_flags) {
+    *furthest_player = NULL;
+    distance_squared = 0.0f;
+
+#define CONSIDER_PLAYER_DISTANCE(index, filtered)                                                                      \
+    do {                                                                                                               \
+        GameObject_s *candidate = Player[index];                                                                       \
+        if (candidate != NULL && static_cast<i8>(candidate->apiobj.flags_low) < 0) {                                   \
+            const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
+            if (candidate_distance > distance_squared || *furthest_player == NULL) {                                   \
+                candidate = Player[index];                                                                             \
+                if (!(filtered) ||                                                                                     \
+                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
+                    distance_squared = candidate_distance;                                                             \
+                    *furthest_player = candidate;                                                                      \
+                }                                                                                                      \
+            }                                                                                                          \
+        }                                                                                                              \
+    } while (0)
+
+    for (i32 i = 0; i < 8; i++) {
+        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
+    }
+
+#undef CONSIDER_PLAYER_DISTANCE
+
+    return *furthest_player != NULL;
+}
 
 void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
     f32 hold_time = object->input_toggle_hold_time;
@@ -1070,35 +1082,25 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
     } while (attempts <= apicharsys->loaded_model_count && id != object->id);
 }
 
+i32 Players_BothActive() {
+    return Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
+           Player[1]->apiobj.player_controlled;
+}
+
 i32 Player_HasInvincibility(GameObject_s *object) {
     return Cheats_CheckFlags(0x80) != 0 || (object != NULL && object->field_0xdec > 0.0f);
 }
 
+i32 Player_HasFastBuild(GameObject_s *player) {
+    return Cheats_CheckFlags(0x4000) != 0 || (player != NULL && player->field_0xdec > 0.0f);
+}
+
+i32 Player_HasDeflectBolts(GameObject_s *object) {
+    return Cheats_CheckFlags(0x80000) != 0 || (object != NULL && object->field_0xdec > 0.0f);
+}
+
 i32 Player_HasDoubleBoltDamage(GameObject_s *object) {
     return Cheats_CheckFlags(2) != 0 || (object != NULL && object->field_0xdec > 0.0f);
-}
-
-void PlayerButton_OnHold_Callback(MechTouchUIElement &element, TouchHolder &) {
-    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA)) {
-        static_cast<MechTouchUIPlayerButton &>(element).ShowChooser();
-        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-    } else {
-        GameAudio_PlaySfx(0x32, NULL, 0, 0);
-    }
-}
-
-i32 Player_HasDoubleWeaponDamage(GameObject_s *object) {
-    return Cheats_CheckFlags(0x400) != 0 || (object != NULL && object->field_0xdec > 0.0f);
-}
-
-void PlayerButton_OnLeave_Callback(MechTouchUIElement &element, TouchHolder &holder) {
-    MechTouchUIPlayerButton &button = static_cast<MechTouchUIPlayerButton &>(element);
-    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA) &&
-        button.selector == NULL && holder.touch_position.y <= button.position.y &&
-        holder.touch_position.y != button.position.y) {
-        button.ShowChooser();
-        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-    }
 }
 
 i32 Player_HasDoubleBoltDamage_FromBolt(BOLT_s *bolt) {
@@ -1114,863 +1116,7 @@ i32 Player_HasDoubleBoltDamage_FromBolt(BOLT_s *bolt) {
     return 0;
 }
 
-void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &element, TouchHolder &) {
-    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA)) {
-        static_cast<MechTouchUIPlayerButton &>(element).TriggerTagNext();
-    } else {
-        GameAudio_PlaySfx(0x32, NULL, 0, 0);
-    }
+i32 Player_HasDoubleWeaponDamage(GameObject_s *object) {
+    return Cheats_CheckFlags(0x400) != 0 || (object != NULL && object->field_0xdec > 0.0f);
 }
 
-u32 (*CanPushObstaclesFn)(GameObject_s *) = NULL;
-
-namespace {
-
-    constexpr f32 kInvalidSurfaceHeight = 2000000.0f;
-
-    void SyncPlayerSpawnPosition(GameObject_s *obj) {
-        const NUVEC &position = obj->apiobj.position;
-
-        obj->apiobj.initial_position = position;
-        obj->apiobj.collision_position = position;
-        plr_lastpos = position;
-        obj->apiobj.start_position = position;
-    }
-
-} // namespace
-
-void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap_to_surface) {
-    if (obj == NULL) {
-        return;
-    }
-
-    const bool restore_hitpoints = obj->apiobj.field_0x27c != -1 && obj->field_0x7a5 == 0x2b;
-
-    if (reset_moves != 0) {
-        if (position == NULL) {
-            position = Player_StartPos(obj);
-        }
-        if (__builtin_expect(position != NULL, 0)) {
-            obj->apiobj.position = *position;
-        }
-
-        if (obj->apiobj.field_0x27c != -1) {
-            obj->field_0xf00 |= 0x40;
-        }
-
-        ResetPlayerMoves(obj);
-        SyncPlayerSpawnPosition(obj);
-
-        obj->reset_velocity = v000;
-        obj->apiobj.velocity = v000;
-
-        GetTopBot(obj);
-        GameObjectDimensions(obj);
-        obj->field_0xe23 &= static_cast<u8>(~8u);
-        obj->use_model_origin = 0;
-        obj->apiobj.field_0x288 = 0;
-        GameObjectOrigin(obj);
-
-        ResetRumble(&obj->pad_gamepad->rumble_packet);
-        ResetLights(&obj->apiobj.position, &obj->light_data, WORLD->rtl_set);
-        ResetMiniAnimPacket(&obj->mini_animation, -1);
-
-        obj->sock_position.location.sock = -1;
-        obj->sock_position.location.segment = -1;
-        f32 surface_y = kInvalidSurfaceHeight;
-        if (WORLD->sock_sys != NULL) {
-            if (Door_NextSock != -1 && WORLD->sock_sys->sock[Door_NextSock].valid != 0) {
-                complexsockposition_forcesock = Door_NextSock;
-                movegamecamera_forcesock = Door_NextSock;
-            }
-            ComplexSockPosition(WORLD->sock_sys, &obj->apiobj.position, -1, -1, &obj->sock_position);
-            ComplexSockAngles(&obj->sock_angles);
-            if (obj->apiobj.field_0x27c < 2 && obj->sock_position.location.sock != -1) {
-                if (!(BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA == WORLD->area)) {
-                    if (BATTLEOVERCORUSCANT_ADATA != NULL && BATTLEOVERCORUSCANT_ADATA == WORLD->area) {
-                        SOCK *sock = &WORLD->sock_sys->sock[obj->sock_position.location.sock];
-                        if ((sock->flags & SOCK_FLAG_MISSING_C_OR_D) == 0) {
-                            obj->apiobj.position = obj->sock_position.midpoint;
-                            if (Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
-                                Player[1]->apiobj.player_controlled) {
-                                NUVEC offset;
-                                f32 side = obj == Player[0] ? 1.0f : -1.0f;
-                                NuVecNorm(&offset, &sock->segments[obj->sock_position.location.segment].planes[4]);
-                                NuVecScale(&offset, &offset, side);
-                                NuVecAdd(&obj->apiobj.position, &obj->apiobj.position, &offset);
-                            }
-                            SyncPlayerSpawnPosition(obj);
-                        }
-                        snap_to_surface = 0;
-                    }
-                } else {
-                    obj->apiobj.position = obj->sock_position.midpoint;
-                    surface_y = FindGunshipHoverHeight(obj);
-                    if (WORLD->current_level == BONUS_GUNSHIPA_LDATA && reinterpret_cast<u8 *>(LevFlag)[0] != 0) {
-                        obj->apiobj.position.x = 12.0f + obj->apiobj.position.x;
-                    }
-                    snap_to_surface = 0;
-                }
-            }
-        }
-
-        u8 player_index = static_cast<u8>(obj->apiobj.field_0x27c);
-        if (player_index > 7) {
-            player_index = obj->apiobj.field_0x289;
-        }
-        player_index &= 7;
-
-        const u16 facing = static_cast<u16>(PlayerStart[player_index].angle);
-        obj->apiobj.roll_angle = 0;
-        obj->apiobj.pitch_angle = 0;
-        obj->apiobj.movement_facing_angle = facing;
-        obj->apiobj.facing_angle = facing;
-        obj->apiobj.field_0x276 = facing;
-        NuVecRotateYValZ(&obj->facing_direction, 1.0f, facing);
-
-        obj->field_0xc34 = 0x3f800000;
-        obj->field_0xc38 = 0.0f;
-        CurrentStart(obj, 0, 1);
-        obj->field_0xe23 &= static_cast<u8>(~8u);
-        obj->field_0xefe &= static_cast<u8>(~4u);
-        obj->field_0xeff &= static_cast<u8>(~2u);
-        obj->apiobj.model_draw_result = 1;
-        obj->use_model_origin = 0;
-        obj->apiobj.field_0x288 = 0;
-        obj->field_0x1084 = 0;
-
-        InitSurfaceInfo(obj);
-        if (surface_y == kInvalidSurfaceHeight) {
-            surface_y = GetHoverPosY(obj);
-        }
-        if (snap_to_surface == 0 || (obj->apiobj.character_data->model_flags & 0x2000) != 0) {
-            if (__builtin_expect(surface_y != kInvalidSurfaceHeight, 1)) {
-                obj->apiobj.position.y = surface_y;
-                SyncPlayerSpawnPosition(obj);
-            }
-        } else {
-            SetObjOnSurface(obj, 0);
-        }
-
-        GizForce_ResetLOS(obj);
-        PortalGameObject(obj, 1, 1, -1, WORLD->current_gscn);
-
-        if ((ResetBits & 2) != 0 || obj->apiobj.field_0x287 != 0 || restore_hitpoints) {
-            SetHitPoints(obj, DEFAULT_PLAYERHITPOINTS);
-            obj->field_0xe38 = 4;
-        }
-        if ((ResetBits & 8) != 0) {
-            const i32 progress_index = static_cast<i8>(obj->apiobj.field_0x27c);
-            if (progress_index >= 0 && progress_index < 8) {
-                if (PlayerProgress[progress_index].field_0xb != 0) {
-                    obj->field_0xe31 = 1;
-                }
-                obj->field_0xe38 = PlayerProgress[progress_index].field_0x9;
-            }
-        }
-
-        ResetPlayerAI(obj);
-        obj->apiobj.last_safe_position = obj->apiobj.position;
-        obj->saved_position = obj->apiobj.position;
-        if (__builtin_expect((obj->apiobj.character_data->model_flags & 0x2000) != 0, 1)) {
-            obj->in_narrow_socket = ObjInNarrowSock(obj, WORLD->sock_sys, WORLD->level_idx);
-            f32 speed = GetVehicleSpeedMul(obj, 0.0f);
-            obj->field_0xdc8 = speed;
-            if (speed > 0.0f) {
-                obj->apiobj.velocity.x = NU_SIN_LUT(obj->apiobj.facing_angle) * speed;
-                obj->apiobj.velocity.z = speed * NU_COS_LUT(obj->apiobj.facing_angle);
-            }
-        } else {
-            obj->field_0xdc8 = 0.0f;
-        }
-    } else {
-        obj->field_0xdc8 = 0.0f;
-    }
-
-    obj->field_0x1004 = 1.0f;
-    obj->field_0x101c = 0.0f;
-    obj->field_0xda8 = 0.0f;
-    obj->field_0xd78 = 1.0f;
-    obj->apiobj.field_0x214 = kInvalidSurfaceHeight;
-    obj->field_0xdbc = 0.0f;
-    obj->field_0xf1c = 0.0f;
-    obj->field_0xc54 = -1.0f;
-    obj->field_0xde0 = 0.0f;
-    obj->apiobj.field_0x287 = 0;
-    obj->field_0xe36 = 0;
-    obj->apiobj.field_0x285 = 0;
-    obj->apiobj.field_0x1f8 &= 0xfa83;
-    obj->apiobj.field_0x1fa &= static_cast<u8>(~2u);
-    obj->apiobj.field_0x1f4 &= ~0x100u;
-    obj->field_0xefc |= 0x80;
-    obj->field_0xe21 |= 0x80;
-}
-
-void StarWars_AutoSetAICapabilities(GameObject_s *object);
-i32 CanPullLevers(i32 id);
-extern f32 DEFAULT_MOVE_RANGE;
-
-void SetFlicker(GameObject_s *object, float duration) {
-    object->field_0x1024 = duration;
-    object->flicker_flags &= ~7;
-}
-
-// Single-bit view of the AI flag bytes; the original resets them one field at a time.
-struct PlayerAIFlagBits {
-    u8 bit0 : 1;
-    u8 bit1 : 1;
-    u8 bit2 : 1;
-    u8 bit3 : 1;
-    u8 bit4 : 1;
-    u8 bit5 : 1;
-    u8 bit6 : 1;
-    u8 bit7 : 1;
-};
-
-static inline PlayerAIFlagBits *PlayerAIFlags(u8 *object, i32 offset) {
-    return reinterpret_cast<PlayerAIFlagBits *>(object + offset);
-}
-
-void InitPlayerAI(GameObject_s *object) {
-    StarWars_AutoSetAICapabilities(object);
-    u8 *b = reinterpret_cast<u8 *>(object);
-    i32 can_pull_levers = CanPullLevers(object->id);
-    b[0xefe] = (b[0xefe] & 0x7f) | (can_pull_levers << 7);
-    b[0x4a6] &= 0xfe;
-    object->ai.character_type_mask_low = 0;
-    object->ai.character_type_mask_high = 0;
-    if (FreePlay && !(object->apiobj.field_0x1f4 & 0x400)) {
-        object->ai.character_type_mask = _0xffffffffffffffff;
-    } else if (SpecialRouteCharacterTypeIDFn) {
-        u8 *row = *reinterpret_cast<u8 **>(b + 0xcac);
-        char *name = row ? *reinterpret_cast<char **>(row + 4) : object->apiobj.character_data->file;
-        u8 type = SpecialRouteCharacterTypeIDFn(name);
-        if (type != 0xff) {
-            u64 mask = type <= 63 ? u64(1) << type : _0xffffffffffffffff;
-            object->ai.character_type_mask_high = static_cast<u32>(mask >> 32);
-            object->ai.character_type_mask_low = static_cast<u32>(mask);
-        }
-    }
-    b[0x370] = 0;
-    PlayerAIFlagBits *flags_ef8 = PlayerAIFlags(b, 0xef8);
-    PlayerAIFlagBits *flags_ef9 = PlayerAIFlags(b, 0xef9);
-    PlayerAIFlagBits *flags_efa = PlayerAIFlags(b, 0xefa);
-    PlayerAIFlagBits *flags_efb = PlayerAIFlags(b, 0xefb);
-    PlayerAIFlagBits *flags_efc = PlayerAIFlags(b, 0xefc);
-    PlayerAIFlagBits *flags_efd = PlayerAIFlags(b, 0xefd);
-    PlayerAIFlagBits *flags_eff = PlayerAIFlags(b, 0xeff);
-    PlayerAIFlagBits *flags_f00 = PlayerAIFlags(b, 0xf00);
-    PlayerAIFlagBits *flags_f01 = PlayerAIFlags(b, 0xf01);
-    PlayerAIFlagBits *flags_f02 = PlayerAIFlags(b, 0xf02);
-    PlayerAIFlagBits *flags_f03 = PlayerAIFlags(b, 0xf03);
-    PlayerAIFlagBits *flags_f04 = PlayerAIFlags(b, 0xf04);
-    PlayerAIFlagBits *flags_4a5 = PlayerAIFlags(b, 0x4a5);
-    PlayerAIFlagBits *flags_4a7 = PlayerAIFlags(b, 0x4a7);
-    PlayerAIFlagBits *flags_7b5 = PlayerAIFlags(b, 0x7b5);
-    flags_ef8->bit1 = 1;
-    object->doomed_escape_locator = NULL;
-    flags_ef8->bit2 = (object->apiobj.character_data->model_flags >> 7) & 1;
-    flags_ef8->bit3 = 1;
-    flags_ef8->bit4 = 0;
-    flags_ef8->bit6 = 0;
-    flags_ef8->bit7 = 0;
-    flags_eff->bit3 = 0;
-    flags_eff->bit4 = 0;
-    flags_eff->bit5 = 0;
-    flags_efc->bit0 = 0;
-    flags_efc->bit1 = 0;
-    flags_efc->bit2 = 0;
-    flags_efc->bit3 = 0;
-    flags_efc->bit4 = 0;
-    flags_efc->bit5 = 0;
-    flags_efd->bit0 = 0;
-    flags_efd->bit3 = 0;
-    flags_efd->bit4 = 0;
-    flags_ef9->bit0 = 0;
-    flags_ef9->bit1 = 0;
-    flags_f01->bit1 = 0;
-    flags_f01->bit2 = 0;
-    flags_f01->bit4 = 0;
-    flags_efb->bit1 = 0;
-    flags_efb->bit3 = 0;
-    flags_efb->bit4 = 0;
-    flags_efb->bit6 = 0;
-    flags_efb->bit7 = 0;
-    flags_f00->bit0 = 0;
-    flags_f00->bit1 = 0;
-    flags_f00->bit5 = 0;
-    flags_f00->bit7 = 0;
-    flags_f03->bit1 = 0;
-    flags_f03->bit2 = 0;
-    flags_f03->bit3 = 0;
-    flags_f03->bit6 = 0;
-    flags_f03->bit7 = 0;
-    object->run_speed_override = 1000000000.0f;
-    object->walk_speed_override = 1000000000.0f;
-    // The original scale-override sentinel; zero would hide the character.
-    object->hover_height_override = 1000000000.0f;
-    object->field_0x1038 = 1000000000.0f;
-    flags_f04->bit0 = 0;
-    flags_f04->bit1 = 0;
-    flags_f02->bit2 = ((object->apiobj.field_0x1f4 >> 10) & 1) == 0;
-    flags_f02->bit3 = 0;
-    *reinterpret_cast<u32 *>(b + 0x1058) = 0;
-    *reinterpret_cast<f32 *>(b + 0x4ac) = DEFAULT_MOVE_RANGE;
-    flags_4a7->bit2 = DEFAULT_MOVE_RANGE > 0.0f;
-    flags_4a7->bit3 = 0;
-    flags_4a7->bit4 = 0;
-    flags_f02->bit5 = 0;
-    flags_f02->bit7 = 0;
-    flags_ef8->bit0 = 0;
-    flags_f03->bit0 = 0;
-    flags_efa->bit2 = 0;
-    flags_efa->bit3 = 0;
-    flags_efa->bit4 = (object->apiobj.character_data->model_flags >> 27) & 1;
-    flags_efa->bit5 = 0;
-    flags_7b5->bit1 = 0;
-    *reinterpret_cast<u32 *>(b + 0xecc) = 0;
-    *reinterpret_cast<u32 *>(b + 0x394) = 0;
-    *reinterpret_cast<u32 *>(b + 0x39c) = 0;
-    flags_efb->bit0 = 0;
-    flags_efb->bit2 = 0;
-    flags_eff->bit0 = 0;
-    *reinterpret_cast<f32 *>(b + 0xed4) = 1.0f;
-    *reinterpret_cast<f32 *>(b + 0xed0) = 0.0f;
-    *reinterpret_cast<f32 *>(b + 0x3a0) = 1000000000.0f;
-    flags_4a5->bit4 = 0;
-    flags_4a5->bit6 = 0;
-    *reinterpret_cast<u32 *>(b + 0x3a4) = 0;
-    *reinterpret_cast<u32 *>(b + 0x3ac) = 0;
-    *reinterpret_cast<u32 *>(b + 0x2a0) = 0;
-    *reinterpret_cast<u32 *>(b + 0x2a4) = 0;
-    flags_ef9->bit3 = 0;
-    *reinterpret_cast<u32 *>(b + 0xebc) = 0;
-    *reinterpret_cast<f32 *>(b + 0x3b0) = 1000000000.0f;
-    *reinterpret_cast<u32 *>(b + 0xec0) = 0;
-    *reinterpret_cast<u32 *>(b + 0x10b0) = 0;
-    *reinterpret_cast<u32 *>(b + 0x10b4) = 0;
-    *reinterpret_cast<u32 *>(b + 0xec4) = 0;
-    *reinterpret_cast<f32 *>(b + 0x448) = 0.0f;
-    *reinterpret_cast<u32 *>(b + 0xec8) = 0;
-    *reinterpret_cast<f32 *>(b + 0xed8) = 0.0f;
-    memset(b + 0xf48, 0, 0x68);
-    b[0x1089] = 0;
-    *reinterpret_cast<u32 *>(b + 0xfe4) = 0;
-    *reinterpret_cast<u32 *>(b + 0x3b4) = 0;
-    *reinterpret_cast<u32 *>(b + 0x294) = 0;
-    *reinterpret_cast<u32 *>(b + 0x298) = 0;
-    *reinterpret_cast<u32 *>(b + 0x29c) = 0;
-    bool special = (object->apiobj.character_data->model_flags & 0x4000) &&
-                   (b[0x27c] == 0xff || *reinterpret_cast<void **>(b + 0xcc0));
-    b[0x1f8] = (b[0x1f8] & 0xfd) | (special << 1);
-    u8 *config = reinterpret_cast<u8 *>(object->apiobj.character_data->player_config);
-    b[0x1f9] &= 0xf7;
-    b[0x1fa] &= 0xe7;
-    flags_f00->bit2 = 0;
-    b[0xefe] &= 0xbf;
-    flags_eff->bit2 = 0;
-    flags_eff->bit7 = (*reinterpret_cast<u32 *>(config + 0x90) >> 13) & 1;
-    b[0x108f] = 0;
-    *reinterpret_cast<u32 *>(b + 0x10c0) = 0;
-    *reinterpret_cast<u32 *>(b + 0x10d8) = 0;
-    *reinterpret_cast<f32 *>(b + 0x1040) = 1.0f;
-    *reinterpret_cast<u32 *>(b + 0x1044) = 0;
-    flags_f04->bit2 = 0;
-    flags_f04->bit3 = 0;
-    flags_f04->bit7 = PlayerAIFlags(reinterpret_cast<u8 *>(object->apiobj.character_data->player_config), 0x98)->bit7;
-    ResetPlayerAI(object);
-}
-
-void ResetPlayerAI(GameObject_s *object) {
-    object->ai.movement_flags &= 0x9f;
-    object->field_0xefe &= 0xdf;
-    object->ai.field_0x1e5 &= 0xfd;
-    object->ai.intersection_connection = NULL;
-    object->ai.intersection_target_connection = NULL;
-    object->ai.animation_override_from = -1;
-    object->ai.animation_override_to = -1;
-    object->ai.field_0x180 = NULL;
-    object->field_0x1092 = 0;
-    object->field_0x1093 = 0;
-    object->field_0x1098 = 0;
-    object->field_0x1094 = 0;
-    object->field_0xf08 = 0;
-    object->field_0xf0c = 0;
-    object->field_0xf10 = 0;
-    object->ai.frame_state = 0;
-    object->field_0xf14 = 0;
-    object->field_0x109c = 0;
-    memset(&object->ai.path_info, 0, sizeof(object->ai.path_info));
-    object->ai.current_route = 0xff;
-    object->ai.next_route = 0;
-    object->ai.inside_path_node = -1;
-    AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 0xff, 1);
-}
-
-void StarWars_AutoSetAICapabilities(GameObject_s *object);
-
-i32 MakePlayerList(i32 count) {
-    i32 player_count = 0;
-
-    for (i32 i = 0; i < count; i++) {
-        GameObject_s *player = Player[i];
-        if (player == NULL) {
-            if (makeplayerlist_freeplay == 1 && player_count == 1 && WORLD != NULL &&
-                WORLD->current_level == HUB_LDATA && HUB_LDATA != NewLData) {
-                PlayerList[1] = FreePlayModelList[i].model_id;
-                PlayerProgress[1].active = 0;
-                player_count = 2;
-            }
-            continue;
-        }
-
-        if (makeplayerlist_freeplay == 1) {
-            PlayerList[player_count] = FreePlayModelList[i].model_id;
-        } else if (makeplayerlist_freeplay != 2) {
-            PlayerList[player_count] = player->id;
-        }
-
-        PlayerProgress[player_count].active = player->apiobj.player_controlled;
-
-        bool unavailable = false;
-        if (player->field_0x7a5 != 6 && player->field_0xe32 != 2) {
-            unavailable = true;
-            if ((player->field_0xe22 & 1) == 0) {
-                unavailable = player->field_0xe32 != 0;
-            }
-        }
-        PlayerProgress[player_count].field_0x7 = unavailable;
-        PlayerProgress[player_count].coins = player->coinpacket != NULL ? player->coinpacket->coins : 0;
-        PlayerProgress[player_count].field_0xb = player->field_0xe31 == 1;
-
-        if (player->apiobj.field_0x287 != 0) {
-            PlayerProgress[player_count].hitpoints = player->hitpoints;
-            PlayerProgress[player_count].field_0x9 = 4;
-        } else {
-            PlayerProgress[player_count].hitpoints = player->current_hp;
-            PlayerProgress[player_count].field_0x9 = player->field_0xe38;
-        }
-        PlayerProgress[player_count].field_0xa = player->field_0x108e;
-        PlayerProgress[player_count].field_0x4 = player->field_0x106e;
-        PlayerProgress[player_count].field_0xc = player->field_0xdec;
-
-        PlayerSuit[player_count] = player->suit;
-        PlayerTorpedoCount[player_count] = player->torpedo != NULL ? player->torpedo->count : 0;
-        player_count++;
-    }
-
-    for (i32 i = player_count; i < 8; i++) {
-        PlayerList[i] = -1;
-    }
-    makeplayerlist_freeplay = 0;
-    return player_count;
-}
-
-void ResetPlayerPacket(PLAYERPACKET_s *, CHARACTERDATA_s *);
-void ResetCharacterIdle(GameObject_s *, i32, i32);
-void SetGameObjectCharacterData(GameObject_s *);
-void ResetCoinPacket(COINPACKET_s *);
-
-void ResetPlayerMoves(GameObject_s *object) {
-    ResetPlayerPacket(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet),
-                      reinterpret_cast<CHARACTERDATA_s *>(object->apiobj.character_data));
-    object->fall_acceleration_timer = 0.0f;
-    object->pause_input_state = 0;
-    object->apiobj.movement_direction = v000;
-    object->input_toggle_hold_time = TOGGLEHOLDTIME;
-    object->field_0xefc |= 0x80;
-    ResetCharacterIdle(object, 2, GetDefaultIdle(object));
-    if (object->apiobj.character_model->model_data_b[1] != NULL) {
-        ResetAnimPacket(&object->apiobj.anim_packet, 1);
-        SetAnimTimeRandom(object->apiobj.character_model, &object->apiobj.anim_packet);
-    } else {
-        ResetAnimPacket(&object->apiobj.anim_packet, -1);
-    }
-    object->apiobj.field_0x27e = 0;
-    object->apiobj.field_0x27d = 0;
-    SetGameObjectCharacterData(object);
-    object->spawn_protection_timer = 0.0f;
-    SetFlicker(object, 0.0f);
-    ResetCoinPacket(object->coinpacket);
-    object->apiobj.respawn_timer = 0.0f;
-    object->apiobj.flags_high &= 0xdf;
-    DrawOffsetCode(object, 1);
-}
-
-void SetToLastSafePos(GameObject_s *object) {
-    NUVEC position = {object->apiobj.last_safe_position.x, object->apiobj.last_safe_position.y,
-                      object->apiobj.last_safe_position.z};
-    object->apiobj.start_position = position;
-    object->saved_position = object->apiobj.position = object->apiobj.start_position;
-}
-
-i32 AvailableToPlayer(u32 character_flags, i32 weapon_action, i32 context, i32 require_all) {
-    for (i32 i = 0; i < 8; i++) {
-        GameObject_s *object = Player[i];
-        if (object == NULL || object->apiobj.character_data == NULL)
-            continue;
-        if (character_flags != 0) {
-            if ((object->apiobj.character_data->model_flags & character_flags) == character_flags) {
-                if (require_all == 0)
-                    return 1;
-            } else if (require_all != 0) {
-                continue;
-            }
-        }
-        if (weapon_action != -1) {
-            if (static_cast<i8>(object->apiobj.character_data->game_character->uses_weapon_action) == weapon_action) {
-                if (require_all == 0)
-                    return 1;
-            } else if (require_all != 0) {
-                continue;
-            }
-        }
-        if (context == 0 || object->field_0x108e == context)
-            return 1;
-    }
-
-    if (FreePlay != 0) {
-        for (i32 index = 0; index < apicharsys->character_count; ++index) {
-            i32 model = apicharsys->playermodelids[index];
-            if (model == -1 || FreePlay == 0 || (apicharsys->models[model].flags & 1) == 0)
-                continue;
-            if (!((Game_CharacterSave != NULL && (Game_CharacterSave[index] & 1) != 0) ||
-                  (static_cast<i32>(GCDataList[index].flags_090) < 0 && Cheats_CheckFlags(0x100) != 0)))
-                continue;
-            if (character_flags != 0) {
-                if ((CDataList[index].model_flags & character_flags) == character_flags) {
-                    if (require_all == 0)
-                        return 1;
-                } else if (require_all != 0) {
-                    continue;
-                }
-            }
-            if (weapon_action == -1 || static_cast<i8>(GCDataList[index].uses_weapon_action) == weapon_action)
-                return 1;
-        }
-    }
-    return 0;
-}
-
-i32 GetNumLocalPlayers() {
-    i32 count = 0;
-    if (Player[0] != NULL)
-        count = static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0;
-    if (Player[1] != NULL && Player[1]->apiobj.player_controlled)
-        count++;
-    return count;
-}
-
-i32 UnderPlayerControl(GameObject_s *object) {
-    return object->apiobj.player_controlled ||
-           (object->field_0xcc0 != NULL && object->field_0xcc0->apiobj.player_controlled);
-}
-
-i32 ActivePlayerInRange(nuvec_s *position, float range_squared, float *distance_squared) {
-    for (i32 i = 0; i < 8; i++) {
-        if (Player[i] != NULL && Player[i]->apiobj.player_controlled) {
-            const f32 distance = NuVecDistSqr(&Player[i]->apiobj.collision_position, position, NULL);
-            if (distance < range_squared) {
-                if (distance_squared != NULL) {
-                    *distance_squared = distance;
-                }
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-GameObject_s *GetOtherActivePlayer(GameObject_s *object) {
-    GameObject_s *other;
-    if (Player[0] == object)
-        other = Player[1];
-    else if (Player[1] == object)
-        other = Player[0];
-    else
-        return NULL;
-    if (other != NULL && static_cast<i8>(other->apiobj.field_0x1f8) < 0)
-        return other;
-    return NULL;
-}
-
-struct SPECIAL_LAYER_s {
-    i16 *character_id;
-    char *name;
-    u32 mask;
-};
-
-DECOMP_ASSERT(sizeof(SPECIAL_LAYER_s) == 0xc, "SPECIAL_LAYER_s size");
-
-static SPECIAL_LAYER_s SpecialLayer[] = {
-    {&id_BATMAN, "bombbackpack", 0},       {&id_BATMAN, "sonargun", 0},          {&id_BATMAN, "infrared_goggles", 0},
-    {&id_BATMAN, "mask_black", 0},         {&id_BATMAN, "mask_blue", 0},         {&id_BATMAN, "mask_red", 0},
-    {&id_BATMAN, "cape_black", 0},         {&id_BATMAN, "cape_blue", 0},         {&id_BATMAN, "body_grey_nextgen", 0},
-    {&id_BATMAN, "body_grey_high", 0},     {&id_BATMAN, "body_grey_low", 0},     {&id_BATMAN, "body_black_nextgen", 0},
-    {&id_BATMAN, "body_black_high", 0},    {&id_BATMAN, "body_black_low", 0},    {&id_BATMAN, "body_blue_nextgen", 0},
-    {&id_BATMAN, "body_blue_high", 0},     {&id_BATMAN, "body_blue_low", 0},     {&id_BATMAN, "face_hands_black", 0},
-    {&id_BATMAN, "face_hands_blue", 0},    {&id_BATMAN, "face_hands_red", 0},    {&id_BATMAN, "hips_black_nextgen", 0},
-    {&id_BATMAN, "hips_black_high", 0},    {&id_BATMAN, "hips_blue_nextgen", 0}, {&id_BATMAN, "hips_blue_high", 0},
-    {&id_BATMAN, "hips_red_nextgen", 0},   {&id_BATMAN, "hips_red_high", 0},     {&id_ROBIN, "magnetic_boots", 0},
-    {&id_ROBIN, "scuba_gear", 0},          {&id_ROBIN, "hack_pack", 0},          {&id_ROBIN, "vacuum_gun", 0},
-    {&id_ROBIN, "nextgen_limbs_green", 0}, {&id_ROBIN, "hires_limbs_green", 0},  {&id_ROBIN, "lowres_limbs_green", 0},
-    {&id_ROBIN, "nextgen_limbs_white", 0}, {&id_ROBIN, "hires_limbs_white", 0},  {&id_ROBIN, "lowres_limbs_white", 0},
-    {&id_ROBIN, "nextgen_limbs_grey", 0},  {&id_ROBIN, "hires_limbs_grey", 0},   {&id_ROBIN, "lowres_limbs_grey", 0},
-    {&id_ROBIN, "nextgen_limbs_blue", 0},  {&id_ROBIN, "hires_limbs_blue", 0},   {&id_ROBIN, "lowres_limbs_blue", 0},
-};
-
-i32 Player_HasPurpleForce(GameObject_s *obj) {
-    if (Cheat_IsOn(0x1c))
-        return 1;
-    return obj != NULL && obj->field_0xdec > 0.0f;
-}
-
-void FixUpLayers() {
-    for (i32 model_index = 0; model_index < apicharsys->loaded_model_count; ++model_index) {
-        CHARACTERMODEL_s *model = &apicharsys->models[model_index];
-        GAMECHARACTERDATA_s *character = &GCDataList[model->model_id];
-
-        for (i32 layer_index = 0; layer_index < character->layer_count; ++layer_index) {
-            GAMECHARACTERLAYER_s *layer = &character->layers[layer_index];
-            layer->hierarchy_layer_index = NuHGobjGetLayerIndex(layer->name, model->hierarchy);
-        }
-    }
-
-    SPECIAL_LAYER_s *layer = SpecialLayer;
-    SPECIAL_LAYER_s *layer_end = SpecialLayer + sizeof(SpecialLayer) / sizeof(SpecialLayer[0]);
-    for (; layer != layer_end; ++layer) {
-        layer->mask = 0;
-        if (layer->character_id != NULL && *layer->character_id != -1) {
-            layer->mask = 1 << LayerFromName(&GCDataList[*layer->character_id], layer->name);
-        }
-    }
-}
-
-// Shares the original translation-unit-local layer table with FixUpLayers.
-u32 AdjustLayerBits(u32 mask, GameObject_s *object) {
-    GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    u32 cape = 0;
-    i32 cape_layer = data->cape_layer;
-    if (cape_layer != -1)
-        cape = 1u << cape_layer;
-    u32 hair = 0;
-    i32 hair_layer = data->hair_layer;
-    if (hair_layer != -1)
-        hair = 1u << hair_layer;
-    if (object->field_0x108e != 0)
-        mask &= ~hair;
-    SUIT_s *suit = static_cast<SUIT_s *>(object->suit);
-    if (suit != NULL && object->id == id_BATMAN) {
-        if ((suit->flags & 4) != 0) {
-            mask = (mask & ~cape) | SpecialLayer[0].mask;
-            mask = (mask & ~SpecialLayer[3].mask) | SpecialLayer[5].mask;
-            if ((mask & SpecialLayer[20].mask) != 0)
-                mask = (mask & ~SpecialLayer[20].mask) | SpecialLayer[24].mask;
-            else if ((mask & SpecialLayer[21].mask) != 0)
-                mask = (mask & ~SpecialLayer[21].mask) | SpecialLayer[25].mask;
-            mask = (mask & ~SpecialLayer[17].mask) | SpecialLayer[19].mask;
-        } else if ((suit->flags & 2) != 0) {
-            mask &= ~cape;
-        } else if ((suit->flags & 8) != 0) {
-            mask = (mask & ~cape) | SpecialLayer[1].mask | SpecialLayer[7].mask;
-            mask = (mask & ~SpecialLayer[3].mask) | SpecialLayer[4].mask;
-            if ((mask & SpecialLayer[20].mask) != 0)
-                mask = (mask & ~SpecialLayer[20].mask) | SpecialLayer[22].mask;
-            else if ((mask & SpecialLayer[21].mask) != 0)
-                mask = (mask & ~SpecialLayer[21].mask) | SpecialLayer[23].mask;
-            mask = (mask & ~SpecialLayer[17].mask) | SpecialLayer[18].mask;
-            if ((mask & SpecialLayer[8].mask) != 0)
-                mask = (mask & ~SpecialLayer[8].mask) | SpecialLayer[14].mask;
-            else if ((mask & SpecialLayer[9].mask) != 0)
-                mask = (mask & ~SpecialLayer[9].mask) | SpecialLayer[15].mask;
-            else if ((mask & SpecialLayer[10].mask) != 0)
-                mask = (mask & ~SpecialLayer[10].mask) | SpecialLayer[16].mask;
-        } else if ((suit->flags & 1) != 0) {
-            mask |= SpecialLayer[2].mask;
-            if ((mask & SpecialLayer[8].mask) != 0)
-                mask = (mask & ~SpecialLayer[8].mask) | SpecialLayer[11].mask;
-            else if ((mask & SpecialLayer[9].mask) != 0)
-                mask = (mask & ~SpecialLayer[9].mask) | SpecialLayer[12].mask;
-            else if ((mask & SpecialLayer[10].mask) != 0)
-                mask = (mask & ~SpecialLayer[10].mask) | SpecialLayer[13].mask;
-        }
-    } else if (suit != NULL && object->id == id_ROBIN) {
-        if ((suit->flags & 0x10) != 0) {
-            mask = (mask & ~(hair | cape)) | SpecialLayer[27].mask;
-            if ((mask & SpecialLayer[30].mask) != 0)
-                mask = (mask & ~SpecialLayer[30].mask) | SpecialLayer[39].mask;
-            else if ((mask & SpecialLayer[31].mask) != 0)
-                mask = (mask & ~SpecialLayer[31].mask) | SpecialLayer[40].mask;
-            else if ((mask & SpecialLayer[32].mask) != 0)
-                mask = (mask & ~SpecialLayer[32].mask) | SpecialLayer[41].mask;
-        } else if ((suit->flags & 0x40) != 0) {
-            mask = (mask & ~cape) | SpecialLayer[26].mask;
-            if ((mask & SpecialLayer[30].mask) != 0)
-                mask = (mask & ~SpecialLayer[30].mask) | SpecialLayer[36].mask;
-            else if ((mask & SpecialLayer[31].mask) != 0)
-                mask = (mask & ~SpecialLayer[31].mask) | SpecialLayer[37].mask;
-            else if ((mask & SpecialLayer[32].mask) != 0)
-                mask = (mask & ~SpecialLayer[32].mask) | SpecialLayer[38].mask;
-        } else if ((suit->flags & 0x20) != 0) {
-            mask = (mask & ~cape) | SpecialLayer[28].mask;
-            if ((mask & SpecialLayer[30].mask) != 0)
-                mask = (mask & ~SpecialLayer[30].mask) | SpecialLayer[33].mask;
-            else if ((mask & SpecialLayer[31].mask) != 0)
-                mask = (mask & ~SpecialLayer[31].mask) | SpecialLayer[34].mask;
-            else if ((mask & SpecialLayer[32].mask) != 0)
-                mask = (mask & ~SpecialLayer[32].mask) | SpecialLayer[35].mask;
-        } else if ((suit->flags & 0x80) != 0) {
-            mask = (mask & ~cape) | SpecialLayer[29].mask;
-        }
-    }
-    if (object->id == id_BODYGUARD) {
-        if (object->current_hp <= 1)
-            mask &= ~0x10u;
-    } else if (object->id == id_GEONOSIAN) {
-        if ((object->field_0xefd & 2) != 0)
-            mask |= 0x20;
-        else
-            mask |= 0x40;
-    } else if (CharacterCustomiser != NULL && object->id == CharacterCustomiser->character_ids[0]) {
-        if ((CharacterCustomiser->pieces[static_cast<u16>(Game.customizer[0].pieces[5])].layer_flags & 0x40) == 0)
-            mask |= cape;
-    } else if (CharacterCustomiser != NULL && object->id == CharacterCustomiser->character_ids[1]) {
-        if ((CharacterCustomiser->pieces[static_cast<u16>(Game.customizer[1].pieces[5])].layer_flags & 0x40) == 0)
-            mask |= cape;
-    } else if (object->id == id_CHEWBACCA) {
-        if (Cheat_IsOn(4) != 0)
-            mask |= 0xc0;
-        data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    }
-    if (data->ride_layers_off != 0 && object->field_0xcc0 != NULL && object->field_0x7a5 == 0x3b)
-        mask &= ~data->ride_layers_off;
-    return mask;
-}
-
-void SetPlayerGroupPosition(f32 x, f32 y, f32 z) {
-    NUVEC offset = {0.0f, 0.0f, 0.2f};
-    for (i32 i = 0; i < PLAYERCOUNT; i++) {
-        NUVEC position = {x, y, z};
-        NuVecAdd(&position, &position, &offset);
-        ResetPlayer(Player[i], 1, &position, 1);
-        NuVecRotateY(&offset, &offset, 0x2000);
-    }
-}
-
-bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, float &distance_squared,
-                            bool require_character_flags, u32 character_flags) {
-    *nearest_player = NULL;
-    distance_squared = 0.0f;
-
-#define CONSIDER_PLAYER_DISTANCE(index, filtered)                                                                      \
-    do {                                                                                                               \
-        GameObject_s *candidate = Player[index];                                                                       \
-        if (candidate != NULL && static_cast<i8>(candidate->apiobj.flags_low) < 0) {                                   \
-            const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
-            if (candidate_distance < distance_squared || *nearest_player == NULL) {                                    \
-                candidate = Player[index];                                                                             \
-                if (!(filtered) ||                                                                                     \
-                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
-                    distance_squared = candidate_distance;                                                             \
-                    *nearest_player = candidate;                                                                       \
-                }                                                                                                      \
-            }                                                                                                          \
-        }                                                                                                              \
-    } while (0)
-
-    for (i32 i = 0; i < 8; i++) {
-        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
-    }
-
-#undef CONSIDER_PLAYER_DISTANCE
-
-    return *nearest_player != NULL;
-}
-
-i32 (*LastSafePosExtraFn)(GameObject_s *) = NULL;
-void (*GameObjectDimensionsExtraFn)(GameObject_s *) = NULL;
-
-void CheckForPlayersTurnedOff() {
-    for (i32 source_index = 0; source_index < 2; ++source_index) {
-        GameObject_s *source = Player[source_index];
-        if (source != NULL && (source->apiobj.flags_high & APIOBJECT_HIGH_FLAG_CHARACTER) == 0) {
-            for (i32 target_index = 2; target_index < 8; ++target_index) {
-                GameObject_s *target = Player[target_index];
-                if (target == NULL || (target->tag_flags & 2) != 0 || (target->field_0xefb & 4) != 0 ||
-                    target->character_context == 0x24 || target->character_context == 0x1f) {
-                    continue;
-                }
-
-                if (target->apiobj.field_0x27d != 0 ||
-                    (target->field_0xe31 == 1 && target->apiobj.character_data->game_character->field_0x28 > 0.0f)) {
-                    TagCharacter(Player[source_index], target, 1);
-                }
-            }
-        }
-    }
-}
-
-bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player, float &distance_squared,
-                               bool require_character_flags, u32 character_flags) {
-    *furthest_player = NULL;
-    distance_squared = 0.0f;
-
-#define CONSIDER_PLAYER_DISTANCE(index, filtered)                                                                      \
-    do {                                                                                                               \
-        GameObject_s *candidate = Player[index];                                                                       \
-        if (candidate != NULL && static_cast<i8>(candidate->apiobj.flags_low) < 0) {                                   \
-            const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);                  \
-            if (candidate_distance > distance_squared || *furthest_player == NULL) {                                   \
-                candidate = Player[index];                                                                             \
-                if (!(filtered) ||                                                                                     \
-                    (candidate->apiobj.character_data->game_character->flags_090 & character_flags) != 0) {            \
-                    distance_squared = candidate_distance;                                                             \
-                    *furthest_player = candidate;                                                                      \
-                }                                                                                                      \
-            }                                                                                                          \
-        }                                                                                                              \
-    } while (0)
-
-    for (i32 i = 0; i < 8; i++) {
-        CONSIDER_PLAYER_DISTANCE(i, require_character_flags);
-    }
-
-#undef CONSIDER_PLAYER_DISTANCE
-
-    return *furthest_player != NULL;
-}
-
-void AveragePlayerCurrentSpeedMul() {
-    i32 count = 0;
-    avg_currentspeed_mul = 0.0f;
-    f32 total = 0.0f;
-    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
-        total += Player[0]->current_speed_mul;
-        count = 1;
-    }
-    if (Player[1] == NULL || !Player[1]->apiobj.player_controlled) {
-        avg_currentspeed_mul = total;
-    } else {
-        total += Player[1]->current_speed_mul;
-        avg_currentspeed_mul = total;
-        if (__builtin_expect(count == 1, 1)) {
-            avg_currentspeed_mul = total * 0.5f;
-        }
-    }
-}
-
-void SetPlayer() {
-    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
-        player = Player[0];
-        if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
-            player2 = Player[1];
-        } else {
-            player2 = NULL;
-        }
-    } else if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
-        player = Player[1];
-        player2 = NULL;
-    } else {
-        player = NULL;
-    }
-}

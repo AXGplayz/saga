@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "nu2api/numath/numtx.h"
 #include "legoapi/legoapi_types.h"
@@ -13,24 +16,65 @@
 #include "legoapi/items/collect/minikits.h"
 #include "nu2api/nucore/nupad.h"
 #include "gameapi/ai/aisys/aisys.h"
-#include "nu2api/numath/numath.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/gizmos/door/zipups.h"
+#include "gameapi/edtools/edui.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuvec.h"
+#include "legoapi/world/level.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/core/charconfig.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/store.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include <stdio.h>
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/items/objects/cable.h"
+#include "legoapi/misc/utilities.h"
 
-extern CABLE_s cables[8];
-extern AREADATA_s *GUNSHIP_ADATA;
-void GameCam_Blend(GAMECAMERA_s *, f32, f32, i32);
-void GameAudio_PlaySfxById(i32, NUVEC *, i32, i32);
 f32 cable_ground_damping = 20.0f;
 f32 cable_damping = 2.0f;
 f32 cable_gravity = 3.0f;
 f32 cable_speed = 20.0f;
 i32 atat_locators[4] = {0, 1, 2, 3};
-extern AREADATA_s *HOTHBATTLE_ADATA;
-extern LEVELDATA_s *HOTHBATTLED_LDATA;
-i32 FaceOpponent(GameObject_s *, NUVEC *);
-extern i16 id_ATAT, id_ATST, id_ATST_LOWRES;
 extern i32 TERRAINMASK_NONDROID;
-i32 GameRayCast(NUVEC *, NUVEC *, f32, i32);
 i32 XZLinesIntersect(NUVEC *, NUVEC *, NUVEC *, NUVEC *, f32 *, f32 *);
 f32 default_targetmomf = 4.0f;
 f32 targetmomf = 4.0f;
@@ -40,6 +84,65 @@ f32 default_max_cable_length = 15.0f;
 f32 max_cable_length = 15.0f;
 f32 default_tow_length = 6.0f;
 f32 tow_length = 6.0f;
+
+extern i16 id_GAMORREANGUARD;
+extern i32 TERRAINMASK_NONWEAPON, TERRAINMASK_NONDROID;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+struct CUTSCENEPLAYERCLIP;
+
+CABLE_s cables[8];
+
+extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
+                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
+                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
+                                    bool first_match);
+
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+i32 solid_cable;
+i32 nsegments_drawn;
+f32 slack_factor = 1.0f;
+f32 cable_slack = 1.0f;
+f32 nsegments_per_unit = 6.0f;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
 void InitCables(WORLDINFO_s *world) {
     memset(cables, 0, sizeof(cables));
@@ -76,6 +179,53 @@ CABLE_s *CreateCable(GameObject_s *source, GameObject_s *target, i32 sound) {
     return NULL;
 }
 
+CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
+    // The original checks the first cable's owner for the entire array.
+    if (__builtin_expect(cables[0].source != object, 1))
+        return NULL;
+
+    if ((cables[0].flags_1e9 & 1) != 0)
+        return &cables[0];
+    if ((cables[1].flags_1e9 & 1) != 0)
+        return &cables[1];
+    if ((cables[2].flags_1e9 & 1) != 0)
+        return &cables[2];
+    if ((cables[3].flags_1e9 & 1) != 0)
+        return &cables[3];
+    if ((cables[4].flags_1e9 & 1) != 0)
+        return &cables[4];
+    if ((cables[5].flags_1e9 & 1) != 0)
+        return &cables[5];
+    if ((cables[6].flags_1e9 & 1) != 0)
+        return &cables[6];
+    if ((cables[7].flags_1e9 & 1) != 0)
+        return &cables[7];
+    return NULL;
+}
+
+CABLE_s *GameObjIsCableTied(GameObject_s *object) {
+    if (__builtin_expect(cables[0].target != object, 1))
+        return NULL;
+
+    if ((cables[0].flags_1e9 & 1) != 0)
+        return &cables[0];
+    if ((cables[1].flags_1e9 & 1) != 0)
+        return &cables[1];
+    if ((cables[2].flags_1e9 & 1) != 0)
+        return &cables[2];
+    if ((cables[3].flags_1e9 & 1) != 0)
+        return &cables[3];
+    if ((cables[4].flags_1e9 & 1) != 0)
+        return &cables[4];
+    if ((cables[5].flags_1e9 & 1) != 0)
+        return &cables[5];
+    if ((cables[6].flags_1e9 & 1) != 0)
+        return &cables[6];
+    if ((cables[7].flags_1e9 & 1) != 0)
+        return &cables[7];
+    return NULL;
+}
+
 void DestroyCable(CABLE_s *cable) {
     if (cable != NULL) {
         if (cable->source != NULL && cable->source->cable == cable) {
@@ -84,6 +234,7 @@ void DestroyCable(CABLE_s *cable) {
         memset(cable, 0, sizeof(*cable));
     }
 }
+
 void ReleaseCable(CABLE_s *cable, i32 snapped) {
     cable->flags_1e9 |= 4;
     if (cable->target != NULL) {
@@ -106,6 +257,7 @@ void ReleaseCable(CABLE_s *cable, i32 snapped) {
         cable->velocities[i].y = 0.0f;
     }
 }
+
 void UpdateCables() {
     NUVEC closest;
     for (CABLE_s *cable = cables; cable != cables + 8; ++cable) {
@@ -409,6 +561,120 @@ void UpdateCables() {
     }
 }
 
+void DrawCables() {
+    NUVEC step;
+    NURND_VERTEX3D vertices[2];
+    NUVEC &start = vertices[0].position;
+    NUVEC &end = vertices[1].position;
+    vertices[0].colour = 0xff000000;
+    vertices[1].colour = 0xff000000;
+    nsegments_drawn = 0;
+    for (CABLE_s *current = cables; current != cables + 8; ++current) {
+        CABLE_s &cable = *current;
+        if ((cable.flags_1e9 & 1) == 0) {
+            continue;
+        }
+
+        const f32 y_span = cable.points[cable.point_count - 1].y - cable.points[0].y;
+        if ((cable.flags_1e9 & 4) != 0) {
+            cable.slack += FRAMETIME * cable_slack * slack_factor;
+            if (cable.slack > cable_slack) {
+                cable.slack = cable_slack;
+            }
+        } else if (cable.total_length >= tow_length) {
+            cable.slack = 0.0f;
+        } else {
+            f32 fraction = cable.total_length / tow_length;
+            if (fraction > 1.0f) {
+                fraction = 0.0f;
+            } else {
+                fraction = 1.0f - fraction;
+            }
+            cable.slack = fraction * cable_slack;
+        }
+
+        f32 distance_along = 0.0f;
+        if (cable.slack == 0.0f) {
+            for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
+                const f32 start_fraction = NuFdiv(distance_along, cable.total_length);
+                start = cable.points[segment];
+                start.y = start_fraction * y_span + cable.points[0].y;
+                distance_along += cable.segment_lengths[segment];
+                const f32 end_fraction = NuFdiv(distance_along, cable.total_length);
+                end = cable.points[segment + 1];
+                end.y = y_span * end_fraction + cable.points[0].y;
+                if (solid_cable != 0) {
+                    DrawRopeSingle(&start, &end, 1.0f, ropemtl, end_fraction, end_fraction, 10.0f, 5.0f);
+                } else {
+                    NuRndrLine3d(vertices, SolidMtl3D, NULL);
+                }
+            }
+        } else {
+            const f32 subdivision_scale = cable.total_length * nsegments_per_unit;
+            NUVEC endpoint = cable.points[0];
+            endpoint.y = y_span * 0.0f + cable.points[0].y;
+            f32 ground_start = GameShadow(NULL, &endpoint, 5.0f, -1);
+            if (ground_start == 2000000.0f) {
+                ground_start = endpoint.y;
+            }
+            for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
+                NUVEC previous = endpoint;
+                endpoint = cable.points[segment + 1];
+                endpoint.y = NuFdiv(distance_along + cable.segment_lengths[segment], cable.total_length) * y_span +
+                             cable.points[0].y;
+                f32 ground_end = GameShadow(NULL, &endpoint, 5.0f, -1);
+                if (ground_end == 2000000.0f) {
+                    ground_end = endpoint.y;
+                }
+
+                NuVecSub(&step, &endpoint, &previous);
+                const f32 segment_length = cable.segment_lengths[segment];
+                const f32 subdivisions = static_cast<f32>(
+                    ceil(static_cast<double>(NuFdiv(segment_length, cable.total_length) * subdivision_scale)));
+                const f32 step_length = NuFdiv(segment_length, subdivisions);
+                NuVecScale(&step, &step, NuFdiv(step_length, segment_length));
+                const f32 half_step = 0.5f * step_length;
+                NUVEC cursor = previous;
+                f32 local_distance = 0.0f;
+                while (local_distance + half_step < cable.segment_lengths[segment]) {
+                    start = cursor;
+                    const f32 global_distance = distance_along + local_distance;
+                    start.y -= cable.slack *
+                               NU_SIN_LUT(static_cast<i32>(NuFdiv(global_distance, cable.total_length) * 32768.0f));
+                    const f32 start_fraction = NuFdiv(local_distance, cable.segment_lengths[segment]);
+                    const f32 start_floor =
+                        start_fraction * ground_end + (1.0f - start_fraction) * ground_start + 0.05f;
+                    if (start_floor > start.y) {
+                        start.y = start_floor;
+                    } else {
+                        start.y = start.y;
+                    }
+                    NuVecAdd(&cursor, &cursor, &step);
+                    end = cursor;
+                    const f32 phase = NuFdiv(global_distance + step_length, cable.total_length);
+                    const i32 angle = !(phase > 1.0f) ? static_cast<i32>(phase * 32768.0f) : 32768;
+                    local_distance += step_length;
+                    const f32 end_sag = cable.slack * NU_SIN_LUT(angle);
+                    end.y -= end_sag;
+                    const f32 end_fraction = NuFdiv(local_distance, cable.segment_lengths[segment]);
+                    const f32 end_floor = end_fraction * ground_end + (1.0f - end_fraction) * ground_start + 0.05f;
+                    if (end.y < end_floor) {
+                        end.y = end_floor;
+                    }
+                    if (solid_cable != 0) {
+                        DrawRopeSingle(&start, &end, 1.0f, ropemtl, end_sag, end_sag, 10.0f, 5.0f);
+                    } else {
+                        NuRndrLine3d(vertices, SolidMtl3D, NULL);
+                    }
+                    ++nsegments_drawn;
+                }
+                distance_along += cable.segment_lengths[segment];
+                ground_start = ground_end;
+            }
+        }
+    }
+}
+
 GameObject_s *CableTargetGameObject(GameObject_s *source, nuvec_s *position, f32 radius) {
     f32 nearest_distance = 100000000.0f;
     GameObject_s *nearest = NULL;
@@ -458,3 +724,4 @@ GameObject_s *CableTargetGameObject(GameObject_s *source, nuvec_s *position, f32
     }
     return nearest;
 }
+

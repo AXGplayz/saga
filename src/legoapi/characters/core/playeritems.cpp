@@ -1,410 +1,522 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
-#include "legoapi/core/input/gamepads.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/characters/motion.h"
-#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/motion/animlist.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/items/base/apiobject.h"
-#include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/render/fx/parts.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/render/fx/parts.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/nuvec.h"
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
+#include <stdio.h>
+#include <string.h>
 
-void GameAudio_PlaySfx(i32 sfx, NUVEC *position, i32 flags, i32 volume);
-void ResetCharacterIdle(GameObject_s *object, i32 mode, i32 animation);
-i32 (*Fighting_WeaponInActionFn)(GameObject_s *) = NULL;
-i32 (*Fighting_WeaponOutActionFn)(GameObject_s *) = NULL;
+#include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/characters/core/charconfig.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/audio/sfx.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numusic/sfx.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include <math.h>
+#include <stdlib.h>
+#include "nu2api/nu3d/nuportal.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "gameapi/edtools/edui.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameframework/saveload.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/numath/nufloat.h"
+#include "batman.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "nu2api/nucore/numemory.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include <stddef.h>
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/nu3d/nuspline.h"
+#include <new>
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuang.h"
+#include "legoapi/render/light/shadow.h"
+#include "nu2api/nucore/nulist.h"
+#include "legoapi/items/base/animpacket.h"
 
-extern i32 adaptivedifficulty[3];
-extern f32 DEFENDTIME;
+struct PLAYERITEM_s;
+struct PLAYERITEMTYPE_s;
 
-extern i8 (*adtab)[4];
+// --- Helpers moved from world.cpp ---
 
-void SetWeaponIn(GameObject_s *object) {
-    const i8 context = object->character_context;
-    if (context != -1 && (context == LEGOCONTEXT_WEAPONIN || context == LEGOCONTEXT_WEAPONOUT)) {
-        object->character_context = -1;
-    }
-    object->weapon_scale = 0.0f;
-    object->field_0xe22 &= ~GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-    object->weapon_scale_state = WEAPON_SCALE_IDLE;
+static PLAYERITEMTYPE_s *PlayerItemType = NULL;
+static i32 PLAYERITEMTYPECOUNT = 0;
+
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
+
+namespace {
+
+} // namespace
+
+struct nuvec_s;
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
-static inline void FastWeaponInSfx(GameObject_s *object) {
-    if (object->weapon_scale_state == WEAPON_SCALE_RETRACTING)
-        return;
-    const i32 current_animation = CurrentAnim(&object->apiobj.anim_packet);
-    if (current_animation != -1) {
-        CHARACTERANIM_s *animation =
-            static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[current_animation]);
-        if (animation != NULL && (animation->flags & CHARACTER_ANIMATION_FLAG_GUN_ON) != 0)
-            return;
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
-    const u32 model_flags = object->apiobj.character_data->model_flags;
-    if ((model_flags & CHARACTER_MODEL_FLAG_JEDI) != 0) {
-        if (object->apiobj.field_0x27c != -1 || WeaponInOut_NoAIJediSfx == 0) {
-            GameAudio_PlaySfx(0x3d, &object->apiobj.collision_position, GameAudio_GetPlrSfxBits(object), 1);
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+// Original defaults: 0x668d30 and 0x668d40, each a four-byte integer.
+
+void PlayerItemTypes_Init(PLAYERITEMTYPE_s *types) {
+    PlayerItemType = NULL;
+    PLAYERITEMTYPECOUNT = 0;
+    if (types != NULL) {
+        PlayerItemType = types;
+        if (types->id != -1) {
+            i32 count = 0;
+            do {
+                types++;
+                count++;
+            } while (types->id != -1);
+            PLAYERITEMTYPECOUNT = count;
+        } else {
+            PlayerItemType = NULL;
         }
-    } else if ((model_flags & CHARACTER_MODEL_FLAG_ALTERNATE_WEAPON) != 0) {
-        GameAudio_PlaySfx(0x42, &object->apiobj.collision_position, 0, 1);
     }
 }
 
-void FastWeaponIn(GameObject_s *object, i32 force_sound) {
-    const i8 context = object->character_context;
-    if (context != -1 && (context == LEGOCONTEXT_WEAPONIN || context == LEGOCONTEXT_WEAPONOUT)) {
-        object->character_context = -1;
-    }
-    if (__builtin_expect(force_sound != 0, 1) && object->weapon_scale == 1.0f)
-        FastWeaponInSfx(object);
-    object->weapon_scale_rate = 5.0f;
-    object->weapon_scale_state = WEAPON_SCALE_RETRACTING;
-}
-
-void KeepWeaponIn(GameObject_s *object) {
-    object->weapon_scale = 0.0f;
-    object->field_0xe22 &= ~GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-    object->weapon_scale_state = WEAPON_SCALE_IDLE;
-    object->field_0xef8 &= ~GAMEOBJECT_EF8_FLAG_KEEP_WEAPON_OUT;
-}
-
-void SetWeaponOut(GameObject_s *object) {
-    const i8 context = object->character_context;
-    if (context != -1 && (context == LEGOCONTEXT_WEAPONIN || context == LEGOCONTEXT_WEAPONOUT)) {
-        object->character_context = -1;
-    }
-    object->weapon_scale = 1.0f;
-    object->weapon_out_timer = 0.0f;
-    object->field_0xe22 |= GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-    object->weapon_scale_state = WEAPON_SCALE_IDLE;
-}
-
-void SlowWeaponIn(GameObject_s *object) {
-    if (LEGOCONTEXT_WEAPONIN != -1 && Fighting_WeaponInActionFn != NULL) {
-        const i32 action = Fighting_WeaponInActionFn(object);
-        if (action != -1 && object->apiobj.character_model->model_data_b[action] != NULL) {
-            const f32 end = NuAnimEndFrame(object->apiobj.character_model->model_data_b[action]);
-            f32 start = AnimListFrame(object->apiobj.character_model, action, 0);
-            if (!(start >= 1.0f))
-                start = 1.0f;
-            if (start >= 1.0f && start < end) {
-                const f32 finish = AnimListFrame(object->apiobj.character_model, action, 1);
-                if (finish > end || finish > start) {
-                    object->context_animation = action;
-                    object->character_context = LEGOCONTEXT_WEAPONIN;
-                    object->context_animation_timer = AnimDuration(object->id, action, 0.0f, 0.0f, 1);
-                    object->weapon_scale = 1.0f;
-                    return;
-                }
-            }
+void PlayerItemTypes_Reset(WORLDINFO *world) {
+    if (PlayerItemType != 0 && PLAYERITEMTYPECOUNT > 0) {
+        for (i32 i = 0; i < PLAYERITEMTYPECOUNT; i++) {
+            PlayerItemType[i].field_0x9 = (u8)BoltType_FindIDByName(PlayerItemType[i].name, world);
         }
     }
-    FastWeaponIn(object, 1);
 }
 
-void WeaponInCode(GameObject_s *object) {
-    if (LEGOCONTEXT_WEAPONIN == -1 || object->character_context != LEGOCONTEXT_WEAPONIN)
-        return;
-    GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    if (object->pad_gamepad->input_magnitude > 0.0f && (data->field_0x94 & 0x1000) == 0) {
-        if (object->weapon_scale == 1.0f && object->weapon_scale_state != WEAPON_SCALE_RETRACTING) {
-            FastWeaponIn(object, 0);
-        }
-        object->character_context = -1;
-        return;
-    }
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    const i16 animation = packet.blending ? packet.blend_animation_b : packet.animation_index;
-    if (animation != object->context_animation) {
-        object->weapon_scale = 1.0f;
-        return;
-    }
-    const f32 start = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
-    object->context_animation_timer -= FRAMETIME;
-    if (object->context_animation_timer <= 0.0f) {
-        object->character_context = -1;
-        if (object->weapon_scale != 1.0f)
-            return;
+void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type) {
+    item->type = type;
+    if (type != NULL) {
+        item->ammunition = type->field_0x2;
+        item->field_0x5 = type->field_0x3;
     } else {
-        if (object->weapon_scale != 1.0f || object->weapon_scale_state == WEAPON_SCALE_RETRACTING ||
-            packet.requested_animation != object->context_animation)
-            return;
-        const f32 time = packet.blending ? packet.blend_target_time : packet.current_time;
-        if (!(time >= start))
-            return;
-    }
-    const f32 end = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
-    object->weapon_scale_state = WEAPON_SCALE_RETRACTING;
-    object->weapon_scale_rate = 1.0f / AnimDuration(object->id, object->context_animation, start, end, 0);
-    if ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_JEDI) != 0) {
-        if (object->apiobj.field_0x27c != -1 || WeaponInOut_NoAIJediSfx == 0) {
-            GameAudio_PlaySfx(0x3d, &object->apiobj.collision_position, GameAudio_GetPlrSfxBits(object), 1);
-        }
-    } else {
-        GameAudio_PlaySfx(0x42, &object->apiobj.collision_position, 0, 1);
-    }
-    ResetCharacterIdle(object, 1, GetDefaultIdle(object));
-}
-
-static inline void FastWeaponOutSfx(GameObject_s *object) {
-    if (object->weapon_scale_state == WEAPON_SCALE_EXTENDING)
-        return;
-    const i32 current_animation = CurrentAnim(&object->apiobj.anim_packet);
-    if (current_animation != -1) {
-        CHARACTERANIM_s *animation =
-            static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[current_animation]);
-        if (animation != NULL && (animation->flags & CHARACTER_ANIMATION_FLAG_GUN_OFF) != 0)
-            return;
-    }
-    const u32 model_flags = object->apiobj.character_data->model_flags;
-    if ((model_flags & CHARACTER_MODEL_FLAG_JEDI) != 0) {
-        if (object->apiobj.field_0x27c != -1 || WeaponInOut_NoAIJediSfx == 0) {
-            GameAudio_PlaySfx(0x3e, &object->apiobj.collision_position, GameAudio_GetPlrSfxBits(object), 1);
-        }
-    } else if ((model_flags & CHARACTER_MODEL_FLAG_ALTERNATE_WEAPON) != 0) {
-        GameAudio_PlaySfx(0x43, &object->apiobj.collision_position, 0, 1);
+        item->ammunition = 0;
+        item->field_0x5 = 0;
     }
 }
 
-void FastWeaponOut(GameObject_s *object, i32 force_sound) {
-    const i8 context = object->character_context;
-    if (context != -1 && (context == LEGOCONTEXT_WEAPONIN || context == LEGOCONTEXT_WEAPONOUT)) {
-        object->character_context = -1;
-    }
-    if (__builtin_expect(force_sound != 0, 1) && object->weapon_scale == 0.0f)
-        FastWeaponOutSfx(object);
-    object->weapon_scale_rate = 5.0f;
-    object->weapon_out_timer = 0.0f;
-    object->weapon_scale_state = WEAPON_SCALE_EXTENDING;
-}
-
-void KeepWeaponOut(GameObject_s *object) {
-    object->weapon_scale = 1.0f;
-    object->field_0xe22 |= GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-    object->weapon_scale_state = WEAPON_SCALE_IDLE;
-    object->field_0xef8 |= GAMEOBJECT_EF8_FLAG_KEEP_WEAPON_OUT;
-}
-
-i32 ReleaseHearts() {
-    GameObject_s *player = Player[0];
-    i32 missing_hitpoints;
-    i32 total_hitpoints;
-    if (player != NULL && player->apiobj.field_0x287 == 0) {
-        total_hitpoints = player->hitpoints;
-        const i32 current_hitpoints = static_cast<i8>(player->current_hp);
-        missing_hitpoints = total_hitpoints != 0 ? total_hitpoints - current_hitpoints : 0;
-    } else {
-        total_hitpoints = 0;
-        missing_hitpoints = 0;
-    }
-
-    player = Player[1];
-    if (player != NULL && player->apiobj.field_0x287 == 0) {
-        i32 current_hitpoints = static_cast<i8>(player->current_hp);
-        i32 hitpoints = player->hitpoints;
-        if (hitpoints != 0) {
-            total_hitpoints += hitpoints;
-            missing_hitpoints += hitpoints - current_hitpoints;
-        } else if (total_hitpoints == 0) {
-            return 0;
-        }
-    } else if (total_hitpoints == 0) {
-        return 0;
-    }
-
-    if (missing_hitpoints > 0 && MAXPARTS > 0) {
-        PART_s *part = Part;
-        PART_s *end = part + MAXPARTS;
-        do {
-            if ((part->active & 1) != 0 && part->type_id == 0xcb) {
-                --missing_hitpoints;
-            }
-            ++part;
-        } while (part != end);
-    }
-
-    missing_hitpoints -= Game.save_version;
-    if (Game.save_version <= 5) {
-        missing_hitpoints += 8;
-    } else {
-        missing_hitpoints += 9;
-    }
-
-    i32 release_threshold = total_hitpoints;
-    if (missing_hitpoints <= total_hitpoints)
-        release_threshold = missing_hitpoints < 0 ? 0 : missing_hitpoints;
-
-    i32 release_chance = (release_threshold << 16) / total_hitpoints;
-    const i32 difficulty_adjustment = static_cast<i8>(adtab[adaptivedifficulty[0]][1]);
-    if (difficulty_adjustment == 1) {
-        release_chance >>= 1;
-    } else if (difficulty_adjustment == -1) {
-        release_chance += release_chance;
-    }
-    return release_chance > qrand();
-}
-
-void SlowWeaponOut(GameObject_s *object) {
-    if (LEGOCONTEXT_WEAPONOUT != -1 && Fighting_WeaponOutActionFn != NULL) {
-        const i32 action = Fighting_WeaponOutActionFn(object);
-        if (action != -1 && object->apiobj.character_model->model_data_b[action] != NULL) {
-            const f32 end = NuAnimEndFrame(object->apiobj.character_model->model_data_b[action]);
-            f32 start = AnimListFrame(object->apiobj.character_model, action, 0);
-            if (start < 1.0f)
-                start = 1.0f;
-            if (start >= 1.0f && start < end) {
-                const f32 finish = AnimListFrame(object->apiobj.character_model, action, 1);
-                if (finish > end || finish > start) {
-                    object->context_animation = action;
-                    object->character_context = LEGOCONTEXT_WEAPONOUT;
-                    object->context_animation_timer = AnimDuration(object->id, action, 0.0f, 0.0f, 1);
-                    object->weapon_scale = 0.0f;
-                    object->weapon_out_timer = 0.0f;
-                    return;
-                }
-            }
+PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id) {
+    PLAYERITEMTYPE_s *type = PlayerItemType;
+    if (type != NULL) {
+        for (i32 i = 0; i < PLAYERITEMTYPECOUNT; i++) {
+            if (type[i].id == id)
+                return &type[i];
         }
     }
-    FastWeaponOut(object, 1);
+    return NULL;
 }
 
-void WeaponOutCode(GameObject_s *object) {
-    object->weapon_out_timer += FRAMETIME;
-    if (TouchHacks::ShouldKeepWeaponOut(*object)) {
-        object->weapon_out_timer = 0.0f;
-        if ((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) == 0 && object->character_context != 7) {
-            if (object->weapon_scale_state == WEAPON_SCALE_IDLE && object->apiobj.field_0x27d != 0 &&
-                object->pad_gamepad->input_magnitude == 0.0f) {
-                i32 action = 17;
-                if (object->apiobj.character_data->game_character->field275_0x116 == 0 &&
-                    (object->apiobj.character_data->model_flags & 0x80) != 0)
-                    action = 127;
-                if (object->apiobj.character_model->model_data_b[action] != NULL &&
-                    (object->character_context == -1 || (CInfo[object->character_context].flags & 4) != 0)) {
-                    SlowWeaponOut(object);
-                    goto after_weapon_touch;
-                }
-            }
-            FastWeaponOut(object, 1);
-        }
-    } else if (TouchHacks::ShouldPutWeaponAway(*object) &&
-               (object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 && object->character_context != 6) {
-        SlowWeaponIn(object);
-    }
-after_weapon_touch:
-    if (LEGOCONTEXT_WEAPONOUT == -1 || object->character_context != LEGOCONTEXT_WEAPONOUT)
-        return;
-    if (object->pad_gamepad->input_magnitude > 0.0f &&
-        (object->apiobj.character_data->game_character->field_0x94 & 0x1000) == 0) {
-        if (object->weapon_scale == 0.0f && object->weapon_scale_state != WEAPON_SCALE_EXTENDING) {
-            FastWeaponOut(object, 0);
-        }
-        object->character_context = -1;
-        return;
-    }
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    const i16 animation = packet.blending ? packet.blend_animation_b : packet.animation_index;
-    if (animation != object->context_animation) {
-        object->weapon_scale = 0.0f;
-        return;
-    }
-    const f32 start = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
-    object->context_animation_timer -= FRAMETIME;
-    if (object->context_animation_timer <= 0.0f) {
-        object->character_context = -1;
-        if (object->weapon_scale != 0.0f)
-            return;
-    } else {
-        if (object->weapon_scale != 0.0f || object->weapon_scale_state == WEAPON_SCALE_EXTENDING ||
-            packet.requested_animation != object->context_animation)
-            return;
-        const f32 time = packet.blending ? packet.blend_target_time : packet.current_time;
-        if (!(time >= start))
-            return;
-    }
-    const f32 end = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
-    object->weapon_scale_state = WEAPON_SCALE_EXTENDING;
-    object->weapon_scale_rate = 1.0f / AnimDuration(object->id, object->context_animation, start, end, 0);
-    if ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_JEDI) != 0) {
-        if (object->apiobj.field_0x27c != -1 || WeaponInOut_NoAIJediSfx == 0) {
-            GameAudio_PlaySfx(0x3e, &object->apiobj.collision_position, GameAudio_GetPlrSfxBits(object), 1);
-        }
-    } else {
-        GameAudio_PlaySfx(0x43, &object->apiobj.collision_position, 0, 1);
-    }
-    ResetCharacterIdle(object, 1, GetDefaultIdle(object));
+i32 PlayerItem_GotAmmo(PLAYERITEM_s *item) {
+    if (item != NULL && item->type != NULL && item->type->field_0x8 == 2)
+        return item->ammunition != 0;
+    return 1;
 }
 
-void AutoWeaponOnOff(GameObject_s *object) {
-    const i8 context = object->character_context;
-    if (context != -1 && (context == LEGOCONTEXT_WEAPONOUT || context == LEGOCONTEXT_WEAPONIN))
-        return;
-    const i32 index = CurrentAnim(&object->apiobj.anim_packet);
-    if (index == -1)
-        return;
-    CHARACTERANIM_s *animation = static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[index]);
-    const u32 flags = animation->flags;
-    const ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((flags & CHARACTER_ANIMATION_FLAG_GUN_OFF) != 0) {
-        if (object->weapon_scale > 0.0f) {
-            if ((packet.flags & ANIMPACKET_FLAG_ANIMATION_CHANGED) != 0 && packet.blending != 0) {
-                FastWeaponIn(object, 0);
-            } else if ((packet.flags & ANIMPACKET_FLAG_ANIMATION_CHANGED) != 0 ||
-                       object->weapon_scale_state != WEAPON_SCALE_RETRACTING) {
-                SetWeaponIn(object);
-            }
-        }
-    } else if ((flags & CHARACTER_ANIMATION_FLAG_GUN_ON) != 0 && object->weapon_scale < 1.0f) {
-        if ((packet.flags & ANIMPACKET_FLAG_ANIMATION_CHANGED) != 0 && packet.blending != 0) {
-            FastWeaponOut(object, 0);
-        } else if ((packet.flags & ANIMPACKET_FLAG_ANIMATION_CHANGED) != 0 ||
-                   object->weapon_scale_state != WEAPON_SCALE_EXTENDING) {
-            SetWeaponOut(object);
-        }
-    }
-}
-
-extern "C" i32 ParticlesPerSecond(f32 rate, f32 elapsed);
-
-void RegenerateHearts(GameObject_s *object) {
-    if (object->current_hp > 0 && object->current_hp < object->hitpoints && object->field_0x1024 <= 0.0f &&
-        object->spawn_protection_timer <= 0.0f && ParticlesPerSecond(1.0f, FRAMETIME) > 0) {
-        ++object->current_hp;
-        GameAudio_PlaySfx(0x27, &object->apiobj.collision_position, 0, 0);
-    }
-}
-
-void WeaponScalingCode(GameObject_s *object) {
-    switch (object->weapon_scale_state) {
-        case WEAPON_SCALE_EXTENDING:
-            object->weapon_scale = SeekLinearF(object->weapon_scale, 1.0f, object->weapon_scale_rate * FRAMETIME);
-            if (object->weapon_scale >= 1.0f) {
-                object->weapon_scale_state = WEAPON_SCALE_IDLE;
-                object->field_0xe22 |= GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-            }
-            break;
-        case WEAPON_SCALE_RETRACTING:
-            object->weapon_scale = SeekLinearF(object->weapon_scale, 0.0f, object->weapon_scale_rate * FRAMETIME);
-            if (object->weapon_scale <= 0.0f) {
-                object->weapon_scale_state = WEAPON_SCALE_IDLE;
-                object->field_0xe22 &= ~GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
-            }
-            break;
-        default:
-            break;
-    }
-}

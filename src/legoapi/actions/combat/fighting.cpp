@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/actions/combat/fighting.h"
 #include "legoapi/actions/combat/hits.h"
@@ -11,39 +14,99 @@
 #include "legoapi/world/world.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
-#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/motion/animlist.h"
 #include "legoapi/characters/motion/action_info.h"
 #include "legoapi/characters/motion/contexts.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/characters/core/playeritems.h"
-#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/gizmo/object/gizmoblowups.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/actions/character/speederchase.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
-#include "legoapi/render/fx/parts.h"
-#include "legoapi/misc/utilities.h"
 
 #include <stdlib.h>
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-void BlockSfx(GameObject_s *object);
-void StartHold(GameObject_s *object);
-void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
-void Arcade_Kill(i32, i32);
-i32 CannotKill(GameObject_s *);
-i32 NewBlockAction(GameObject_s *);
-void Player_ClearContext(GameObject_s *, i32);
-void Player_ResetContexts(PLAYERPACKET_s *);
-i32 qrand();
-extern "C" void KillPart(PART_s *, i32);
-void LightSabreDebris(GameObject_s *);
+#include "legoapi/items/collect/torpedo.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/gizmos/door/securitydoors.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/nu3d/nutexanm.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/items/base/apiobject.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/numath/nuvec4.h"
+#include "nu2api/numusic/sfx.h"
+#include <float.h>
+#include <string.h>
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/ai/aisys/aipath.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/numechptr.hpp"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "nu2api/nu3d/nuspline.h"
+#include <stdio.h>
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nufile/nufile.h"
+#include <math.h>
+#include "legoapi/audio/audio.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "gameframework/saveload.h"
+#include "nu2api/nu3d/nuhspecial.h"
+#include "legoapi/world/levels/podrace.h"
+#include <stdint.h>
+#include "nu2api/nucore/nulist.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "editor/edpath.h"
+#include "nu2api/nucore/common.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "nu2api/nu3d/numtl.h"
+#include "editor/edpath_types.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include <ctype.h>
+#include "legoapi/world/areas.h"
+#include "nu2api/numusic/numusic.h"
+#include <stdarg.h>
+#include <limits.h>
+#include "legoapi/actions/movement/climbing.h"
 
 void (*Punch_HitHoldFn)(GameObject_s *, GameObject_s *);
 i32 (*Punch_GetDamageFn)(GameObject_s *, GameObject_s *);
@@ -55,218 +118,149 @@ BLADE_s BladeTab[4] = {
     {107, 227, 4, 62, 67, {200, 0, 255}, {0, 0, 0}},
 };
 
-void DeflectPart(PART_s *part, GameObject_s *object, float speed, float gravity, i32 deflect, i32 debris) {
-    NUMTX matrix = part->transform;
-    u32 flags = part->flags;
-    i16 type = part->type_id;
-    GameObject_s *owner = part->owner;
-    nuhspecial_s *special = part->source_special;
-    f32 radius = part->field_0e4;
-    KillPart(part, 0);
+// Original action/context lookup data, with its arrays and pointers in one owner.
 
-    if (deflect != 0 && owner != NULL) {
-        NUVEC velocity;
-        f32 facing;
-        if (object->apiobj.player_controlled) {
-            if (owner->apiobj.field_0x27c == -1) {
-                MakeThrowVector(&velocity, reinterpret_cast<NUVEC *>(&matrix.m30), &owner->apiobj.collision_position,
-                                &owner->apiobj.velocity, speed, gravity);
-                goto velocity_ready;
-            }
-        }
-        velocity.y = 0.0f;
-        velocity.x = 0.0f;
-        velocity.z = 2.0f;
-        NuVecRotateX(&velocity, &velocity, static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * -5461.0f));
-        facing = static_cast<f32>(object->apiobj.movement_facing_angle - 0x1555);
-        NuVecRotateY(&velocity, &velocity,
-                     static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 10922.0f + facing));
-    velocity_ready:
-        ADDPART_s params = Default_ADDPART;
-        params.matrix = &matrix;
-        params.velocity = &velocity;
-        params.special = special;
-        params.field_14 = radius;
-        params.gravity = gravity;
-        params.field_28 = type;
-        params.flags = flags;
-        params.owner = object;
-        params.field_40 = PartCollide_3D;
-        params.time_step = FRAMETIME;
-        PART_s *deflected = AddPart(&params);
-        if (deflected != NULL) {
-            u16 (*hit_flags)(GameObject_s *) = reinterpret_cast<u16 (*)(GameObject_s *)>(ObjHitObj_Flags);
-            deflected->force_flags = hit_flags(object);
-            if (part->update_callback != NULL)
-                part->update_callback(deflected);
-        }
-    }
-    if (object != NULL) {
-        if (object->field_0x7a5 == 0x18)
-            NewBlockAction(object);
-        NewRumble(object->pad_gamepad->pad, 0.75f, 0);
-        GameCam_Judder(GameCam, -0.2f, 0, NULL);
-        if (debris != -1)
-            LightSabreDebris(object);
-    }
+i32 (*CanStartHoldFn)(GameObject_s *) = NULL;
+
+extern i32 LevFlag[4];
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
 }
 
-bool IsDownSwipe(NuVec2 const &start, NuVec2 const &end) {
-    return abs(RotDiff(NuAtan2D(end.x - start.x, end.y - start.y), 0x8000)) < 0x1c72;
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
 }
 
-void TakeHitCode(GameObject_s *object) {
-    f32 timer;
-    f32 frame_time;
-    f32 impact_speed;
-    f32 impact_threshold;
-    i16 animation;
-    i8 context;
-    i32 animation_active;
-    i32 kill_parts_mode;
-    i32 hearts;
-    i32 second_flag;
-    i32 first_flag;
-    u32 coins;
-    bool has_coins;
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
 
-    animation = object->context_animation;
-    animation_active = 1;
-    if (animation == -1) {
-        animation_active = 0;
-    } else if (object->apiobj.character_model->model_data_b[animation] != NULL &&
-               AnimPlaying(&object->apiobj.anim_packet, animation, 1, 0) == 0) {
-        animation_active = 0;
-    }
+namespace {
 
-    context = object->character_context;
-    if (context == 0x5a)
-        goto context_5a;
-    if (context != 0x5f) {
-        if (context != 0x15 || animation_active == 0)
-            return;
-        timer = object->context_animation_timer;
-        frame_time = FRAMETIME;
-        object->context_animation_timer = timer - frame_time;
-        if (0.0f < timer - frame_time)
-            return;
-        goto finish_context;
-    }
+} // namespace
 
-    if (animation_active == 0)
-        return;
-    timer = object->context_animation_timer + FRAMETIME;
-    object->context_animation_timer = timer;
-    if (timer >= object->airborne_action_duration)
-        goto finish_airborne;
-    if (timer > 0.5f)
-        goto check_ground_impact;
-    return;
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
 
-check_ground_impact:
-    if (0.0f > object->reset_velocity.y && object->apiobj.field_0x27d != 0)
-        goto finish_airborne;
-    if (object->field_0x1084 == 0)
-        return;
-    impact_speed = object->terrain_impact_speed;
-    impact_threshold = timer / object->airborne_action_duration * -0.8f + 0.8f;
-    if (impact_speed > impact_threshold)
-        goto finish_airborne;
-    return;
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 
-finish_airborne:
-    kill_parts_mode = 1;
-    if (Arcade != 0 && static_cast<u8>(object->hit_variant) < 2)
-        Arcade_Kill(object->hit_variant, object->apiobj.field_0x27c);
-    goto kill_object;
+struct FLOWBOX_s;
 
-context_5a:
-    if (animation_active == 0)
-        return;
-    timer = object->context_animation_timer;
-    frame_time = FRAMETIME;
-    object->context_animation_timer = timer - frame_time;
-    if (0.0f < timer - frame_time)
-        return;
-    if (object->field_0x7a3 != 0) {
-        if (object->field_0x7a3 != 1)
-            return;
-        goto finish_context;
-    }
+struct JEDIBNETPACKET_s;
 
-    animation = object->context_animation;
-    object->movement_runtime_flags |= 0x80;
-    if (animation == 0xb9) {
-        kill_parts_mode = 0;
-        goto kill_object;
-    }
-    if (animation == 0x3d)
-        goto finish_context;
-    if (animation == 0xa7)
-        object->context_animation = 0xaa;
-    else if (animation == 0xa8)
-        object->context_animation = 0xab;
-    else if (animation == 0xa9)
-        object->context_animation = 0xac;
-    else
-        object->context_animation = 1;
+struct nuhspecial_s;
+struct nuvec_s;
 
-    object->field_0x7a3 = 1;
-    animation = object->context_animation;
-    if (object->apiobj.character_model->model_data_b[animation] != NULL &&
-        (static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[animation])->flags & 2) == 0) {
-        object->context_animation_timer = AnimDuration(object->id, animation, 0.0f, 0.0f, 1);
-        return;
-    }
-    object->context_animation_timer = object->field_0x768;
-    return;
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
 
-finish_context:
-    object->character_context = -1;
-    return;
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
 
-kill_object:
-    KillParts(object, -1, -1, 1, 0.0f, kill_parts_mode, NULL);
-    KillGameObject(object, 2, 0);
-    if (object->apiobj.field_0x27c != -1)
-        return;
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
 
-    if (BonusArea != 0) {
-        coins = static_cast<u16>(object->apiobj.character_data->game_character->field_0xee);
-        has_coins = static_cast<i32>(coins) > 0;
-    release_hearts:
-        hearts = ReleaseHearts();
-        if (hearts == 0 && !has_coins)
-            return;
-        if (BonusArea == 0) {
-            if (coins > 2499) {
-                first_flag = 0;
-                second_flag = 0;
-                goto add_pickups;
-            }
-        no_bonus_under_limit:
-            first_flag = 1;
-            second_flag = 0;
-            goto add_pickups;
-        }
-    } else {
-        if (Cheat_IsOn(0x10) == 0) {
-            has_coins = false;
-            coins = 0;
-            goto release_hearts;
-        } else {
-            hearts = ReleaseHearts();
-            coins = 350;
-            if (BonusArea == 0)
-                goto no_bonus_under_limit;
-        }
-    }
+struct nupad_s;
 
-    first_flag = 0;
-    second_flag = 1;
-add_pickups:
-    AddPickups(coins, hearts, 0, 0, &object->apiobj.collision_position, NULL, 2.0f, -1, 1.0f, 2000000.0f, NULL,
-               first_flag, second_flag, false);
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+struct EDCREATURE_s;
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+struct AISYS_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+extern u32 flagremaptab[32][2];
+}
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
 }
 
 void ComboHitFrame(GameObject_s *object, i32 damage) {
@@ -279,127 +273,39 @@ void ComboHitFrame(GameObject_s *object, i32 damage) {
     BlockSfx(object);
 }
 
-i32 IsFacingTarget(nuvec_s *first, nuvec_s *second, i32 facing_angle, i32 arc_degrees) {
-    const i32 arc = (arc_degrees << 15) / 360;
-    NUVEC direction;
-    NuVecSub(&direction, first, second);
-
-    i32 angle_difference = (NuAtan2D(direction.x, direction.z) - facing_angle) & 0xffff;
-    if (angle_difference >= 0x8000)
-        angle_difference -= 0x10000;
-    angle_difference = abs(angle_difference);
-
-    return arc > angle_difference;
-}
-
-void ComboRotateCode(GameObject_s *object, i32 action_held) {
-    if (object->character_context != 9) {
+void StartHold(GameObject_s *object) {
+    if (CanStartHoldFn == NULL)
+        return;
+    if (CanStartHoldFn(object) == 2) {
+        object->hold_timer = 0.0f;
+        object->character_context = -1;
         return;
     }
-    object->context_animation_timer += FRAMETIME;
-    i32 rotation;
-    if (object->context_animation_timer != object->context_animation_timer) {
-        rotation = static_cast<i32>(object->context_animation_timer / object->airborne_action_duration * 32768.0f);
-    } else {
-        if (action_held == 0) {
+    if (LEGOCONTEXT_HOLD != -1 && NewBlockAction(object) != 0) {
+        object->context_animation_timer = 0.3f;
+        object->character_context = LEGOCONTEXT_HOLD;
+        PlaySabreSfx(NULL, object, NULL, 1);
+        return;
+    }
+    object->character_context = -1;
+}
+
+void HoldCode(GameObject_s *object) {
+    if (LEGOCONTEXT_HOLD != -1 && object->character_context == LEGOCONTEXT_HOLD) {
+        if (object->context_animation_timer > 0.0f)
+            object->context_animation_timer -= FRAMETIME;
+        else if ((object->pad_gamepad->buttons_held & GAMEPAD_ACTION) == 0)
             object->character_context = -1;
-        } else {
-            StartHold(object);
-        }
-        rotation = -0x8000;
     }
-    u16 angle =
-        object->pad_79f[0] == 1 ? object->carried_object_angle + rotation : object->carried_object_angle - rotation;
-    object->apiobj.field_0x276 = angle;
-    object->apiobj.movement_facing_angle = angle;
-    object->apiobj.facing_angle = angle;
 }
 
-BOLTTYPE_s *BoltType_FindByID(i32, WORLDINFO_s *);
-void SetWeaponIn(GameObject_s *);
-void SetWeaponOut(GameObject_s *);
-DECOMP_ASSERT(offsetof(GameObject_s, field_0x7e4) == 0x7e4, "Quick shoot record offset");
-DECOMP_ASSERT(offsetof(GameObject_s, field_0x7e8) == 0x7e8, "Quick shoot record count offset");
-DECOMP_ASSERT(offsetof(GameObject_s, quick_shoot_flags) == 0xe2f, "Quick shoot flags offset");
-DECOMP_ASSERT(offsetof(GameObject_s, quick_shoot_bolt_id) == 0xe3e, "Quick shoot bolt ID offset");
-void StartQuickShoot(GameObject_s *object, i32 action) {
-    object->field_0xe21 &= ~8;
-    i32 bolt_id = BoltType_FindIDByCreature(object, 0);
-    NUVEC direction;
-    BoltSys->shoot_direction(object, &direction);
-    f32 speed = BoltType_FindByID(bolt_id, WORLD)->field_10;
-    f32 range = speed * BoltType_FindByID(bolt_id, WORLD)->field_14;
-    f32 range_squared = range * range;
-    GameObject_s *target = TargetGameObject(object, &object->apiobj.collision_position, &direction, range,
-                                            range_squared, 0, 1, 0, bolt_id);
-    if (target != NULL)
-        SetObjTarget(object, target);
-    else if ((object->apiobj.flags_low & 0x80) != 0 &&
-             GizmoSys_SetBestBoltTarget(WORLD->gizmo_sys, WORLD, object, &object->apiobj.collision_position, &direction,
-                                        range, range_squared, 1, 0, bolt_id) == 0) {
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_Target(object, &object->apiobj.collision_position, &direction, range,
-                                                   range_squared, 1, 0, bolt_id);
-        if (blowup != NULL)
-            SetGizmoBlowUpTarget(object, blowup);
-        else {
-            PART_s *part =
-                TargetPart(object, &object->apiobj.collision_position, &direction, range, range_squared, 1, bolt_id);
-            if (part != NULL)
-                SetPartTarget(object, part);
-            else {
-                target = TargetGameObject(object, &object->apiobj.collision_position, &direction, range, range_squared,
-                                          0x200, 1, 0, bolt_id);
-                if (target != NULL)
-                    SetObjTarget(object, target);
-            }
-        }
+void HoldCode_Copy(GameObject_s *object) {
+    if (LEGOCONTEXT_HOLD != -1 && object->character_context == LEGOCONTEXT_HOLD) {
+        if (object->context_animation_timer > 0.0f)
+            object->context_animation_timer -= FRAMETIME;
+        else if ((object->pad_gamepad->buttons_held & GAMEPAD_ACTION) == 0)
+            object->character_context = -1;
     }
-    object->character_context = 10;
-    object->context_animation = action;
-    object->context_animation_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, action != 0x57);
-    ResetAnimPacket(&object->apiobj.anim_packet, -1);
-    object->apiobj.anim_packet.flags |= 0x10;
-    i32 fire_now = !(AnimListFrame(object->apiobj.character_model, object->context_animation, 1) > 1.0f);
-    bolt_id = BoltType_FindIDByCreature(object, 0);
-    i32 flags = 1 + 2 * fire_now;
-    if (object == Player[0] && nextShootTarget.Get() != NULL)
-        nextShootTarget = NuMechPtr<MechObjectInterface, 4>();
-    if ((object->apiobj.field_0x1f4 & 0x40000) == 0 || object->apiobj.field_0x27c == -1) {
-        NewBuzzFrames(object->pad_gamepad->pad, (object->apiobj.character_data->model_flags & 0x2000) != 0 ? 1 : 2, 0);
-        object->quick_shoot_flags = flags;
-        object->quick_shoot_bolt_id = bolt_id;
-        object->field_0xef9 |= 8;
-        if ((object->apiobj.character_data->game_character->flags_098[0] & 2) != 0)
-            SetWeaponIn(object);
-        if (object->field_0x7e4 != NULL && object->field_0x7e4[8] == 2 && object->field_0x7e8 != 0)
-            --object->field_0x7e8;
-    }
-    object->quick_shoot_timer = 0.0f;
-    ++object->action_suppressed;
-    SetWeaponOut(object);
-}
-
-void ForceNextLungeTarget(MechObjectInterface *target) {
-    lungeTarget = NuMechPtr<MechObjectInterface, 4>(target);
-}
-
-void ForceNextShootTarget(MechObjectInterface &target) {
-    nextShootTarget = NuMechPtr<MechObjectInterface, 4>(&target);
-}
-
-i32 ObjZappedBlue(GameObject_s *object) {
-    if (object->field_0x7a5 == 0x42)
-        return 1;
-    if (object->field_0x7a5 == 0x1c) {
-        GameObject_s *holder = static_cast<GameObject_s *>(object->field_0x780);
-        if (holder != NULL && (holder->field_0xe21 & 1) != 0)
-            return 1;
-    }
-    return 0;
-}
-
-void SetForcedAttackOpponent(MechObjectInterface *target) {
-    forceNextAttackOpponent = NuMechPtr<MechObjectInterface, 4>(target);
 }
 
 void Punch_Hit(GameObject_s *attacker, GameObject_s *target, float, float gap) {
@@ -514,3 +420,4 @@ extra_code:
         Punch_HitExtraCodeFn(attacker, hit_position);
     }
 }
+

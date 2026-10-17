@@ -2,35 +2,23 @@
 #include "legoapi/audio/audio.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
-#include "legoapi/characters/motion/action_info.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/screens/gamestructure.h"
-#include "legoapi/render/fx.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world.h"
 #include "globals.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/ai/game/creature.h"
+#include "legoapi/characters/motion/move.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
-
-extern i32 drop_in_teleport;
-extern i32 teleport_all_freeplay_modes;
-
-void ResetPlayerMoves(GameObject_s *object);
-void Player_ClearContext(GameObject_s *object, i32 mode);
-void Player_ResetContexts(PLAYERPACKET_s *packet);
-void ResetPlayerPacket(PLAYERPACKET_s *packet, CHARACTERDATA_s *data);
-void ReleaseEat(GameObject_s *object);
-void AICreatureResumeScript(GameObject_s *object);
 
 void StartDropIn(GameObject_s *object) {
     if (WORLD->current_level == PODSPRINTA_LDATA || (PODRACE_ADATA != NULL && PODRACE_ADATA == WORLD->area)) {
@@ -92,38 +80,6 @@ f32 DropInOutScale(GameObject_s *object) {
         return NuTrigTable[(static_cast<i32>(angle) >> 1) & 0x7fff];
     }
     return 1.0f;
-}
-
-i32 FreePlay_DropInToPlayerPos(GameObject_s *object) {
-    i32 result = 0;
-    if ((WORLD == NULL || WORLD->current_level != FACTORYF_LDATA) && player != NULL && FreePlay != 0 &&
-        drop_in_teleport > 1 && VehicleArea == 0 && (Arcade != 0 || teleport_all_freeplay_modes != 0) &&
-        object->field_0xcc0 == NULL && (CInfo[static_cast<i8>(object->character_context)].flags & 0x8000) == 0 &&
-        object->character_context != 0x2b && object->apiobj.model_draw_result == 0 && (object->tag_flags & 2) == 0) {
-        NUVEC position = player->apiobj.last_safe_position;
-        if (position.x == player->apiobj.position.x && position.y == player->apiobj.position.y &&
-            position.z == player->apiobj.position.z) {
-            position.z += 0.01f;
-        }
-
-        if (NuCameraClipTestSphere(&position, object->apiobj.field_0x1e0, &numtx_identity) == 0) {
-            ResetPlayerMoves(object);
-            Player_ClearContext(object, 1);
-            Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-            object->apiobj.start_position = position;
-            object->apiobj.position = position;
-            object->apiobj.velocity = v000;
-            object->apiobj.field_0x276 = player->apiobj.field_0x276;
-            ResetPlayerMoves(object);
-            object->apiobj.movement_stuck_time = 0.0f;
-            InitSurfaceInfo(object);
-            SetObjOnSurface(object, 1);
-            GameObjectOrigin(object);
-            AddGameDebris(WORLD->debris_sys, 0x5c, &object->apiobj.collision_position);
-            result = 1;
-        }
-    }
-    return result;
 }
 
 void DropOut(i32 player_index, i32 resume, i32 silent, i32) {

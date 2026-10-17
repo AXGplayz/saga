@@ -1,14 +1,14 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
-#include "gameapi/edtools/edfile.h"
 #include "globals.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/core/input/qrand.h"
 #include "nu2api/nu3d/nutexanm.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/gizmo/base/gizactions.h"
@@ -17,246 +17,118 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world.h"
-#include "legoapi/world/level.h"
 #include "nu2api/nu3d/nurndr.h"
-#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuhgobj.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nufloat.h"
-#include "nu2api/numath/nuquat.h"
 #include "nu2api/numath/nuvec4.h"
-#include "nu2api/numath/nurand.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
 
 #include <float.h>
 #include <string.h>
+#include <stdio.h>
+#include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/numtx.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nusound/nusound.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include <stdlib.h>
+#include "legoapi/world/mission.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/misc/utilities.h"
+#include <math.h>
+#include "batman.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/render/fx/particles.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/actions/character/streaks.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "gameframework/saveload.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/render/light/shadow.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/nucore/nupad.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include <new>
+#include <stdint.h>
+#include "nu2api/nucore/nulist.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "editor/edpath.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuang.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/characters/motion/contexts.h"
+#include <stddef.h>
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edanim_internal.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "legoapi/misc/androidbatman.h"
+#include <cfloat>
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/gizmos/door/securitydoors.h"
+#include "gameapi/ai/aisys/aipath.h"
+#include "nu2api/nucore/numechptr.hpp"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "nu2api/nu3d/nuhspecial.h"
+#include "legoapi/world/levels/podrace.h"
+#include <ctype.h>
+#include <limits.h>
+#include "legoapi/world/levels/episodeI.h"
 
-void EvalAnim(nuhspecial_s *special, f32 frame, numtx_s *matrix, i32 include_instance_translation);
-i32 UseFallAnim(GameObject_s *object);
-i32 GetDefaultIdle(GameObject_s *object);
-i32 SetProtocolDroidFallAnim(GameObject_s *object);
 // Retail uses translation-unit-local helpers with compiler-inferred private
 // calling conventions; keep their shared animation-mode call sites intact.
-static void MoveAnim_Manage(GameObject_s *object, f32 movement_speed, i32 allow_tiptoe, i32 weapon_variant);
-static void MoveAnim_Check(GameObject_s *object);
-static void JumpAnimCode(GameObject_s *object);
-static bool JumpAnim_HasAction(const GameObject_s *object, i16 action);
-static GAMECHARACTERDATA *GetGameCharacterData(GameObject_s *object);
-void UpdateCharacterIdle(GameObject_s *object);
-void AutoWeaponOnOff(GameObject_s *object);
-void AddFootSteps(GameObject_s *object);
-f32 PodSprint_InStartCountdown(WORLDINFO_s *world);
-i32 PodRace_InStartCountdown(WORLDINFO_s *world);
-void SetPodMergeAnims(ANIMPACKET_s *packet, i32 index);
-extern "C" i16 id_ANAKINSPODGREEN;
-extern "C" void PlaySfxByIdAndSetVolume(i32 sfx_id, NUVEC *position, f32 volume);
-i32 MatrixReflection(NUMTX *matrix, i32 axis, f32 plane, f32 height, NUMTX *result);
-
-extern i16 id_BODYGUARD;
-extern i16 id_IMPERIALGUARD;
-extern i16 id_YODA;
-extern i16 id_YODAGHOST;
-extern i16 id_GONKDROID;
-extern i16 id_JUMBOHOMINGDROID;
-extern i16 id_GAMORREANGUARD, id_PRINCESSLEIASLAVE, id_LAMASU, id_TAUNWE;
-extern i16 id_PENGUIN, id_UMBRELLA, id_GLIDEPACK;
-extern f32 hub_jabbaawake;
-
-enum CHARACTER_ANIMATION : i16 {
-    CHARACTER_ANIMATION_WALK = 0,
-    CHARACTER_ANIMATION_IDLE = 1,
-    CHARACTER_ANIMATION_RUN = 3,
-    CHARACTER_ANIMATION_TIPTOE = 4,
-    CHARACTER_ANIMATION_FALL = 5,
-    CHARACTER_ANIMATION_WEAPON_IDLE = 11,
-    CHARACTER_ANIMATION_ALT_IDLE = 25,
-    CHARACTER_ANIMATION_SABER_RUN = 23,
-    CHARACTER_ANIMATION_ALT_WEAPON_IDLE = 39,
-    CHARACTER_ANIMATION_FALL_VARIANT_40 = 40,
-    CHARACTER_ANIMATION_SABER_TIPTOE = 63,
-    CHARACTER_ANIMATION_SABER_WALK = 64,
-    CHARACTER_ANIMATION_FALL_VARIANT_75 = 75,
-    CHARACTER_ANIMATION_FALL_VARIANT_76 = 76,
-    CHARACTER_ANIMATION_BACKWARDS = 80,
-    CHARACTER_ANIMATION_EXTRA_TIPTOE = 113,
-    CHARACTER_ANIMATION_EXTRA_WALK = 114,
-    CHARACTER_ANIMATION_EXTRA_RUN = 115,
-    CHARACTER_ANIMATION_EXTRA_FALL = 116,
-    CHARACTER_ANIMATION_EXTRA_IDLE = 117,
-    CHARACTER_ANIMATION_SUIT_TIPTOE = 198,
-    CHARACTER_ANIMATION_SUIT_WALK = 199,
-    CHARACTER_ANIMATION_SUIT_RUN = 200,
-};
-
-static void MoveAnim_Check(GameObject_s *object) {
-    if (GetAnimBlendMode() == 1)
-        return;
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    i16 requested = packet.requested_animation;
-    const i16 previous = packet.previous_animation;
-    if (object->released_movement_animation == -1)
-        goto check_hold;
-reset_hold:
-    object->movement_animation_hold_timer = 0.1f;
-    object->held_movement_animation = -1;
-check_release:
-    requested = packet.requested_animation;
-    {
-        const u32 requested_flags = ActionInfo[requested].flags;
-        if (requested == previous || (requested_flags & 7) == 0 ||
-            (previous != CHARACTER_ANIMATION_ALT_IDLE && previous != CHARACTER_ANIMATION_IDLE) ||
-            (requested_flags & 4) != 0)
-            goto reset_release;
-        if (object->released_movement_animation != -1) {
-            object->movement_animation_release_timer -= FRAMETIME;
-            if (object->movement_animation_release_timer <= 0.0f)
-                object->movement_animation_release_timer = -1.0f;
-            else
-                packet.requested_animation = object->released_movement_animation;
-            return;
-        }
-        object->movement_animation_hold_timer = 0.1f;
-        if (packet.blending == 0 && (requested_flags & 3) != 0) {
-            packet.requested_animation = previous;
-            object->released_movement_animation = previous;
-        }
-        return;
-    }
-reset_release:
-    object->movement_animation_release_timer = 0.1f;
-    object->released_movement_animation = -1;
-    return;
-check_hold:
-    if (requested == previous)
-        goto reset_hold;
-    {
-        const u32 requested_flags = ActionInfo[requested].flags;
-        if (((requested_flags & 7) == 0 && requested != CHARACTER_ANIMATION_ALT_IDLE &&
-             requested != CHARACTER_ANIMATION_IDLE) ||
-            (ActionInfo[previous].flags & 7) == 0 || (requested_flags & 4) != 0)
-            goto reset_hold;
-    }
-    if (object->held_movement_animation != -1) {
-        object->movement_animation_hold_timer -= FRAMETIME;
-        if (object->movement_animation_hold_timer <= 0.0f) {
-            object->held_movement_animation = -1;
-        } else {
-            packet.requested_animation = object->held_movement_animation;
-            goto reset_release;
-        }
-    } else {
-        object->movement_animation_hold_timer = 0.1f;
-        if (packet.blending == 0) {
-            bool retain_previous = false;
-            if (previous == CHARACTER_ANIMATION_RUN) {
-                retain_previous = requested == CHARACTER_ANIMATION_WALK || requested == CHARACTER_ANIMATION_TIPTOE ||
-                                  requested == CHARACTER_ANIMATION_IDLE;
-            } else if (previous == CHARACTER_ANIMATION_SABER_RUN) {
-                const GAMECHARACTERDATA *game_character =
-                    static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                const i16 alternate_idle =
-                    game_character->field275_0x116 != 0
-                        ? CHARACTER_ANIMATION_ALT_IDLE
-                        : static_cast<i16>((object->apiobj.character_data->model_flags & 0x80) != 0 ? 118 : 25);
-                retain_previous = requested == CHARACTER_ANIMATION_SABER_TIPTOE ||
-                                  requested == CHARACTER_ANIMATION_SABER_WALK || requested == alternate_idle;
-            }
-            if (retain_previous) {
-                packet.requested_animation = previous;
-                object->held_movement_animation = previous;
-                goto reset_release;
-            }
-        }
-    }
-    goto check_release;
-}
-
-static void JumpAnimCode(GameObject_s *object) {
-    if (object->context_variant_flags < 0) {
-        void **animations = object->apiobj.character_model->model_data_b;
-        if (object->action_movement_state == PLAYER_JUMP_MOVEMENT_COMBAT_ROLL &&
-            animations[PLAYER_JUMP_ACTION_COMBAT_ROLL_FALL] != NULL) {
-            object->apiobj.anim_packet.requested_animation = PLAYER_JUMP_ACTION_COMBAT_ROLL_FALL;
-            return;
-        }
-        if (animations[PLAYER_JUMP_ACTION_FALL] != NULL) {
-            object->apiobj.anim_packet.requested_animation = PLAYER_JUMP_ACTION_FALL;
-            return;
-        }
-        object->apiobj.anim_packet.requested_animation = object->context_animation;
-        return;
-    }
-    ANIMPACKET_s *packet = &object->apiobj.anim_packet;
-    packet->requested_animation = object->context_animation;
-    const u8 state = object->action_movement_state;
-    if (object->context_animation != 0x49 && (state == 6 || state < 2 || state == 7 || state == 9)) {
-        if (!(packet->blending == 0 && object->context_animation == packet->animation_index &&
-              (packet->flags & 1) != 0)) {
-            object->airborne_input_timer = 0.0f;
-        } else {
-            object->airborne_input_timer += FRAMETIME;
-            if (object->airborne_input_timer >= 0.1f &&
-                (object->nearby_floor_distance == 2000000.0f || object->nearby_floor_distance > 0.35f)) {
-                object->context_variant_flags |= 0x80;
-            }
-        }
-    }
-}
-
-static CHARACTERANIM_s *GetAnimationInfo(const CHARACTERMODEL_s *model, i32 animation) {
-    if (model == NULL || animation < 0 || model->model_data_a == NULL) {
-        return NULL;
-    }
-    return static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-}
-
-static GAMECHARACTERDATA *GetGameCharacterData(GameObject_s *object) {
-    if (object == NULL || object->apiobj.character_data == NULL) {
-        return NULL;
-    }
-    return static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-}
-
-static void StartAnimation(CHARACTERMODEL_s *model, ANIMPACKET_s *packet, i16 animation, bool backwards) {
-    packet->animation_index = animation;
-    CHARACTERANIM_s *info = GetAnimationInfo(model, animation);
-    const bool reverse =
-        backwards && info != NULL && (info->flags & CHARACTER_ANIMATION_FLAG_REVERSE_WITH_MOVEMENT) != 0;
-    packet->current_reversed = reverse ? 1 : 0;
-    packet->current_time = reverse ? NuAnimEndFrame(model->model_data_b[animation]) : 1.0f;
-    packet->previous_time = packet->current_time;
-    packet->blending = 0;
-}
-
-void Animate_ATAT(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-        if (object->apiobj.player_controlled && object->apiobj.character_model->model_data_b[15] != NULL) {
-            packet.requested_animation = 15;
-        }
-        if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-            object->pad_gamepad->input_magnitude > 0.0f) {
-            packet.requested_animation = CHARACTER_ANIMATION_WALK;
-        }
-    }
-
-    if (packet.requested_animation != CHARACTER_ANIMATION_IDLE) {
-        return;
-    }
-
-    const i32 turn = RotDiff(object->previous_movement_angle, object->apiobj.field_0x276);
-    if (turn < 0 && object->apiobj.character_model->model_data_b[38] != NULL) {
-        packet.requested_animation = 38;
-    } else if (turn > 0 && object->apiobj.character_model->model_data_b[79] != NULL) {
-        packet.requested_animation = 79;
-    }
-}
 
 void Animate_POD(GameObject_s *object) {
     ANIMPACKET_s &packet = object->apiobj.anim_packet;
@@ -303,1019 +175,981 @@ normal_animation:
     }
 }
 
-static inline i16 JediWeaponIdle(GameObject_s *object) {
-    if (((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 || object->field_0xe32 == 1) &&
-        object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_WEAPON_IDLE] != NULL)
-        return CHARACTER_ANIMATION_ALT_WEAPON_IDLE;
-    return CHARACTER_ANIMATION_WEAPON_IDLE;
+extern WORLDINFO WorldInfo[2];
+
+struct bgprocinfo_s;
+
+extern i32 LevFlag[4];
+
+extern i32 LevFlag[4]; // shared per-level 16-byte state scratch
+
+struct AISYS_s;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
 }
 
-void Animate_JEDI(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
 
-    if ((object->field_0xe23 & GAMEOBJECT_E23_FLAG_FORCE_WEAPON_IDLE) != 0) {
-        packet.requested_animation = JediWeaponIdle(object);
-    } else if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
 
-        if (object->field_0x7a5 != CHARACTER_CONTEXT_DOOMED) {
-            bool use_default_idle = object->apiobj.field_0x27d != 0;
-            if (!use_default_idle) {
-                const bool has_fall_animation =
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL;
-                // Original 0x16c978/0x16c9ce joins the character-data check
-                // at 0x16c7bc even when the ground-contact timer has expired.
-                if (object->ground_contact_grace_timer > 0.0f || !has_fall_animation ||
-                    (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                     object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
-                    const GAMECHARACTERDATA *game_character =
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    use_default_idle = !(game_character->field_0x28 > 0.0f) || !has_fall_animation;
-                }
-            }
-            if (use_default_idle) {
-                packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-            }
-        }
+}
 
-        if (object->field_0x7a5 == CHARACTER_CONTEXT_JUMP) {
-            JumpAnimCode(object);
-        } else if (UseFallAnim(object)) {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        } else if (object->field_0x7a5 == CHARACTER_CONTEXT_FORCE_PUSH) {
-            if ((object->action_flags & GAMEOBJECT_ACTION_FLAG_FORCE_PUSH_WEAPON_IDLE_MASK) != 0) {
-                packet.requested_animation = JediWeaponIdle(object);
-            } else {
-                packet.requested_animation =
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_WEAPON_IDLE] != NULL
-                        ? CHARACTER_ANIMATION_ALT_WEAPON_IDLE
-                        : CHARACTER_ANIMATION_WEAPON_IDLE;
-            }
-        } else if (object->field_0x7a5 == CHARACTER_CONTEXT_FORCE_DEFLECT ||
-                   object->field_0x7a5 == CHARACTER_CONTEXT_FORCE_THROW ||
-                   object->field_0x7a5 == CHARACTER_CONTEXT_FORCE) {
-            packet.requested_animation = JediWeaponIdle(object);
-        } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL) {
-            GAMEPAD_s *pad = object->pad_gamepad;
-            if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 && pad->input_magnitude > 0.0f) {
-                if (object->id == id_YODA || object->id == id_YODAGHOST) {
-                    packet.requested_animation = CHARACTER_ANIMATION_SABER_TIPTOE;
-                } else {
-                    const GAMECHARACTERDATA *game_character =
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    const i32 allow_tiptoe =
-                        (game_character->flags_090 & GAMECHARACTER_FLAG_DISABLE_TIPTOE) == 0 ? 1 : 0;
-                    MoveAnim_Manage(object, pad->input_magnitude, allow_tiptoe, 1);
-                }
-            } else if (((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 ||
-                        object->field_0xe32 == 1) &&
-                       object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_IDLE] != NULL) {
-                packet.requested_animation = CHARACTER_ANIMATION_ALT_IDLE;
-            }
-        }
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
 
-        if (UsingExtraActionsFn != NULL && UsingExtraActionsFn(object) != 0) {
-            switch (packet.requested_animation) {
-                case CHARACTER_ANIMATION_WALK:
-                    packet.requested_animation = CHARACTER_ANIMATION_EXTRA_WALK;
-                    break;
-                case CHARACTER_ANIMATION_IDLE:
-                    packet.requested_animation = CHARACTER_ANIMATION_EXTRA_IDLE;
-                    break;
-                case 2:
-                    break;
-                case CHARACTER_ANIMATION_RUN:
-                    packet.requested_animation = CHARACTER_ANIMATION_EXTRA_RUN;
-                    break;
-                case CHARACTER_ANIMATION_TIPTOE:
-                    packet.requested_animation = CHARACTER_ANIMATION_EXTRA_TIPTOE;
-                    break;
-                case CHARACTER_ANIMATION_FALL:
-                    packet.requested_animation = CHARACTER_ANIMATION_EXTRA_FALL;
-                    break;
-            }
-        }
-        MoveAnim_Check(object);
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct nuhspecial_s;
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+
+struct numtx_s;
+
+struct EDCREATURE_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+typedef isize __attribute__((may_alias)) NuGCutWord;
+
+struct instNUGCUTSCENE_s;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct nupad_s;
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+struct ani3_animheader_s;
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
-    UpdateCharacterIdle(object);
 
-    if (packet.requested_animation == CHARACTER_ANIMATION_FALL ||
-        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-         (packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_75 ||
-          packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-          packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer += FRAMETIME;
-    } else {
-        object->fall_animation_timer = 0.0f;
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
     }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
 
-    if (object->id == id_IMPERIALGUARD || !(object->weapon_scale > 0.0f)) {
+union variptr_u;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" i16 id_LANDSPEEDER;
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+namespace {
+
+} // namespace
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+struct MechTouchUIElement;
+
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
+
+namespace {
+
+} // namespace
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+extern "C" i16 id_LANDSPEEDER;
+
+extern "C" {
+    extern i16 id_MINIATST, id_MINIATTE;
+}
+
+extern i16 id_MINIATST, id_MINIATTE;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct FLOWBOX_s;
+
+struct JEDIBNETPACKET_s;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+extern u32 flagremaptab[32][2];
+}
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+void GameAnimSys_AllocateLevelProgressData(variptr_u *buf, variptr_u *buf_end, i32 capacity, i32 level_count) {
+    if (buf_end == NULL || buf == NULL)
+        return;
+    gameanimsysprogress.count = level_count;
+    gameanimsysprogress.entry_size = capacity;
+    gameanimsysprogress.entries = static_cast<u8 **>(GameBufferAlloc(buf, buf_end, level_count * sizeof(u8 *)));
+    if (gameanimsysprogress.entries != NULL) {
+        for (i32 i = 0; i < level_count; ++i)
+            gameanimsysprogress.entries[i] = static_cast<u8 *>(GameBufferAlloc(buf, buf_end, capacity));
+    }
+}
+
+void GameAnimSys_StoreProgress(GAMEANIMSYS_s *system, i32 index) {
+    if (system == NULL || system->sets == NULL || index < 0 || index >= gameanimsysprogress.count)
+        return;
+    u8 *progress = gameanimsysprogress.entries[index];
+    for (i32 i = 0; i < gameanimsysprogress.entry_size; ++i) {
+        GAMEANIMSET_s *set = system->sets[i];
+        if (set == NULL)
+            return;
+        progress[i] = static_cast<u8>(set->state);
+    }
+}
+
+u8 *GameAnimSys_GetProgressData(i32 index) {
+    if (index < 0 || index >= gameanimsysprogress.count)
+        return NULL;
+    return gameanimsysprogress.entries[index];
+}
+
+void GameAnimSys_ClearProgress(i32 idx) {
+    if (idx < 0) {
         return;
     }
-
-    const char *loop_sfx;
-    if (object->id == id_BODYGUARD) {
-        loop_sfx = "Grv_GuardWeaponLp";
-    } else if ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_JEDI_BADDIE) != 0) {
-        loop_sfx = "SaberLoopB";
-    } else {
-        loop_sfx = "SaberLoopJ";
-    }
-    PlaySfxByIdAndSetVolume(GetSfxId(loop_sfx), &object->apiobj.collision_position, object->weapon_scale);
-}
-
-static void MoveAnim_Manage(GameObject_s *object, f32 movement_speed, i32 allow_tiptoe, i32 weapon_variant) {
-    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-
-    CHARACTER_ANIMATION animation;
-    if (allow_tiptoe != 0 && movement_speed <= (game_character->tiptoe_speed + game_character->walk_speed) * 0.5f) {
-        if (weapon_variant != 0 &&
-            (object->weapon_scale == 1.0f || object->weapon_scale_state == WEAPON_SCALE_EXTENDING) &&
-            object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SABER_TIPTOE] != NULL) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_SABER_TIPTOE;
-        } else {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_TIPTOE;
-        }
-    } else if (movement_speed <= (game_character->walk_speed + game_character->run_speed) * 0.5f) {
-        if (weapon_variant != 0 &&
-            (object->weapon_scale == 1.0f || object->weapon_scale_state == WEAPON_SCALE_EXTENDING) &&
-            object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SABER_WALK] != NULL) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_SABER_WALK;
-        } else if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_BACKWARDS] != NULL &&
-                   (object->field_0xefd & GAMEOBJECT_MOVEMENT_FLAG_BACKWARDS) != 0) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_BACKWARDS;
-        } else {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        }
-    } else {
-        object->apiobj.anim_packet.requested_animation = animation =
-            weapon_variant != 0 &&
-                    (object->weapon_scale == 1.0f || object->weapon_scale_state == WEAPON_SCALE_EXTENDING) &&
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SABER_RUN] != NULL
-                ? CHARACTER_ANIMATION_SABER_RUN
-                : CHARACTER_ANIMATION_RUN;
-    }
-
-    const SUIT_s *suit = static_cast<const SUIT_s *>(object->suit);
-    if (suit != NULL && (suit->store_flag & SUIT_STORE_FLAG_EXTRA_MOVEMENT_ANIMATIONS) != 0 &&
-        (object->movement_context_state & 0x00ffff00) != 0x00054300) {
-        if (animation == CHARACTER_ANIMATION_TIPTOE &&
-            object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SUIT_TIPTOE] != NULL) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_SUIT_TIPTOE;
-        } else if (animation == CHARACTER_ANIMATION_WALK &&
-                   object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SUIT_WALK] != NULL) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_SUIT_WALK;
-        } else if (animation == CHARACTER_ANIMATION_RUN &&
-                   object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_SUIT_RUN] != NULL) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_SUIT_RUN;
-        }
-    }
-
-    // The target applies this bounded fallback exactly three times. Keeping
-    // the passes explicit preserves its finite walk/run alternation when a
-    // model supplies none of the ordinary locomotion clips.
-    if (object->apiobj.character_model->model_data_b[animation] == NULL) {
-        if (animation == CHARACTER_ANIMATION_TIPTOE) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else if (animation == CHARACTER_ANIMATION_WALK) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_RUN;
-        } else if (animation == CHARACTER_ANIMATION_RUN) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else {
-            return;
-        }
-    }
-    if (object->apiobj.character_model->model_data_b[animation] == NULL) {
-        if (animation == CHARACTER_ANIMATION_TIPTOE) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else if (animation == CHARACTER_ANIMATION_WALK) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_RUN;
-        } else if (animation == CHARACTER_ANIMATION_RUN) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else {
-            return;
-        }
-    }
-    if (object->apiobj.character_model->model_data_b[animation] == NULL) {
-        if (animation == CHARACTER_ANIMATION_TIPTOE) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else if (animation == CHARACTER_ANIMATION_WALK) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_RUN;
-        } else if (animation == CHARACTER_ANIMATION_RUN) {
-            object->apiobj.anim_packet.requested_animation = animation = CHARACTER_ANIMATION_WALK;
-        } else {
-            return;
-        }
-    }
-}
-
-void AnimatePlayer(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    packet.previous_animation = packet.animation_index;
-    object->mini_animation.previous_animation = object->mini_animation.animation_index;
-    CHARACTERMODEL_s *model = object->apiobj.character_model;
-
-    if ((object->apiobj.field_0x1f4 & APIOBJECT_STATE_FLAG_IGNORE_DOORS) == 0) {
-        object->apiobj.character_data->animate_fn(object);
-    }
-
-    if (object->ai.animation_override_from != -1 &&
-        ((object->ai.animation_override_from == 0xe9 && object->character_context != 0x1c) ||
-         object->ai.animation_override_from == packet.requested_animation)) {
-        packet.requested_animation = object->ai.animation_override_to;
-    }
-
-    if (model == NULL ||
-        (object->apiobj.field_0x287 != 0 && (object->field_0x1018 == 0.0f || object->apiobj.field_0x287 == 1))) {
+    if (idx >= gameanimsysprogress.count) {
         return;
     }
-
-    const f32 direction = (object->field_0xefd & GAMEOBJECT_MOVEMENT_FLAG_BACKWARDS) != 0 ? -1.0f : 1.0f;
-    f32 movement_speed;
-    if (object->apiobj.character_model->model_data_b[1] != NULL) {
-        movement_speed = object->pad_gamepad->animation_input_magnitude;
-        if (movement_speed > 0.0f && object->id == id_GONKDROID && Cheat_IsOn(8) == 0)
-            movement_speed = object->apiobj.character_data->game_character->walk_speed;
-    } else if ((object->apiobj.character_data->game_character->flags_090 &
-                GAMECHARACTER_FLAG_ANIMATION_SPEED_FROM_VELOCITY) != 0) {
-        const f32 forward_speed = object->apiobj.velocity.x * object->facing_direction.x +
-                                  object->apiobj.velocity.z * object->facing_direction.z;
-        movement_speed = forward_speed < 0.0f ? 0.0f : forward_speed;
-    } else {
-        movement_speed = object->pad_gamepad->input_magnitude;
-    }
-
-    // The original passes signed movement into UpdateAnimPacket.  Clips with
-    // CHARACTER_ANIMATION_FLAG_REVERSE_WITH_MOVEMENT (including the acrobatic
-    // jump clips) start at their end frame and play backwards while the
-    // character is travelling backwards.
-    f32 time_multiplier = 1.0f;
-    if (object->character_context == 0x2d && object->field_0x788 != NULL)
-        time_multiplier = GizBuildItMul(object);
-    UpdateAnimPacket(model, &packet, (FRAMETIME * 30.0f) * time_multiplier, movement_speed * direction,
-                     time_multiplier * FRAMETIME,
-                     object->apiobj.character_data->game_character->backwards_speed_multiplier);
-    if ((packet.flags & ANIMPACKET_FLAG_ANIMATION_CHANGED) != 0 &&
-        (packet.blending != 0 ? packet.blend_animation_b : packet.animation_index) == 0x5f) {
-        f32 *time = packet.blending != 0 ? &packet.blend_target_time : &packet.current_time;
-        const f32 duration = AnimDuration(object->id, 0x5f, 0.0f, 0.0f, 0);
-        i32 count = static_cast<i32>(duration / 0.3f);
-        if (NuFmod(duration, 3.0f) > 0.15f)
-            ++count;
-        const i32 phase = qrand() / (0xffff / count + 1);
-        CHARACTERMODEL_s *current_model = object->apiobj.character_model;
-        const f32 start =
-            static_cast<f32>(phase) *
-                (0.3f * static_cast<CHARACTERANIM_s *>(current_model->model_data_a[0x5f])->playback_rate) +
-            1.0f;
-        if (NuAnimEndFrame(current_model->model_data_b[0x5f]) > start)
-            *time = start;
-        object->field_0xe21 = (object->field_0xe21 & ~0x40) | ((phase & 1) << 6);
-    }
-    AutoWeaponOnOff(object);
-    AddFootSteps(object);
-}
-
-void Animate_BEAST(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    GAMEPAD_s *pad = object->pad_gamepad;
-
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        if (object->character_context != CHARACTER_CONTEXT_DOOMED &&
-            (object->apiobj.field_0x27d != 0 ||
-             ((object->ground_contact_grace_timer > 0.0f ||
-               object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-               (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) &&
-              !(static_cast<const GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 >
-                    0.0f &&
-                object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL)))) {
-            packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-        }
-
-        if (UseFallAnim(object)) {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL &&
-                   (object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                   pad->input_magnitude > 0.0f) {
-            const bool has_walk = object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_WALK] != NULL;
-            const bool has_run = object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_RUN] != NULL;
-            if (!has_run) {
-                if (has_walk) {
-                    packet.requested_animation = CHARACTER_ANIMATION_WALK;
-                }
-            } else if (!has_walk) {
-                packet.requested_animation = CHARACTER_ANIMATION_RUN;
-            } else {
-                const GAMECHARACTERDATA *character =
-                    static_cast<const GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                const f32 threshold = (character->walk_speed + character->run_speed) * 0.5f;
-                if (!(threshold >= object->pad_gamepad->input_magnitude)) {
-                    packet.requested_animation = CHARACTER_ANIMATION_RUN;
-                } else {
-                    packet.requested_animation = CHARACTER_ANIMATION_WALK;
-                }
-            }
-            if (packet.requested_animation == CHARACTER_ANIMATION_WALK && (object->field_0xe24 & 1) != 0) {
-                packet.requested_animation = CHARACTER_ANIMATION_SABER_WALK;
-            }
-        }
-
-        const GAMECHARACTERDATA *character =
-            static_cast<const GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-        if (character->run_speed != character->walk_speed && character->run_speed != character->tiptoe_speed) {
-            MoveAnim_Check(object);
-        }
-        if (packet.requested_animation == CHARACTER_ANIMATION_FALL &&
-            object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
-            packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-        }
-    }
-
-    UpdateCharacterIdle(object);
-    const i16 animation = packet.requested_animation;
-    if (animation == CHARACTER_ANIMATION_FALL ||
-        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-         (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-          animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer += FRAMETIME;
-    } else {
-        object->fall_animation_timer = 0.0f;
-    }
-}
-
-void Animate_BARMAN(GameObject_s *object) {
-    GAMEPAD_s *pad = object->pad_gamepad;
-    object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-    if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 && pad->input_magnitude > 0.0f) {
-        object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_WALK;
-    }
-    UpdateCharacterIdle(object);
-}
-
-void Animate_CANNON(GameObject_s *object) {
-    object->apiobj.anim_packet.requested_animation =
-        (CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0
-            ? object->context_animation
-            : CHARACTER_ANIMATION_IDLE;
-}
-
-void Animate_WALKER(GameObject_s *object) {
-    GAMEPAD_s *pad = object->pad_gamepad;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        object->apiobj.anim_packet.requested_animation = object->context_animation;
+    u8 *data = gameanimsysprogress.entries[idx];
+    if (gameanimsysprogress.entry_size <= 0) {
         return;
     }
-
-    object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-    if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 && pad->input_magnitude > 0.0f) {
-        object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_WALK;
+    for (i32 i = 0; i < gameanimsysprogress.entry_size; i++) {
+        data[i] = 0;
     }
 }
 
-void Animate_CRITTER(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-        return;
+GAMEANIMSYS_s *GameAnimSys_Create(variptr_u *buf, variptr_u *buf_end) {
+    GAMEANIMSYS_s *system = static_cast<GAMEANIMSYS_s *>(GameBufferAlloc(buf, buf_end, sizeof(GAMEANIMSYS_s)));
+    if (system != NULL && gameanimsysprogress.entry_size != 0) {
+        system->sets = static_cast<GAMEANIMSET_s **>(
+            GameBufferAlloc(buf, buf_end, gameanimsysprogress.entry_size * sizeof(GAMEANIMSET_s *)));
     }
-
-    if (object->character_context == 30) {
-        if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL) {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            return;
-        }
-    }
-    packet.requested_animation = CHARACTER_ANIMATION_FALL;
-
-    if (object->character_context != CHARACTER_CONTEXT_DOOMED) {
-        if (object->apiobj.field_0x27d != 0 ||
-            ((object->ground_contact_grace_timer > 0.0f ||
-              object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-              (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-               object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) &&
-             (!(static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f) ||
-              object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL))) {
-            packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-        }
-    }
-
-    if (!UseFallAnim(object)) {
-        if (packet.requested_animation != CHARACTER_ANIMATION_FALL &&
-            (object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-            object->pad_gamepad->input_magnitude > 0.0f) {
-            const bool has_walk = object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_WALK] != NULL;
-            const bool has_run = object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_RUN] != NULL;
-            if (has_run) {
-                if (has_walk) {
-                    const GAMECHARACTERDATA *game_character =
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    const f32 run_threshold = (game_character->walk_speed + game_character->run_speed) * 0.5f;
-                    packet.requested_animation = run_threshold >= object->pad_gamepad->input_magnitude
-                                                     ? CHARACTER_ANIMATION_WALK
-                                                     : CHARACTER_ANIMATION_RUN;
-                } else {
-                    packet.requested_animation = CHARACTER_ANIMATION_RUN;
-                }
-            } else if (has_walk) {
-                packet.requested_animation = CHARACTER_ANIMATION_WALK;
-            }
-        }
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-    }
-    MoveAnim_Check(object);
-}
-
-void Animate_WEIRDO(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        if (object->character_context != CHARACTER_CONTEXT_DOOMED) {
-            if (object->apiobj.field_0x27d != 0 ||
-                ((object->ground_contact_grace_timer > 0.0f ||
-                  object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-                  (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                   object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) &&
-                 (!(object->apiobj.character_data->game_character->field_0x28 > 0.0f) ||
-                  object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL))) {
-                packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-            }
-        }
-
-        if (object->character_context == CHARACTER_CONTEXT_JUMP) {
-            JumpAnimCode(object);
-        } else if (UseFallAnim(object)) {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        } else if (object->character_context == CHARACTER_CONTEXT_FORCE_PUSH &&
-                   (object->action_flags & GAMEOBJECT_ACTION_FLAG_FORCE_PUSH_WEAPON_IDLE_MASK) == 0) {
-            packet.requested_animation =
-                object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_WEAPON_IDLE] != NULL
-                    ? CHARACTER_ANIMATION_ALT_WEAPON_IDLE
-                    : CHARACTER_ANIMATION_WEAPON_IDLE;
-        } else if (object->character_context == CHARACTER_CONTEXT_FORCE_PUSH ||
-                   object->character_context == CHARACTER_CONTEXT_FORCE_DEFLECT ||
-                   object->character_context == CHARACTER_CONTEXT_FORCE_THROW ||
-                   object->character_context == CHARACTER_CONTEXT_FORCE) {
-            packet.requested_animation =
-                ((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 || object->field_0xe32 == 1) &&
-                        object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_WEAPON_IDLE] != NULL
-                    ? CHARACTER_ANIMATION_ALT_WEAPON_IDLE
-                    : CHARACTER_ANIMATION_WEAPON_IDLE;
-        } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL) {
-            if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                object->pad_gamepad->input_magnitude > 0.0f) {
-                MoveAnim_Manage(object, object->pad_gamepad->input_magnitude, 1, 1);
-            } else if ((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 || object->field_0xe32 == 1) {
-                if (object->apiobj.character_data->game_character->field275_0x116 == 0 &&
-                    (object->apiobj.character_data->model_flags & 0x80) != 0) {
-                    if (object->apiobj.character_model->model_data_b[118] != NULL)
-                        packet.requested_animation = 118;
-                } else if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_IDLE] != NULL) {
-                    packet.requested_animation = CHARACTER_ANIMATION_ALT_IDLE;
-                }
-            }
-        }
-
-        if (object->apiobj.character_data->game_character->field275_0x116 == 0 &&
-            (object->apiobj.character_data->model_flags & 0x80) != 0) {
-            if (packet.requested_animation == CHARACTER_ANIMATION_SABER_RUN)
-                packet.requested_animation = CHARACTER_ANIMATION_EXTRA_RUN;
-            else if (packet.requested_animation == CHARACTER_ANIMATION_SABER_WALK)
-                packet.requested_animation = CHARACTER_ANIMATION_EXTRA_WALK;
-        }
-        MoveAnim_Check(object);
-    }
-    UpdateCharacterIdle(object);
-
-    if (packet.requested_animation == CHARACTER_ANIMATION_FALL ||
-        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-         (packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_75 ||
-          packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-          packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer += FRAMETIME;
-    } else {
-        object->fall_animation_timer = 0.0f;
-    }
-
-    const u16 weapon = static_cast<u16>(object->apiobj.character_data->game_character->weapon_model) & ~2u;
-    if ((weapon == 101 || weapon == 105) && object->id != id_IMPERIALGUARD && object->weapon_scale > 0.0f) {
-        const char *loop_sfx;
-        if (object->id == id_BODYGUARD)
-            loop_sfx = "Grv_GuardWeaponLp";
-        else if ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_JEDI_BADDIE) != 0)
-            loop_sfx = "SaberLoopB";
-        else
-            loop_sfx = "SaberLoopJ";
-        const i32 sound = GetSfxId(loop_sfx);
-        PlaySfxByIdAndSetVolume(sound, &object->apiobj.collision_position, object->weapon_scale);
-    }
-}
-
-void Animate_DEFAULT(GameObject_s *object) {
-    object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-}
-
-extern i32 NeedsPretendAnim(GameObject_s *object);
-
-void Animate_VEHICLE(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        GAMECHARACTERDATA_s *character = object->apiobj.character_data->game_character;
-        if ((reinterpret_cast<u8 *>(character)[0x92] & 0x10) != 0) {
-            packet.requested_animation = 3;
-        } else if ((object->id == id_STAP || object->id == id_STAP2 || object->id == id_JUMBOHOMINGDROID) &&
-                   object->pad_gamepad->input_magnitude > 0.0f &&
-                   object->apiobj.character_model->model_data_b[0] != NULL) {
-            packet.requested_animation = 0;
-        } else {
-            packet.requested_animation = 1;
-        }
-    }
-
-    if (WORLD->current_level == PLATFORM_LDATA && NeedsPretendAnim(object) != 0) {
-        const u16 phase = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.1f) / 2.1f * 65536.0f);
-        object->render_offset.x = 0.1f * NU_SIN_LUT(phase);
-        object->render_offset.y = 0.05f * NU_SIN_LUT(static_cast<u16>(phase + 0x2000));
-        object->render_offset.z = 0.025f * NU_SIN_LUT(static_cast<u16>(phase ^ 0x8000));
-        NuVecMtxRotate(&object->render_offset, &object->render_offset, &object->apiobj.field_0xb8);
-    }
-}
-
-void Animate_PROTOCOL(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-        goto final_animation;
-    }
-    if (object->context_target_position != NULL) {
-        packet.requested_animation = static_cast<i16>(SetProtocolDroidFallAnim(object));
-        goto final_animation;
-    }
-    packet.requested_animation = CHARACTER_ANIMATION_FALL;
-    if (object->character_context == CHARACTER_CONTEXT_DOOMED)
-        goto falling;
-    if (object->apiobj.field_0x27d != 0)
-        goto idle;
-    if (object->ground_contact_grace_timer > 0.0f)
-        goto check_fall;
-    if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL)
-        goto check_fall;
-    if (!(object->fall_animation_timer < 0.2f) || object->nearby_floor_distance == 2000000.0f ||
-        !(object->nearby_floor_distance < 0.25f) || !(object->apiobj.velocity.y < 0.0f))
-        goto falling;
-check_fall:
-    if (!(GetGameCharacterData(object)->field_0x28 <= 0.0f) &&
-        object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL)
-        goto falling;
-idle:
-    packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-    if (packet.requested_animation == CHARACTER_ANIMATION_FALL)
-        goto falling;
-    switch (object->field_0xe38) {
-        case 1:
-            packet.requested_animation = 8;
-            break;
-        case 2:
-            packet.requested_animation = 20;
-            break;
-        case 3:
-            packet.requested_animation = 15;
-            break;
-        default:
-            packet.requested_animation = 1;
-            break;
-    }
-    if (UseFallAnim(object)) {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-    } else if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-               object->pad_gamepad->input_magnitude > 0.0f) {
-        switch (object->field_0xe38) {
-            case 1:
-                packet.requested_animation = 29;
-                break;
-            case 2:
-                packet.requested_animation = 23;
-                break;
-            case 3:
-                packet.requested_animation = 3;
-                break;
-            default:
-                packet.requested_animation = 0;
-                break;
-        }
-    }
-    goto final_animation;
-falling:
-    packet.requested_animation = static_cast<i16>(SetProtocolDroidFallAnim(object));
-    if (UseFallAnim(object))
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-final_animation:
-    if (packet.requested_animation == CHARACTER_ANIMATION_FALL)
-        packet.requested_animation = static_cast<i16>(SetProtocolDroidFallAnim(object));
-    UpdateCharacterIdle(object);
-    const i16 animation = packet.requested_animation;
-    if (animation != CHARACTER_ANIMATION_FALL &&
-        !((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-          (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-           animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer = 0.0f;
-    } else {
-        object->fall_animation_timer += FRAMETIME;
-    }
-}
-
-void Animate_DROIDEKA(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        if (object->character_context != CHARACTER_CONTEXT_DOOMED) {
-            if (object->apiobj.field_0x27d != 0) {
-                packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-            } else if (object->ground_contact_grace_timer > 0.0f) {
-                const GAMECHARACTERDATA *game_character =
-                    static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                if (!(game_character->field_0x28 > 0.0f) ||
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
-                    packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-                }
-            } else if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-                       (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                        object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
-                const GAMECHARACTERDATA *game_character =
-                    static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                if (!(game_character->field_0x28 > 0.0f) ||
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
-                    packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-                }
-            }
-        }
-
-        if (!UseFallAnim(object) && !(object->character_context == -1 && object->apiobj.field_0x27d == 0)) {
-            if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                object->pad_gamepad->input_magnitude > 0.0f) {
-                const GAMECHARACTERDATA *game_character = GetGameCharacterData(object);
-                const f32 walk_threshold = (game_character->tiptoe_speed + game_character->walk_speed) * 0.5f;
-                packet.requested_animation = !(object->pad_gamepad->input_magnitude <= walk_threshold)
-                                                 ? CHARACTER_ANIMATION_WALK
-                                                 : CHARACTER_ANIMATION_TIPTOE;
-            }
-        } else {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        }
-        MoveAnim_Check(object);
-    }
-
-    if (packet.requested_animation != CHARACTER_ANIMATION_FALL &&
-        !((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-          (packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_75 ||
-           packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-           packet.requested_animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer = 0.0f;
-    } else {
-        object->fall_animation_timer += FRAMETIME;
-    }
-}
-
-// Original @0x4a9900.
-void GameAnimSet_Draw(GAMEANIMSET_s &set) {
-    for (GAMEANIMOBJ_s *object = set.objects; object != NULL; object = object->next) {
-        if ((object->flags & 2) == 0 && NuSpecialGetVisibilityFn(&object->special) != 0) {
-            NuSpecialDrawAt(&object->special, NuSpecialGetDrawMtx(&object->special));
-        }
-    }
-}
-
-i32 GameAnimSet_Play(GAMEANIMSET_s *set, float speed, i32 evaluate_state) {
-    if (set == NULL) {
-        return 1;
-    }
-
-    if (evaluate_state != 0) {
-        GameAnimSet_EvaluateState(set);
-    }
-    set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags & ~GAMEANIMSET_FLAG_STOP_REQUESTED);
-
-    if (speed >= 0.0f) {
-        if (set->state == GAMEANIMSET_STATE_AT_END) {
-            return 1;
-        }
-    } else if (speed < 0.0f) {
-        if (set->state == GAMEANIMSET_STATE_AT_START) {
-            return 1;
-        }
-    }
-
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        nuinstanim_s *animation = object->instance_animation;
-        if (animation == NULL) {
-            continue;
-        }
-
-        animation->playing = 1;
-        animation->waiting = 0;
-
-        f32 direction;
-        if (object->end_frame < object->start_frame) {
-            direction = -1.0f;
-        } else {
-            direction = 1.0f;
-        }
-        f32 current_frame = animation->ltime * direction;
-        if (object->start_frame * direction > current_frame) {
-            animation->ltime = object->start_frame;
-        } else if (current_frame > object->end_frame * direction) {
-            animation->ltime = object->end_frame;
-        }
-
-        if (animation->fparam1 != 0.0f) {
-            animation->tfactor = animation->fparam1 * speed * direction;
-        } else {
-            animation->tfactor = direction * speed;
-        }
-    }
-
-    if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0) {
-        GameAnimSet_AddToSystemList(set);
-    }
-    return 1;
-}
-
-i32 GameAnimSet_Stop(GAMEANIMSET_s *set) {
-    if (set == NULL) {
-        return 1;
-    }
-
-    GAMEANIMSET_STATE state = static_cast<GAMEANIMSET_STATE>(set->state & ~GAMEANIMSET_STATE_AT_END);
-    if (state != GAMEANIMSET_STATE_ACTIVE_FORWARD) {
-        return 1;
-    }
-
-    set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags | GAMEANIMSET_FLAG_STOP_REQUESTED);
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        if (object->instance_animation != NULL) {
-            object->instance_animation->playing = 0;
-        }
-    }
-    return 1;
-}
-
-void Animate_ASTROMECH(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) == 0) {
-        if (object->context_target_position != NULL) {
-            if (object->apiobj.character_model->model_data_b[43] != NULL) {
-                packet.requested_animation = 43;
-            } else {
-                packet.requested_animation =
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL
-                        ? CHARACTER_ANIMATION_IDLE
-                        : CHARACTER_ANIMATION_FALL;
-            }
-        } else {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            if (object->character_context != CHARACTER_CONTEXT_DOOMED) {
-                if (object->apiobj.field_0x27d != 0) {
-                    packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-                } else if (object->ground_contact_grace_timer > 0.0f ||
-                           object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-                           (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                            object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
-                    const GAMECHARACTERDATA *game_character =
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    if (!(game_character->field_0x28 > 0.0f) ||
-                        object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
-                        packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-                    }
-                }
-            }
-
-            if (object->character_context == 0) {
-                packet.requested_animation = object->pad_gamepad->input_magnitude > 0.0f ? 37 : 36;
-            } else if (UseFallAnim(object)) {
-                packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL &&
-                       (object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                       object->pad_gamepad->input_magnitude > 0.0f) {
-                packet.requested_animation = CHARACTER_ANIMATION_WALK;
-            }
-        }
-    } else {
-        packet.requested_animation = object->context_animation;
-    }
-
-    UpdateCharacterIdle(object);
-    const i16 animation = packet.requested_animation;
-    if (animation != CHARACTER_ANIMATION_FALL &&
-        !((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-          (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-           animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer = 0.0f;
-    } else {
-        object->fall_animation_timer += FRAMETIME;
-    }
-}
-
-void Animate_CHARACTER(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if (object->id == id_JABBA && WORLD != NULL && WORLD->current_level == HUB_LDATA) {
-        packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-        if (object->pad_gamepad->input_magnitude > 0.0f && object->apiobj.character_model->model_data_b[0] != NULL) {
-            packet.requested_animation = CHARACTER_ANIMATION_WALK;
-        } else if (object->apiobj.character_model->model_data_b[15] != NULL && hub_jabbaawake > 0.0f) {
-            packet.requested_animation = 15;
-        }
-        return;
-    }
-    bool check_movement_animation = false;
-
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) == 0) {
-        if (object->context_target_position != NULL) {
-            if (object->apiobj.character_model->model_data_b[43] != NULL) {
-                packet.requested_animation = 43;
-            } else {
-                packet.requested_animation =
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL
-                        ? CHARACTER_ANIMATION_IDLE
-                        : CHARACTER_ANIMATION_FALL;
-            }
-        } else if (object->character_context == CHARACTER_CONTEXT_FORCE) {
-            packet.requested_animation = CHARACTER_ANIMATION_WEAPON_IDLE;
-        } else {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-
-            if (object->character_context != CHARACTER_CONTEXT_DOOMED &&
-                (object->apiobj.field_0x27d != 0 ||
-                 ((object->ground_contact_grace_timer > 0.0f ||
-                   object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-                   (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                    object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) &&
-                  (!(object->apiobj.character_data->game_character->field_0x28 > 0.0f) ||
-                   object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL)))) {
-                packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-            }
-
-            if (object->character_context == CHARACTER_CONTEXT_JUMP) {
-                JumpAnimCode(object);
-            } else if (UseFallAnim(object)) {
-                packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            } else if (object->character_context == -1 && object->field_0xe31 == 1) {
-                packet.requested_animation = object->pad_gamepad->input_magnitude > 0.0f ? 37 : 15;
-            } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL) {
-                GAMEPAD_s *pad = object->pad_gamepad;
-                if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 && pad->input_magnitude > 0.0f) {
-                    const GAMECHARACTERDATA *game_character =
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    if (!object->apiobj.player_controlled && game_character->field275_0x116 == 1) {
-                        MoveAnim_Manage(object, pad->input_magnitude, 0, 1);
-                    } else {
-                        const i32 allow_tiptoe =
-                            (game_character->flags_090 & GAMECHARACTER_FLAG_DISABLE_TIPTOE) == 0 ? 1 : 0;
-                        MoveAnim_Manage(object, pad->input_magnitude, allow_tiptoe, 1);
-                    }
-                } else if (((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 ||
-                            object->field_0xe32 == 1) &&
-                           object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_IDLE] != NULL) {
-                    packet.requested_animation = CHARACTER_ANIMATION_ALT_IDLE;
-                }
-            }
-            check_movement_animation = true;
-        }
-    } else {
-        packet.requested_animation = object->context_animation;
-    }
-
-    if (check_movement_animation) {
-        MoveAnim_Check(object);
-    }
-    if (object->apiobj.player_controlled && (object->pad_gamepad->buttons_held & GAMEPAD_SPECIAL) != 0) {
-        if (object->id == id_GAMORREANGUARD) {
-            if (packet.requested_animation == CHARACTER_ANIMATION_ALT_IDLE)
-                packet.requested_animation = 15;
-        } else if (object->id == id_PRINCESSLEIASLAVE) {
-            if (packet.requested_animation == CHARACTER_ANIMATION_IDLE)
-                packet.requested_animation = 96;
-        } else if ((object->id == id_LAMASU || object->id == id_TAUNWE) &&
-                   packet.requested_animation == CHARACTER_ANIMATION_IDLE) {
-            packet.requested_animation = 15;
-        }
-    }
-    UpdateCharacterIdle(object);
-
-    const i16 animation = packet.requested_animation;
-    if (animation == CHARACTER_ANIMATION_FALL ||
-        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-         (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-          animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer += FRAMETIME;
-    } else {
-        object->fall_animation_timer = 0.0f;
-    }
-    if (object->id != id_PENGUIN) {
-        if (object->suit != NULL && (static_cast<SUIT_s *>(object->suit)->flags & 2) != 0) {
-            if (id_GLIDEPACK < 0 || apicharsys == NULL)
-                return;
-            i16 model_id = apicharsys->playermodelids[id_GLIDEPACK];
-            if (model_id == -1)
-                return;
-            object->mini_animation.requested_animation_id =
-                object->character_context == 0x4f                                                           ? 45
-                : object->character_context == CHARACTER_CONTEXT_JUMP && object->action_movement_state == 4 ? 33
-                : object->character_context == 14                                                           ? 34
-                                                                                                            : 44;
-            UpdateMiniAnimPacket(&apicharsys->models[model_id], &object->mini_animation, FRAMETIME * 30.0f, 0.0f,
-                                 FRAMETIME);
-        }
-    } else {
-        if (id_UMBRELLA < 0 || apicharsys == NULL)
-            return;
-        i16 model_id = apicharsys->playermodelids[id_UMBRELLA];
-        if (model_id == -1)
-            return;
-        CHARACTERMODEL_s *model = &apicharsys->models[model_id];
-        object->mini_animation.requested_animation_id =
-            animation == -1 || model->model_data_b[animation] == NULL ? CHARACTER_ANIMATION_IDLE : animation;
-        UpdateMiniAnimPacket(model, &object->mini_animation, FRAMETIME * 30.0f, 0.0f, FRAMETIME);
-    }
-}
-
-void Animate_GEONOSIAN(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        packet.requested_animation = object->context_animation;
-    } else {
-        packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        if (object->character_context != CHARACTER_CONTEXT_DOOMED &&
-            (object->apiobj.field_0x27d != 0 ||
-             ((object->ground_contact_grace_timer > 0.0f ||
-               object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-               (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) &&
-              !(static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f &&
-                object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL)))) {
-            packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-        }
-
-        if (UseFallAnim(object)) {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-        } else if (object->character_context == -1 && object->field_0xe31 == 1) {
-            packet.requested_animation = object->pad_gamepad->input_magnitude > 0.0f ? 37 : 15;
-        } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL &&
-                   (object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                   object->pad_gamepad->input_magnitude > 0.0f) {
-            packet.requested_animation = CHARACTER_ANIMATION_WALK;
-        }
-        MoveAnim_Check(object);
-    }
-
-    UpdateCharacterIdle(object);
-    const i16 animation = packet.requested_animation;
-    f32 fall_timer = 0.0f;
-    if (animation == CHARACTER_ANIMATION_FALL ||
-        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-         (animation == CHARACTER_ANIMATION_FALL_VARIANT_40 || animation == CHARACTER_ANIMATION_FALL_VARIANT_75 ||
-          animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        fall_timer = object->fall_animation_timer + FRAMETIME;
-    }
-    object->fall_animation_timer = fall_timer;
-}
-
-i32 GameAnimSet_Reset(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            nuinstanim_s *animation = object->instance_animation;
-            if (animation != NULL) {
-                animation->playing = 0;
-                animation->waiting = 0;
-                animation->ltime = object->start_frame;
-                animation->tfactor = 1.0f;
-            }
-            GameAnimSet_RemoveFromSystemList(set);
-        }
-    }
-    return 1;
-}
-
-void Animate_HOVERDROID(GameObject_s *object) {
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
-        object->apiobj.anim_packet.requested_animation = object->context_animation;
-    } else if (object->character_context == 0x1e &&
-               object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL) {
-        object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_FALL;
-    } else {
-        object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-    }
+    return system;
 }
 
 GAMEANIMSET_s *GameAnimSet_Create(variptr_u *buf, variptr_u *buf_end, GAMEANIMOBJPOOL_s *object_pool,
@@ -1336,89 +1170,96 @@ GAMEANIMSET_s *GameAnimSet_Create(variptr_u *buf, variptr_u *buf_end, GAMEANIMOB
     return set;
 }
 
-void Animate_BATTLEDROID(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) == 0) {
-        if (object->context_target_position != NULL) {
-            if (object->apiobj.character_model->model_data_b[43] != NULL) {
-                packet.requested_animation = 43;
-            } else {
-                if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
-                    packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-                } else {
-                    packet.requested_animation = CHARACTER_ANIMATION_FALL;
-                }
-            }
-        } else {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            if (object->character_context == CHARACTER_CONTEXT_DOOMED)
-                goto choose_movement;
-            if (object->apiobj.field_0x27d != 0)
-                goto default_idle;
-            if (object->ground_contact_grace_timer > 0.0f ||
-                object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL ||
-                (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                 object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
-                if (!(GetGameCharacterData(object)->field_0x28 > 0.0f) ||
-                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL)
-                    goto default_idle;
-            }
-            goto choose_movement;
-        default_idle:
-            packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-        choose_movement:
-
-            if (!UseFallAnim(object)) {
-                if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                    object->pad_gamepad->input_magnitude > 0.0f) {
-                    const GAMECHARACTERDATA *game_character = GetGameCharacterData(object);
-                    MoveAnim_Manage(object, object->pad_gamepad->input_magnitude,
-                                    (game_character->flags_090 & GAMECHARACTER_FLAG_DISABLE_TIPTOE) == 0 ? 1 : 0, 0);
-                }
-            } else {
-                packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            }
-            MoveAnim_Check(object);
-        }
-    } else {
-        packet.requested_animation = object->context_animation;
-    }
-
-    const i16 animation = packet.requested_animation;
-    if (animation != CHARACTER_ANIMATION_FALL &&
-        !((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-          (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-           animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer = 0.0f;
-    } else {
-        object->fall_animation_timer += FRAMETIME;
+void GameAnimSet_AddToSystemList(GAMEANIMSET_s *set) {
+    if (set != NULL && set->system != NULL && (set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0) {
+        NuLinkedListAppend(&set->system->active_sets, &set->links);
+        set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags | GAMEANIMSET_FLAG_IN_SYSTEM_LIST);
     }
 }
 
-void Animate_SPEEDERBIKE(GameObject_s *object) {
-    object->apiobj.anim_packet.requested_animation =
-        (CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0
-            ? object->context_animation
-            : CHARACTER_ANIMATION_IDLE;
+void GameAnimSet_EvaluateState(GAMEANIMSET_s *set) {
+    if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0) {
+        return;
+    }
+
+    GAMEANIMOBJ_s *object = set->objects;
+    i32 all_at_end = 1;
+    i32 all_at_start = 1;
+
+    while (object != NULL) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation != NULL) {
+            f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+            f32 current_frame = animation->ltime * direction;
+            if (object->end_frame * direction > current_frame) {
+                all_at_end = 0;
+            }
+            if (current_frame > object->start_frame * direction) {
+                all_at_start = 0;
+            }
+        }
+        object = object->next;
+    }
+
+    set->state = GAMEANIMSET_STATE_AT_START;
+    if (all_at_end != 0) {
+        set->state = GAMEANIMSET_STATE_AT_END;
+    } else if (all_at_start == 0) {
+        set->state = GAMEANIMSET_STATE_BETWEEN_ENDPOINTS;
+    }
 }
 
-i32 GameAnimSet_Playing(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            if (object->instance_animation != NULL && object->instance_animation->playing == 0) {
-                return 0;
+void GameAnimSet_RemoveFromSystemList(GAMEANIMSET_s *set) {
+    if (set != NULL && set->system != NULL) {
+        if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0) {
+            NuLinkedListRemove(&set->system->active_sets, &set->links);
+            set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags & ~GAMEANIMSET_FLAG_IN_SYSTEM_LIST);
+        }
+        GameAnimSet_EvaluateState(set);
+    }
+}
+
+void GameAnimSys_ReStoreProgress(GAMEANIMSYS_s *system, i32 index) {
+    if (system == NULL || system->sets == NULL || index < 0 || index >= gameanimsysprogress.count)
+        return;
+    u8 *progress = gameanimsysprogress.entries[index];
+    for (i32 i = 0; i < gameanimsysprogress.entry_size; ++i) {
+        GAMEANIMSET_s *set = system->sets[i];
+        if (set == NULL)
+            return;
+        const i8 state = static_cast<i8>(progress[i]);
+        set->state = static_cast<GAMEANIMSET_STATE>(state);
+        if (state == GAMEANIMSET_STATE_ACTIVE_FORWARD || state == GAMEANIMSET_STATE_ACTIVE_BACKWARD) {
+            if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0)
+                GameAnimSet_AddToSystemList(set);
+        } else if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0)
+            GameAnimSet_RemoveFromSystemList(set);
+    }
+}
+
+GAMEANIMOBJPOOL_s *GameAnimSet_CreateObjectPool(variptr_u *buf, variptr_u *buf_end, i32 object_data_size,
+                                                i32 capacity) {
+    GAMEANIMOBJPOOL_s *pool = NULL;
+    if (capacity != 0) {
+        pool = static_cast<GAMEANIMOBJPOOL_s *>(GameBufferAlloc(buf, buf_end, sizeof(GAMEANIMOBJPOOL_s)));
+        if (pool != NULL) {
+            pool->object_data_size = static_cast<u16>(object_data_size);
+            pool->capacity = static_cast<u16>(capacity);
+            pool->objects = static_cast<GAMEANIMOBJ_s *>(
+                GameBufferAlloc(buf, buf_end, static_cast<u16>(capacity) * sizeof(GAMEANIMOBJ_s)));
+            if (object_data_size != 0) {
+                pool->object_data = GameBufferAlloc(
+                    buf, buf_end, static_cast<u16>(pool->object_data_size) * static_cast<u16>(pool->capacity));
+            }
+
+            for (i32 i = 0; i < pool->capacity; ++i) {
+                GAMEANIMOBJ_s *object = &pool->objects[i];
+                object->next = pool->free_objects;
+                pool->free_objects = object;
             }
         }
     }
-    return 1;
-}
-
-void GameAnimSet_EvalAnim(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            EvalAnim2(&object->special, object->instance_animation->ltime);
-        }
-    }
+    return pool;
 }
 
 GAMEANIMOBJ_s *GameAnimSet_AddObject(GAMEANIMSET_s *set, nuhspecial_s *special, float start_frame, float end_frame,
@@ -1484,183 +1325,18 @@ GAMEANIMOBJ_s *GameAnimSet_AddObject(GAMEANIMSET_s *set, nuhspecial_s *special, 
     return object;
 }
 
-i32 GameAnimSet_JumpToEnd(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            if (object->instance_animation != NULL) {
-                object->instance_animation->playing = 0;
-                object->instance_animation->ltime = object->end_frame;
-            }
-        }
-    }
-    return 1;
-}
-
-void GameAnimSet_SetOffset(GAMEANIMSET_s *set, NUVEC *offset) {
+GAMEANIMOBJ_s *GameAnimSet_AddObjectByName(GAMEANIMSET_s *set, nugscn_s *scene, char *name, float start_frame,
+                                           float end_frame, i32 append, GIZMOSYS_s *gizmo_sys, char *prefix,
+                                           char *suffix) {
     if (set == NULL) {
-        return;
+        return NULL;
     }
 
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        if ((object->flags & 4) != 0) {
-            continue;
-        }
-        NUMTX *source = NuSpecialGetMtx(&object->special);
-        if (source == NULL) {
-            continue;
-        }
-
-        NUMTX matrix = *source;
-        matrix.m30 += offset->x;
-        matrix.m31 += offset->y;
-        matrix.m32 += offset->z;
-        NuSpecialSetDrawMtx(&object->special, &matrix);
+    nuhspecial_s special;
+    if (Gizmo_FindNuSpecial(scene, &special, name, 1, gizmo_sys, prefix, suffix) == 0) {
+        return NULL;
     }
-}
-
-f32 GameAnimSet_GetAnimPos(GAMEANIMOBJ_s *object) {
-    if (object == NULL || object->instance_animation == NULL || object->animation == NULL) {
-        return 0.0f;
-    }
-
-    if (object->start_frame == object->end_frame) {
-        return 1.0f;
-    }
-
-    f32 position =
-        (object->instance_animation->ltime - object->start_frame) / (object->end_frame - object->start_frame);
-    if (position < 0.0f) {
-        return 0.0f;
-    }
-    if (position > 1.0f) {
-        position = 1.0f;
-    }
-    return position;
-}
-
-void GameAnimSet_SetAnimPos(GAMEANIMOBJ_s *object, float position) {
-    if (object == NULL || object->instance_animation == NULL || object->animation == NULL) {
-        return;
-    }
-
-    if (position < 0.0f) {
-        position = 0.0f;
-    }
-    if (position > 1.0f) {
-        position = 1.0f;
-    }
-    object->instance_animation->ltime = (object->end_frame - object->start_frame) * position + object->start_frame;
-}
-
-void GameAnimSet_SetTFactor(GAMEANIMSET_s *set, float factor) {
-    if (set == NULL) {
-        return;
-    }
-
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        nuinstanim_s *animation = object->instance_animation;
-        if (animation != NULL) {
-            f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
-            if (animation->fparam1 != 0.0f) {
-                animation->tfactor = animation->fparam1 * factor * direction;
-            } else {
-                animation->tfactor = direction * factor;
-            }
-        }
-    }
-}
-
-void Animate_REPUBLICGUNSHIP(GameObject_s *object) {
-    object->apiobj.anim_packet.requested_animation = CHARACTER_ANIMATION_IDLE;
-    if (object->character_context == 0x23) {
-        object->apiobj.anim_packet.requested_animation = 0x2c;
-    } else if (object->character_context == 0x24) {
-        object->apiobj.anim_packet.requested_animation = 0x2d;
-    }
-    UpdateCharacterIdle(object);
-}
-
-i32 GameAnimSet_JumpToStart(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            if (object->instance_animation != NULL) {
-                object->instance_animation->playing = 0;
-                object->instance_animation->ltime = object->start_frame;
-            }
-        }
-    }
-    return 1;
-}
-
-void Animate_SUPERBATTLEDROID(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) == 0) {
-        if (object->context_target_position != NULL) {
-            if (object->apiobj.character_model->model_data_b[43] != NULL) {
-                packet.requested_animation = 43;
-            } else {
-                const i32 target_state =
-                    *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) + 0x14);
-                packet.requested_animation = target_state == 0 ? CHARACTER_ANIMATION_IDLE : CHARACTER_ANIMATION_FALL;
-            }
-        } else {
-            packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            if (object->character_context != CHARACTER_CONTEXT_DOOMED &&
-                object->character_context != CHARACTER_CONTEXT_JUMP) {
-                bool use_default_idle = object->apiobj.field_0x27d != 0;
-                if (!use_default_idle) {
-                    const bool has_fall =
-                        object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL;
-                    if (object->ground_contact_grace_timer > 0.0f || !has_fall ||
-                        (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
-                         object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
-                        use_default_idle = !(GetGameCharacterData(object)->field_0x28 > 0.0f) || !has_fall;
-                    }
-                }
-                if (use_default_idle) {
-                    packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
-                }
-            }
-
-            if (!UseFallAnim(object)) {
-                if (packet.requested_animation != CHARACTER_ANIMATION_FALL) {
-                    const GAMECHARACTERDATA *game_character = GetGameCharacterData(object);
-                    const bool weapon_out = (object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 ||
-                                            object->weapon_scale > 0.0f;
-                    if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                        object->pad_gamepad->input_magnitude > 0.0f) {
-                        const f32 run_threshold = (game_character->walk_speed + game_character->run_speed) * 0.5f;
-                        if (object->pad_gamepad->input_magnitude <= run_threshold) {
-                            packet.requested_animation =
-                                weapon_out ? CHARACTER_ANIMATION_SABER_WALK : CHARACTER_ANIMATION_WALK;
-                        } else {
-                            packet.requested_animation =
-                                weapon_out ? CHARACTER_ANIMATION_SABER_RUN : CHARACTER_ANIMATION_RUN;
-                        }
-                    } else if (object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_IDLE] != NULL &&
-                               object->weapon_scale >= 0.5f) {
-                        packet.requested_animation = CHARACTER_ANIMATION_ALT_IDLE;
-                    }
-                }
-            } else {
-                packet.requested_animation = CHARACTER_ANIMATION_FALL;
-            }
-            MoveAnim_Check(object);
-        }
-    } else {
-        packet.requested_animation = object->context_animation;
-    }
-
-    UpdateCharacterIdle(object);
-    const i16 animation = packet.requested_animation;
-    if (animation != CHARACTER_ANIMATION_FALL &&
-        !((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
-          (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
-           animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
-        object->fall_animation_timer = 0.0f;
-    } else {
-        object->fall_animation_timer += FRAMETIME;
-    }
+    return GameAnimSet_AddObject(set, &special, start_frame, end_frame, append);
 }
 
 void GameAnimSet_RemoveObject(GAMEANIMSET_s *set, GAMEANIMOBJ_s *object) {
@@ -1684,6 +1360,42 @@ void GameAnimSet_RemoveObject(GAMEANIMSET_s *set, GAMEANIMOBJ_s *object) {
     pool->free_objects = object;
 }
 
+void GameAnimSet_RemoveSpecial(GAMEANIMSET_s *set, nuhspecial_s *special) {
+    if (special == NULL || set == NULL)
+        return;
+    GAMEANIMOBJ_s *object = set->objects;
+    while (object != NULL && NuSpecialCompare(&object->special, special) == 0) {
+        object = object->next;
+    }
+    if (object != NULL)
+        GameAnimSet_RemoveObject(set, object);
+}
+
+void GameAnimSet_RemoveAllObjects(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        while (set->objects != NULL)
+            GameAnimSet_RemoveObject(set, set->objects);
+    }
+}
+
+void GameAnimSet_SetTFactor(GAMEANIMSET_s *set, float factor) {
+    if (set == NULL) {
+        return;
+    }
+
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation != NULL) {
+            f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+            if (animation->fparam1 != 0.0f) {
+                animation->tfactor = animation->fparam1 * factor * direction;
+            } else {
+                animation->tfactor = direction * factor;
+            }
+        }
+    }
+}
+
 void GameAnimSet_ScaleFParam1(GAMEANIMSET_s *set, float scale) {
     if (set != NULL) {
         for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
@@ -1691,49 +1403,6 @@ void GameAnimSet_ScaleFParam1(GAMEANIMSET_s *set, float scale) {
                 object->instance_animation->fparam1 *= scale;
             }
         }
-    }
-}
-
-i32 GameAnimSet_SetRepeating(GAMEANIMSET_s *set, i32 repeating) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            if (object->instance_animation != NULL) {
-                object->instance_animation->repeating = repeating & 1;
-            }
-        }
-    }
-    return 1;
-}
-
-void GameAnimSet_EvaluateState(GAMEANIMSET_s *set) {
-    if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0) {
-        return;
-    }
-
-    GAMEANIMOBJ_s *object = set->objects;
-    i32 all_at_end = 1;
-    i32 all_at_start = 1;
-
-    while (object != NULL) {
-        nuinstanim_s *animation = object->instance_animation;
-        if (animation != NULL) {
-            f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
-            f32 current_frame = animation->ltime * direction;
-            if (object->end_frame * direction > current_frame) {
-                all_at_end = 0;
-            }
-            if (current_frame > object->start_frame * direction) {
-                all_at_start = 0;
-            }
-        }
-        object = object->next;
-    }
-
-    set->state = GAMEANIMSET_STATE_AT_START;
-    if (all_at_end != 0) {
-        set->state = GAMEANIMSET_STATE_AT_END;
-    } else if (all_at_start == 0) {
-        set->state = GAMEANIMSET_STATE_BETWEEN_ENDPOINTS;
     }
 }
 
@@ -1801,208 +1470,6 @@ i32 GameAnimSet_GetAveragePos(GAMEANIMSET_s *set, NUVEC *position, i32 frame_sel
         return 0;
     NuVecScale(position, &sum, 1.0f / static_cast<f32>(count));
     return 1;
-}
-
-GAMEANIMSET_VISIBILITY GameAnimSet_GetVisibility(GAMEANIMSET_s *set) {
-    if (set == NULL) {
-        return GAMEANIMSET_VISIBILITY_NONE;
-    }
-
-    i32 visible_count = 0;
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        if (NuSpecialGetVisibilityFn(&object->special) == 1) {
-            ++visible_count;
-        }
-    }
-
-    if (visible_count == set->object_count) {
-        return GAMEANIMSET_VISIBILITY_ALL;
-    }
-    if (visible_count > 0) {
-        return GAMEANIMSET_VISIBILITY_PARTIAL;
-    }
-    return GAMEANIMSET_VISIBILITY_NONE;
-}
-
-void GameAnimSet_JumpToAnimPos(GAMEANIMSET_s *set, float position) {
-    if (set == NULL) {
-        return;
-    }
-
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        nuinstanim_s *animation = object->instance_animation;
-        if (animation == NULL || object->animation == NULL) {
-            continue;
-        }
-
-        animation->playing = 0;
-        f32 frame = (object->end_frame - object->start_frame) * position + object->start_frame;
-        f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
-        f32 scaled_frame = frame * direction;
-        f32 scaled_end = object->end_frame * direction;
-        if (scaled_frame <= scaled_end) {
-            animation->ltime = frame;
-        } else {
-            animation->ltime = object->end_frame;
-            scaled_frame = scaled_end;
-        }
-        if (object->start_frame * direction > scaled_frame) {
-            animation->ltime = object->start_frame;
-        }
-    }
-}
-
-void GameAnimSet_RemoveSpecial(GAMEANIMSET_s *set, nuhspecial_s *special) {
-    if (special == NULL || set == NULL)
-        return;
-    GAMEANIMOBJ_s *object = set->objects;
-    while (object != NULL && NuSpecialCompare(&object->special, special) == 0) {
-        object = object->next;
-    }
-    if (object != NULL)
-        GameAnimSet_RemoveObject(set, object);
-}
-
-void GameAnimSet_SetVisibility(GAMEANIMSET_s *set, i32 visibility) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            NuSpecialSetVisibility(&object->special, visibility);
-        }
-    }
-}
-
-void GameAnimSet_DrawReflection(GAMEANIMSET_s *set, i32 axis, float offset, numtx_s *matrix) {
-    if (set == NULL || set->objects == NULL) {
-        return;
-    }
-    if (matrix == NULL) {
-        matrix = NuSpecialGetMtx(&set->objects->special);
-    }
-    f32 plane = offset + reinterpret_cast<f32 *>(matrix)[11 + axis];
-    NuRndrStartReflectionRender(0);
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        if ((object->flags & 2) == 0 && NuSpecialGetVisibilityFn(&object->special) != 0) {
-            NUMTX_ALIGNED16 reflection;
-            extern i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
-            NUMTX *draw_matrix = NuSpecialGetDrawMtx(&object->special);
-            if (MatrixReflection(draw_matrix, axis, plane, WORLD->current_level->unknown_0cc, &reflection) != 0) {
-                NuSpecialDrawAt(&object->special, &reflection);
-            }
-        }
-    }
-    NuRndrEndReflectionRender();
-}
-
-GAMEANIMOBJ_s *GameAnimSet_AddObjectByName(GAMEANIMSET_s *set, nugscn_s *scene, char *name, float start_frame,
-                                           float end_frame, i32 append, GIZMOSYS_s *gizmo_sys, char *prefix,
-                                           char *suffix) {
-    if (set == NULL) {
-        return NULL;
-    }
-
-    nuhspecial_s special;
-    if (Gizmo_FindNuSpecial(scene, &special, name, 1, gizmo_sys, prefix, suffix) == 0) {
-        return NULL;
-    }
-    return GameAnimSet_AddObject(set, &special, start_frame, end_frame, append);
-}
-
-void GameAnimSet_AddToSystemList(GAMEANIMSET_s *set) {
-    if (set != NULL && set->system != NULL && (set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0) {
-        NuLinkedListAppend(&set->system->active_sets, &set->links);
-        set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags | GAMEANIMSET_FLAG_IN_SYSTEM_LIST);
-    }
-}
-
-f32 GameAnimSet_AutoSetReflectY(GAMEANIMSET_s *set, nuvec_s *position, numtx_s *matrix) {
-    if (set != NULL && set->objects != NULL) {
-        if (matrix == NULL) {
-            matrix = NuSpecialGetMtx(&set->objects->special);
-        }
-        f32 height = matrix->m31;
-        f32 ground = GameShadow(NULL, position, 5.0f, -1);
-        if (ground != 2000000.0f) {
-            return ground - height;
-        }
-    }
-    return 0.0f;
-}
-
-f32 GameAnimSet_GetCurrentFrame(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-            if (object->instance_animation != NULL) {
-                return object->instance_animation->ltime;
-            }
-        }
-    }
-    return 0.0f;
-}
-
-GAMEANIMOBJPOOL_s *GameAnimSet_CreateObjectPool(variptr_u *buf, variptr_u *buf_end, i32 object_data_size,
-                                                i32 capacity) {
-    GAMEANIMOBJPOOL_s *pool = NULL;
-    if (capacity != 0) {
-        pool = static_cast<GAMEANIMOBJPOOL_s *>(GameBufferAlloc(buf, buf_end, sizeof(GAMEANIMOBJPOOL_s)));
-        if (pool != NULL) {
-            pool->object_data_size = static_cast<u16>(object_data_size);
-            pool->capacity = static_cast<u16>(capacity);
-            pool->objects = static_cast<GAMEANIMOBJ_s *>(
-                GameBufferAlloc(buf, buf_end, static_cast<u16>(capacity) * sizeof(GAMEANIMOBJ_s)));
-            if (object_data_size != 0) {
-                pool->object_data = GameBufferAlloc(
-                    buf, buf_end, static_cast<u16>(pool->object_data_size) * static_cast<u16>(pool->capacity));
-            }
-
-            for (i32 i = 0; i < pool->capacity; ++i) {
-                GAMEANIMOBJ_s *object = &pool->objects[i];
-                object->next = pool->free_objects;
-                pool->free_objects = object;
-            }
-        }
-    }
-    return pool;
-}
-
-i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *set) {
-    if (set == NULL || set->objects == NULL) {
-        return 1;
-    }
-
-    i32 animated_count = 0;
-    i32 repeating_count = 0;
-    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
-        nuinstanim_s *animation = object->instance_animation;
-        if (animation == NULL) {
-            continue;
-        }
-
-        ++animated_count;
-        if (animation->repeating != 0) {
-            ++repeating_count;
-            continue;
-        }
-        if (animation->playing != 0) {
-            return 0;
-        }
-
-        const f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
-        if (animation->ltime * direction > object->start_frame * direction) {
-            return 0;
-        }
-    }
-
-    if (animated_count == 0) {
-        return 1;
-    }
-    return animated_count != repeating_count;
-}
-
-void GameAnimSet_RemoveAllObjects(GAMEANIMSET_s *set) {
-    if (set != NULL) {
-        while (set->objects != NULL)
-            GameAnimSet_RemoveObject(set, set->objects);
-    }
 }
 
 i32 GameAnimSet_GetCentreAndRadius(GAMEANIMSET_s *set, NUVEC *centre, f32 *radius, i32 frame_selection,
@@ -2101,6 +1568,271 @@ i32 GameAnimSet_GetCentreAndRadius(GAMEANIMSET_s *set, NUVEC *centre, f32 *radiu
     return 1;
 }
 
+i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *set) {
+    if (set == NULL || set->objects == NULL) {
+        return 1;
+    }
+
+    i32 animated_count = 0;
+    i32 repeating_count = 0;
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation == NULL) {
+            continue;
+        }
+
+        ++animated_count;
+        if (animation->repeating != 0) {
+            ++repeating_count;
+            continue;
+        }
+        if (animation->playing != 0) {
+            return 0;
+        }
+
+        const f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+        if (animation->ltime * direction > object->start_frame * direction) {
+            return 0;
+        }
+    }
+
+    if (animated_count == 0) {
+        return 1;
+    }
+    return animated_count != repeating_count;
+}
+
+i32 GameAnimSet_Reset(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            nuinstanim_s *animation = object->instance_animation;
+            if (animation != NULL) {
+                animation->playing = 0;
+                animation->waiting = 0;
+                animation->ltime = object->start_frame;
+                animation->tfactor = 1.0f;
+            }
+            GameAnimSet_RemoveFromSystemList(set);
+        }
+    }
+    return 1;
+}
+
+i32 GameAnimSet_Play(GAMEANIMSET_s *set, float speed, i32 evaluate_state) {
+    if (set == NULL) {
+        return 1;
+    }
+
+    if (evaluate_state != 0) {
+        GameAnimSet_EvaluateState(set);
+    }
+    set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags & ~GAMEANIMSET_FLAG_STOP_REQUESTED);
+
+    if (speed >= 0.0f) {
+        if (set->state == GAMEANIMSET_STATE_AT_END) {
+            return 1;
+        }
+    } else if (speed < 0.0f) {
+        if (set->state == GAMEANIMSET_STATE_AT_START) {
+            return 1;
+        }
+    }
+
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation == NULL) {
+            continue;
+        }
+
+        animation->playing = 1;
+        animation->waiting = 0;
+
+        f32 direction;
+        if (object->end_frame < object->start_frame) {
+            direction = -1.0f;
+        } else {
+            direction = 1.0f;
+        }
+        f32 current_frame = animation->ltime * direction;
+        if (object->start_frame * direction > current_frame) {
+            animation->ltime = object->start_frame;
+        } else if (current_frame > object->end_frame * direction) {
+            animation->ltime = object->end_frame;
+        }
+
+        if (animation->fparam1 != 0.0f) {
+            animation->tfactor = animation->fparam1 * speed * direction;
+        } else {
+            animation->tfactor = direction * speed;
+        }
+    }
+
+    if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0) {
+        GameAnimSet_AddToSystemList(set);
+    }
+    return 1;
+}
+
+i32 GameAnimSet_Stop(GAMEANIMSET_s *set) {
+    if (set == NULL) {
+        return 1;
+    }
+
+    GAMEANIMSET_STATE state = static_cast<GAMEANIMSET_STATE>(set->state & ~GAMEANIMSET_STATE_AT_END);
+    if (state != GAMEANIMSET_STATE_ACTIVE_FORWARD) {
+        return 1;
+    }
+
+    set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags | GAMEANIMSET_FLAG_STOP_REQUESTED);
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        if (object->instance_animation != NULL) {
+            object->instance_animation->playing = 0;
+        }
+    }
+    return 1;
+}
+
+i32 GameAnimSet_SetRepeating(GAMEANIMSET_s *set, i32 repeating) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            if (object->instance_animation != NULL) {
+                object->instance_animation->repeating = repeating & 1;
+            }
+        }
+    }
+    return 1;
+}
+
+i32 GameAnimSet_JumpToEnd(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            if (object->instance_animation != NULL) {
+                object->instance_animation->playing = 0;
+                object->instance_animation->ltime = object->end_frame;
+            }
+        }
+    }
+    return 1;
+}
+
+i32 GameAnimSet_JumpToStart(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            if (object->instance_animation != NULL) {
+                object->instance_animation->playing = 0;
+                object->instance_animation->ltime = object->start_frame;
+            }
+        }
+    }
+    return 1;
+}
+
+void GameAnimSet_JumpToAnimPos(GAMEANIMSET_s *set, float position) {
+    if (set == NULL) {
+        return;
+    }
+
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation == NULL || object->animation == NULL) {
+            continue;
+        }
+
+        animation->playing = 0;
+        f32 frame = (object->end_frame - object->start_frame) * position + object->start_frame;
+        f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+        f32 scaled_frame = frame * direction;
+        f32 scaled_end = object->end_frame * direction;
+        if (scaled_frame <= scaled_end) {
+            animation->ltime = frame;
+        } else {
+            animation->ltime = object->end_frame;
+            scaled_frame = scaled_end;
+        }
+        if (object->start_frame * direction > scaled_frame) {
+            animation->ltime = object->start_frame;
+        }
+    }
+}
+
+i32 GameAnimSet_Playing(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            if (object->instance_animation != NULL && object->instance_animation->playing == 0) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+f32 GameAnimSet_GetCurrentFrame(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            if (object->instance_animation != NULL) {
+                return object->instance_animation->ltime;
+            }
+        }
+    }
+    return 0.0f;
+}
+
+f32 GameAnimSet_GetAnimPos(GAMEANIMOBJ_s *object) {
+    if (object == NULL || object->instance_animation == NULL || object->animation == NULL) {
+        return 0.0f;
+    }
+
+    if (object->start_frame == object->end_frame) {
+        return 1.0f;
+    }
+
+    f32 position =
+        (object->instance_animation->ltime - object->start_frame) / (object->end_frame - object->start_frame);
+    if (position < 0.0f) {
+        return 0.0f;
+    }
+    if (position > 1.0f) {
+        position = 1.0f;
+    }
+    return position;
+}
+
+void GameAnimSet_SetAnimPos(GAMEANIMOBJ_s *object, float position) {
+    if (object == NULL || object->instance_animation == NULL || object->animation == NULL) {
+        return;
+    }
+
+    if (position < 0.0f) {
+        position = 0.0f;
+    }
+    if (position > 1.0f) {
+        position = 1.0f;
+    }
+    object->instance_animation->ltime = (object->end_frame - object->start_frame) * position + object->start_frame;
+}
+
+void GameAnimSet_SetOffset(GAMEANIMSET_s *set, NUVEC *offset) {
+    if (set == NULL) {
+        return;
+    }
+
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        if ((object->flags & 4) != 0) {
+            continue;
+        }
+        NUMTX *source = NuSpecialGetMtx(&object->special);
+        if (source == NULL) {
+            continue;
+        }
+
+        NUMTX matrix = *source;
+        matrix.m30 += offset->x;
+        matrix.m31 += offset->y;
+        matrix.m32 += offset->z;
+        NuSpecialSetDrawMtx(&object->special, &matrix);
+    }
+}
+
 f32 GameAnimSet_GetCompletionRatio(GAMEANIMSET_s *set) {
     if (set == NULL) {
         return 0.0f;
@@ -2124,433 +1856,193 @@ f32 GameAnimSet_GetCompletionRatio(GAMEANIMSET_s *set) {
     return 0.0f;
 }
 
-void GameAnimSet_RemoveFromSystemList(GAMEANIMSET_s *set) {
-    if (set != NULL && set->system != NULL) {
-        if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0) {
-            NuLinkedListRemove(&set->system->active_sets, &set->links);
-            set->flags = static_cast<GAMEANIMSET_FLAGS>(set->flags & ~GAMEANIMSET_FLAG_IN_SYSTEM_LIST);
+GAMEANIMSET_VISIBILITY GameAnimSet_GetVisibility(GAMEANIMSET_s *set) {
+    if (set == NULL) {
+        return GAMEANIMSET_VISIBILITY_NONE;
+    }
+
+    i32 visible_count = 0;
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        if (NuSpecialGetVisibilityFn(&object->special) == 1) {
+            ++visible_count;
         }
-        GameAnimSet_EvaluateState(set);
+    }
+
+    if (visible_count == set->object_count) {
+        return GAMEANIMSET_VISIBILITY_ALL;
+    }
+    if (visible_count > 0) {
+        return GAMEANIMSET_VISIBILITY_PARTIAL;
+    }
+    return GAMEANIMSET_VISIBILITY_NONE;
+}
+
+void GameAnimSet_SetVisibility(GAMEANIMSET_s *set, i32 visibility) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            NuSpecialSetVisibility(&object->special, visibility);
+        }
     }
 }
 
-i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
-                                            i32 joint_count, i32 first_joint, NUVEC *root_translation);
-i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3W(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
-                                             i32 joint_count, i32 first_joint, NUVEC *root_translation);
-
-extern "C" {
-
-    i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
-                                              i32 first_joint);
-    i32 ANI_SimpleAni3PlayerV4Joint_Blend_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
-                                                    i32 joint_count, i32 first_joint, NUVEC *root_translation);
-
-    void ANI_FixUpAddrs(ani3_animheader_s *anim, isize delta, i32) {
-        if (anim->magic != 0x414e4934) {
-            return;
-        }
-        while (true) {
-            if (anim->constants != NULL) {
-                anim->constants = reinterpret_cast<i16 *>(reinterpret_cast<usize>(anim->constants) + (usize)delta);
-            }
-            if (anim->scale_min != NULL) {
-                anim->scale_min =
-                    reinterpret_cast<ani3_scalemin_s *>(reinterpret_cast<usize>(anim->scale_min) + (usize)delta);
-            }
-            if (anim->keys != NULL) {
-                anim->keys = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->keys) + (usize)delta);
-            }
-            if (anim->curve_types != NULL) {
-                anim->curve_types = reinterpret_cast<u16 *>(reinterpret_cast<usize>(anim->curve_types) + (usize)delta);
-            }
-            if (anim->node_flags != NULL) {
-                anim->node_flags = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->node_flags) + (usize)delta);
-            }
-            if (anim->field_38 != NULL) {
-                anim->field_38 = reinterpret_cast<void *>(reinterpret_cast<usize>(anim->field_38) + (usize)delta);
-            }
-            u16 next = anim->next_block;
-            if (next == 0) {
-                break;
-            }
-            delta += next;
-            anim = reinterpret_cast<ani3_animheader_s *>(reinterpret_cast<usize>(anim) + next);
+void GameAnimSet_EvalAnim(GAMEANIMSET_s *set) {
+    if (set != NULL) {
+        for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+            EvalAnim2(&object->special, object->instance_animation->ltime);
         }
     }
-
-    // Original @0x2c17d0. The non-quaternion ANI4 player uses a compact
-    // four-samples-per-word curve stream. Only groups enabled by the node's
-    // translation/rotation/scale flags occupy space in that stream.
-
-    f32 GetInstAnimEndFrame(nugscn_s *scene, nuinstanim_s *instance_animation) {
-        if (instance_animation == NULL) {
-            return 0.0f;
-        }
-
-        void *animation = scene->instance_animation_data[instance_animation->anim_ix];
-        if (animation != NULL) {
-            return NuAnimEndFrameOld(animation);
-        }
-        if ((instance_animation->end_frame_lookup_bits & NUINSTANIM_END_FRAME_LOOKUP_MASK) == 0 ||
-            scene->animation_end_frames == NULL) {
-            return 0.0f;
-        }
-
-        return static_cast<f32>(scene->animation_end_frames[instance_animation->end_frame_lookup_index - 1].end_frame);
-    }
-
-    NUJOINTPROCANIMFN JointProcAnimFn;
-
-    void SetProceduralAnimationFn(void *function) {
-        JointProcAnimFn = reinterpret_cast<NUJOINTPROCANIMFN>(function);
-    }
-
-    i32 StateAnimEvaluate(StateAnim *state, u8 *index, u8 *value, f32 frame) {
-        u8 next = *index;
-        if (next < state->count) {
-            i32 changed = 0;
-            do {
-                if (!(frame >= state->times[next])) {
-                    if (changed) {
-                        return 1;
-                    }
-                    break;
-                }
-                changed = 1;
-                *value = state->values[next];
-                next = static_cast<u8>(*index + 1);
-                *index = next;
-            } while (next < state->count);
-            if (next >= state->count) {
-                return 1;
-            }
-        }
-
-        i32 changed = 0;
-        if (next == 0) {
-            return 0;
-        }
-        do {
-            if (!(state->times[next - 1] > frame)) {
-                return changed;
-            }
-            next--;
-            *index = next;
-            *value = next == 0 ? state->values[0] : state->values[next - 1];
-            changed = 1;
-            next = *index;
-        } while (next != 0);
-        return 1;
-    }
-
-    i32 StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame) {
-        i32 current = *index;
-        i32 count = state->count;
-        if (current >= count) {
-            current = count - 1;
-        }
-        if (current < 0) {
-            current = 0;
-        }
-        char old_value = state->values[current];
-        if (!(frame >= state->times[current])) {
-            if (current != 0) {
-                i32 previous = current - 1;
-                current = previous;
-                while (!(frame >= state->times[previous])) {
-                    if (previous == 0) {
-                        break;
-                    }
-                    --previous;
-                    current = previous;
-                }
-            }
-        } else {
-            while (true) {
-                if (current >= count - 1) {
-                    break;
-                }
-                const i32 next = current + 1;
-                if (state->times[next] > frame) {
-                    break;
-                }
-                current = next;
-            }
-        }
-        char new_value = state->values[current];
-        *value = new_value;
-        *index = static_cast<u8>(current);
-        return old_value != new_value;
-    }
-
-    void NuSpecialSetInstAnimTime(nuhspecial_s *special, f32 frame) {
-        NUGSCN *scene = special->scene;
-        if (scene == NULL) {
-            return;
-        }
-        nuinstanim_s *animation = NuSpecialGetInstAnim(special);
-        if (animation != NULL) {
-            animation->ltime = frame;
-            if (!((animation->end_frame_lookup_bits & NUINSTANIM_END_FRAME_LOOKUP_MASK) != 0 &&
-                  scene->animation_end_frames != NULL)) {
-                return;
-            }
-            StateAnim *state =
-                reinterpret_cast<StateAnim *>(&scene->animation_end_frames[animation->end_frame_lookup_index - 1]);
-            char value;
-            u8 index = static_cast<u8>(static_cast<u32>(animation->flags) >> NUINSTANIM_STATE_INDEX_SHIFT);
-            StateAnimEvaluate2(state, &index, &value, frame);
-            animation->flags =
-                static_cast<NUINSTANIM_FLAGS>((static_cast<u32>(animation->flags) & ~NUINSTANIM_STATE_INDEX_MASK) |
-                                              (static_cast<u32>(index) << NUINSTANIM_STATE_INDEX_SHIFT));
-        }
-    }
-
-    StateAnim *StateAnimFixPtrs(StateAnim *state, isize delta) {
-        if (state == NULL) {
-            return NULL;
-        }
-        state = reinterpret_cast<StateAnim *>(reinterpret_cast<usize>(state) + delta);
-        if (state == NULL) {
-            return NULL;
-        }
-        state->times =
-            state->times != NULL ? reinterpret_cast<f32 *>(reinterpret_cast<usize>(state->times) + delta) : NULL;
-        state->values =
-            state->values != NULL ? reinterpret_cast<u8 *>(reinterpret_cast<usize>(state->values) + delta) : NULL;
-        return state;
-    }
-
-} // extern "C"
-
-void SetAnimFrame(nuhspecial_s *special, float frame) {
-    if (NuSpecialExistsFn(special) == 0)
-        return;
-    NUMTX_ALIGNED16 matrix;
-    NuMtxSetIdentity(&matrix);
-    nuinstanim_s *instance_animation = NuSpecialGetInstAnim(special);
-    if (instance_animation == NULL)
-        return;
-    nuanimdata_s *animation = special->scene->instance_animation_data[instance_animation->anim_ix];
-    if (animation == NULL)
-        return;
-    // The animation header begins with its final frame; the remaining header is opaque here.
-    f32 end_frame;
-    memcpy(&end_frame, animation, sizeof(end_frame));
-    if (frame == 1.0e9f)
-        frame = end_frame;
-    if (!(frame >= 1.0f && frame <= end_frame))
-        return;
-    NuAnimData2CalcMatrix(animation, 0, frame, &matrix);
-    instance_animation->mtx = matrix;
-    NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
-    instance_animation->mtx.m30 = instance_matrix->m30;
-    instance_animation->mtx.m31 = instance_matrix->m31;
-    instance_animation->mtx.m32 = instance_matrix->m32;
-    instance_animation->ltime = frame;
 }
 
-i32 GetAnimDirection(nuinstanim_s *animation) {
-    if (animation == NULL || animation->tfactor == 0.0f) {
-        return -1;
-    }
-    return animation->tfactor < 0.0f ? 1 : 0;
-}
-
-i32 FindTexAnimFromMtl(nugscn_s *scene, numtl_s *material) {
-    nutexanim_s *animations = static_cast<nutexanim_s *>(scene->texture_anims);
-    for (i32 animation_index = 0; animation_index < scene->num_texture_anims; ++animation_index) {
-        if (animations[animation_index].material == material) {
-            return animation_index + 1;
+f32 GameAnimSet_AutoSetReflectY(GAMEANIMSET_s *set, nuvec_s *position, numtx_s *matrix) {
+    if (set != NULL && set->objects != NULL) {
+        if (matrix == NULL) {
+            matrix = NuSpecialGetMtx(&set->objects->special);
+        }
+        f32 height = matrix->m31;
+        f32 ground = GameShadow(NULL, position, 5.0f, -1);
+        if (ground != 2000000.0f) {
+            return ground - height;
         }
     }
-    return 0;
+    return 0.0f;
 }
 
-static char **TexAnimList;
+// Original @0x4a9900.
+void GameAnimSet_Draw(GAMEANIMSET_s &set) {
+    for (GAMEANIMOBJ_s *object = set.objects; object != NULL; object = object->next) {
+        if ((object->flags & 2) == 0 && NuSpecialGetVisibilityFn(&object->special) != 0) {
+            NuSpecialDrawAt(&object->special, NuSpecialGetDrawMtx(&object->special));
+        }
+    }
+}
 
-void InitTexAnimScripts(char **names) {
-    TexAnimList = names;
-    if (names == NULL)
+void GameAnimSet_DrawReflection(GAMEANIMSET_s *set, i32 axis, float offset, numtx_s *matrix) {
+    if (set == NULL || set->objects == NULL) {
         return;
-    while (*names != NULL) {
-        permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 4);
-        char path[72];
-        NuStrCpy(path, "stuff\\ats\\");
-        NuStrCat(path, *names++);
-        NuStrCat(path, ".ats");
-        NuTexAnimProgReadScript(path, &permbuffer_ptr, permbuffer_end, static_cast<i32>(DEFAULTFPS));
     }
-    permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 16);
+    if (matrix == NULL) {
+        matrix = NuSpecialGetMtx(&set->objects->special);
+    }
+    f32 plane = offset + reinterpret_cast<f32 *>(matrix)[11 + axis];
+    NuRndrStartReflectionRender(0);
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        if ((object->flags & 2) == 0 && NuSpecialGetVisibilityFn(&object->special) != 0) {
+            NUMTX_ALIGNED16 reflection;
+            extern i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
+            NUMTX *draw_matrix = NuSpecialGetDrawMtx(&object->special);
+            if (MatrixReflection(draw_matrix, axis, plane, WORLD->current_level->unknown_0cc, &reflection) != 0) {
+                NuSpecialDrawAt(&object->special, &reflection);
+            }
+        }
+    }
+    NuRndrEndReflectionRender();
 }
 
-i32 GizmoFileReadGameAnimSet(GAMEANIMSET_s *set, void *world_ptr,
-                             void (*read_object_data)(GAMEANIMOBJ_s *, unsigned char), unsigned char version,
-                             char *prefix, char *suffix) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    const unsigned char file_version = static_cast<unsigned char>(EdFileReadChar());
-    const unsigned char object_count = static_cast<unsigned char>(EdFileReadChar());
-    i32 success = 1;
+void GameAnimSys_Update(GAMEANIMSYS_s *system) {
+    if (system == NULL) {
+        return;
+    }
 
-    for (i32 object_index = 0; object_index < object_count; ++object_index) {
-        char object_name[64];
-        const i32 name_length = static_cast<signed char>(EdFileReadChar());
-        if (name_length != 0) {
-            EdFileRead(object_name, name_length);
-        }
+    GAMEANIMSET_s *set = reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetHead(&system->active_sets));
+    while (set != NULL) {
+        GAMEANIMSET_s *next_set =
+            reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetNext(&system->active_sets, &set->links));
 
-        const f32 start_frame = EdFileReadFloat();
-        const f32 end_frame = EdFileReadFloat();
-        u32 flags = 0;
-        if (file_version > 1) {
-            flags = EdFileReadInt();
-        }
+        const u8 was_no_visibility_test = set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
+        set->flags &= ~GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
 
-        if (name_length == 0) {
+        if ((set->flags & GAMEANIMSET_FLAG_STOP_REQUESTED) != 0) {
+            set->flags &= ~(GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED);
+            GameAnimSet_RemoveFromSystemList(set);
+            set = next_set;
             continue;
         }
 
-        if (set->object_pool == NULL || set->object_pool->free_objects == NULL) {
-            success = 0;
+        set->state = GAMEANIMSET_STATE_AT_START;
+        i32 all_playing_forward = 1;
+        i32 all_at_start = 1;
+        i32 all_at_end = 1;
+        i32 any_special_no_visibility_test = 0;
+
+        GAMEANIMOBJ_s *object = set->objects;
+        while (object != NULL) {
+            if (NuSpecialGetNoVisiTestFn(&object->special) != 0) {
+                any_special_no_visibility_test = 1;
+            }
+
+            if (object->instance_animation != NULL) {
+                const f32 direction = object->start_frame > object->end_frame ? -1.0f : 1.0f;
+                const f32 previous_frame = object->instance_animation->ltime;
+
+                if (previous_frame * direction >= object->end_frame * direction) {
+                    if (object->instance_animation->tfactor * direction < 0.0f) {
+                        object->instance_animation->ltime = object->end_frame;
+                    } else if (object->instance_animation->repeating != 0) {
+                        object->instance_animation->ltime = previous_frame - object->end_frame + object->start_frame;
+                    } else {
+                        object->instance_animation->ltime = object->end_frame;
+                        object->instance_animation->playing = 0;
+                    }
+                } else if (previous_frame * direction <= object->start_frame * direction) {
+                    if (object->instance_animation->tfactor * direction > 0.0f) {
+                        object->instance_animation->ltime = object->start_frame;
+                    } else if (object->instance_animation->repeating != 0) {
+                        object->instance_animation->ltime = object->end_frame - (object->start_frame - previous_frame);
+                    } else {
+                        object->instance_animation->ltime = object->start_frame;
+                        object->instance_animation->playing = 0;
+                    }
+                }
+
+                if (previous_frame != object->instance_animation->ltime) {
+                    EvalAnim2(&object->special, object->instance_animation->ltime);
+                }
+
+                if (object->instance_animation->playing != 0) {
+                    set->flags |= GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
+                    if (object->instance_animation->tfactor * direction < 0.0f) {
+                        all_playing_forward = 0;
+                    }
+                }
+
+                const f32 directed_frame = object->instance_animation->ltime * direction;
+                if (directed_frame > object->start_frame * direction) {
+                    all_at_start = 0;
+                }
+                if (directed_frame < object->end_frame * direction) {
+                    all_at_end = 0;
+                }
+            }
+            object = object->next;
         }
 
-        GAMEANIMOBJ_s *object = GameAnimSet_AddObjectByName(set, world->current_gscn, object_name, start_frame,
-                                                            end_frame, 0, world->gizmo_sys, prefix, suffix);
-        GAMEANIMOBJ_s missing_object;
-        if (object == NULL) {
-            memset(&missing_object, 0, sizeof(missing_object));
-            object = &missing_object;
-        }
-
-        object->flags = flags;
-        if (read_object_data != NULL) {
-            read_object_data(object, version);
-        }
-        if (file_version <= 2) {
-            object->flags &= ~2u;
-        }
-    }
-
-    return success;
-}
-
-void EvalAnim(nuhspecial_s *special, float frame, numtx_s *matrix, i32 include_instance_translation) {
-    if (matrix == NULL || special == NULL) {
-        return;
-    }
-
-    nuinstanim_s *instance_animation = NuSpecialGetInstAnim(special);
-    if (instance_animation == NULL) {
-        if (include_instance_translation != 0) {
-            NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
-            if (instance_matrix != NULL) {
-                memcpy(matrix, instance_matrix, sizeof(NUMTX));
+        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != any_special_no_visibility_test) {
+            object = set->objects;
+            auto set_flags = set->flags;
+            while (object != NULL) {
+                NuSpecialSetNoVisiTest(&object->special, set_flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST);
+                object = object->next;
             }
         }
-        return;
-    }
 
-    NUGSCN *scene = special->scene;
-    nuanimdata_s *animation = scene->instance_animation_data[instance_animation->anim_ix];
-    if (animation == NULL) {
-        return;
-    }
-
-    NuAnimData2CalcMatrix(animation, 0, frame, matrix);
-    if (include_instance_translation != 0) {
-        NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
-        if (instance_matrix != NULL) {
-            NUVEC *translation = NUMTX_GET_ROW_VEC(matrix, 3);
-            const NUVEC *instance_translation = NUMTX_GET_ROW_VEC(instance_matrix, 3);
-            translation->x += instance_translation->x;
-            translation->y += instance_translation->y;
-            translation->z += instance_translation->z;
+        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != 0) {
+            set->state =
+                all_playing_forward != 0 ? GAMEANIMSET_STATE_ACTIVE_FORWARD : GAMEANIMSET_STATE_ACTIVE_BACKWARD;
+        } else {
+            if (all_at_end != 0) {
+                set->state = GAMEANIMSET_STATE_AT_END;
+            } else if (all_at_start == 0) {
+                set->state = GAMEANIMSET_STATE_BETWEEN_ENDPOINTS;
+            }
+            if (was_no_visibility_test != 0) {
+                set->flags |= GAMEANIMSET_FLAG_STOP_REQUESTED;
+            }
         }
-    }
-}
 
-void EvalAnim2(nuhspecial_s *special, float frame) {
-    nuinstanim_s *instance_animation = NuSpecialGetInstAnim(special);
-    if (instance_animation == NULL) {
-        return;
-    }
-
-    NUGSCN *scene = special->scene;
-    nuanimdata_s *animation = scene->instance_animation_data[instance_animation->anim_ix];
-    if (animation == NULL || frame == instance_animation->prev_eval_time) {
-        return;
-    }
-
-    NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
-    NuAnimData2CalcMatrix(animation, 0, frame, &instance_animation->mtx);
-
-    instance_animation->prev_eval_time = frame;
-    const i32 instance_index = instance_animation - scene->instance_animations;
-    NUVEC &animation_translation = *NUMTX_GET_ROW_VEC(&instance_animation->mtx, 3);
-    NUVEC &instance_translation = *NUMTX_GET_ROW_VEC(instance_matrix, 3);
-    NUMTX *evaluated_matrix = &scene->instance_animation_matrices[instance_index];
-    memcpy(evaluated_matrix, &instance_animation->mtx, sizeof(NUMTX));
-
-    animation_translation.x += instance_translation.x;
-    animation_translation.y += instance_translation.y;
-    animation_translation.z += instance_translation.z;
-    NuSpecialUpdate(special);
-}
-
-void GameAnimSys_AllocateLevelProgressData(variptr_u *buf, variptr_u *buf_end, i32 capacity, i32 level_count) {
-    if (buf_end == NULL || buf == NULL)
-        return;
-    gameanimsysprogress.count = level_count;
-    gameanimsysprogress.entry_size = capacity;
-    gameanimsysprogress.entries = static_cast<u8 **>(GameBufferAlloc(buf, buf_end, level_count * sizeof(u8 *)));
-    if (gameanimsysprogress.entries != NULL) {
-        for (i32 i = 0; i < level_count; ++i)
-            gameanimsysprogress.entries[i] = static_cast<u8 *>(GameBufferAlloc(buf, buf_end, capacity));
-    }
-}
-
-u8 *GameAnimSys_GetProgressData(i32 index) {
-    if (index < 0 || index >= gameanimsysprogress.count)
-        return NULL;
-    return gameanimsysprogress.entries[index];
-}
-
-void GameAnimSys_StoreProgress(GAMEANIMSYS_s *system, i32 index) {
-    if (system == NULL || system->sets == NULL || index < 0 || index >= gameanimsysprogress.count)
-        return;
-    u8 *progress = gameanimsysprogress.entries[index];
-    for (i32 i = 0; i < gameanimsysprogress.entry_size; ++i) {
-        GAMEANIMSET_s *set = system->sets[i];
-        if (set == NULL)
-            return;
-        progress[i] = static_cast<u8>(set->state);
-    }
-}
-
-void GameAnimSys_ReStoreProgress(GAMEANIMSYS_s *system, i32 index) {
-    if (system == NULL || system->sets == NULL || index < 0 || index >= gameanimsysprogress.count)
-        return;
-    u8 *progress = gameanimsysprogress.entries[index];
-    for (i32 i = 0; i < gameanimsysprogress.entry_size; ++i) {
-        GAMEANIMSET_s *set = system->sets[i];
-        if (set == NULL)
-            return;
-        const i8 state = static_cast<i8>(progress[i]);
-        set->state = static_cast<GAMEANIMSET_STATE>(state);
-        if (state == GAMEANIMSET_STATE_ACTIVE_FORWARD || state == GAMEANIMSET_STATE_ACTIVE_BACKWARD) {
-            if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0)
-                GameAnimSet_AddToSystemList(set);
-        } else if ((set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) != 0)
+        if ((set->flags & (GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED)) == 0) {
             GameAnimSet_RemoveFromSystemList(set);
+        }
+        set = next_set;
     }
 }
 
-GAMEANIMSYS_s *GameAnimSys_Create(variptr_u *buf, variptr_u *buf_end) {
-    GAMEANIMSYS_s *system = static_cast<GAMEANIMSYS_s *>(GameBufferAlloc(buf, buf_end, sizeof(GAMEANIMSYS_s)));
-    if (system != NULL && gameanimsysprogress.entry_size != 0) {
-        system->sets = static_cast<GAMEANIMSET_s **>(
-            GameBufferAlloc(buf, buf_end, gameanimsysprogress.entry_size * sizeof(GAMEANIMSET_s *)));
-    }
-    return system;
-}

@@ -1,3514 +1,1037 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/menus/core/panel.h"
-#include "legoapi/ai/core/legoai.h"
-#include "legoapi/items/objects/objectsall.h"
-#include "legoapi/items/collect/torpedo.h"
-#include "legoapi/actions/movement/carrying.h"
-#include "legoapi/actions/combat/hits.h"
-#include "legoapi/actions/character/streaks.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmo/object/gizmoblowups.h"
-#include "legoapi/render/core/render.h"
-#include "legoapi/render/core/rtl.h"
-#include "legoapi/audio/audio.h"
-#include "legoapi/gizmos/transport/grapples.h"
 #include "legoapi/gizmos/transport/gizportal.h"
-#include "legoapi/gizmos/door/zipups.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/menus/screens/arcade.h"
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
-#include "gameapi/edtools/edfile.h"
 #include "gameapi/edtools/edui.h"
-#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
 #include "legoapi/world/mission.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/render/fx.h"
-#include "legoapi/render/core/terrain.h"
-#include "legoapi/render/light/lighting.h"
-#include "legoapi/render/light/shadow.h"
-#include "legoapi/render/fx/parts.h"
 #include "legoapi/render/fx/spline_position.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nuvec.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/world/level.h"
-#include "legoapi/world/mission.h"
-#include "legoapi/props/objects/techno.h"
 #include "legoapi/world/world.h"
-#include "legoapi/characters/motion.h"
-#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/CharacterObjectInterface.h"
 #include "legoapi/characters/core/charconfig.h"
-#include "legoapi/menus/core/gamehint.h"
-#include "legoapi/menus/core/gamemessages.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/trigger/gizspecial.h"
-#include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/gizmos/door/spinner.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/menus/screens/shop.h"
 #include "legoapi/menus/screens/store.h"
 #include "MechInputTouch/MechInputTouch_types.h"
-#include "legoapi/core/input/gamepads.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/props/system/socksys.h"
-#include "legoapi/world/area.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
-#include "legoapi/core/input/timing.h"
-#include "legoapi/gizmos/transport/grapples.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nurndr.h"
-#include "nu2api/nu3d/nuqfnt.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nu3d/nuportal.h"
-#include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nucamera.h"
-#include "legoapi/audio/sfx.h"
-#include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nulgtlaser.h"
-#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/nuhgobj.h"
 
 #include <stdio.h>
 #include <string.h>
+#include "legoapi/world/world_shared.h"
+#include "legoapi/items/base/apiobject.h"
+#include <new>
+#include "nu2api/numath/nuang.h"
+#include "legoapi/world/levels/levels.h"
+#include <stdlib.h>
+#include "nu2api/nu3d/nurndrstat.h"
+#include "legoapi/actions/character/snake.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "batman.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "editor/edpath.h"
+#include "nu2api/nucore/nulist.h"
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/render/light/surfaces.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/gizmos/door/securitydoors.h"
+#include "gameapi/ai/aisys/aipath.h"
+#include "nu2api/nucore/numechptr.hpp"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "nu2api/nu3d/nuhspecial.h"
+#include "legoapi/world/levels/podrace.h"
+#include <stdint.h>
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include <ctype.h>
+#include <limits.h>
 
-void SetObjAsHeadTarget(GameObject_s *, GameObject_s *, i8, f32, f32, f32);
-void SetBallooningHeight(GameObject_s *, f32);
-void GameObjectSetCanUse(GameObject_s *, void *, u8, u8, f32);
-i32 Suit_GetIndex(SUIT_s *);
-BOLTTYPE_s *BoltType_FindByID(i32, WORLDINFO_s *);
-void Bolt_Shoot(GameObject_s *, i32, i32);
-void GameAudio_PlaySfxById(i32, NUVEC *, i32, i32);
-void PartUpdate_Basketball(PART_s *);
-void PartImpact_Basketball(PART_s *);
-void AddSlamDebris(GameObject_s *);
-void Batarang_Release(GameObject_s *, i32);
-void ThermalDetonator_Throw(GameObject_s *);
-void BobaRocket_Kill(PART_s *, i32);
-void BobaRocket_Move(PART_s *, f32);
-void BobaRocket_Deflect(PART_s *);
-void PartCollide_3D(PART_s *);
-void ConfigureComplexShadow(GameObject_s *);
-f32 DropInOutScale(GameObject_s *);
-extern f32 rocket_speed;
-extern f32 sabrerubwait;
-NUVEC *GetZapOrigin(GameObject_s *);
-void PlaySabreSfx(char *, GameObject_s *, NUVEC *, i32);
-i32 testlaser_type;
 i32 lightning_type;
-f32 testlaser_endw = 0.1f;
-f32 testlaser_sizewab = 0.01f;
-f32 testlaser_sizel = 0.1f;
-f32 testlaser_sizew = 0.02f;
-extern i16 id_YODA, id_YODAGHOST, id_GAMORREANGUARD, id_JANGOFETT;
-extern i16 id_MOUSEDROID;
-extern i32 LEGO_AIPATHCNX_WALLSHUFFLE;
-extern i32 VehicleArea;
-extern i32 TERRAINMASK_NONWEAPON, TERRAINMASK_NONDROID;
-f32 DEFENDTIME = 4.0f;
-extern f32 jump_stuck_time;
-i32 teleport_all_freeplay_modes = 1;
-i32 drop_in_teleport = 3;
-
-static f32 Condition_IAmAPartyCharacter(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.field_0x27c != -1) {
-        return 1.0f;
-    }
-    return 0.0f;
-}
-
-extern "C" {
-    void AddToAIGroup(AIGROUP_s *group, APIOBJECT_s *object);
-    extern NUVEC plr_lastpos;
-    extern i16 id_BAT;
-    extern i16 id_SNAKE;
-    extern i16 id_GRIEVOUS;
-    extern i16 id_BODYGUARD;
-    extern i16 id_IMPERIALGUARD;
-    extern i16 id_JAWA;
-    extern i16 id_UGNAUGHT;
-    extern i16 id_ATAT;
-    extern i16 id_GONKDROID;
-    extern i16 id_BASKETCANNON;
-    extern i16 id_R2Q5;
-    extern i16 id_LANDSPEEDER, id_MILLENNIUMFALCON;
-    extern i32 FalconDebKey[2];
-    void AddVariableShotDebrisEffectTimed1(i32, NUVEC *, i32, f32, i16, i16, NUMTX *);
-    void AddDebrisEffect(i32 *, i32, f32, f32, f32);
-    void DebrisPosOrientationMtx(i32, NUMTX *);
-    void DebFreeInstantly(i32 *);
-    void AddVariableShotDebrisEffect(i32, NUVEC *, i32, i16, i16);
-}
-
-// Written by ThingManager's ctor (original global @0x124f2e0, .bss).
-extern void *theThingManager;
-extern void oneAtOnce_MaintainArray();
-
-void legoSetMusicVolume(float);
-void MovePlayer(GameObject_s *object);
-void AnimatePlayer(GameObject_s *object);
-void TerrainPlayer(GameObject_s *object);
-void KeepOnScreen(GameObject_s *object);
-void SetPlayer();
-void InitPlayerAI(GameObject_s *object);
-void ResetPlayerMoves(GameObject_s *object);
-void MovePlayerSpline(GameObject_s *object);
-void GetTopBot(GameObject_s *object);
-void ResetRumble(RUMBLEPACKET *packet);
-void InitSurfaceInfo(GameObject_s *object);
-i32 TightRope_SnapTo(GameObject_s *object, NUVEC *position);
-void Player_ClearContext(GameObject_s *object, i32 mode);
-void Player_ResetContexts(PLAYERPACKET_s *packet);
-i32 SetObjOnSurface(GameObject_s *object, i32 mode);
-void StarWars_GameAISysInit();
-void GameAISysSetGame();
-void ClearAICreatures();
-void CollideGameObjects(WORLDINFO_s *world);
-void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode);
-i32 TagCode(GameObject_s *source, GameObject_s *target, i32 takeover, i32 blend, i32 mode);
-extern i32 do_player_tag;
-extern f32 player_tag_timer;
-extern GameObject_s *player_tag_from;
-extern GameObject_s *player_tag_to;
-APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id);
-i32 EquivalentObject_Find(WORLDINFO_s *world, nuhspecial_s *special);
-void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system);
-void AIPathCnxHelperSysReset(WORLDINFO_s *world, AIPATHCNXHELPERSYS_s *system);
-void InitAICreatures(AISYS_s *system);
-void ResetAICreatures(AISYS_s *system);
-void LevelScriptReStoreProgress(WORLDINFO_s *world, LEVELSCRIPTPROCESS_s *process);
-void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world);
-void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index);
-void ResetCoinPacket(COINPACKET_s *packet);
-GIZMOPICKUP_s *GizmoPickups_Collide(WORLDINFO_s *world, GameObject_s *object, i32 arg);
-
-f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *);
-void *Condition_InHubAreaInit(AISYS_s *, char *, AISCRIPT_s *);
-
-extern i32 LEGO_AIPATHCNX_BLOCKAGE;
-
-extern "C" i32 AISysSetLevelPath(AISYS_s *system, char *path_name);
-
-GAMEFOG_STATE GameFog = {};
-f32 dof_fstop;
-
-static i32 GameFogSnap;
-static rtlfog_s *GameFogSet;
-static f32 GameFogDuration;
-static f32 GameFogTime;
-static GAMEFOG_STATE GameFogOld;
-static GAMEFOG_STATE GameFogNew;
-
-enum AI_ACTION_SPEED_MODE : u8 {
-    AI_ACTION_SPEED_RUN = 0,
-    AI_ACTION_SPEED_WALK = 1,
-    AI_ACTION_SPEED_TIPTOE = 2,
-};
-
-enum SCRIPT_ERROR_LEVEL : u32 {
-    SCRIPT_ERROR_LEVEL_NONE = 0,
-    SCRIPT_ERROR_LEVEL_WARNING = 1,
-    SCRIPT_ERROR_LEVEL_STRICT = 2,
-    SCRIPT_ERROR_LEVEL_COUNT = 3,
-};
-
-enum AI_DEFAULTS : u8 {
-    AI_DEFAULT_ACTIVATE_DIFFICULTY = 1,
-};
-
-enum AI_OBJECT_ROUTE_STATE : u8 {
-    AI_OBJECT_ROUTE_STATE_SCRIPT_VISIBLE = 3,
-};
-
-enum CHARACTER_AI_MODEL_FLAGS : u32 {
-    CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP = 0x00200000,
-    CHARACTER_AI_MODEL_FLAG_DISABLE_RESPAWN = 0x00400000,
-};
-
-enum AI_GAME_OBJECT_TYPE : u8 {
-    AI_GAME_OBJECT_TYPE_VEHICLE = 0x2b,
-};
 
 // Enabled in the target data image.  Ordinary background characters are
 // staggered across frames; special movement states opt back into full-rate
 // processing through the forced-update path.
 i32 timebase_updates = 1;
 
-static const f32 AI_RESPAWN_DELAY = 2.0f;
-
-extern TERRSET *CurTerr;
-
-static f32 Condition_OnForcePlatform(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    if (force != NULL && packet != NULL && packet->owner != NULL) {
-        GameObject_s *object = packet->owner->apiobj.objptr;
-        if ((object->apiobj.field_0x27d != 0 || object->apiobj.field_0x27e != 0) &&
-            object->apiobj.supporting_platform_id != -1) {
-            i16 platform = object->apiobj.supporting_platform_id;
-            NUMTX *transform = static_cast<NUMTX *>(CurTerr->platforms[platform].scene_object);
-            if (object->apiobj.position.y >= transform->m31) {
-                for (GAMEANIMOBJ_s *animation = force->anim_set->objects; animation != NULL;
-                     animation = animation->next) {
-                    GIZFORCEANIMDATA_s *data = static_cast<GIZFORCEANIMDATA_s *>(animation->object_data);
-                    if (platform == data->platform_id)
-                        return 1.0f;
-                }
-            }
-        }
-    }
-    return 0.0f;
-}
-
-static f32 Condition_PlayerOnForcePlatform(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    if (force != NULL && player != NULL) {
-        GameObject_s *object = player;
-        if ((object->apiobj.field_0x27d != 0 || object->apiobj.field_0x27e != 0) &&
-            object->apiobj.supporting_platform_id != -1) {
-            i16 platform = object->apiobj.supporting_platform_id;
-            NUMTX *transform = static_cast<NUMTX *>(CurTerr->platforms[platform].scene_object);
-            if (object->apiobj.position.y >= transform->m31) {
-                for (GAMEANIMOBJ_s *animation = force->anim_set->objects; animation != NULL;
-                     animation = animation->next) {
-                    GIZFORCEANIMDATA_s *data = static_cast<GIZFORCEANIMDATA_s *>(animation->object_data);
-                    if (platform == data->platform_id)
-                        return 1.0f;
-                }
-            }
-        }
-    }
-    return 0.0f;
-}
-
-static f32 Condition_EitherPlayerOnForcePlatform(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    if (force != NULL && player != NULL) {
-        i32 players = 0;
-        if ((player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0) &&
-            player->apiobj.supporting_platform_id != -1) {
-            NUMTX *transform =
-                static_cast<NUMTX *>(CurTerr->platforms[player->apiobj.supporting_platform_id].scene_object);
-            if (player->apiobj.position.y >= transform->m31)
-                players |= 1;
-        }
-        if (player2 != NULL && (player2->apiobj.field_0x27d != 0 || player2->apiobj.field_0x27e != 0) &&
-            player2->apiobj.supporting_platform_id != -1) {
-            NUMTX *transform =
-                static_cast<NUMTX *>(CurTerr->platforms[player2->apiobj.supporting_platform_id].scene_object);
-            if (player2->apiobj.position.y >= transform->m31)
-                players |= 2;
-        }
-        if (players != 0) {
-            for (GAMEANIMOBJ_s *animation = force->anim_set->objects; animation != NULL; animation = animation->next) {
-                GIZFORCEANIMDATA_s *data = static_cast<GIZFORCEANIMDATA_s *>(animation->object_data);
-                if ((players & 1) && player->apiobj.supporting_platform_id == data->platform_id)
-                    return 1.0f;
-                if ((players & 2) && player2->apiobj.supporting_platform_id == data->platform_id)
-                    return 1.0f;
-            }
-        }
-    }
-    return 0.0f;
-}
-
-static void *Condition_OnForcePlatformInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, force_gizmotype_id, name);
-    if (gizmo != NULL) {
-        GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo->object);
-        if (force != NULL && (force->runtime_flags & 1) != 0)
-            return force;
-    }
-    return NULL;
-}
-
-static void *Condition_ForcePushingInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && GetNamedAPIObjectFn != NULL ? GetNamedAPIObjectFn(system, name) : NULL;
-}
-
-static f32 Condition_ForcePushing(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject_s *object = static_cast<GameObject_s *>(argument);
-    if (object == NULL && packet != NULL) {
-        if (packet->owner == NULL)
-            return 0.0f;
-        object = packet->owner->apiobj.objptr;
-        if (object == NULL)
-            return 0.0f;
-    }
-    f32 result = 0.0f;
-    if (object != NULL) {
-        result = object->character_context == 0x1b ? 1.0f : 0.0f;
-    }
-    return result;
-}
-
-static f32 Condition_EitherPlayerUsingForce(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    return GizForce_GameObjUsingForce(player, force) != 0 || GizForce_GameObjUsingForce(player2, force) != 0 ? 1.0f
-                                                                                                             : 0.0f;
-}
-
-static f32 Condition_PlayerUsingForce(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return GizForce_GameObjUsingForce(player, static_cast<GIZFORCE_s *>(argument)) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_UsingForce(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    return GizForce_GameObjUsingForce(packet->owner->apiobj.objptr, static_cast<GIZFORCE_s *>(argument)) != 0 ? 1.0f
-                                                                                                              : 0.0f;
-}
-
-static void *Condition_UsingForceInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, force_gizmotype_id, name);
-    return gizmo != NULL ? gizmo->object : NULL;
-}
-
-static f32 Condition_ForceBeingUsed(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    if (force == NULL) {
-        return 0.0f;
-    }
-    if ((force->field_0xaa & 0x20) == 0 && force->field_0x3c_bits == 0) {
-        return 0.0f;
-    }
-    return 1.0f;
-}
-
-static void *Condition_ForceInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return GizmoFindByName(WORLD->gizmo_sys, force_gizmotype_id, name);
-}
-
-static f32 Condition_ForceAtStart(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && GizmoGetOutput(WORLD->gizmo_sys, static_cast<GIZMO_s *>(argument), 1, 1) == 0 ? 1.0f
-                                                                                                             : 0.0f;
-}
-
-static f32 Condition_ForceAtEnd(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && GizmoGetOutput(WORLD->gizmo_sys, static_cast<GIZMO_s *>(argument), 0, 1) != 0 ? 1.0f
-                                                                                                             : 0.0f;
-}
-
-// The original executable returns zero unconditionally for this condition.
-static f32 Condition_NumForceObjects(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return 0.0f;
-}
-
-static void *Condition_NumForceObjectsInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    i32 flags = 0;
-    if (name != NULL && system != NULL) {
-        flags = NuStrIStr(name, "throwable") != NULL;
-        if (NuStrIStr(name, "inrange") != NULL)
-            flags |= 2;
-    }
-    return reinterpret_cast<void *>(static_cast<intptr_t>(flags));
-}
-
-static f32 Condition_ForceStackComplete(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    return force != NULL && force->group != NULL && (force->group->field_0x24 & 2) ? 1.0f : 0.0f;
-}
-
-static f32 Condition_ForceStackCompleteInOrder(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    return force != NULL && force->group != NULL && (force->group->field_0x24 & 4) ? 1.0f : 0.0f;
-}
-
-static f32 Condition_ForceComplete(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    return force != NULL && GizForce_Complete(force) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_ForceFinished(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZFORCE_s *force = static_cast<GIZFORCE_s *>(argument);
-    return force != NULL && GizForce_AnimComplete(force) != 0 ? 1.0f : 0.0f;
-}
-
-static void *Condition_ForceCompleteInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, force_gizmotype_id, name);
-    return gizmo != NULL ? gizmo->object : NULL;
-}
-
-static f32 Condition_ObstacleOpenedByPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(argument);
-    if (obstacle != NULL) {
-        return player != NULL && obstacle->triggering_object == player ? 1.0f : 0.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_ObstacleOpenedByEitherPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
-                                                  void *argument) {
-    GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(argument);
-    return obstacle != NULL && ((player != NULL && obstacle->triggering_object == player) ||
-                                (player2 != NULL && obstacle->triggering_object == player2))
-               ? 1.0f
-               : 0.0f;
-}
-
-static void *Condition_ObstacleOpenedByPlayerInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, obstacle_gizmotype_id, name);
-    return gizmo != NULL ? gizmo->object : NULL;
-}
-
-static f32 Condition_ObstacleLockedOpen(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return (static_cast<GIZOBSTACLE_s *>(argument)->runtime_flags & 4) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_ObstacleLockedShut(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return (static_cast<GIZOBSTACLE_s *>(argument)->runtime_flags & 8) != 0 ? 1.0f : 0.0f;
-}
-
-static void *Condition_GizSpecialInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return GizmoFindByName(WORLD->gizmo_sys, gizspecial_gizmotype_id, name);
-}
-
-static void *Condition_ObstacleInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return GizmoFindByName(WORLD->gizmo_sys, obstacle_gizmotype_id, name);
-}
-
-static f32 Condition_ObstacleAtStart(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && GizmoGetOutput(WORLD->gizmo_sys, static_cast<GIZMO_s *>(argument), 1, 1) == 0 ? 1.0f
-                                                                                                             : 0.0f;
-}
-
-static f32 Condition_ObstacleAtEnd(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && GizmoGetOutput(WORLD->gizmo_sys, static_cast<GIZMO_s *>(argument), 0, 1) != 0 ? 1.0f
-                                                                                                             : 0.0f;
-}
-
-static void *Condition_OnSpeederBikeInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_OnSpeederBike(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject_s *object = static_cast<GameObject_s *>(argument);
-    if (object == NULL) {
-        if (packet->owner != NULL) {
-            object = packet->owner->apiobj.objptr;
-        }
-    }
-    if (object != NULL) {
-        return object->field_0xcc0 != NULL && object->character_context == 0x3b &&
-                       object->field_0xcc0->id == id_SPEEDERBIKE
-                   ? 1.0f
-                   : 0.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_Player2Active(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return player2 != NULL ? 1.0f : 0.0f;
-}
-
-static void *Condition_TakenOverInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_TakenOver(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *name, void *argument) {
-    GameObject_s *object = static_cast<GameObject_s *>(argument);
-    if (object == NULL) {
-        if (name != NULL) {
-            if (NuStrICmp(name, "Opponent") == 0) {
-                APIOBJECT_s *opponent = packet->owner->apiobj.objptr->ai.opponent_object;
-                if (opponent != NULL)
-                    object = opponent->objptr;
-            } else if (NuStrICmp(name, "TakeoverTarget") == 0) {
-                object = packet->owner->apiobj.objptr;
-                if (object != NULL)
-                    object = object->takeover_target;
-            }
-        } else if (packet != NULL && packet->owner != NULL) {
-            object = packet->owner->apiobj.objptr;
-        }
-    }
-    return object != NULL && object->field_0xcc0 != NULL && object->character_context != 0x3b ? 1.0f : 0.0f;
-}
-
-static void *Condition_LastLevelInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && system != NULL && WORLD->area != NULL) {
-        for (i32 index = 0; index < LEVELCOUNT; ++index) {
-            if (NuStrICmp(name, LDataList[index].name) == 0) {
-                return reinterpret_cast<void *>(static_cast<isize>(index));
-            }
-        }
-    }
-    return reinterpret_cast<void *>(static_cast<isize>(-1));
-}
-
-static f32 Condition_LastLevel(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    if (LastLData != NULL) {
-        return LastLData->idx == static_cast<i32>(reinterpret_cast<isize>(argument)) ? 1.0f : 0.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_IsVisibleInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return name;
-}
-
-static f32 Condition_IsVisible(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    nuhspecial_s special = {};
-    NuSpecialFind(WORLD->current_gscn, &special, static_cast<char *>(argument), 1);
-    f32 result = 0.0f;
-    if (NuSpecialExistsFn(&special) != 0) {
-        result = NuSpecialGetVisibilityFn(&special);
-    }
-    return result;
-}
-
-// The reference executable exposes this condition as an unconditional zero.
-static f32 Condition_Indy(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return 0.0f;
-}
-
-// The Android reference executable reports false for the PSP platform.
-static f32 Condition_PSP(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return 0.0f;
-}
-
-// The reference executable exposes this condition as an unconditional zero.
-static f32 Condition_CheatProgress(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return 0.0f;
-}
-
-static f32 Condition_ChallengeMode(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return ChallengeMode != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_Freeplay(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return static_cast<f32>(FreePlay);
-}
-
-static f32 Condition_MissionMode(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return Mission_Active(NULL) != NULL ? 1.0f : 0.0f;
-}
-
-static f32 Condition_MissionWon(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return MissionSys != NULL && MissionSys->field8_0x1d == 2 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_NumInSetAlive(AISYS_s *, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *, void *argument) {
-    i32 set = reinterpret_cast<intptr_t>(argument);
-    if (set == -1)
-        set = process->unknown_b0;
-    f32 result = 0.0f;
-    if (set != 0)
-        result = static_cast<u32>(aicreature_sets_alive[set - 1]);
-    return result;
-}
-
-static f32 Condition_IsSetAlive(AISYS_s *, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *, void *argument) {
-    i32 set = reinterpret_cast<intptr_t>(argument);
-    if (set == -1)
-        set = process->unknown_b0;
-    return set != 0 && aicreature_sets_alive[set - 1] != 0 ? 1.0f : 0.0f;
-}
-
-static void *Condition_IsSetAliveInit(AISYS_s *, char *arg, AISCRIPT_s *) {
-    if (arg == NULL)
-        return NULL;
-    if (NuStrICmp(arg, "myset") == 0)
-        return reinterpret_cast<void *>(static_cast<intptr_t>(-1));
-    i32 set = NuAToI(arg);
-    if (set < 1 || set > 16)
-        set = 0;
-    return reinterpret_cast<void *>(static_cast<intptr_t>(set));
-}
-
-extern "C" i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *cutscene);
-
-static f32 Condition_SockXDistanceToPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    f32 result = 0.0f;
-    NUVEC player_offset, object_offset;
-    if (packet == NULL)
-        return 0.0f;
-    if (packet->owner != NULL && player != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        if (player->field_0x661 != 0xff && player->field_0x661 == object->field_0x661) {
-            NuVecSub(&player_offset, &player->apiobj.position, &player->sock_position.midpoint);
-            NuVecRotateY(&player_offset, &player_offset, -player->sock_position.midpoint_rotation.y);
-            NuVecSub(&object_offset, &object->apiobj.position, &object->sock_position.midpoint);
-            NuVecRotateY(&object_offset, &object_offset, -object->sock_position.midpoint_rotation.y);
-            result = player_offset.x - object_offset.x;
-        }
-    }
-    return result;
-}
-
-static f32 Condition_PlayerDeflectingPart(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return player != NULL && player->force_part != NULL ? 1.0f : 0.0f;
-}
-
-static f32 Condition_CollidingWithOpponent(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->opponent_object != NULL && packet->owner != NULL &&
-        (packet->owner->apiobj.colliding_objects_mask & packet->opponent_object->collision_identity_mask) != 0) {
-        return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_OpponentPathPosRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->opponent_object != NULL &&
-        packet->opponent_object->ai != NULL) {
-        NUVEC difference;
-        return NuVecDist(&packet->owner->apiobj.position, &packet->opponent_object->ai->last_path_position,
-                         &difference);
-    }
-    return 1.0e9f;
-}
-
-static f32 Condition_OpponentToPlayerRange(AISYS_s *system, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->opponent_object != NULL && system != NULL &&
-        system->player_1 != NULL) {
-        NUVEC difference;
-        return NuVecDist(&system->player_1->position, &packet->opponent_object->position, &difference);
-    }
-    return 1.0e9f;
-}
-
-static f32 Condition_SockDistanceToPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->owner != NULL && player != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        if (player->field_0x661 != 0xff && player->field_0x661 == object->field_0x661) {
-            f32 distance = MidDistanceFromSockStart(WORLD->sock_sys, &player->sock_position);
-            result = distance - MidDistanceFromSockStart(WORLD->sock_sys, &object->sock_position);
-        }
-    }
-    return result;
-}
-
-static f32 Condition_SockDistanceToOpponent(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->owner != NULL && packet->opponent_object != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        GameObject *opponent = packet->opponent_object->objptr;
-        if (opponent->field_0x661 != 0xff && opponent->field_0x661 == object->field_0x661) {
-            f32 distance = MidDistanceFromSockStart(WORLD->sock_sys, &opponent->sock_position);
-            result = distance - MidDistanceFromSockStart(WORLD->sock_sys, &object->sock_position);
-        }
-    }
-    return result;
-}
-
-static f32 Condition_FurthestPlayerDistanceAlongSock(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    f32 distance = 0.0f;
-    if (player != NULL) {
-        if (player2 != NULL)
-            distance = player2->sock_position.distance > player->sock_position.distance
-                           ? player2->sock_position.distance
-                           : player->sock_position.distance;
-        else
-            distance = player->sock_position.distance;
-    }
-    return distance;
-}
-
-static f32 Condition_PlayerDistanceAlongSock(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return player != NULL ? player->sock_position.distance : 0.0f;
-}
-
-static f32 Condition_PlayerInSock(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && WORLD->sock_sys != NULL &&
-                   argument == &WORLD->sock_sys->sock[static_cast<i8>(player->field_0x661)]
-               ? 1.0f
-               : 0.0f;
-}
-
-static void *Condition_PlayerInSockInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return FindSock(WORLD->sock_sys, name);
-}
-
-extern "C" f32 NuAnimEndFrameOld(void *animation);
-
-extern i32 Hub_GetRandomCharType();
-extern u8 hub_custodians_finished_loading;
 extern "C" {
-    i32 nbaddies_can_see_players;
-}
-
-static f32 Condition_NumBaddiesThatCanSeePlayers(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return (f32)nbaddies_can_see_players;
-}
-
-static f32 Condition_OnSameObjectAsPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && player != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        if ((object->apiobj.packed_contact_state & 0xffff00) != 0 &&
-            (player->apiobj.packed_contact_state & 0xffff00) != 0 && object->apiobj.supporting_platform_id != -1 &&
-            object->apiobj.supporting_platform_id == player->apiobj.supporting_platform_id)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_RandomMapCharsAvailable(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    if (hub_custodians_finished_loading == 0)
-        return 0.0f;
-    i16 character = Hub_GetRandomCharType();
-    return character != -1 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_EitherPlayerWearingHelmet(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    // The shipped condition only checks the active player despite its name.
-    return player->field_0x108e == 5 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_AreaContainsPartyMember(AISYS_s *system, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *,
-                                             void *argument) {
-    if (system != NULL) {
-        AIAREA *area = static_cast<AIAREA *>(argument);
-        if (area == NULL)
-            area = process->unknown_a0;
-        if (area != NULL && (area->runtime_flags & 8) != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_AreaContainsPartyMemberInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL ? AISysFindArea(system, name) : NULL;
-}
-
-static f32 Condition_CharacterTypeExists(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    if (argument != NULL) {
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-            if (Obj[index].id == (intptr_t)argument)
-                return 1.0f;
-        }
-    }
-    return 0.0f;
-}
-
-static void *Condition_CharacterTypeExistsInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && system != NULL) {
-        for (i32 index = 0; index < CHARCOUNT; ++index) {
-            if (NuStrICmp(CDataList[index].file, name) == 0)
-                return (void *)(intptr_t)index;
-        }
-    }
-    return (void *)(intptr_t)-1;
-}
-
-static f32 Condition_EitherPlayerInMyTriggerArea(AISYS_s *system, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *,
-                                                 void *) {
-    if (system != NULL && process->unknown_a0 != NULL) {
-        AIAREA *area = process->unknown_a0;
-        if (system->player_1 != NULL && area->system != NULL) {
-            i64 mask = 1 << (area - area->system->areas);
-            u64 membership = ((u64)system->player_1->ai_area_mask_high << 32) | system->player_1->ai_area_mask_low;
-            if ((membership & mask) != 0)
-                return 1.0f;
-        }
-        if (system->player_2 != NULL && area->system != NULL) {
-            i64 mask = 1 << (area - area->system->areas);
-            u64 membership = ((u64)system->player_2->ai_area_mask_high << 32) | system->player_2->ai_area_mask_low;
-            if ((membership & mask) != 0)
-                return 1.0f;
-        }
-    }
-    return 0.0f;
-}
-
-static f32 Condition_OnDynamicGrapple(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject *object = static_cast<GameObject *>(argument);
-    if (object == NULL) {
-        if (packet == NULL || packet->owner == NULL)
-            return 0.0f;
-        object = packet->owner->apiobj.objptr;
-    }
-    if (object != NULL && object->character_context == 0x46) {
-        GRAPPLE *grapple = static_cast<GRAPPLE *>(object->field_0x788);
-        if (grapple != NULL && grapple->has_terrain_platform != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_OnDynamicGrappleInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_AngleAboutMyLocatorToPlayer(AISYS_s *, AISCRIPTPROCESS_s *process, AIPACKET_s *packet, char *,
-                                                 void *argument) {
-    f32 result = 0.0f;
-    if (argument != NULL && process->unknown_a4 != NULL && packet != NULL && packet->owner != NULL) {
-        GameObject *object = packet->owner;
-        GameObject *target = NULL;
-        if ((intptr_t)argument == -1)
-            target = player;
-        else if ((intptr_t)argument == 1)
-            target = Player[1];
-        if (target != NULL) {
-            i32 object_angle = NuAtan2D(object->apiobj.position.x - process->unknown_a4->position.x,
-                                        object->apiobj.position.z - process->unknown_a4->position.z);
-            i32 player_angle = NuAtan2D(target->apiobj.position.x - process->unknown_a4->position.x,
-                                        target->apiobj.position.z - process->unknown_a4->position.z);
-            result = (f32)NuAngSub(player_angle, object_angle);
-        }
-    }
-    return result;
-}
-
-static void *Condition_AngleAboutMyLocatorToPlayerInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return (void *)(intptr_t)(name != NULL && NuStrICmp(name, "player1") == 0 ? 1 : -1);
-}
-
-static f32 Condition_EitherPlayerUsingHatMachine(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    HATMACHINE_s *machine;
-    if (player != NULL && player->character_context == 0x61 &&
-        (machine = static_cast<HATMACHINE_s *>(player->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(machine->name, name) == 0)) {
-        return 1.0f;
-    }
-    if (player2 != NULL && player2->character_context == 0x61 &&
-        (machine = static_cast<HATMACHINE_s *>(player2->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(machine->name, name) == 0)) {
-        return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_EitherPlayerPullingLever(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    LEVER_s *lever;
-    if (player != NULL && player->character_context == 0x4a &&
-        (lever = static_cast<LEVER_s *>(player->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(lever->name, name) == 0)) {
-        return 1.0f;
-    }
-    if (player2 != NULL && player2->character_context == 0x4a &&
-        (lever = static_cast<LEVER_s *>(player2->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(lever->name, name) == 0)) {
-        return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_EitherPlayerUsingPanel(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    GIZPANEL_s *panel;
-    if (player != NULL && player->character_context == 0x0b &&
-        (panel = static_cast<GIZPANEL_s *>(player->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(panel->name, name) == 0)) {
-        return 1.0f;
-    }
-    if (player2 != NULL && player2->character_context == 0x0b &&
-        (panel = static_cast<GIZPANEL_s *>(player2->field_0x788)) != NULL &&
-        (name == NULL || NuStrICmp(panel->name, name) == 0)) {
-        return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_AreaContainsBaddies(AISYS_s *system, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *,
-                                         void *argument) {
-    if (system != NULL) {
-        AIAREA *area = static_cast<AIAREA *>(argument);
-        if (area == NULL)
-            area = process->unknown_a0;
-        if (area != NULL && (area->runtime_flags & 4) != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_AreaContainsBaddiesInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL ? AISysFindArea(system, name) : NULL;
-}
-
-static f32 Condition_AreaContainsGoodies(AISYS_s *system, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *,
-                                         void *argument) {
-    if (system != NULL) {
-        AIAREA *area = static_cast<AIAREA *>(argument);
-        if (area == NULL)
-            area = process->unknown_a0;
-        if (area != NULL && (area->runtime_flags & 2) != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_AreaContainsGoodiesInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL ? AISysFindArea(system, name) : NULL;
-}
-
-static f32 Condition_PickupBeenTurnedOn(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL ? (f32)GizmoPickup_BeenTurnedOn(static_cast<GIZMOPICKUP_s *>(argument)) : 0.0f;
-}
-
-static void *Condition_PickupBeenTurnedOnInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return name != NULL ? GizmoPickup_FindByName(WORLD, name) : NULL;
-}
-
-static f32 Condition_AnimationFinished(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    nuinstanim_s *animation = static_cast<nuinstanim_s *>(argument);
-    if (animation != NULL && !animation->playing) {
-        nuanimdata_s *data = WORLD->current_gscn->instance_animation_data[animation->anim_ix];
-        if (data != NULL && animation->ltime >= NuAnimEndFrameOld(data))
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_AnimationFinishedInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    nuhspecial_s special;
-    NuSpecialFind(WORLD->current_gscn, &special, name, 1);
-    return NuSpecialExistsFn(&special) != 0 ? NuSpecialGetInstAnim(&special) : NULL;
-}
-
-static f32 Condition_RigidAnimFrame(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    nuinstanim_s *animation = static_cast<nuinstanim_s *>(argument);
-    return animation != NULL ? animation->ltime : 1.0f;
-}
-
-static void *Condition_RigidAnimFrameInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    nuhspecial_s special;
-    NuSpecialFind(WORLD->current_gscn, &special, name, 1);
-    return NuSpecialExistsFn(&special) != 0 ? NuSpecialGetInstAnim(&special) : NULL;
-}
-
-static f32 Condition_FinishedSpline(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        return object->movement_spline != NULL && object->movement_spline_finished == 0 ? 0.0f : 1.0f;
-    }
-    return -1.0f;
-}
-
-static f32 Condition_CutSceneFinished(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    CUTINFO *cut = static_cast<CUTINFO *>(argument);
-    return cut != NULL && cut->instance != NULL &&
-                   instNuGCutSceneIsFinished(static_cast<instNUGCUTSCENE_s *>(cut->instance)) != 0
-               ? 1.0f
-               : 0.0f;
-}
-
-static void *Condition_CutSceneFinishedInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return CutScene_Find(WORLD->cutscene_sys, name);
-}
-
-static f32 Condition_CutSceneStarted(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    CUTINFO *cut = static_cast<CUTINFO *>(argument);
-    return cut != NULL && cut->instance != NULL && (static_cast<instNUGCUTSCENE_s *>(cut->instance)->flags_88 & 2) != 0
-               ? 1.0f
-               : 0.0f;
-}
-
-static void *Condition_CutSceneStartedInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return CutScene_Find(WORLD->cutscene_sys, name);
-}
-
-static f32 Condition_CutSceneExists(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL ? 1.0f : 0.0f;
-}
-
-static void *Condition_CutSceneExistsInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return CutScene_Find(WORLD->cutscene_sys, name);
-}
-
-static f32 Condition_CutScenePlaying(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    // The reference target returns zero unconditionally for this condition.
-    return 0.0f;
-}
-
-static void *Condition_CutScenePlayingInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return CutScene_Find(WORLD->cutscene_sys, name);
-}
-
-static f32 Condition_Message(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GIZAIMESSAGE_s *message = static_cast<GIZAIMESSAGE_s *>(argument);
-    return message != NULL ? message->value : 0.0f;
-}
-
-static void *Condition_MessageInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && system != NULL && gizaimessagesys != NULL)
-        return CheckGizAIMessage(gizaimessagesys, name, NULL);
-    return NULL;
-}
-
-static f32 Condition_ScriptParam(AISYS_s *, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *, void *argument) {
-    i32 index = reinterpret_cast<intptr_t>(argument);
-    return index >= 0 ? process->params[index] : 0.0f;
-}
-
-static void *Condition_ScriptParamInit(AISYS_s *, char *name, AISCRIPT_s *script) {
-    if (name != NULL) {
-        for (i32 index = 0; index < 4; ++index) {
-            if (NuStrICmp(script->params[index].name, name) == 0)
-                return reinterpret_cast<void *>(static_cast<intptr_t>(index));
-        }
-        return reinterpret_cast<void *>(static_cast<intptr_t>(NuAToI(name)));
-    }
-    return reinterpret_cast<void *>(static_cast<intptr_t>(-1));
-}
-
-static f32 Condition_Blocking(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        u32 flags = CInfo[object->character_context].flags;
-        if ((flags & 0x04000000) != 0 || ((flags & 0x08000000) != 0 && (object->jump_flags & 2) != 0))
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_RaceLap(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return static_cast<f32>(Lap);
-}
-
-static f32 Condition_MusicOn(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return SuperOptions.music_enabled != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_GotOpponentLOS(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        APIOBJECT *opponent = object->character_context == 0x1b ? reinterpret_cast<APIOBJECT *>(object->force_target)
-                                                                : packet->opponent_object;
-        if (opponent != NULL &&
-            ((WORLD->api_object_sys->line_of_sight[packet->owner->apiobj.field_0x289] >> opponent->field_0x289) & 1) !=
-                0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_GotLocatorInSet(AISYS_s *system, AISCRIPTPROCESS_s *process, AIPACKET_s *, char *,
-                                     void *argument) {
-    AILOCATORSET *set = static_cast<AILOCATORSET *>(argument);
-    if (set != NULL && process->unknown_a4 != NULL) {
-        u8 locator = static_cast<u8>(process->unknown_a4 - system->locators);
-        for (i32 index = 0; index < set->locator_count; ++index) {
-            if (set->locator_entries[index] == locator)
-                return 1.0f;
-        }
-    }
-    return 0.0f;
-}
-
-static void *Condition_GotLocatorInSetInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return AIPathFindLocatorSet(system, name);
-}
-
-i32 CanFightLikeAJedi(GameObject_s *object) {
-    return CharCategory_IsCategory(object, 0) != 0 || object->id == id_GRIEVOUS || object->id == id_BODYGUARD ||
-           object->id == id_IMPERIALGUARD;
-}
-
-static f32 Condition_CanFightLikeAJedi(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    return packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL &&
-                   CanFightLikeAJedi(packet->owner) != 0
-               ? 1.0f
-               : 0.0f;
-}
-
-static f32 Condition_EitherPlayerPushingSpinner(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    if (argument != NULL) {
-        if (player != NULL && player->character_context == 0x28 && player->field_0x788 == argument)
-            return 1.0f;
-        if (player2 != NULL && player2->character_context == 0x28 && player2->field_0x788 == argument)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static void *Condition_EitherPlayerPushingSpinnerInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    return GizSpinner_FindBySpecialName(WORLD, name);
-}
-
-static f32 Condition_CharacterRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject *object = static_cast<GameObject *>(argument);
-    if (packet != NULL && packet->owner != NULL && object != NULL) {
-        NUVEC difference;
-        return NuVecDist(&object->apiobj.position, &packet->owner->apiobj.position, &difference);
-    }
-    return 1000000000.0f;
-}
-
-static void *Condition_CharacterRangeInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_MaulShouldRunAway(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet->owner != NULL) {
-        i32 angle = NuAtan2D(packet->owner->apiobj.collision_position.x - 5.5f,
-                             packet->owner->apiobj.collision_position.z - 3.65f);
-        for (i32 index = 0; index < 2; ++index) {
-            GameObject *object = Player[index];
-            if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
-                f32 x = object->apiobj.collision_position.x - 5.5f;
-                f32 z = object->apiobj.collision_position.z - 3.65f;
-                if (x * x + z * z < 25.0f && NuAngSub(NuAtan2D(x, z), angle) <= 0xe37)
-                    return 1.0f;
-            }
-        }
-    }
-    return 0.0f;
-}
-
-static f32 Condition_BeenTakenOver(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject *object = static_cast<GameObject *>(argument);
-    if (object == NULL && packet->owner != NULL)
-        object = packet->owner->apiobj.objptr;
-    return object != NULL && object->field_0xcc0 != NULL && object->character_context == 0x3b ? 1.0f : 0.0f;
-}
-
-static void *Condition_BeenTakenOverInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_LastAttackerRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        GameObject *attacker = object->last_attacker;
-        if (attacker != NULL) {
-            NUVEC difference;
-            return NuVecDist(&object->apiobj.position, &attacker->apiobj.position, &difference);
-        }
-    }
-    return 1000000000.0f;
-}
-
-static f32 Condition_LastAttackerIsActivePlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->owner != NULL) {
-        GameObject *attacker = packet->owner->apiobj.objptr->last_attacker;
-        if (attacker != NULL && (attacker->apiobj.flags_low & 0x80) != 0)
-            result = 1.0f;
-    }
-    return result;
-}
-
-static f32 Condition_CannotReachDestination(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    return packet != NULL && (packet->runtime_flags & 0x40) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_BeenSpawned(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    return packet != NULL && packet->owner != NULL && packet->owner->apiobj.field_0x27c == -1 &&
-                   packet->field_0x134 == 0xff
-               ? 1.0f
-               : 0.0f;
-}
-
-static f32 Condition_ShouldAttackOpponent(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL) {
-        GameObject *object = packet->owner->apiobj.objptr;
-        if (object != NULL && object->ai.opponent_object != NULL) {
-            GameObject *opponent = object->ai.opponent_object->objptr;
-            if (opponent != NULL && (object->ai.field_0x1e5 & 8) != 0 && object->ai.opponent_metric < 1.0f) {
-                if (opponent->id == id_BAT || opponent->id == id_SNAKE)
-                    return 1.0f;
-            }
-        }
-    }
-    return 0.0f;
-}
-
-static f32 Condition_RespawnLocatorIs(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    return argument != NULL && packet != NULL && packet->respawn_locator == argument ? 1.0f : 0.0f;
-}
-
-static void *Condition_RespawnLocatorIsInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL ? AIPathFindLocator(system, name) : NULL;
-}
-
-static f32 Condition_BoltsDontGetDeflectedBack(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    return packet != NULL && packet->owner != NULL && (packet->owner->apiobj.objptr->field_0xefc & 8) != 0 ? 1.0f
-                                                                                                           : 0.0f;
-}
-
-static f32 Condition_HelpWithTriggers(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    AITRIGGERSETSYS_s *system = WORLD->ai_trigger_set_sys;
-    if (system == NULL)
-        return 0.0f;
-    if (packet != NULL && packet->owner != NULL) {
-        u8 index = packet->owner->apiobj.field_0x289;
-        if (system->field_0x42c0[index] != -1 && system->sets[system->field_0x4280[index]].field_0x20e != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_DropBackInTimer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return drop_back_in_timer;
-}
-
-static f32 Condition_InMiniCut(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *arg, void *) {
-    return MiniCutCam != 0 || (arg != NULL && ObstacleCamSpl != NULL) ? 1.0f : 0.0f;
-}
-
-static f32 Condition_BigJumpComplete(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    if (packet != NULL && packet->owner != NULL) {
-        return packet->owner->apiobj.objptr->character_context != 0x1f ? 1.0f : 0.0f;
-    }
-    return 1.0f;
-}
-
-static f32 Condition_AIOverrideControl(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    APIOBJECT *object = static_cast<APIOBJECT *>(argument);
-    if (object == NULL) {
-        if (packet != NULL)
-            object = reinterpret_cast<APIOBJECT *>(packet->owner);
-    }
-    return object != NULL && (object->flags_high & 1) != 0 ? 1.0f : 0.0f;
-}
-
-static void *Condition_AIOverrideControlInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && GetNamedAPIObjectFn != NULL)
-        return GetNamedAPIObjectFn(system, name);
-    return NULL;
-}
-
-static f32 Condition_IsOnScreen(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    APIOBJECT *object = static_cast<APIOBJECT *>(argument);
-    if (object == NULL) {
-        if (packet != NULL)
-            object = reinterpret_cast<APIOBJECT *>(packet->owner);
-    }
-    return object != NULL && object->model_draw_result != 0 ? 1.0f : 0.0f;
-}
-
-static void *Condition_IsOnScreenInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && GetNamedAPIObjectFn != NULL)
-        return GetNamedAPIObjectFn(system, name);
-    return NULL;
-}
-
-static f32 Condition_IAmPlayer2(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->owner != NULL) {
-        if (player == Player[0]) {
-            result = packet->owner->apiobj.objptr == Player[1] ? 1.0f : 0.0f;
-        } else if (player == Player[1]) {
-            result = packet->owner->apiobj.objptr == Player[0] ? 1.0f : 0.0f;
-        }
-    }
-    return result;
-}
-
-static f32 Condition_PlayerOnObject(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    i32 platform = reinterpret_cast<intptr_t>(argument);
-    f32 result = 0.0f;
-    if (__builtin_expect(player != NULL && platform != -1 && (player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0), 0)) {
-        if (__builtin_expect(player->apiobj.supporting_platform_id == platform, 0)) {
-            NUMTX *transform = static_cast<NUMTX *>(CurTerr->platforms[platform].scene_object);
-            result = transform->m31 > player->apiobj.position.y ? 0.0f : 1.0f;
-        }
-    }
-    return result;
-}
-
-static void *Condition_OnObjectInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    nuhspecial_s special;
-    i32 platform = -1;
-    if (CurTerr != NULL) {
-        if (NuSpecialFind(WORLD->current_gscn, &special, name, 1) != 0) {
-            platform = FindPlatInst(NuSpecialGetInstanceix(&special));
-        }
-    }
-    return reinterpret_cast<void *>(static_cast<intptr_t>(platform));
-}
-
-static f32 Condition_PlayerOnGround(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return player != NULL && (player->apiobj.field_0x27d != 0 || player->apiobj.field_0x27e != 0) ? 1.0f : 0.0f;
-}
-
-static f32 Condition_UnderPlayerControl(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    GameObject_s *object = static_cast<GameObject_s *>(argument);
-    f32 result = 0.0f;
-    if (object != NULL) {
-        if ((object->apiobj.flags_low & 0x80) != 0)
-            result = 1.0f;
-    }
-    return result;
-}
-
-static void *Condition_UnderPlayerControlInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    if (name != NULL && system != NULL)
-        return GetNamedGameObject(system, name);
-    return NULL;
-}
-
-static f32 Condition_PlayerTakenOver(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return player != NULL && player->field_0xcc0 != NULL && player->character_context != 0x3b ? 1.0f : 0.0f;
-}
-
-static f32 Condition_EitherPlayerTakenOver(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    if (player != NULL && player->field_0xcc0 != NULL && player->character_context != 0x3b)
-        return 1.0f;
-    if (player2 != NULL && player2->field_0xcc0 != NULL && player2->character_context != 0x3b)
-        return 1.0f;
-    return 0.0f;
-}
-
-static f32 Condition_PartyContainsDroids(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    for (i32 index = 0; index < 8; ++index) {
-        GameObject_s *object = Player[index];
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && (object->field_0xeff & 1) == 0 &&
-            (object->apiobj.character_data->model_flags & 0x10) != 0)
-            return 1.0f;
-    }
-    return 0.0f;
-}
-
-static f32 Condition_OpponentContext(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->opponent_object != NULL) {
-        if (packet->opponent_object->objptr->character_context == reinterpret_cast<intptr_t>(argument))
-            result = 1.0f;
-    }
-    return result;
-}
-
-static void *Condition_InContextInit(AISYS_s *, char *name, AISCRIPT_s *) {
-    i32 context;
-    if (NuStrICmp(name, "DEACTIVATED") == 0)
-        context = 0x17;
-    else if (NuStrICmp(name, "FORCEDBACK") == 0)
-        context = 0x22;
-    else if (NuStrICmp(name, "GRAB") == 0)
-        context = 0x38;
-    else if (NuStrICmp(name, "EAT") == 0)
-        context = 0x3f;
-    else if (NuStrICmp(name, "FORCEPUSHED") == 0)
-        context = 0x1c;
-    else if (NuStrICmp(name, "FORCEPUSH") == 0)
-        context = 0x1b;
-    else if (NuStrICmp(name, "GETIN") == 0)
-        context = 0x3c;
-    else if (NuStrICmp(name, "BALLOONING") == 0)
-        context = 0x5d;
-    else if (NuStrICmp(name, "STUNNED") == 0)
-        context = 0x5a;
-    else if (NuStrICmp(name, "FLOAT") == 0)
-        context = 0x4b;
-    else if (NuStrICmp(name, "GRAPPLE") == 0)
-        context = 0x46;
-    else
-        context = 0x64;
-    return reinterpret_cast<void *>(static_cast<isize>(context));
-}
-
-static f32 Condition_InContext(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    f32 result = 0.0f;
-    if (packet != NULL && packet->owner != NULL) {
-        GameObject_s *object = packet->owner->apiobj.objptr;
-        if (object != NULL && object->character_context == static_cast<i32>(reinterpret_cast<isize>(argument))) {
-            result = 1.0f;
-        }
-    }
-    return result;
-}
-
-static void *Condition_HitPointsInit(AISYS_s *system, char *name, AISCRIPT_s *) {
-    return name != NULL && system != NULL ? GetNamedGameObject(system, name) : NULL;
-}
-
-static f32 Condition_HitPoints(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *, void *argument) {
-    GameObject_s *object = static_cast<GameObject_s *>(argument);
-    if (object == NULL) {
-        if (packet != NULL && packet->owner != NULL) {
-            object = packet->owner->apiobj.objptr;
-        }
-    }
-    f32 result = 0.0f;
-    if (object != NULL) {
-        result = static_cast<i8>(object->current_hp);
-    }
-    return result;
-}
-
-static f32 Condition_CurrentHintId(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-    return Hint_CurrentId();
-}
-
-static void *Condition_HintAvailableInit(AISYS_s *, char *argument, AISCRIPT_s *) {
-    return argument != NULL ? reinterpret_cast<void *>(static_cast<isize>(NuAToI(argument))) : NULL;
-}
-
-static f32 Condition_HintAvailable(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && Hint_isAvailable(static_cast<i32>(reinterpret_cast<isize>(argument))) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_HintComplete(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *argument) {
-    return argument != NULL && Hint_isComplete(static_cast<i32>(reinterpret_cast<isize>(argument))) != 0 ? 1.0f : 0.0f;
-}
-
-static f32 Condition_EmptyTakeOver(AISYS_s *system, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    if (name == NULL || system == NULL) {
-        return 0.0f;
-    }
-    i32 character = -1;
-    for (i32 index = 0; index < CHARCOUNT && character == -1; ++index) {
-        if (NuStrICmp(CDataList[index].file, name) == 0) {
-            character = index;
-        }
-    }
-    GameObject_s *object = Obj;
-    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && (object->apiobj.field_0x1f4 & 0x400) != 0 &&
-            object->id == character) {
-            if (object->takeover_target == NULL || object->field_0xcc0 == NULL ||
-                object->field_0xcc0->character_context != 0x3b) {
-                return 1.0f;
-            }
-        }
-    }
-    return 0.0f;
-}
-
-extern "C" {
-    AICONDITIONDEF lego_aiconditiondefs[] = {
-        {"GlynTest", NULL, NULL},
-        {"Debug", NULL, NULL},
-        {"Active", NULL, NULL},
-        {"GotGun", NULL, NULL},
-        {"PrefersBrawling", NULL, NULL},
-        {"IsAlive", NULL, NULL},
-        {"IsOnScreen", Condition_IsOnScreen, Condition_IsOnScreenInit},
-        {"OffScreenTimer", NULL, NULL},
-        {"OnObject", NULL, Condition_OnObjectInit},
-        {"OnSameObjectAsPlayer", Condition_OnSameObjectAsPlayer, NULL},
-        {"PlayerOnObject", Condition_PlayerOnObject, Condition_OnObjectInit},
-        {"EitherPlayerOnObject", NULL, Condition_OnObjectInit},
-        {"EitherPlayerLocatorRangeXZ", NULL, NULL},
-        {"OnGround", NULL, NULL},
-        {"BeenAlerted", NULL, NULL},
-        {"PlayerOnGround", Condition_PlayerOnGround, NULL},
-        {"SpawnCount", NULL, NULL},
-        {"BehindCamera", NULL, NULL},
-        {"LocatorOnScreen", NULL, NULL},
-        {"Blocking", Condition_Blocking, NULL},
-        {"BeenHit", NULL, NULL},
-        {"HoverPhase", NULL, NULL},
-        {"HitPoints", Condition_HitPoints, Condition_HitPointsInit},
-        {"OnDynamicGrapple", Condition_OnDynamicGrapple, Condition_OnDynamicGrappleInit},
-        {"XPos", NULL, NULL},
-        {"YPos", NULL, NULL},
-        {"ZPos", NULL, NULL},
-        {"CollidingWithOpponent", Condition_CollidingWithOpponent, NULL},
-        {"Colliding", NULL, NULL},
-        {"ObstacleAtStart", Condition_ObstacleAtStart, Condition_ObstacleInit},
-        {"ObstacleAtEnd", Condition_ObstacleAtEnd, Condition_ObstacleInit},
-        {"SpecialAtStart", Condition_ObstacleAtStart, Condition_GizSpecialInit},
-        {"SpecialAtEnd", Condition_ObstacleAtEnd, Condition_GizSpecialInit},
-        {"ObstacleLockedOpen", Condition_ObstacleLockedOpen, Condition_ObstacleOpenedByPlayerInit},
-        {"ObstacleLockedShut", Condition_ObstacleLockedShut, Condition_ObstacleOpenedByPlayerInit},
-        {"ForceAtStart", Condition_ForceAtStart, Condition_ForceInit},
-        {"ForceAtEnd", Condition_ForceAtEnd, Condition_ForceInit},
-        {"ObstacleOpenedByPlayer", Condition_ObstacleOpenedByPlayer, Condition_ObstacleOpenedByPlayerInit},
-        {"ObstacleOpenedByEitherPlayer", Condition_ObstacleOpenedByEitherPlayer, Condition_ObstacleOpenedByPlayerInit},
-        {"AnimationFinished", Condition_AnimationFinished, Condition_AnimationFinishedInit},
-        {"EitherPlayerPullingLever", Condition_EitherPlayerPullingLever, NULL},
-        {"EitherPlayerUsingHatMachine", Condition_EitherPlayerUsingHatMachine, NULL},
-        {"EitherPlayerUsingPanel", Condition_EitherPlayerUsingPanel, NULL},
-        {"EitherPlayerWearingHelmet", Condition_EitherPlayerWearingHelmet, NULL},
-        {"PartyUnderCover", NULL, NULL},
-        {"NumBaddiesThatCanSeePlayers", Condition_NumBaddiesThatCanSeePlayers, NULL},
-        {"PlayerUsingForce", Condition_PlayerUsingForce, Condition_UsingForceInit},
-        {"EitherPlayerUsingForce", Condition_EitherPlayerUsingForce, Condition_UsingForceInit},
-        {"UsingForce", Condition_UsingForce, Condition_UsingForceInit},
-        {"OnForcePlatform", Condition_OnForcePlatform, Condition_OnForcePlatformInit},
-        {"PlayerOnForcePlatform", Condition_PlayerOnForcePlatform, Condition_OnForcePlatformInit},
-        {"EitherPlayerOnForcePlatform", Condition_EitherPlayerOnForcePlatform, Condition_OnForcePlatformInit},
-        {"ForceBeingUsed", Condition_ForceBeingUsed, Condition_UsingForceInit},
-        {"ForcePushing", Condition_ForcePushing, Condition_ForcePushingInit},
-        {"TurretAlive", NULL, NULL},
-        {"PlayerDeflectingPart", Condition_PlayerDeflectingPart, NULL},
-        {"ForceComplete", Condition_ForceComplete, Condition_ForceCompleteInit},
-        {"ForceFinished", Condition_ForceFinished, Condition_ForceCompleteInit},
-        {"ForceStackComplete", Condition_ForceStackComplete, Condition_ForceCompleteInit},
-        {"ForceStackCompleteInOrder", Condition_ForceStackCompleteInOrder, Condition_ForceCompleteInit},
-        {"BuildItComplete", NULL, NULL},
-        {"BlowupBlownup", NULL, NULL},
-        {"IAmA", NULL, NULL},
-        {"OpponentIsA", NULL, NULL},
-        {"OpponentIsAThreat", NULL, NULL},
-        {"CanFightLikeAJedi", Condition_CanFightLikeAJedi, NULL},
-        {"IAmAGoody", NULL, NULL},
-        {"IAmABaddy", NULL, NULL},
-        {"IAmANeutral", NULL, NULL},
-        {"IAmAGoodyBaddy", NULL, NULL},
-        {"IAmAPartyCharacter", Condition_IAmAPartyCharacter, NULL},
-        {"CategoryIs", NULL, NULL},
-        {"PlayerCategoryIs", NULL, NULL},
-        {"EitherPlayerIs", NULL, NULL},
-        {"Player1Is", NULL, NULL},
-        {"Player2Is", NULL, NULL},
-        {"IsSetAlive", Condition_IsSetAlive, Condition_IsSetAliveInit},
-        {"NumInSetAlive", Condition_NumInSetAlive, Condition_IsSetAliveInit},
-        {"Context", NULL, NULL},
-        {"InContext", Condition_InContext, Condition_InContextInit},
-        {"OpponentContext", Condition_OpponentContext, Condition_InContextInit},
-        {"Player2Active", Condition_Player2Active, NULL},
-        {"NumBaddies", NULL, NULL},
-        {"NumForceObjects", Condition_NumForceObjects, Condition_NumForceObjectsInit},
-        {"BeenToLevel", NULL, NULL},
-        {"LastLevel", Condition_LastLevel, Condition_LastLevelInit},
-        {"Message", Condition_Message, Condition_MessageInit},
-        {"ScriptParam", Condition_ScriptParam, Condition_ScriptParamInit},
-        {"CutSceneStarted", Condition_CutSceneStarted, Condition_CutSceneStartedInit},
-        {"CutSceneFinished", Condition_CutSceneFinished, Condition_CutSceneFinishedInit},
-        {"CutSceneExists", Condition_CutSceneExists, Condition_CutSceneExistsInit},
-        {"PlayerInSock", Condition_PlayerInSock, Condition_PlayerInSockInit},
-        {"CutScenePlaying", Condition_CutScenePlaying, Condition_CutScenePlayingInit},
-        {"RigidAnimFrame", Condition_RigidAnimFrame, Condition_RigidAnimFrameInit},
-        {"SockDistanceToPlayer", Condition_SockDistanceToPlayer, NULL},
-        {"SockDistanceToOpponent", Condition_SockDistanceToOpponent, NULL},
-        {"SockXDistanceToPlayer", Condition_SockXDistanceToPlayer, NULL},
-        {"PlayerDistanceAlongSock", Condition_PlayerDistanceAlongSock, NULL},
-        {"FurthestPlayerDistanceAlongSock", Condition_FurthestPlayerDistanceAlongSock, NULL},
-        {"FinishedSpline", Condition_FinishedSpline, NULL},
-        {"CurrentHintId", Condition_CurrentHintId, NULL},
-        {"HintAvailable", Condition_HintAvailable, Condition_HintAvailableInit},
-        {"HintComplete", Condition_HintComplete, Condition_HintAvailableInit},
-        {"Freeplay", Condition_Freeplay, NULL},
-        {"Indy", Condition_Indy, NULL},
-        {"MissionMode", Condition_MissionMode, NULL},
-        {"MissionWon", Condition_MissionWon, NULL},
-        {"ChallengeMode", Condition_ChallengeMode, NULL},
-        {"PSP", Condition_PSP, NULL},
-        {"AIOverrideControl", Condition_AIOverrideControl, Condition_AIOverrideControlInit},
-        {"BoltsDontGetDeflectedBack", Condition_BoltsDontGetDeflectedBack, NULL},
-        {"CheatProgress", Condition_CheatProgress, NULL},
-        {"BigJumpComplete", Condition_BigJumpComplete, NULL},
-        {"RespawnLocatorIs", Condition_RespawnLocatorIs, Condition_RespawnLocatorIsInit},
-        {"InMiniCut", Condition_InMiniCut, NULL},
-        {"MaulShouldRunAway", Condition_MaulShouldRunAway, NULL},
-        {"DropBackInTimer", Condition_DropBackInTimer, NULL},
-        {"HelpWithTriggers", Condition_HelpWithTriggers, NULL},
-        {"EitherPlayerPushingSpinner", Condition_EitherPlayerPushingSpinner, Condition_EitherPlayerPushingSpinnerInit},
-        {"CharacterRange", Condition_CharacterRange, Condition_CharacterRangeInit},
-        {"BeenSpawned", Condition_BeenSpawned, NULL},
-        {"LastAttackerRange", Condition_LastAttackerRange, NULL},
-        {"LastAttackerIsActivePlayer", Condition_LastAttackerIsActivePlayer, NULL},
-        {"PartyContainsDroids", Condition_PartyContainsDroids, NULL},
-        {"CannotReachDestination", Condition_CannotReachDestination, NULL},
-        {"TakenOver", Condition_TakenOver, Condition_TakenOverInit},
-        {"PlayerTakenOver", Condition_PlayerTakenOver, NULL},
-        {"EitherPlayerTakenOver", Condition_EitherPlayerTakenOver, NULL},
-        {"BeenTakenOver", Condition_BeenTakenOver, Condition_BeenTakenOverInit},
-        {"OnSpeederBike", Condition_OnSpeederBike, Condition_OnSpeederBikeInit},
-        {"UnderPlayerControl", Condition_UnderPlayerControl, Condition_UnderPlayerControlInit},
-        {"CharacterExists", NULL, NULL},
-        {"CharacterTypeExists", Condition_CharacterTypeExists, Condition_CharacterTypeExistsInit},
-        {"GotLocatorInSet", Condition_GotLocatorInSet, Condition_GotLocatorInSetInit},
-        {"GotOpponentLOS", Condition_GotOpponentLOS, NULL},
-        {"EmptyTakeOver", Condition_EmptyTakeOver, NULL},
-        {"HasTakeOverTarget", NULL, NULL},
-        {"TakeOverRange", NULL, NULL},
-        {"TakeOverTargetInTriggerArea", NULL, NULL},
-        {"EitherPlayerInMyTriggerArea", Condition_EitherPlayerInMyTriggerArea, NULL},
-        {"AreaContainsBaddies", Condition_AreaContainsBaddies, Condition_AreaContainsBaddiesInit},
-        {"AreaContainsGoodies", Condition_AreaContainsGoodies, Condition_AreaContainsGoodiesInit},
-        {"AreaContainsPartyMember", Condition_AreaContainsPartyMember, Condition_AreaContainsPartyMemberInit},
-        {"GotVictim", NULL, NULL},
-        {"IsVisible", Condition_IsVisible, Condition_IsVisibleInit},
-        {"MySet", NULL, NULL},
-        {"ScreenWipe", NULL, NULL},
-        {"IAmPlayer2", Condition_IAmPlayer2, NULL},
-        {"HeadTurnRestricted", NULL, NULL},
-        {"ShopActive", NULL, NULL},
-        {"Side", NULL, NULL},
-        {"NearestPartyRange", NULL, NULL},
-        {"NearestPartyXZRange", NULL, NULL},
-        {"OpponentToPlayerRange", Condition_OpponentToPlayerRange, NULL},
-        {"OpponentPathPosRange", Condition_OpponentPathPosRange, NULL},
-        {"GizmoOutput0", NULL, NULL},
-        {"GizmoOutput1", NULL, NULL},
-        {"GizmoOutput2", NULL, NULL},
-        {"GizmoOutput3", NULL, NULL},
-        {"GizmoVisibility", NULL, NULL},
-        {"AngleAboutMyLocatorToPlayer", Condition_AngleAboutMyLocatorToPlayer,
-         Condition_AngleAboutMyLocatorToPlayerInit},
-        {"AnimSpeedMul", NULL, NULL},
-        {"PickupBeenTurnedOn", Condition_PickupBeenTurnedOn, Condition_PickupBeenTurnedOnInit},
-        {"FlowBoxComplete", NULL, NULL},
-        {"CanHearRadio", NULL, NULL},
-        {"BeingTowed", NULL, NULL},
-        {"RaceLap", Condition_RaceLap, NULL},
-        {"MusicOn", Condition_MusicOn, NULL},
-        {"CharacterLoaded", NULL, NULL},
-        {"AreaComplete", NULL, NULL},
-        {"ShouldAttackOpponent", Condition_ShouldAttackOpponent, NULL},
-        {"InSwamp", NULL, NULL},
-        {"InSameTriggerAreaAsNearestPlayer", NULL, NULL},
-        {"NetworkGameOnGoing", NULL, NULL},
-        {"InHubArea", &Condition_InHubArea, &Condition_InHubAreaInit},
-        {"IsLowEndDevice", NULL, NULL},
-        {"RandomMapCharsAvailable", Condition_RandomMapCharsAvailable, NULL},
-        {NULL, NULL, NULL},
-    };
+extern AICONDITIONDEF lego_aiconditiondefs[178];
 
     static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
                   "complete game AI condition registry");
 
-    f32 default_path_heighttol = 0.2f;
-    u8 default_activate_difficulty = AI_DEFAULT_ACTIVATE_DIFFICULTY;
-    u8 default_min_n_respawns;
-    u8 default_max_n_respawns;
-    f32 default_min_t_respawn;
-    f32 default_max_t_respawn;
-
-    CHARACTERNAMEFN *LevelCharacterNameFn;
-    CHARACTERNAMEFN *SpecialRouteCharacterNameFn;
-    CHARACTERGLOBALIDFN *LevelCharacterGlobalIDFn;
-    GLOBALCHARACTERNAMEFN *GlobalCharacterNameFn;
-    CHARACTERHGOBJFN *GlobalCharacterHGobjFn;
-    CHARACTERRENDERFN *GlobalCharacterRenderFn;
-    CHARACTERGOALSPEEDFN *GetCharacterGoalSpeedFn;
-    CHARACTERTYPEIDFN *LevelCharacterTypeIDFn;
-
-    AICHARACTERTYPEID *GlobalCharacterTypeIDFn;
-    AISPECIALROUTECHARACTERTYPEID *SpecialRouteCharacterTypeIDFn;
-    AICHARACTERDISTANCE *GetViewRangeFn;
-    AICHARACTERDISTANCE *GetHearDistanceFn;
-    AICHARACTERDISTANCE *GetMaxViewHeightFn;
-    AICHARACTERDISTANCE *GetMinViewHeightFn;
-    GAMEAILOAD *GameAILoadFn;
-    AIACTIONPARSESPEED *AIActionParseSpeedFn;
-    AIBIGJUMPTODESTINATION *AIBigJumpToDestinationFn;
-    AIRESPAWNONPATH *AIRespawnOnPathFn;
-    AICLEARCREATURES *ClearAICreaturesFn;
-    APIOBJECTFROMOBJID *APIOBJECTFromObjIDFn;
-    AIFINDALTERNATIVESPECIALOBJECT *FindAlternativeSpecialObjectFn;
-    AIGETNAMEDAPIOBJECT *GetNamedAPIObjectFn;
-    AIGETCREATUREORIGIN *GetAICreatureOriginFn;
 }
 
-static SCRIPT_ERROR_LEVEL ScriptErrorLevel;
+extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 
-// The special-route list reserves the first ten ids for suit characters.  The
-// remaining ids enumerate the current story list while omitting variants that
-// are represented by those dedicated routes.
-static const char *skip_chars[] = {"Batman", "Robin", "Glide_Pack", NULL};
+u8 grapple_attach_frames = 5;
 
-static char *LevelCharacterName(u8 character_index) {
-    if (character_index == 0xff || CurrentStoryCList == NULL) {
-        return NULL;
-    }
-
-    const i16 character_type = CurrentStoryCList[character_index].model_id;
-    if (character_type == -1) {
-        return NULL;
-    }
-    return apicharsys->char_data[character_type].file;
+extern "C" {
+    ed_module_s edTimingDesc = {NULL,
+                                NULL,
+                                "Timings",
+                                ThingManager::edTimingInit,
+                                NULL,
+                                ThingManager::edTimingEnter,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                0x656d6974,
+                                ThingManager::edTimingProc,
+                                ThingManager::edTimingRender,
+                                NULL};
 }
 
-static i32 LevelCharacterGlobalID(u8 character_index) {
-    if (character_index == 0xff || CurrentStoryCList == NULL) {
-        return -1;
-    }
-    return CurrentStoryCList[character_index].model_id;
-}
-
-static char *GlobalCharacterName(i32 character_type) {
-    if (character_type == -1 || character_type >= apicharsys->character_count) {
-        return NULL;
-    }
-    return apicharsys->char_data[character_type].file;
-}
-
-static void *GlobalCharacterHGobj(i32 character_type) {
-    if (character_type == -1) {
-        return NULL;
-    }
-
-    const i16 model_index = apicharsys->playermodelids[character_type];
-    if (model_index == -1) {
-        return NULL;
-    }
-    return apicharsys->models[model_index].hierarchy;
-}
-
-static f32 GetViewRange(i32 character_type) {
-    if (character_type == -1) {
-        return 0.0f;
-    }
-    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->viewdistance;
-}
-
-static f32 GetHearDistance(i32 character_type) {
-    if (character_type == -1) {
-        return 0.0f;
-    }
-    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->heardistance;
-}
-
-static f32 GetMaxViewHeight(i32 character_type) {
-    if (character_type == -1) {
-        return 0.0f;
-    }
-    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->maxviewheight;
-}
-
-static f32 GetMinViewHeight(i32 character_type) {
-    if (character_type == -1) {
-        return 0.0f;
-    }
-    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->minviewheight;
-}
-
-static NUVEC *GetAICreatureOrigin(AISYS *system, AIPACKET *packet) {
-    if (packet == NULL || system == NULL || packet->field_0x134 == 0xff)
-        return NULL;
-    if ((packet->navigation_flags & 8) == 0) {
-        AICREATURE *creature = &system->creatures[packet->field_0x134];
-        NUVEC offset;
-        offset.x = ((packet->group_column + 1) >> 1) * creature->x_spacing;
-        if ((packet->group_column & 1) != 0)
-            offset.x = -offset.x;
-        offset.y = 0.0f;
-        offset.z = -creature->z_spacing * (f32)(u32)packet->group_row;
-        NuVecRotateY(&offset, &offset, creature->y_rot);
-        NuVecAdd(&packet->creature_origin, &offset, &creature->pos);
-        packet->navigation_flags |= 8;
-    }
-    return &packet->creature_origin;
-}
-
-static APIOBJECT *GetNamedAPIObject(AISYS *system, char *name) {
-    if (system != NULL) {
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-            if ((Obj[index].apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0) {
-                continue;
-            }
-
-            if ((Obj[index].apiobj.field_0x1f4 & 0x400) != 0 && Obj[index].ai.field_0x134 != 0xff) {
-                usize creature_address =
-                    reinterpret_cast<usize>(system->creatures) + Obj[index].ai.field_0x134 * sizeof(*system->creatures);
-                auto *creature = reinterpret_cast<decltype(system->creatures)>(creature_address);
-                if (creature != NULL && NuStrICmp(creature->name, name) == 0) {
-                    usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
-                    if (result_address == 0) {
-                        break;
-                    }
-                    return reinterpret_cast<APIOBJECT *>(result_address);
-                }
-            }
-            if (NuStrICmp(Obj[index].apiobj.character_data->file, name) != 0) {
-                continue;
-            }
-            usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
-            if (result_address == 0) {
-                break;
-            }
-            return reinterpret_cast<APIOBJECT *>(result_address);
-        }
-    }
-
-    if (NuStrICmp(name, "player") == 0) {
-        return player != NULL ? &player->apiobj : NULL;
-    }
-    if (NuStrICmp(name, "player_2") == 0) {
-        GameObject_s *second = Player[0] == player ? Player[1] : Player[0];
-        return second != NULL ? &second->apiobj : NULL;
-    }
-    for (i32 index = 0; index < 8; ++index) {
-        if (Player[index] == NULL) {
-            continue;
-        }
-        char player_name[72];
-        sprintf(player_name, "Player%d", index);
-        if (NuStrICmp(player_name, name) == 0) {
-            return &Player[index]->apiobj;
-        }
-    }
-    return NULL;
-}
-
-static i32 GlobalCharacterTypeID(char *name) {
-    for (i32 character_type = 0; character_type < apicharsys->character_count; ++character_type) {
-        if (NuStrICmp(name, apicharsys->char_data[character_type].file) == 0) {
-            return character_type;
-        }
-    }
-    return -1;
-}
-
-static i32 GameFindAlternativeSpecialObject(AISYS *, nuhspecial_s *special) {
-    return EquivalentObject_Find(WorldInfo_CurrentlyActive(), special);
-}
-
-static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *, VARIPTR *) {
-    if (__builtin_expect(version < 12 && system->path_sys != NULL && system->path_sys->path_count != 0, 1)) {
-        AIPATHSYS *path_system = system->path_sys;
-        AIPATH **paths = path_system->paths;
-        for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
-            AIPATH *path = paths[path_index];
-            const i32 connection_count = path->connection_count;
-            AIPATHCNX *entries = path->connections;
-            for (i32 connection = 0; connection < connection_count; ++connection) {
-                entries[connection].traversal_flags[0] = 0;
-                entries[connection].original_traversal_flags[0] = 0;
-                entries[connection].traversal_flags[1] = 0;
-                entries[connection].original_traversal_flags[1] = 0;
-            }
-        }
-    }
-
-    i32 tag_length = static_cast<i8>(EdFileReadChar());
-    if (__builtin_expect(tag_length <= 8 && tag_length != 0, 0)) {
-        char tag[16];
-        EdFileRead(tag, tag_length);
-        if (NuStrICmp(tag, "LEGO") == 0) {
-            EdFileReadInt();
-            // Retail allocates through a fresh 16-aligned cursor against the
-            // system's storage end instead of the caller's buffer.
-            VARIPTR cursor __attribute__((aligned(16)));
-            system->game_sys = AISysBufferAlloc(&cursor, &system->storage_end, 4);
-        }
-    }
-}
-
-static void GlobalCharacterRender(NUVEC *position, i16 angle, i32 character, i32, EDCREATURE_s *) {
-    i16 layers[32];
-    if (character < CHARCOUNT) {
-        i16 model_id = apicharsys->playermodelids[character];
-        if (model_id != -1) {
-            CHARACTERMODEL_s *model = &apicharsys->models[model_id];
-
-            i32 layer_count = GCDataList[model->model_id].make_layer_list(
-                model, layers, apicharsys->char_data[character].game_character->layer_mask);
-            if (layer_count > 0) {
-                angle = NuAngAdd(angle, 0x8000);
-                NUVEC scale;
-                scale.x = scale.y = scale.z = CDataList[character].model_scale;
-                NUMTX_ALIGNED16 matrix;
-                NuMtxSetScale(&matrix, &scale);
-                NuMtxTranslate(&matrix, position);
-                NuMtxPreRotateY(&matrix, angle);
-                NuHGobjRndr(model->hierarchy, &matrix, layer_count, layers);
-            }
-        }
-    }
-}
-
-static f32 GetCharacterGoalSpeed(APIOBJECT *object) {
-    if (object == NULL || object->ai == NULL) {
-        return 0.0f;
-    }
-
-    switch (object->ai->goal_speed_mode) {
-        case AI_ACTION_SPEED_RUN:
-            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->movement_speed * FRAMETIME;
-        case AI_ACTION_SPEED_WALK:
-            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->field_0x18 * FRAMETIME;
-        case AI_ACTION_SPEED_TIPTOE:
-            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->field_0x14 * FRAMETIME;
-        default:
-            return 0.0f;
-    }
-}
-
-static i32 GameAIActionParseSpeed(char *name, u8 *speed) {
-    if (NuStrICmp(name, "RUN") == 0) {
-        *speed = AI_ACTION_SPEED_RUN;
-        return 1;
-    }
-    if (NuStrICmp(name, "WALK") == 0) {
-        *speed = AI_ACTION_SPEED_WALK;
-        return 1;
-    }
-    if (NuStrICmp(name, "TIPTOE") == 0) {
-        *speed = AI_ACTION_SPEED_TIPTOE;
-        return 1;
-    }
-    return 0;
-}
-
-static char *SpecialRouteCharacterName(u8 route_id) {
-    if (route_id == 0xff) {
-        return NULL;
-    }
-    if (route_id < 10) {
-        return Suit[route_id].suit_character_name;
-    }
-
-    i32 route_index = 0;
-    i32 skipped_count = 0;
-    while (CurrentStoryCList[route_index + skipped_count].model_id != -1 && route_index + skipped_count < 64) {
-        char *name = apicharsys->char_data[CurrentStoryCList[route_index + skipped_count].model_id].file;
-        bool skip = false;
-        for (i32 skip_index = 0; skip_chars[skip_index] != NULL; ++skip_index) {
-            if (NuStrICmp(name, skip_chars[skip_index]) == 0) {
-                skip = true;
-                break;
-            }
-        }
-        if (skip) {
-            ++skipped_count;
-            continue;
-        }
-        if (route_index + 10 == route_id) {
-            return apicharsys->char_data[CurrentStoryCList[route_index + skipped_count].model_id].file;
-        }
-        ++route_index;
-    }
-    return NULL;
-}
-
-static i32 LevelCharacterTypeID(char *name) {
-    i32 result = 0x40;
-    if (NuStrICmp(name, "Everyone") != 0) {
-        result = -1;
-        if (CurrentStoryCList != NULL) {
-            for (i32 index = 0; CurrentStoryCList[index].model_id != -1 && index < 64; ++index) {
-                if (NuStrICmp(name, apicharsys->char_data[CurrentStoryCList[index].model_id].file) == 0) {
-                    result = index;
-                    break;
-                }
-            }
-        }
-    }
-    return result;
-}
-
-static u32 AIBigJumpToDestination(APIOBJECT *object, NUVEC *destination) {
-    if (destination == NULL || object == NULL || object->objptr == NULL || object->field_0x287 != 0 ||
-        object->objptr->field_0x7a5 == AI_GAME_OBJECT_TYPE_VEHICLE) {
-        return 1;
-    }
-
-    GameObject_s *game_object = object->objptr;
-    if (game_object->field_0xcc0 == NULL) {
-        if ((object->character_data->model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
-            object->start_position = *destination;
-            object->velocity = v000;
-            object->position = *destination;
-            ResetPlayerMoves(game_object);
-            object->respawn_timer = 0.0f;
-        } else {
-            StartBigJump(game_object, destination, 0, 0.5f, 1.0f, 0, 0);
-        }
-    } else {
-        SnapCreaturePos(game_object, destination, 0, NULL, 0);
-    }
-
+i32 BaseThing::RemoveDependancies(ThingRemoveData *) {
     return 1;
 }
 
-static u32 AIRespawnOnPath(APIOBJECT *object) {
-    if (object->field_0x287 != 0 || (object->ai->path_info.flags & AI_RESPAWN_FLAG_DISABLED) != 0 ||
-        (object->flags_high & APIOBJECT_HIGH_FLAG_RESPAWN_ENABLED) == 0) {
-        return 0;
-    }
-
-    const u32 model_flags = object->character_data->model_flags;
-    if ((model_flags & CHARACTER_AI_MODEL_FLAG_DISABLE_RESPAWN) != 0) {
-        return 0;
-    }
-
-    GameObject_s *game_object = object->objptr;
-    if (game_object->field_0x7a5 == AI_GAME_OBJECT_TYPE_VEHICLE || game_object->field_0xcc0 != NULL) {
-        return 0;
-    }
-
-    if (object->respawn_timer > AI_RESPAWN_DELAY) {
-        if ((model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) == 0) {
-            StartBigJump(game_object, &object->respawn_position, 0, 0.5f, 1.0f, 0, 0);
-        } else {
-            object->start_position = object->respawn_position;
-            object->position = object->respawn_position;
-            object->velocity = v000;
-            ResetPlayerMoves(game_object);
-            object->respawn_timer = 0.0f;
-        }
-    }
-
-    return 0;
+void BaseThing::EnterLevel(ThingLevelData *) {
 }
 
-static i32 SpecialRouteCharacterTypeID(char *name) {
-    if (NuStrICmp(name, "Everyone") == 0) {
-        return 0x40;
-    }
-
-    for (i32 suit_index = 0; suit_index < 10; ++suit_index) {
-        if (NuStrICmp(name, Suit[suit_index].suit_character_name) == 0) {
-            return suit_index;
-        }
-    }
-
-    i32 route_index = 0;
-    i32 skipped_count = 0;
-    if (CurrentStoryCList != NULL) {
-        while (CurrentStoryCList[route_index].model_id != -1 && route_index < 64) {
-            char *character_name = apicharsys->char_data[CurrentStoryCList[route_index + skipped_count].model_id].file;
-            bool skip = false;
-            for (i32 skip_index = 0; skip_chars[skip_index] != NULL; ++skip_index) {
-                if (NuStrICmp(character_name, skip_chars[skip_index]) == 0) {
-                    skip = true;
-                    break;
-                }
-            }
-            if (skip) {
-                ++skipped_count;
-                continue;
-            }
-            if (NuStrICmp(name, apicharsys->char_data[CurrentStoryCList[route_index + skipped_count].model_id].file) ==
-                0) {
-                return route_index + 10;
-            }
-            ++route_index;
-        }
-    }
-    return -1;
+void BaseThing::ExitLevel(ThingLevelData *) {
 }
 
-extern i32 TimingBarSet;
-extern i32 SHADOWCALLS;
-extern u32 LAYER_HOVERIGNORE;
-
-f32 GameShadow(GameObject_s *object, nuvec_s *position, f32 probe_height, i32 terrain_mask) {
-    i32 disabled_platforms[16];
-    i32 disabled_platform_count = 0;
-
-    if (object != NULL) {
-        WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-        if (object->field_0x107c != -1) {
-            disabled_platforms[disabled_platform_count++] = object->field_0x107c;
-        }
-
-        if (world != NULL && world->char_platform_sys != NULL && VehicleArea == 0 &&
-            !object->apiobj.player_controlled) {
-            CHARPLATFORMSYS_s *system = world->char_platform_sys;
-            for (i32 i = 0; i < system->platform_count; ++i) {
-                if (system->platforms[i].object != NULL) {
-                    disabled_platforms[disabled_platform_count++] = system->platforms[i].object->field_0x107c;
-                }
-            }
-        }
-
-        for (i32 i = 0; i < disabled_platform_count; ++i) {
-            PlatOnOff(disabled_platforms[i], 0);
-        }
-
-        if (LAYER_HOVERIGNORE != 0xffffffff &&
-            static_cast<GAMECHARACTERDATA_s *>(object->apiobj.character_data->field11_0x24)->field_0x28 == 0.0f) {
-            terrain_mask &= ~LAYER_HOVERIGNORE;
-        }
-    }
-
-    if (TimingBarSet == 2) {
-        TBOPENFN("Ter", 2);
-    }
-    const f32 shadow_height = NewShadowEx(position, 0, probe_height, probe_height, terrain_mask);
-    ++SHADOWCALLS;
-    if (TimingBarSet == 2) {
-        TBCLOSEFN("Ter", 2);
-    }
-
-    if (object != NULL && object->field_0x107c != -1) {
-        PlatOnOff(object->field_0x107c, 1);
-    }
-    for (i32 i = 0; i < disabled_platform_count; ++i) {
-        PlatOnOff(disabled_platforms[i], 1);
-    }
-    return shadow_height;
+void BaseThing::Reset(ThingResetData *) {
 }
 
-extern f32 MainRenderTime;
-extern f32 MainRenderTargetTime;
-extern f32 backdrop_top_r;
-extern f32 backdrop_top_g;
-extern f32 backdrop_top_b;
-extern f32 backdrop_bot_r;
-extern f32 backdrop_bot_g;
-extern f32 backdrop_bot_b;
-extern void (*BackDrop_AlphaFn)(f32 *alpha);
-extern void BackDrop_UpdateColours(i32 instant);
-extern i32 Paused;
-extern f32 PauseMenus_X;
-extern i32 PauseMenus_Align;
-struct CUTSCENEPLAYERCLIP;
-extern CUTSCENEPLAYERCLIP *CutScenePlayer_Active();
-
-void UpdateGameMessages();
-extern i32 DoubleScore;
-extern FadeSystem FadeSys;
-extern f32 LevelNameTime, LevelNameMul;
-extern i32 pause_rndr_on;
-extern "C" TIMER BonusTimer;
-extern "C" i32 screendump;
-
-void GameTiming(WORLDINFO_s *world, float *game_time) {
-    f32 level_name_target = 1.0f;
-    if (LevelNameTime > 0.0f)
-        LevelNameTime -= FRAMETIME;
-    else
-        level_name_target = 0.0f;
-    LevelNameMul = SeekLinearF(LevelNameMul, level_name_target, FRAMETIME + FRAMETIME);
-
-    if (Paused != 0) {
-        if (screendump == 0) {
-            UpdateTimer(&PauseTimer);
-            if (LevelNameTime < 0.5f)
-                LevelNameTime = 0.5f;
-        }
-        DoubleScoreTime = 0.0f;
-    } else {
-        if (game_time != NULL)
-            *game_time += FRAMETIME;
-        UpdateTimer(&GameTimer);
-        UpdateTimer(&LevelTimer);
-        UpdateTimer(&AreaTimer);
-        UpdatePickupFlicker();
-        UpdateTimer(&JoinInTimer);
-        if (CUTSTOPGAME != 0) {
-            DoubleScoreTime = 0.0f;
-        } else {
-            if (world != NULL && world->current_level != NULL && (world->current_level->flags & LEVEL_GAMEPLAY) != 0 &&
-                pause_rndr_on == 0 && (Player[0] != NULL || Player[1] != NULL)) {
-                UpdateTimer(&GamePlayTimer);
-                UpdateTimer(&OverallGamePlayTimer);
-                if (BonusWinner == -1)
-                    UpdateTimer(&BonusTimer);
-                if ((world->current_level->flags & 0x2000) != 0) {
-                    UpdateTimer(&SuperStoryTimer);
-                    if (SuperStoryTimer.time_elapsed > 36000.0f)
-                        ResetTimer(&SuperStoryTimer, 36000.0f);
-                }
-                if (world->area != NULL && (world->area->flags & 0x10) != 0) {
-                    if (ChallengeMode == 1) {
-                        UpdateTimer(&ChallengeTimer);
-                        if (Game_AreaSave != NULL && world->level_sub_id >= 0 &&
-                            !(ChallengeTimer.time_elapsed < Game_AreaSave[world->level_sub_id].challenge_trial_time))
-                            EndChallenge(3, 1);
-                    } else {
-                        if (Mission_CurrentState(NULL) == 1 && MissionSys != NULL && MissionSys->mission != NULL) {
-                            const f32 time_limit = static_cast<f32>(MissionSys->mission->time);
-                            UpdateTimer(&MissionSys->timer);
-                            if (time_limit <= MissionSys->timer.time_elapsed && netclient == 0)
-                                EndMission(MissionSys, 3, 1);
-                        }
-                    }
-                }
-            }
-            UpdateGameMessages();
-            f32 score_step = FRAMETIME;
-            f32 target = 0.0f;
-            if (DoubleScore != 0 && GetMenuID() == -1)
-                target = 1.0f;
-            DoubleScoreTime = SeekLinearF(DoubleScoreTime, target, score_step);
-        }
-    }
-    UpdateTimer(&GlobalTimer);
-    menu_flash = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
-    f32 pulse_time = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
-    game_pulse = NuTrigTable[static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) / 2];
-    pulse_time = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f);
-    global_pulse = NuTrigTable[static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f)) / 2];
-    MainRenderTime = SeekLinearF(MainRenderTime, MainRenderTargetTime, FRAMETIME);
-    qrand();
+void BaseThing::Process(ThingProcessData *) {
 }
 
-extern "C" i32 NewRayCastScaleYMask(NUVEC *, NUVEC *, f32, f32, i32, u32);
-extern i32 RAYCASTCALLS;
-
-i32 GameRayCast(NUVEC *position, NUVEC *displacement, f32 radius, i32 mask) {
-    i32 hit = NewRayCastScaleYMask(position, displacement, radius, 1.0f, 0, mask);
-    ++RAYCASTCALLS;
-    return hit;
+void BaseThing::ProcessEvenWhenPaused(ThingProcessData *) {
 }
 
-f32 draw_attention_distance = 2.0f;
-extern f32 party_follow_offsets[8];
-extern i32 active_neutral_count;
-extern "C" i32 party_under_cover;
-extern i32 party_cant_be_under_cover;
-extern AREADATA *VADER_ADATA;
-extern GameObject_s *alert_obj;
-void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system);
-i32 Hub_InMenu();
-i32 test_new_interaction;
-i32 debug_ignore_players;
-i32 WALKSTEALTH;
-i32 active_goody_count;
-extern i32 active_baddy_count;
-f32 timetogetlos;
-void GameCreatureOpponentSelection(AISYS_s *, i32, APIOBJECT **, i32, APIOBJECT **, i32, APIOBJECT **, u64, f32);
-void GizTurrets_OpponentSelection(GIZTURRETSYS_s *, i32, APIOBJECT **, i32, APIOBJECT **);
+void BaseThing::ProcessOnlyWhenPaused(ThingProcessData *) {
+}
+
+void BaseThing::Render(ThingRenderData *) {
+}
+
+void BaseThing::Display(ThingRenderData *) {
+}
+
+void BaseThing::Effects(ThingRenderData *) {
+}
+
+i32 speeder_hitpoints_lost;
+
+GameObject_s *player_tag_to;
+GameObject_s *player_tag_from;
+f32 player_tag_timer;
+i32 do_player_tag;
+
+f32 Hub_PadSpeed[2];
+u16 Hub_PadAngle[2];
+GameObject_s *CarWashHack;
+f32 AIFireIntervalMul = 1.0f;
+f32 GhostLightMul = 1.0f;
+f32 GhostLightTargetMul = 1.0f;
+f32 CurrentSpeedOverride;
+f32 lightning_sizew[2] = {0.02f, 0.02f};
+f32 lightning_sizel[2] = {0.1f, 0.1f};
+f32 lightning_sizewab[2] = {0.01f, 0.01f};
+f32 lightning_endw[2] = {0.1f, 0.1f};
+u32 lightning_col[2] = {0xff808040, 0xff808040};
+f32 CurrentSpeed = 10.0f;
+f32 BaseCurrentSpeed = 10.0f;
+
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+
+extern "C" {
+    extern i16 id_TROOPERCANNON;
+}
+
+i32 addcreature_override_id_check;
+f32 default_mover_extra = 0.05f;
+
+extern "C" i16 id_LANDSPEEDER;
+extern i32 LevFlag[4];
+
+struct nuhspecial_s;
+struct VuVec;
 
 #if defined(__i386__)
-#define GAMEOBJECTS_CLONE_ATTR2_SSE __attribute__((noinline, noclone, regparm(2), sseregparm))
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
 #else
-#define GAMEOBJECTS_CLONE_ATTR2_SSE __attribute__((noinline, noclone))
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
 #endif
 
-// Retail keeps only the IPA-SRA clone, which takes the other object's x and z by address.
-static GAMEOBJECTS_CLONE_ATTR2_SSE void TestWalkAround(APIOBJECT *object, f32 *other_x, f32 *other_z,
-                                                       NUVEC *difference, f32 radius)
-    __asm__("_ZL14TestWalkAroundP11APIOBJECT_sS0_P7nuvec_sf.isra.10");
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
 
-static void TestWalkAround(APIOBJECT *object, f32 *other_x, f32 *other_z, NUVEC *difference, f32 radius) {
-    if (difference->x * difference->x + difference->z * difference->z < radius * radius) {
-        difference->x = object->position.x - *other_x;
-        difference->z = object->position.z - *other_z;
-        i32 angle = NuAtan2D(difference->x, difference->z);
-        difference->x = object->ai->movement_destination.x - *other_x;
-        difference->z = object->ai->movement_destination.z - *other_z;
-        i32 turn = NuAngSub(NuAtan2D(difference->x, difference->z), angle);
-        i32 limit = static_cast<i32>((ai_moveradius / radius) * 10430.378f);
-        if (turn > limit)
-            turn = limit;
-        else if (turn < -limit)
-            turn = -limit;
-        angle = NuAngAdd(angle, turn);
-        difference->x = 0.0f;
-        difference->y = 0.0f;
-        difference->z = radius;
-        NuVecRotateY(difference, difference, angle);
-        object->ai->movement_position.x = difference->x + *other_x;
-        object->ai->movement_position.y = object->ai->movement_destination.y;
-        object->ai->movement_position.z = difference->z + *other_z;
-    }
+namespace {
+
+} // namespace
+
+struct EDCREATURE_s;
+
+struct AISYS_s;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
-void GameAIProcess() {
-    if (TimingBarSet == 4)
-        TBOPENFN("(Sys)", 4);
-    ai_fighting = 0;
-    AISysProcess(WORLD->ai_sys, reinterpret_cast<APIOBJECT *>(player), reinterpret_cast<APIOBJECT *>(player2));
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
 
-    GameObject_s *object = Obj;
-    u8 high_flags;
-    i32 object_limit = HIGHGAMEOBJECT;
-    // Keep the first-loop counter available in edx at the latch and body entry.
-    for (i32 index = 0; index < object_limit; ++object, ++index) {
-        f32 frame_time = FRAMETIME;
-        high_flags = object->apiobj.flags_high;
-        if (!__builtin_expect((high_flags & 0x10) != 0 && object->apiobj.field_0x287 == 0, 1)) {
-            continue;
-        }
-        object->ai.capabilities &= ~0x00e00000u;
-        if (object->apiobj.player_controlled && TouchHacks::TouchControlsActive) {
-            if ((object->ai.capabilities & 1) != 0)
-                object->ai.capabilities |= 0x00200000;
-            if ((object->ai.capabilities & 2) != 0)
-                object->ai.capabilities |= 0x00400000;
-            if ((object->ai.capabilities & 0x20) != 0)
-                object->ai.capabilities |= 0x00800000;
-        }
-        object->field_0xefd &= 0x7f;
-        object->field_0xf01 &= 0x3f;
-        object->field_0xf02 &= 0xfc;
-        object->field_0x107e = 0;
-        if (__builtin_expect(object->use_action_frames != 0, 1)) {
-            --object->use_action_frames;
-        } else if (object->use_action_parameter > 0.0f) {
-            object->use_action_parameter -= frame_time;
-        } else {
-            object->can_use_object = NULL;
-            object->use_action = 0;
-        }
-        if (object->field_0x1094 != 0)
-            --object->field_0x1094;
-        object->apiobj.visibility_range_extension =
-            (object->ai.field_0x1e5 & 0x40) != 0 ? draw_attention_distance : 0.0f;
-        i32 mini_cut_cam = MiniCutCam;
-        if (mini_cut_cam != 0 && (high_flags & 1) != 0) {
-            i32 gamepad_start = GAMEPAD_START;
-            GAMEPAD_s *pad = object->pad_gamepad;
-            pad->buttons_held &= gamepad_start;
-            pad->buttons_pressed &= gamepad_start;
-        }
-        if (object->alert_target != NULL) {
-            object->alert_target_timer -= frame_time;
-            if (__builtin_expect(object->alert_target_timer <= 0.0f, 0)) {
-                object->alert_target = NULL;
-                object->alert_target_timer = 0.0f;
-            }
-        }
-    }
-    f32 follow_offset = 0.0f;
-    active_neutral_count = 0;
-    party_under_cover = 0;
-    i32 all_under_cover = 1;
-    i32 cover_result = 0;
-    GameObject_s **player_slots = Player;
-    for (i32 index = 0; index < 8; ++index) {
-        GameObject_s *object = player_slots[index];
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && (object->field_0xeff & 1) == 0 &&
-            (VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && party_cant_be_under_cover == 0) {
-            if (object->field_0x108e == 5 ||
-                ((FreePlay != 0 || WORLD->current_level == HUB_LDATA) &&
-                 (object->apiobj.character_data->model_flags & 0x204) != 0 && object->field_0xcc0 == NULL)) {
-                if (alert_obj == NULL || alert_obj->apiobj.field_0x27c == -1 || (alert_obj->field_0xeff & 1) != 0)
-                    cover_result = 1;
-            }
-            all_under_cover = (object->apiobj.character_data->model_flags & 0x80000) != 0 ? all_under_cover : 0;
-        }
-        party_follow_offsets[index] = 0.5f;
-    }
-    party_under_cover = cover_result;
-    if ((VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && __builtin_expect(all_under_cover != 0, 0) &&
-        party_cant_be_under_cover == 0) {
-        party_under_cover = 1;
-    }
-    AITriggerSetSysProcess(WORLD->ai_trigger_set_sys);
+extern EdInputContext * Input;
 
-    f32 drop_timer = drop_back_in_timer;
-    APIOBJECT *object_lists[4][64];
-    // Keep the original stack frame and pointer-list offsets while scratch slots are identified.
-    APIOBJECT **neutral_objects = object_lists[0];
-    APIOBJECT **interactive_objects = object_lists[1];
-    APIOBJECT **goodies = object_lists[2];
-    APIOBJECT **baddies = object_lists[3];
-    i32 neutral_count = 0;
-    i32 interactive_count = 0;
-    i32 goody_count = 0;
-    i32 baddy_count = 0;
-    GameObject_s *active_player = player;
-    APIOBJECT **volatile neutral_cursor = neutral_objects;
-    APIOBJECT **volatile goody_cursor = goodies;
-    APIOBJECT **baddy_cursor = baddies;
-    for (i32 index = 0; index < 8; ++index) {
-        GameObject_s *object;
-        if (index < 2 && (object = Player[1]) == active_player) {
-            if (index != 0)
-                object = player_slots[0];
-        } else {
-            object = player_slots[index];
-        }
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && object->character_context != 0x17 &&
-            object->character_context != 0x5a) {
-            if (party_under_cover != 0 && (object->ai.field_0x1e5 & 0x40) != 0)
-                party_under_cover = 0;
-            if (!(object->camera_screen_position.x > -0.85f && object->camera_screen_position.x < 0.85f &&
-                  object->camera_screen_position.y > -0.85f && object->camera_screen_position.y < 0.85f) &&
-                (object->tag_flags & 2) == 0 && drop_timer > 0.0f) {
-                object->ai.nearest_opponent = NULL;
-                object->ai.pending_nearest_opponent = NULL;
-                object->ai.pending_nearest_metric = 1.0e9f;
-                object->ai.opponent = NULL;
-                object->ai.pending_opponent = NULL;
-                object->ai.pending_opponent_metric = 1.0e9f;
-                object->ai.field_0x1e5 &= ~0x10;
-            } else if ((object->apiobj.field_0x1f4 & 1) != 0) {
-                ++baddy_count;
-                *baddy_cursor++ = &object->apiobj;
-            } else if ((object->apiobj.field_0x1f4 & 4) != 0) {
-                ++neutral_count;
-                *neutral_cursor++ = &object->apiobj;
-            } else {
-                ++goody_count;
-                *goody_cursor++ = &object->apiobj;
-            }
-        }
-        object = Player[index];
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && (object->field_0xeff & 1) == 0 &&
-            !object->apiobj.player_controlled) {
-            party_follow_offsets[object->apiobj.field_0x27c] = follow_offset;
-            follow_offset += 0.2f;
-        }
-    }
-    u64 awareness = 0;
-    NUVEC wall_direction;
-    u8 shifted_flag;
-    u8 cleared_flag;
-    object = Obj;
-    APIOBJECT **interactive_cursor = interactive_objects;
-    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
-        NUVEC direction;
-        i32 ground_checks;
-        u8 ai_update_flags;
-        GAMEPAD_s *pad;
-        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
-        object->active_trigger_set = NULL;
-        if ((object->apiobj.field_0x1f8 & character_flags) != character_flags || object->apiobj.field_0x287 != 0 ||
-            object->character_context == 0x3b) {
-            goto interaction;
-        }
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
 
-        ground_checks = object->apiobj.field_0x27d != 0;
-        if (ground_checks == 0) {
-            ground_checks = (object->apiobj.character_data->model_flags >> 13) & 1;
-        }
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
 
-        if ((object->apiobj.field_0x1f4 & 0x400) != 0) {
-            if ((object->apiobj.field_0x1f4 & 0x10000) != 0) {
-                ++baddy_count;
-                *baddy_cursor++ = &object->apiobj;
-                ++goody_count;
-                *goody_cursor++ = &object->apiobj;
-            } else if ((object->apiobj.field_0x1f4 & 1) != 0) {
-                ++baddy_count;
-                *baddy_cursor++ = &object->apiobj;
-            } else if ((object->apiobj.field_0x1f4 & 4) != 0) {
-                ++neutral_count;
-                *neutral_cursor++ = &object->apiobj;
-            } else {
-                ++goody_count;
-                *goody_cursor++ = &object->apiobj;
-            }
-        }
-        if ((object->apiobj.field_0x1f4 & 0x40000) != 0) {
-            if ((object->apiobj.flags_high & 0x10) != 0 && object->apiobj.field_0x287 == 0 &&
-                object->context_target_position == NULL &&
-                (object->apiobj.character_data->game_character->flags_090 & 0x8000) == 0) {
-                ++interactive_count;
-                *interactive_cursor++ = &object->apiobj;
-                object->apiobj.resolved_collision_priority = 0;
-                object->apiobj.collision_priority = HIGHGAMEOBJECT - object->apiobj.field_0x289;
-                object->ai.field_0x1e5 |= 0x20;
-            } else if (object->field_0x101c > 0.0f) {
-                object->ai.field_0x1e5 |= 0x20;
-            } else {
-                object->ai.nearest_opponent = NULL;
-                object->ai.opponent = NULL;
-                object->ai.field_0x1e5 &= ~0x20;
-            }
-            if (object->opponent != NULL && (static_cast<APIOBJECT *>(object->opponent)->flags_low & 1) == 0)
-                object->opponent = NULL;
-            if (object->ai.opponent_object != NULL && ((object->ai.opponent_object->flags_low & 1) == 0 ||
-                                                       (object->ai.opponent_object->ai->field_0x1e5 & 0x20) == 0)) {
-                object->ai.opponent_metric = 1.0e9f;
-                object->ai.opponent = NULL;
-            }
-            if ((object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0)
-                AISysUpdateCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, ground_checks,
-                                            object->ai_elapsed_time);
-            continue;
-        }
-        pad = object->pad_gamepad;
-        if (pad->pad == NULL) {
-            pad->buttons_held = 0;
-            pad->buttons_pressed = 0;
-            pad->buttons_released = 0;
-            pad->left_directions = 0;
-            pad->previous_left_directions = 0;
-            pad->right_directions = 0;
-            pad->previous_right_directions = 0;
-            pad->unknown_20 = 0;
-        }
-        awareness |= object->apiobj.ai_awareness_mask;
-        // Network-controlled objects use the direct field test above. The
-        // scripted path snapshots its update flags after resetting the pad.
-        ai_update_flags = object->field_0xf00;
-        if ((ai_update_flags & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
-            object->script_fire_target = NULL;
-            shifted_flag = (object->field_0xef9 << 1) & 4;
-            cleared_flag = object->field_0xef9 & ~4;
-            cleared_flag |= shifted_flag;
-            object->field_0xef9 = cleared_flag;
-            object->field_0xef8 &= ~0x20;
-            if (__builtin_expect((cleared_flag & 0x80) != 0, 1)) {
-                object->field_0xef9 &= ~0x80;
-                object->field_0xe64 = object->field_0xe58;
-            }
-            object->field_0xefa &= ~3;
-        }
-        AISysProcessCharacter(WORLD->ai_sys, &object->apiobj, &object->ai, ground_checks, object->ai_elapsed_time, 0,
-                              (ai_update_flags >> 3) & 1);
-        goto ai_precombat;
-    ai_combat:
-        if ((object->apiobj.field_0x1f8 & 0x180) == 0x80) {
-            object->field_0xefc &= ~4;
-            object->apiobj.flags_high =
-                (object->apiobj.flags_high & ~2) | ((object->apiobj.character_data->model_flags >> 27) & 2);
-        } else {
-            object->apiobj.flags_high &= ~2;
-            i32 defend = false;
-            if ((object->field_0xef8 & 0x80) != 0 && object->ai.opponent_object != NULL) {
-                BOLTTYPE_s *bolt = BoltType_FindByID(0, WORLD);
-                if (bolt->field_10 * bolt->field_14 > object->ai.opponent_metric) {
-                    NUVEC forward;
-                    NuVecSub(&direction, &object->ai.opponent_object->collision_position,
-                             &object->apiobj.collision_position);
-                    f32 scale = object->ai.opponent_metric == 0.0f ? 0.0f : 1.0f / object->ai.opponent_metric;
-                    NuVecScale(&direction, &direction, scale);
-                    NuVecRotateY(&forward, &v001, object->apiobj.movement_facing_angle);
-                    f32 dot = NuVecDot(&direction, &forward);
-                    u16 angle = object->ai.opponent_metric < 0.5f   ? 0x3aaa
-                                : object->ai.opponent_metric < 1.0f ? 0x3000
-                                                                    : 0x2555;
-                    if (dot > NuTrigTable[angle]) {
-                        object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-                        object->script_fire_target = *object->ai.action_target_ref;
-                    }
-                }
-                defend = true;
-            }
-            if (FreePlay != 0 && (object->apiobj.field_0x1f4 & 0x400) == 0 && object->id == id_DROIDEKA)
-                object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
-            if ((object->field_0xef8 & 2) != 0 &&
-                ((object->apiobj.field_0x1f4 & 0x400) != 0 || party_under_cover == 0 ||
-                 (object->field_0xeff & 1) != 0) &&
-                (CanFightLikeAJedi(object) != 0 || object->id == id_GAMORREANGUARD)) {
-                if ((object->field_0xef8 & 1) != 0 || object->ai.opponent_object != NULL ||
-                    (object->field_0xe22 & 8) != 0)
-                    object->field_0xed8 = DEFENDTIME;
-                if (object->field_0xed8 > 0.0f) {
-                    defend = true;
-                    if ((object->field_0xe22 & 9) == 9)
-                        object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-                }
-            }
-            if ((object->field_0xefb & 0x20) != 0) {
-                defend = true;
-                if ((object->field_0xe22 & 1) != 0) {
-                    object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-                    object->field_0xefb &= ~0x20;
-                }
-            }
-            if ((object->field_0xef8 & 8) != 0 &&
-                (defend || (object->field_0xef8 & 0x30) != 0 ||
-                 ((object->id == id_YODA || object->id == id_YODAGHOST) && !object->apiobj.player_controlled &&
-                  object->apiobj.field_0x27c != -1))) {
-                if ((object->field_0xe22 & 1) == 0 && object->character_context != 7 && object->field_0xe32 == 0)
-                    object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-            } else if ((object->pad_gamepad->buttons_pressed & GAMEPAD_ACTION) == 0 && (object->field_0xe22 & 1) != 0 &&
-                       object->character_context != 6 && object->field_0xe32 == 0) {
-                object->pad_gamepad->buttons_pressed |= GAMEPAD_SPECIAL;
-            }
-        }
-        if ((object->apiobj.character_data->game_character->flags_094[3] & 0x10) != 0 &&
-            !object->apiobj.player_controlled) {
-            f32 threshold = object->apiobj.character_data->game_character->walk_speed - 0.01f;
-            if (object->field_0xe31 == 1) {
-                if (threshold >= object->pad_gamepad->input_magnitude) {
-                    object->ai_jump_timer += FRAMETIME;
-                    if (object->ai_jump_timer > 0.1f) {
-                        object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
-                        object->ai_jump_timer = 0.0f;
-                    }
-                } else {
-                    object->ai_jump_timer = 0.0f;
-                }
-            } else if (object->pad_gamepad->input_magnitude > threshold) {
-                object->ai_jump_timer += FRAMETIME;
-                if (object->ai_jump_timer > 1.0f) {
-                    object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
-                    object->ai_jump_timer = 0.0f;
-                }
-            } else {
-                object->ai_jump_timer = 0.0f;
-            }
-        }
-        if (__builtin_expect(object->ai.action_target_ref != NULL, 0))
-            SetObjAsHeadTarget(object, *object->ai.action_target_ref, 2, 1.0f, 0.0f, 0.0f);
-        goto interaction;
-    ai_precombat:
-        if (__builtin_expect(!object->apiobj.player_controlled, 1)) {
-            if (object->character_context == 0x5d)
-                SetBallooningHeight(object, object->ai.movement_destination.y);
-            if (__builtin_expect(WORLD->current_level == JEDI_B_LDATA, 0) && object->id == id_JANGOFETT &&
-                (object->field_0xefb & 8) != 0 && object->hover_height_override != 1.0e9f && object->field_0xe31 == 0)
-                object->field_0xe31 = 1;
-            if (object->apiobj.field_0x27c != -1 && object->field_0xe31 != 0 &&
-                (object->ai.capabilities & LEGO_AIPATHCNX_R2D2GLIDE) == 0)
-                object->field_0xe31 = 0;
-            if (object->character_context == 0x4b && object->suit != NULL &&
-                (static_cast<SUIT_s *>(object->suit)->flags & 0x10) != 0)
-                object->pad_gamepad->buttons_held |= GAMEPAD_SPECIAL;
-            AIPATHCNX *connection = object->ai.path_info.connection;
-            if (connection != NULL && (connection->traversal_flags[object->ai.path_info.direction] &
-                                       object->ai.capabilities & LEGO_AIPATHCNX_WALLSHUFFLE) != 0)
-                goto ai_wall_shuffle;
-            if (!(object->ai.path_connection_state == 0 && (object->ai.path_info.flags & 1) != 0 &&
-                  object->apiobj.movement_stuck_time > jump_stuck_time))
-                goto ai_route;
-            if (object->apiobj.supporting_platform_id != -1 && connection != NULL &&
-                (connection->original_traversal_flags[0] & LEGO_AIPATHCNX_BLOCKAGE) != 0) {
-                if ((object->apiobj.character_data->model_flags & 0x88) != 0) {
-                    object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-                    object->apiobj.movement_stuck_time = 0.0f;
-                    GameObjectSetCanUse(object, NULL, 5, 0, 1.0f);
-                } else if (FreePlay != 0) {
-                    object->input_toggle_hold_time -= FRAMETIME;
-                    if (object->input_toggle_hold_time <= 0.0f) {
-                        Player_ToggleCharacter(object, 1, 0);
-                        if (object->id == id_DROIDEKA)
-                            Player_ToggleCharacter(object, 1, 0);
-                        if (object->apiobj.model_draw_result == 0)
-                            object->input_toggle_hold_time = 0.0f;
-                        else
-                            object->input_toggle_hold_time = 0.25f;
-                    }
-                }
-            } else if ((object->ai.capabilities & (LEGO_AIPATHCNX_R2D2GLIDE | LEGO_AIPATHCNX_JUMP)) != 0 &&
-                       object->field_0xe31 == 0) {
-                object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
-                object->apiobj.movement_stuck_time = 0.0f;
-            } else {
-                object->ai.field_0x1e6 |= AIPACKET_RUNTIME_USING_PATH_WAYPOINT;
-            }
-            goto ai_route;
-        ai_wall_shuffle: {
-            NUVEC lateral, ray, movement;
-            object->field_0xf02 |= 1;
-            AIPATHNODE *nodes = object->ai.path_info.path->nodes;
-            i32 direction = object->ai.path_info.direction;
-            u8 other_node = connection->node_indices[direction == 0];
-            u8 node = connection->node_indices[direction];
-            u16 angle;
-            if (object->character_context == 0x45) {
-                angle = object->takeover_start_angle;
-                wall_direction = v001;
-                NuVecRotateY(&wall_direction, &wall_direction, angle);
-            } else {
-                NuVecSub(&lateral, &nodes[other_node].position, &nodes[node].position);
-                lateral.y = 0.0f;
-                NuVecNorm(&lateral, &lateral);
-                NuVecRotateY(&lateral, &lateral, 0x4000);
-                ray = lateral;
-                f32 reverse_x = -lateral.x;
-                f32 reverse_z = -lateral.z;
-                if (GameRayCast(&nodes[node].position, &ray, 0.0f,
-                                TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID | 0x5f) != 0) {
-                    f32 first_distance = NuVecMag(&ray);
-                    ray.x = reverse_x;
-                    ray.y = 0.0f;
-                    ray.z = reverse_z;
-                    if (GameRayCast(&nodes[node].position, &ray, 0.0f,
-                                    TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID | 0x5f) != 0) {
-                        f32 second_distance = NuVecMag(&ray);
-                        if (first_distance < 1.0e9f || second_distance < 1.0e9f) {
-                            if (second_distance > first_distance) {
-                                wall_direction = lateral;
-                            } else {
-                                wall_direction.x = -lateral.x;
-                                wall_direction.y = 0.0f;
-                                wall_direction.z = -lateral.z;
-                            }
-                        }
-                    } else if (first_distance < 1.0e9f) {
-                        wall_direction = lateral;
-                    }
-                } else {
-                    ray.x = reverse_x;
-                    ray.y = 0.0f;
-                    ray.z = reverse_z;
-                    if (GameRayCast(&nodes[node].position, &ray, 0.0f,
-                                    TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID | 0x5f) != 0 &&
-                        NuVecMag(&ray) < 1.0e9f) {
-                        wall_direction.x = -lateral.x;
-                        wall_direction.y = 0.0f;
-                        wall_direction.z = -lateral.z;
-                    }
-                }
-                angle = NuAtan2D(wall_direction.x, wall_direction.z);
-            }
-            movement.x = object->ai.movement_position.x - object->apiobj.position.x;
-            movement.y = 0.0f;
-            movement.z = object->ai.movement_position.z - object->apiobj.position.z;
-            f32 distance = NuVecMag(&movement);
-            if (__builtin_expect(distance > ai_moveradius, 1))
-                NuVecScale(&movement, &movement, (ai_moveradius / distance) * 2.0f);
-            NuVecRotateY(&movement, &movement, -static_cast<i32>(angle));
-            movement.z = 0.0f;
-            NuVecRotateY(&movement, &movement, angle);
-            NuVecScale(&wall_direction, &wall_direction, ai_moveradius);
-            NuVecAdd(&movement, &movement, &wall_direction);
-            object->ai.movement_position.x = object->apiobj.position.x + movement.x;
-            object->ai.movement_position.y = object->apiobj.position.y;
-            object->ai.movement_position.z = object->apiobj.position.z + movement.z;
-        }
-        }
-    ai_route:
-        if (FreePlay != 0 && (object->apiobj.field_0x1f4 & 0x400) == 0) {
-            if (!object->apiobj.player_controlled && object->character_context != 0x0b) {
-                if (drop_in_teleport == 1 && VehicleArea == 0 && (Arcade != 0 || teleport_all_freeplay_modes != 0) &&
-                    object->apiobj.model_draw_result == 0 && (object->tag_flags & 2) == 0 &&
-                    drop_back_in_timer > 0.0f) {
-                    NUVEC position = player->apiobj.last_safe_position;
-                    if (position.x == player->apiobj.position.x && position.y == player->apiobj.position.y &&
-                        position.z == player->apiobj.position.z)
-                        position.z += 0.01f;
-                    object->apiobj.start_position = position;
-                    object->apiobj.position = object->apiobj.start_position;
-                    object->apiobj.velocity = v000;
-                    object->apiobj.field_0x276 = player->apiobj.field_0x276;
-                    ResetPlayerMoves(object);
-                    object->apiobj.movement_stuck_time = 0.0f;
-                    InitSurfaceInfo(object);
-                    SetObjOnSurface(object, 1);
-                    GameObjectOrigin(object);
-                    AddGameDebris(WORLD->debris_sys, 0x5c, &object->apiobj.collision_position);
-                    goto ai_combat;
-                }
-                if ((object->ai.field_0x1e6 & AIPACKET_RUNTIME_ROUTE_SELECTED) != 0) {
-                    object->ai.current_route = 0xff;
-                    object->route_character_id = -1;
-                    object->field_0xf14 = 0;
-                } else if ((object->ai.field_0x1e6 & AIPACKET_RUNTIME_USING_PATH_WAYPOINT) != 0 &&
-                           ((object->ai.field_0x1e6 & AIPACKET_RUNTIME_PATH_BLOCKED) != 0 ||
-                            (object->ai.path_info.connection != NULL &&
-                             object->ai.path_info.connection->route_mask != 0))) {
-                    if ((object->field_0xefc & 0x40) != 0) {
-                        if (object->field_0xf14 != object->ai.frame_state) {
-                            object->route_character_id = -1;
-                            object->field_0xefc &= ~0x40;
-                            object->route_suit_index = -1;
-                            object->field_0xf14 = 0;
-                        }
-                    } else if ((object->ai.frame_state & LEGO_AIPATHCNX_DONTTOGGLE) == 0) {
-                        if (object->route_character_id == -1 || object->field_0xf14 != object->ai.frame_state ||
-                            object->route_character_id == id_DROIDEKA) {
-                            object->route_character_id = object->id;
-                            object->route_suit_index =
-                                object->suit != NULL ? Suit_GetIndex(static_cast<SUIT_s *>(object->suit)) : -1;
-                            object->input_toggle_hold_time = 0.0f;
-                            object->field_0xf14 = object->ai.frame_state;
-                            object->route_search_index = object->ai.next_route;
-                            object->route_start_index = object->ai.next_route;
-                        }
-                        object->input_toggle_hold_time -= FRAMETIME;
-                        if (object->input_toggle_hold_time <= 0.0f) {
-                            Player_ToggleCharacter(object, 1, 0);
-                            if (object->id == id_DROIDEKA)
-                                Player_ToggleCharacter(object, 1, 0);
-                            object->input_toggle_hold_time = object->apiobj.model_draw_result != 0 ? 0.25f : 0.0f;
-                            if (object->id == object->route_character_id) {
-                                const i32 route_suit_index = object->route_suit_index;
-                                if (Suit_GetIndex(static_cast<SUIT_s *>(object->suit)) == route_suit_index) {
-                                    Player_ToggleCharacter(object, -1, 0);
-                                    if (object->id == id_DROIDEKA)
-                                        Player_ToggleCharacter(object, -1, 0);
-                                    object->route_character_id = object->id;
-                                    object->route_suit_index = Suit_GetIndex(static_cast<SUIT_s *>(object->suit));
-                                    object->ai.next_route = object->route_search_index;
-                                    AISysFindRoute(&object->ai);
-                                    object->route_search_index = object->ai.next_route;
-                                    if (object->route_search_index == object->route_start_index)
-                                        object->field_0xefc |= 0x40;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    object->route_character_id = -1;
-                    object->field_0xefc &= ~0x40;
-                    object->route_suit_index = -1;
-                    object->field_0xf14 = 0;
-                    object->route_search_index = 0;
-                }
-            }
-        } else if ((object->ai.field_0x1e6 & AIPACKET_RUNTIME_USING_PATH_WAYPOINT) != 0) {
-            AISysFindRoute(&object->ai);
-        }
-        goto ai_combat;
-    interaction:
-        if ((object->apiobj.flags_high & 0x10) != 0 && object->apiobj.field_0x287 == 0 &&
-            object->context_target_position == NULL &&
-            (object->apiobj.character_data->game_character->flags_090 & 0x8000) == 0) {
-            ++interactive_count;
-            *interactive_cursor++ = &object->apiobj;
-            object->apiobj.resolved_collision_priority = 0;
-            object->apiobj.collision_priority = HIGHGAMEOBJECT - object->apiobj.field_0x289;
-            if ((object->apiobj.flags_low & 2) != 0 || (object->field_0xeff & 0x80) != 0) {
-                object->apiobj.collision_priority = 0x8000;
-            } else if (!object->apiobj.player_controlled) {
-                if (__builtin_expect((object->ai.field_0x1e7 & 0x80) != 0, 1))
-                    object->apiobj.collision_priority |= 0x4000;
-                if ((object->ai.field_0x1e7 & 0x40) != 0)
-                    object->apiobj.collision_priority |= 0x2000;
-                if ((object->ai.navigation_flags & 1) != 0)
-                    object->apiobj.collision_priority |= 0x1000;
-                if ((object->pad_gamepad->allocated_5a & 2) != 0)
-                    object->apiobj.collision_priority |= 0x800;
-                if ((object->ai.path_info.flags & 1) == 0 || object->ai.path_info.connection == NULL)
-                    object->apiobj.collision_priority |= 0x400;
-                if (object->ai.movement_parameter == 0.0f) {
-                    const f32 delta_x = object->ai.fallback_destination.x - object->apiobj.position.x;
-                    const f32 delta_z = object->ai.fallback_destination.z - object->apiobj.position.z;
-                    const f32 radius = object->ai.mover_height + 1.0f;
-                    direction.x = delta_x;
-                    direction.z = delta_z;
-                    if (direction.x * direction.x + direction.z * direction.z < radius * radius)
-                        object->apiobj.collision_priority |= 0x200;
-                }
-            }
-            object->ai.field_0x1e5 |= 0x20;
-            if (object->opponent != NULL && (static_cast<APIOBJECT *>(object->opponent)->flags_low & 1) == 0)
-                object->opponent = NULL;
-            if (object->ai.opponent_object != NULL && ((object->ai.opponent_object->flags_low & 1) == 0 ||
-                                                       (object->ai.opponent_object->ai->field_0x1e5 & 0x20) == 0)) {
-                object->ai.opponent = NULL;
-                object->ai.opponent_metric = 1.0e9f;
-            }
-            if ((object->field_0xeff & 8) != 0 || debug_ignore_players != 0 || Hub_InMenu() != 0) {
-                object->ai_opponent_exclusion_mask |= (u64)1 << player->apiobj.field_0x289;
-                if (player2 != NULL)
-                    object->ai_opponent_exclusion_mask |= (u64)1 << player2->apiobj.field_0x289;
-            }
-            if (object->apiobj.player_controlled && object->apiobj.field_0x27d != 0 &&
-                object->pad_gamepad->input_magnitude >
-                    (WALKSTEALTH != 0 ? object->apiobj.character_data->game_character->walk_speed
-                                      : object->apiobj.character_data->game_character->tiptoe_speed))
-                object->field_0xef9 |= 8;
-        } else if (object->field_0x101c > 0.0f) {
-            object->ai.field_0x1e5 |= 0x20;
-        } else {
-            object->ai.nearest_opponent = NULL;
-            object->ai.opponent = NULL;
-            object->ai.field_0x1e5 &= ~0x20;
-        }
-    }
-    if (TimingBarSet == 4)
-        TBCLOSEFN("(Sys)", 4);
-    active_goody_count = goody_count;
-    active_baddy_count = baddy_count;
-    active_neutral_count = neutral_count;
-    if (TimingBarSet == 4)
-        TBOPENFN("(LOS)", 4);
-    for (i32 index = 0; index < neutral_count; ++index)
-        baddies[baddy_count + index] = neutral_objects[index];
-    i32 los_count = baddy_count + neutral_count;
-    timetogetlos = (f32)(los_count * los_count) * FRAMETIME * 0.5f;
-    APIObjectLOSChecks(WORLD->api_object_sys, 2, goody_count, goodies, los_count, baddies,
-                       (f32) static_cast<u8>(WORLD->current_level->unknown_0da));
-    if (TimingBarSet == 4)
-        TBCLOSEFN("(LOS)", 4);
-    if (TimingBarSet == 4)
-        TBOPENFN("(Avoid)", 4);
-    if (test_new_interaction == 0) {
-        LEGO_AISysCreatureInteraction2D(WORLD->ai_sys, interactive_count, interactive_objects, NULL, FRAMETIME);
-    } else {
-        for (i32 index = 0; index < interactive_count; ++index) {
-            AIPACKET *packet = interactive_objects[index]->ai;
-            packet->antinode_timer -= FRAMETIME;
-            if (packet->antinode_timer < 0.0f)
-                packet->antinode_timer = 0.0f;
-        }
-        for (i32 first_index = 0; first_index < interactive_count - 1; ++first_index) {
-            APIOBJECT *first = interactive_objects[first_index];
-            for (i32 second_index = first_index + 1; second_index < interactive_count; ++second_index) {
-                APIOBJECT *second = interactive_objects[second_index];
-                f32 radius = first->ai->mover_height + second->ai->mover_height;
-                NUVEC difference;
-                difference.x = first->ai->movement_position.x - second->ai->movement_position.x;
-                if (difference.x > radius || difference.x < -radius)
-                    continue;
-                difference.z = first->ai->movement_position.z - second->ai->movement_position.z;
-                if (difference.z > radius || difference.z < -radius)
-                    continue;
-                if (first->collision_min.y > second->collision_max.y ||
-                    second->collision_min.y > first->collision_max.y || first->collision_link == second ||
-                    second->collision_link == first)
-                    continue;
-                bool fixed_first = first->player_controlled;
-                bool fixed_second = second->player_controlled;
-                if (first->collision_priority > second->collision_priority)
-                    fixed_first = true;
-                if (first->collision_priority == second->collision_priority)
-                    continue;
-                if (second->collision_priority > first->collision_priority)
-                    fixed_second = true;
-                if (fixed_first && fixed_second)
-                    continue;
-                f32 distance = NuFsqrt(difference.x * difference.x + difference.z * difference.z);
-                if (distance < radius) {
-                    difference.y = 0.0f;
-                    if (__builtin_expect(!fixed_first, 1)) {
-                        if (!fixed_second) {
-                            first->resolved_collision_priority = second->collision_priority;
-                            difference.x = -difference.x;
-                            difference.z = -difference.z;
-                            TestWalkAround(second, &first->position.x, &first->position.z, &difference, radius);
-                        } else if (second->collision_priority > first->resolved_collision_priority) {
-                            first->resolved_collision_priority = second->collision_priority;
-                            TestWalkAround(first, &second->position.x, &second->position.z, &difference, radius);
-                        }
-                    } else if (first->collision_priority > second->resolved_collision_priority) {
-                        second->resolved_collision_priority = first->collision_priority;
-                        difference.x = -difference.x;
-                        difference.z = -difference.z;
-                        TestWalkAround(second, &first->position.x, &first->position.z, &difference, radius);
-                    }
-                    AIPACKET *first_ai = first->ai;
-                    AIPACKET *second_ai = second->ai;
-                    f32 first_timer = first_ai->antinode_timer;
-                    f32 second_timer = second_ai->antinode_timer;
-                    if (__builtin_expect(first_timer > antinode_time && second_timer > antinode_time, 1)) {
-                        if (first_timer > second_timer) {
-                            second_ai->antinode_timer = first_timer;
-                            second_ai->antinode_clockwise = first_ai->antinode_clockwise;
-                        } else {
-                            first_ai->antinode_timer = second_timer;
-                            first_ai->antinode_clockwise = second_ai->antinode_clockwise;
-                        }
-                    } else if (second_timer > antinode_time) {
-                        first_ai->antinode_timer = second_timer;
-                        first_ai->antinode_clockwise = second_ai->antinode_clockwise;
-                    } else if (first_timer > 0.0f) {
-                        second_ai->antinode_timer = first_timer;
-                        second_ai->antinode_clockwise = first_ai->antinode_clockwise;
-                    }
-                    if (((first->field_0x1f4 ^ second->field_0x1f4) & 1) != 0) {
-                        first->ai->field_0x1e5 |= 0x40;
-                        second->ai->field_0x1e5 |= 0x40;
-                    }
-                }
-            }
-        }
-        AISysCreatureAntinodeInteraction(WORLD->ai_sys, interactive_count, interactive_objects, NULL);
-    }
-    if (TimingBarSet == 4)
-        TBCLOSEFN("(Avoid)", 4);
-    GameObject_s **cleanup_players = Player;
-    if (party_under_cover != 0) {
-        for (i32 index = 0; index < 8; ++index) {
-            GameObject_s *cover_player = cleanup_players[index];
-            if (cover_player != NULL)
-                cover_player->ai.field_0x1e5 &= ~0x40;
-        }
-    }
-    if (TimingBarSet == 4)
-        TBOPENFN("(Opponent)", 4);
-    GameCreatureOpponentSelection(WORLD->ai_sys, interactive_count, interactive_objects, goody_count, goodies,
-                                  baddy_count, baddies, awareness, FRAMETIME);
-    if (TimingBarSet == 4)
-        TBCLOSEFN("(Opponent)", 4);
-    if (TimingBarSet == 4)
-        TBOPENFN("(Turret)", 4);
-    GizTurrets_OpponentSelection(WORLD->giz_turret_sys, goody_count, goodies, baddy_count, baddies);
-    if (TimingBarSet == 4)
-        TBCLOSEFN("(Turret)", 4);
-    oneAtOnce_MaintainArray();
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
 }
 
 extern "C" {
-    void InitFn_LevelCharacterTypeID(CHARACTERTYPEIDFN *function) {
-        LevelCharacterTypeIDFn = function;
-        SpecialRouteCharacterTypeIDFn = function;
-    }
-
-    void InitFn_SpecialRouteCharacterTypeID(CHARACTERTYPEIDFN *function) {
-        SpecialRouteCharacterTypeIDFn = function;
-    }
-
-    void InitFn_LevelCharacterName(CHARACTERNAMEFN *function) {
-        LevelCharacterNameFn = function;
-        SpecialRouteCharacterNameFn = function;
-    }
-
-    void InitFn_SpecialRouteCharacterName(CHARACTERNAMEFN *function) {
-        SpecialRouteCharacterNameFn = function;
-    }
-
-    void InitFn_LevelCharacterGlobalID(CHARACTERGLOBALIDFN *function) {
-        LevelCharacterGlobalIDFn = function;
-    }
-
-    void InitFn_GlobalCharacterTypeID(CHARACTERTYPEIDFN *function) {
-        GlobalCharacterTypeIDFn = function;
-    }
-
-    void InitFn_GlobalCharacterName(GLOBALCHARACTERNAMEFN *function) {
-        GlobalCharacterNameFn = function;
-    }
-
-    void InitFn_GlobalCharacterRender(CHARACTERRENDERFN *function) {
-        GlobalCharacterRenderFn = function;
-    }
-
-    void InitFn_GlobalCharacterHGobj(CHARACTERHGOBJFN *function) {
-        GlobalCharacterHGobjFn = function;
-    }
-
-    void InitFn_ClearAICreatures(AICLEARCREATURES *function) {
-        ClearAICreaturesFn = function;
-    }
-
-    void InitFn_GetCharacterGoalSpeedFn(CHARACTERGOALSPEEDFN *function) {
-        GetCharacterGoalSpeedFn = function;
-    }
-
-    void InitFn_GetViewRange(CHARACTERDISTANCEFN *function) {
-        GetViewRangeFn = function;
-    }
-
-    void InitFn_GetHearDistance(CHARACTERDISTANCEFN *function) {
-        GetHearDistanceFn = function;
-    }
-
-    void InitFn_GlobalGetMaxViewHeight(CHARACTERDISTANCEFN *function) {
-        GetMaxViewHeightFn = function;
-    }
-
-    void InitFn_GlobalGetMinViewHeight(CHARACTERDISTANCEFN *function) {
-        GetMinViewHeightFn = function;
-    }
-
-    void InitFn_GameAILoad(GAMEAILOAD *function) {
-        GameAILoadFn = function;
-    }
-
-    void InitFn_AIActionParseSpeed(AIACTIONPARSESPEED *function) {
-        AIActionParseSpeedFn = function;
-    }
-
-    void InitFn_AIRespawnOnPath(AIRESPAWNONPATH *function) {
-        AIRespawnOnPathFn = function;
-    }
-
-    void InitFn_AIBigJumpToDestination(AIBIGJUMPTODESTINATION *function) {
-        AIBigJumpToDestinationFn = function;
-    }
-
-    void InitFn_FindAlternativeSpecialObjectFn(AIFINDALTERNATIVESPECIALOBJECT *function) {
-        FindAlternativeSpecialObjectFn = function;
-    }
-
-    void InitFn_APIOBJECTFromObjIDFn(APIOBJECTFROMOBJID *function) {
-        APIOBJECTFromObjIDFn = function;
-    }
-
-    void InitFn_GetNamedAPIObject(AIGETNAMEDAPIOBJECT *function) {
-        GetNamedAPIObjectFn = function;
-    }
-
-    void InitFn_GetAICreatureOrigin(AIGETCREATUREORIGIN *function) {
-        GetAICreatureOriginFn = function;
-    }
-
-    void SetScriptErrorLevel(SCRIPT_ERROR_LEVEL level) {
-        if (level < SCRIPT_ERROR_LEVEL_COUNT) {
-            ScriptErrorLevel = level;
-        }
-    }
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
-extern f32 OFFSCREEN_CATCHUP_TIME;
-extern f32 drop_back_in_timer;
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
 
-i32 TryToTeleportToNextNode(GameObject_s *object, AIPATHNODE_s *node, i32 tightrope) {
-    if ((object->apiobj.field_0x1f4 & 0x400) != 0 || !object->ai.path_info.on_path) {
-        return 0;
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
-    if (!(object->field_0xf1c >= OFFSCREEN_CATCHUP_TIME) &&
-        (object->apiobj.model_draw_result != 0 || (object->tag_context_flags & 2) != 0 ||
-         !(drop_back_in_timer > 0.0f))) {
-        return 0;
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
     }
-    NUVEC position = node->position;
-    position.y += object->apiobj.field_0x1e0;
-    if (NuCameraClipTestSphere(&position, object->apiobj.field_0x1e0, &numtx_identity) == 0) {
-        return 0;
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
     }
-    if (tightrope != 0) {
-        if (TightRope_SnapTo(object, &node->position) == 0) {
-            return 0;
-        }
-        object->field_0x109c = 0;
-        object->field_0x1092 = 0;
-        object->field_0x1093 = 0;
-        object->ai.path_connection_state = 0;
-        return 1;
+#endif
+} // extern "C"
+
+struct nupad_s;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
-    object->apiobj.initial_position = node->position;
-    object->apiobj.collision_position = object->apiobj.initial_position;
-    object->apiobj.start_position = object->apiobj.initial_position;
-    object->ai.owner->apiobj.position = object->apiobj.initial_position;
-    plr_lastpos = object->apiobj.initial_position;
-    object->apiobj.velocity = v000;
-    InitSurfaceInfo(object);
-    SetObjOnSurface(object, 0);
-    object->field_0x1092 = 0;
-    object->field_0x1093 = 0;
-    object->field_0x109c = 0;
-    object->ai.path_connection_state = 0;
-    if (object->field_0xcc0 == NULL) {
-        Player_ClearContext(object, 0);
-        Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-    }
-    return 1;
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
 }
 
-void SetSpecialMove(GameObject_s *object, AIPATHNODE_s *target, AIPATHNODE_s *node, char move) {
-    object->ai.field_0x180 = target;
-    object->field_0x1092 = move;
-    object->field_0x1093 = 0;
-    object->special_move_node = node;
-    object->special_move_progress = 0.0f;
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
 }
 
-void ClearSpecialMove(GameObject_s *object) {
-    object->special_move_progress = 1.0f;
-    object->ai.field_0x180 = NULL;
-    object->field_0x1092 = 0;
-    object->field_0x1093 = 0;
-    object->special_move_node = NULL;
-    object->field_0x1080 = 0.0f;
-    object->field_0x107f = 0;
+extern "C" i16 id_MINIATST, id_MINIATTE;
+
+extern "C" i16 id_LANDSPEEDER;
+
+extern "C" {
+    extern i16 id_MINIATST, id_MINIATTE;
 }
 
-void GameAISysInit() {
-    RegisterAIScriptActions(lego_aiactiondefs);
-    RegisterAIScriptConditions(lego_aiconditiondefs);
-    InitFn_LevelCharacterTypeID(LevelCharacterTypeID);
-    InitFn_SpecialRouteCharacterTypeID(SpecialRouteCharacterTypeID);
-    InitFn_LevelCharacterName(LevelCharacterName);
-    InitFn_SpecialRouteCharacterName(SpecialRouteCharacterName);
-    InitFn_LevelCharacterGlobalID(LevelCharacterGlobalID);
-    InitFn_GlobalCharacterTypeID(GlobalCharacterTypeID);
-    InitFn_GlobalCharacterName(GlobalCharacterName);
-    InitFn_GlobalCharacterRender(GlobalCharacterRender);
-    InitFn_GlobalCharacterHGobj(GlobalCharacterHGobj);
-    InitFn_ClearAICreatures(ClearAICreatures);
-    InitFn_GetCharacterGoalSpeedFn(GetCharacterGoalSpeed);
-    InitFn_GetViewRange(GetViewRange);
-    InitFn_GetHearDistance(GetHearDistance);
-    InitFn_GlobalGetMaxViewHeight(GetMaxViewHeight);
-    InitFn_GlobalGetMinViewHeight(GetMinViewHeight);
-    InitFn_GameAILoad(GameAILoad);
-    InitFn_AIActionParseSpeed(GameAIActionParseSpeed);
-    InitFn_AIRespawnOnPath(AIRespawnOnPath);
-    InitFn_AIBigJumpToDestination(AIBigJumpToDestination);
-    InitFn_FindAlternativeSpecialObjectFn(GameFindAlternativeSpecialObject);
-    InitFn_APIOBJECTFromObjIDFn(GameAPIOBJECTFromObjID);
-    InitFn_GetNamedAPIObject(GetNamedAPIObject);
-    InitFn_GetAICreatureOrigin(GetAICreatureOrigin);
-
-    default_path_heighttol = 0.2f;
-    default_activate_difficulty = AI_DEFAULT_ACTIVATE_DIFFICULTY;
-    default_min_n_respawns = 0;
-    default_max_n_respawns = 0;
-    default_min_t_respawn = 0.0f;
-    default_max_t_respawn = 0.0f;
-
-    SetScriptErrorLevel(SCRIPT_ERROR_LEVEL_WARNING);
-    GameAISysSetGame();
+static void ClearLastSafeTakeoverSource(GameObject_s *object) {
+    if (object->takeover_source != NULL &&
+        (LEGOCONTEXT_GETIN == -1 || object->character_context != LEGOCONTEXT_GETIN) &&
+        (LEGOCONTEXT_BEENTAKENOVER == -1 || object->character_context != LEGOCONTEXT_BEENTAKENOVER))
+        object->takeover_source = NULL;
 }
 
-void GameFog_Reset() {
-    GameFogSnap = 1;
-    GameFogDuration = 0.0f;
-    GameFogSet = 0;
-    GameFogTime = 0.0f;
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
 }
 
-void Game_KillPart(PART_s *part, i32 reason) {
-    if (reason == 1 && part->force_player_mask != -1) {
-        if ((part->force_player_mask & 1) != 0 && Player[0] != NULL) {
-            NewBuzz(Player[0]->pad_gamepad->pad, 0.2f, 0);
-            NewRumble(Player[0]->pad_gamepad->pad, 0.8f, 0);
-        }
-        if ((part->force_player_mask & 2) != 0 && Player[1] != NULL) {
-            NewBuzz(Player[1]->pad_gamepad->pad, 0.2f, 0);
-            NewRumble(Player[1]->pad_gamepad->pad, 0.8f, 0);
-        }
-    }
+namespace {
+
+} // namespace
+
+struct FLOWBOX_s;
+
+struct JEDIBNETPACKET_s;
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
 }
 
-void GameAISysReset(AISYS_s *system) {
-    if (system == NULL) {
-        return;
-    }
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
 
-    AISysSetLevelPath(system, NULL);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
 
-    WORLD->processor_count = 0;
-    for (i32 script_index = 0; script_index < 32; ++script_index) {
-        char script_name[16];
-        if (script_index != 0) {
-            sprintf(script_name, "Level%d", script_index);
-        } else {
-            sprintf(script_name, "Level");
-        }
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
 
-        if (AIScriptFind(WORLD->ai_sys, script_name, 0, 1, 0) == NULL) {
-            continue;
-        }
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
 
-        AIScriptProcessorInit(system, NULL, &WORLD->processors[WORLD->processor_count].processor, NULL, script_name,
-                              NULL, 0, NULL, NULL);
-        NuStrCpy(WORLD->processors[WORLD->processor_count].name, script_name);
-        LevelScriptReStoreProgress(WORLD, &WORLD->processors[WORLD->processor_count]);
-        ++WORLD->processor_count;
-    }
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
 
-    AIPATHSYS *path_system = system->path_sys;
-    if (path_system != NULL) {
-        for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
-            AIPATH *path = path_system->paths[path_index];
-            AIPATHCNX *connection = path->connections;
-            auto path_connection_count = path->connection_count;
-            for (i32 connection_index = 0; connection_index < path_connection_count; ++connection_index, ++connection) {
-                connection->node_a = connection->previous_node_a;
-                connection->node_b = connection->previous_node_b;
-
-                if (LEGO_AIPATHCNX_BLOCKAGE != 0) {
-                    connection->node_a &= ~LEGO_AIPATHCNX_BLOCKAGE;
-                    connection->node_b &= ~LEGO_AIPATHCNX_BLOCKAGE;
-                }
-            }
-        }
-    }
-
-    AIPathCnxControlSysReset(WORLD->ai_path_cnx_control_sys);
-    AIPathCnxHelperSysReset(WORLD, WORLD->ai_path_cnx_helper_sys);
-    InitAICreatures(system);
-    ResetAICreatures(system);
-
-    if (WORLD->processor_count != 0) {
-        GizmoSysAddGizmos(WORLD->gizmo_sys, WORLD->giz_flow, WORLD);
-    }
 }
 
-extern "C" i32 party_under_cover;
-extern i32 party_cant_be_under_cover;
-extern GameObject_s *alert_obj;
-extern f32 alert_timer;
-extern AREADATA *VADER_ADATA;
+namespace {
 
-void MakeBaddiesForgetAboutParty(i32 check_hostility) {
-    GameObject_s *baddies[64];
-    GameObject_s *party[64];
-    i32 baddie_count = 0;
-    i32 party_count = 0;
-    GameObject_s *objects = Obj;
-    i32 count = HIGHGAMEOBJECT;
-    GameObject_s *object = objects;
-    for (i32 i = 0; i < count; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0)
-            continue;
-        if ((object->apiobj.field_0x1f4 & 1) != 0)
-            party[party_count++] = object;
-        else if ((object->apiobj.field_0x1f4 & 4) == 0)
-            baddies[baddie_count++] = object;
-    }
-    if (check_hostility != 0) {
-        for (i32 i = 0; i < baddie_count; ++i) {
-            u64 mask = u64(1) << baddies[i]->apiobj.field_0x289;
-            for (i32 j = 0; j < party_count; ++j) {
-                APIOBJECT *object = &party[j]->apiobj;
-                u64 hostile = u64(object->field387_0x2a0) | (u64(object->field388_0x2a4) << 32);
-                if ((hostile & mask) != 0) {
-                    u32 *defaults = WORLD->api_object_sys->hostility_masks[object->field_0x289];
-                    if (((u64(defaults[0]) | (u64(defaults[1]) << 32)) & mask) != 0)
-                        return;
-                }
-            }
-        }
-    }
-    for (i32 i = 0; i < baddie_count; ++i) {
-        APIOBJECT *baddie = &baddies[i]->apiobj;
-        u64 mask = ~(u64(1) << baddie->field_0x289);
-        for (i32 j = 0; j < party_count; ++j) {
-            APIOBJECT *member = &party[j]->apiobj;
-            member->field387_0x2a0 &= static_cast<u32>(mask);
-            member->field388_0x2a4 &= static_cast<u32>(mask >> 32);
-            u64 other_mask = ~(u64(1) << member->field_0x289);
-            baddie->field387_0x2a0 &= static_cast<u32>(other_mask);
-            baddie->field388_0x2a4 &= static_cast<u32>(other_mask >> 32);
-        }
-    }
-    object = objects;
-    for (i32 i = 0; i < count; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0)
-            continue;
-        object->ai.field_0x1e5 &= ~0x58;
-        object->ai.opponent = NULL;
-        object->ai.opponent_metric = 1000000000.0f;
-        object->ai.nearest_opponent = NULL;
-        object->ai.field_0xdc = 0;
-        object->ai.nearest_opponent_metric = 1000000000.0f;
-        object->ai.target_metric_e0 = 1000000000.0f;
-        object->ai.field_0xec = 0;
-        object->ai.target_metric_f0 = 1000000000.0f;
-        object->apiobj.field387_0x2a0 = 0;
-        object->apiobj.field388_0x2a4 = 0;
-        object->field_0xebc = 0;
-        object->field_0xec0 = 0;
-        object->field_0xecc = 0;
-    }
-    party_under_cover = 0;
-    alert_timer = 0.0f;
-    alert_obj = NULL;
-    if (VADER_ADATA != NULL && WORLD->area == VADER_ADATA)
-        return;
-    if (party_cant_be_under_cover != 0)
-        return;
-    i32 all_under_cover = 1;
-    for (i32 i = 0; i < 8; ++i) {
-        GameObject_s *player = Player[i];
-        if (player == NULL || (player->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player->apiobj.field_0x287 != 0 ||
-            (player->field_0xeff & 1) != 0)
-            continue;
-        if (player->field_0x108e == 5 ||
-            ((FreePlay != 0 || WORLD->current_level == HUB_LDATA) &&
-             (player->apiobj.character_data->model_flags & 0x204) != 0 && player->field_0xcc0 == NULL)) {
-            party_under_cover = 1;
-        }
-        if ((player->apiobj.character_data->model_flags & 0x80000) == 0)
-            all_under_cover = 0;
-    }
-    if (all_under_cover != 0)
-        party_under_cover = 1;
+} // namespace
+
+struct AIPACKET_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+extern u32 flagremaptab[32][2];
 }
 
-void GameAttackInit() {
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
 }
 
-extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry);
-i32 GameAudio_GetSfxId(i32 sfx);
-void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
-
-void GameFog_Update(WORLDINFO_s *world) {
-    rtlfog_s *previous = GameFogSet;
-    if (world->rtl_set != NULL &&
-        !(CUTSTOPGAME != 0 && CutStopInfo != NULL && (static_cast<CUTINFO *>(CutStopInfo)->flags & 4) != 0)) {
-        GameFogSet = rtlGetFogSet(world->rtl_set, NUMTX_GET_ROW_VEC(&pNuCam->mtx, 3));
+void GameObjectDimensions(GameObject_s *object) {
+    APIOBJECT &api = object->apiobj;
+    if (object->use_model_origin != 0 && object->field_0xd24 == 1.0f &&
+        api.character_data->player_config->collision_origin_joint != -1 &&
+        api.character_model->points_of_interest[api.character_data->player_config->collision_origin_joint] != NULL &&
+        api.field_0x288 != 0) {
+        const f32 radius = object->field_0x1004 * api.character_data->player_config->collision_origin_radius;
+        api.field_0x1dc = radius;
+        api.field_0x1e0 = radius;
     } else {
-        GameFogSet = NULL;
+        api.field_0x1dc = api.collision_radius;
+        api.field_0x1e0 = api.collision_height;
     }
-
-    if (GameFogSnap == 0 && GameFogSet != previous) {
-        GameFogTime = 0.0f;
-        GameFogDuration = 3.0f;
-        GameFogOld = GameFog;
-    }
-    if (GameFogSnap != 0 || GameFogSet != previous) {
-        if (GameFogSet != NULL) {
-            u32 colour = GameFogSet->colour;
-            GameFogNew.high_quality_colour_channels[0] = colour >> 24;
-            GameFogNew.high_quality_colour_channels[1] = (colour >> 16) & 0xff;
-            GameFogNew.high_quality_colour_channels[2] = (colour >> 8) & 0xff;
-            GameFogNew.high_quality_colour_channels[3] = colour & 0xff;
-            GameFogNew.high_quality_start = GameFogSet->start;
-            GameFogNew.high_quality_end = GameFogSet->end;
-            GameFogNew.high_quality_density = GameFogSet->density;
-            GameFogNew.low_quality_density = GameFogSet->low_quality_density;
-            colour = GameFogSet->low_quality_colour;
-            GameFogNew.low_quality_colour_channels[0] = colour >> 24;
-            GameFogNew.low_quality_colour_channels[1] = (colour >> 16) & 0xff;
-            GameFogNew.low_quality_colour_channels[2] = (colour >> 8) & 0xff;
-            GameFogNew.low_quality_colour_channels[3] = colour & 0xff;
-        } else {
-            GameFogNew.high_quality_colour_channels[0] = GameFogNew.high_quality_colour_channels[1] =
-                GameFogNew.high_quality_colour_channels[2] = GameFogNew.high_quality_colour_channels[3] = 0.0f;
-            GameFogNew.high_quality_start = 5.0f;
-            GameFogNew.high_quality_end = 20.0f;
-            GameFogNew.high_quality_density = 0.0f;
-            GameFogNew.low_quality_density = 0.0f;
-            GameFogNew.low_quality_colour_channels[0] = GameFogNew.low_quality_colour_channels[1] =
-                GameFogNew.low_quality_colour_channels[2] = GameFogNew.low_quality_colour_channels[3] = 0.0f;
-        }
-    }
-
-    f32 fstop = 22.0f;
-    if (GameFogSet != NULL) {
-        fstop = static_cast<f32>(static_cast<u32>(GameFogSet->depth_of_field_fstop)) / 10.0f;
-        if (fstop == 0.0f)
-            fstop = 22.0f;
-    }
-    dof_fstop = fstop;
-
-    if (NuIOS_IsLowEndDevice() && world->current_level != NULL) {
-        GameFogNew.low_quality_end = world->current_level->data_display.far_clip;
-        GameFogNew.low_quality_start = world->current_level->data_display.fog_start;
-    }
-    if (GameFogSnap != 0) {
-        GameFog = GameFogNew;
-        GameFogDuration = 0.0f;
-        GameFogTime = 0.0f;
-    } else {
-        if (GameFogTime < GameFogDuration) {
-            GameFogTime += FRAMETIME;
-            if (GameFogTime > GameFogDuration)
-                GameFogTime = GameFogDuration;
-        }
-        if (GameFogTime >= GameFogDuration) {
-            GameFog = GameFogNew;
-        } else {
-            f32 blend = 1.0f - (NU_SIN_LUT(GameFogTime / GameFogDuration * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
-            GameFog.high_quality_colour_channels[0] =
-                GameFogOld.high_quality_colour_channels[0] +
-                (GameFogNew.high_quality_colour_channels[0] - GameFogOld.high_quality_colour_channels[0]) * blend;
-            GameFog.high_quality_colour_channels[1] =
-                GameFogOld.high_quality_colour_channels[1] +
-                (GameFogNew.high_quality_colour_channels[1] - GameFogOld.high_quality_colour_channels[1]) * blend;
-            GameFog.high_quality_colour_channels[2] =
-                GameFogOld.high_quality_colour_channels[2] +
-                (GameFogNew.high_quality_colour_channels[2] - GameFogOld.high_quality_colour_channels[2]) * blend;
-            GameFog.high_quality_colour_channels[3] =
-                GameFogOld.high_quality_colour_channels[3] +
-                (GameFogNew.high_quality_colour_channels[3] - GameFogOld.high_quality_colour_channels[3]) * blend;
-            GameFog.high_quality_start =
-                GameFogOld.high_quality_start + (GameFogNew.high_quality_start - GameFogOld.high_quality_start) * blend;
-            GameFog.high_quality_end =
-                GameFogOld.high_quality_end + (GameFogNew.high_quality_end - GameFogOld.high_quality_end) * blend;
-            GameFog.high_quality_density = GameFogOld.high_quality_density +
-                                           (GameFogNew.high_quality_density - GameFogOld.high_quality_density) * blend;
-            GameFog.low_quality_density = GameFogOld.low_quality_density +
-                                          (GameFogNew.low_quality_density - GameFogOld.low_quality_density) * blend;
-            GameFog.low_quality_colour_channels[0] =
-                GameFogOld.low_quality_colour_channels[0] +
-                (GameFogNew.low_quality_colour_channels[0] - GameFogOld.low_quality_colour_channels[0]) * blend;
-            GameFog.low_quality_colour_channels[1] =
-                GameFogOld.low_quality_colour_channels[1] +
-                (GameFogNew.low_quality_colour_channels[1] - GameFogOld.low_quality_colour_channels[1]) * blend;
-            GameFog.low_quality_colour_channels[2] =
-                GameFogOld.low_quality_colour_channels[2] +
-                (GameFogNew.low_quality_colour_channels[2] - GameFogOld.low_quality_colour_channels[2]) * blend;
-            GameFog.low_quality_colour_channels[3] =
-                GameFogOld.low_quality_colour_channels[3] +
-                (GameFogNew.low_quality_colour_channels[3] - GameFogOld.low_quality_colour_channels[3]) * blend;
-        }
-    }
-    GameFog.colour = (static_cast<i32>(GameFog.high_quality_colour_channels[0]) << 24) +
-                     (static_cast<i32>(GameFog.high_quality_colour_channels[1]) << 16) +
-                     (static_cast<i32>(GameFog.high_quality_colour_channels[2]) << 8) +
-                     static_cast<i32>(GameFog.high_quality_colour_channels[3]);
-    GameFog.low_quality_colour = (static_cast<i32>(GameFog.low_quality_colour_channels[0]) << 24) +
-                                 (static_cast<i32>(GameFog.low_quality_colour_channels[1]) << 16) +
-                                 (static_cast<i32>(GameFog.low_quality_colour_channels[2]) << 8) +
-                                 static_cast<i32>(GameFog.low_quality_colour_channels[3]);
-    GameFogSnap = 0;
-    g_BackgroundColour = GameFog.colour;
+    if (GameObjectDimensionsExtraFn != NULL)
+        GameObjectDimensionsExtraFn(object);
 }
 
-void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
-    if (buf_end == NULL || buf == NULL || buf_end->addr <= buf->addr + size) {
+MechObjectInterface *GameObject_s::GetMechObjectInterface() {
+    if (mech_object_interface == NULL)
+        new CharacterObjectInterface(*this);
+    return mech_object_interface;
+}
+
+void GameObject_s::KillTasks() {
+    MechTouchTask *task = touch_task;
+    while (task != NULL) {
+        MechTouchTask *next = task->next;
+        task->OnStop();
+        delete task;
+        task = next;
+    }
+    touch_task = NULL;
+}
+
+bool GameObject_s::IsRunningTaskType(HashedKey const &type) {
+    MechTouchTask *task = touch_task;
+    while (task != NULL) {
+        MechTouchTask *next = task->next;
+        if (task->GetHashId().value == type.value)
+            return true;
+        task = next;
+    }
+    return false;
+}
+
+void GameObject_s::ClearMechObjectInterface() {
+    delete mech_object_interface;
+}
+
+MechAddonCollection *GameObject_s::GetAddons(bool create) {
+    if (addons == NULL && create) {
+        MechObjectInterface *object = GetMechObjectInterface();
+        addons = new MechAddonCollection(*object);
+    }
+    return addons;
+}
+
+GameObject_s *AddGameObject(i32 id) {
+    GameObject_s *object = reinterpret_cast<GameObject_s *>(APIObjectCreate(WORLD->api_object_sys));
+    if (object == NULL) {
         return NULL;
     }
-    buf->addr = (buf->addr + 3) & ~usize(3);
-    void *ptr = buf->void_ptr;
-    buf->addr += size;
-    if (ptr == NULL) {
-        return NULL;
-    }
-    memset(ptr, 0, size);
-    return ptr;
-}
 
-void GameAISysSetGame() {
-    AIPathCnxHelperSysInitFn = NULL;
-    StarWars_GameAISysInit();
-}
+    const u8 object_index = object->apiobj.field_0x289;
+    object->field_0x661 = 0xff;
+    object->apiobj.field_0x27f = 0xff;
+    object->apiobj.field_0x280 = 0xff;
+    object->field_0x1086 = 2;
+    object->apiobj.flags_low |= APIOBJECT_FLAG_IN_USE;
+    object->apiobj.character = 1;
+    object->field_0x1054 = 1;
+    object->apiobj.collision_identity_mask = u64(1) << object_index;
+    object->apiobj.field_0xa8 = 1.0f;
+    object->field_0x1004 = 1.0f;
+    object->field_0x1020 = 2000000.0f;
+    object->apiobj.field_0x281 = 0xff;
+    object->apiobj.field_0x218 = object->apiobj.water_height = object->apiobj.field_0x220 = 2000000.0f;
 
-void GameAudio_AddSfx(i32 sfx, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx) {
-    if (sfx_count == NULL || sfx_ids == NULL || *sfx_count >= max_sfx) {
-        return;
-    }
-
-    i32 sfx_id = GameAudio_GetSfxId(sfx);
-    if (sfx_id == -1) {
-        return;
-    }
-    for (i32 i = 0; i < *sfx_count; ++i) {
-        if (sfx_ids[i] == sfx_id) {
-            return;
+    HIGHGAMEOBJECT = 0;
+    for (i32 i = 0; i < 64; i++) {
+        if ((Obj[i].apiobj.flags_low & APIOBJECT_FLAG_IN_USE) != 0) {
+            HIGHGAMEOBJECT = i + 1;
         }
     }
-    sfx_ids[*sfx_count] = sfx_id;
-    ++*sfx_count;
+
+    object->ai.owner = object;
+    object->apiobj.field_0x2a8 = 0;
+    object->apiobj.field_0x2ac = 0;
+    object->apiobj.objptr = object;
+    object->apiobj.ai = &object->ai;
+
+    MechAddonCollection *addons = object->GetAddons(true);
+    if (addons != NULL) {
+        MechEdgeStopAddon *edge_stop = new MechEdgeStopAddon(*object->GetMechObjectInterface());
+        addons->Add(*edge_stop);
+        if (VehicleArea != 0 || id == id_SPEEDERBIKE || id == id_SPEEDERBIKESNOW || id == id_STAP || id == id_STAP2 ||
+            id == id_TROOPERCANNON || id == id_CANNON || id == id_MOSCANNON || id == id_ATST || id == id_BASKETCANNON ||
+            id == id_BIGGUN) {
+            MechObjectInterface *target = object->GetMechObjectInterface();
+            MechAutofireAddon *addon = NU_ALLOC_T(MechAutofireAddon, 1, "", 0);
+            if (addon != NULL)
+                new (addon) MechAutofireAddon(*target);
+            addons->Add(*addon);
+        }
+    }
+    return object;
+}
+
+void GameObject_s::ClearAddons() {
+    delete addons;
+    addons = NULL;
+}
+
+void RemoveGameObject(GameObject_s *obj, i32) {
+    if (obj == NULL) {
+        return;
+    }
+
+    obj->KillTasks();
+    obj->ClearAddons();
+    obj->ClearMechObjectInterface();
+
+    GameObject_s *other = Obj;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; i++, other++) {
+        other->apiobj.collision_contact_mask &= ~obj->apiobj.collision_identity_mask;
+        other->apiobj.ai_awareness_mask &= ~(1ULL << obj->apiobj.field_0x289);
+        other->ai_seen_mask &= ~(1ULL << obj->apiobj.field_0x289);
+        other->ai_opponent_exclusion_mask &= ~(1ULL << obj->apiobj.field_0x289);
+    }
+
+    if (obj->pad_gamepad != NULL) {
+        obj->pad_gamepad->allocated_5a &= ~1u;
+    }
+    DestroySnakeBody(obj);
+    APIObjectDestroy(WORLD->api_object_sys, &obj->apiobj);
+
+    i32 object_count = 0;
+    for (i32 i = 0; i < 64; i++) {
+        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
+            object_count = i + 1;
+        }
+    }
+    HIGHGAMEOBJECT = object_count;
+    for (i32 i = 0; i < 8; i++) {
+        if (LevGameObject[i] == obj) {
+            LevGameObject[i] = NULL;
+        }
+    }
+}
+
+void ClearGameObjects(APIOBJECTSYS_s *api_object_sys) {
+    for (i32 i = 0; i < 64; i++) {
+        Obj[i].KillTasks();
+        Obj[i].ClearAddons();
+        Obj[i].ClearMechObjectInterface();
+    }
+    memset(Obj, 0, sizeof(GameObject_s) * 64);
+    APIObjectDestroyAll(api_object_sys);
+    HIGHGAMEOBJECT = 0;
+}
+
+void ScaleGameObject(GameObject_s *object) {
+    const f32 scale = object->apiobj.field_0xa8;
+    CHARACTERDATA *character = object->apiobj.character_data;
+    object->apiobj.scaled_radius = character->field13_0x2c * scale;
+    object->apiobj.collision_radius = object->field_0x1008 * scale;
+    object->apiobj.collision_height = object->apiobj.collision_radius * object->collision_y_scale;
+    object->apiobj.scaled_height = (character->field16_0x38 - character->field15_0x34) * object->field_0x1004;
+}
+
+__attribute__((optimize("O2", "tree-vectorize"))) void GetTopBot(GameObject_s *object) {
+    CHARACTERDATA *character = object->apiobj.character_data;
+    const f32 bottom = character->field15_0x34;
+    const f32 top = character->field16_0x38;
+    object->field_0xffc = bottom;
+    object->field_0x1000 = top;
+
+    if (object->field_0x1008 == 0.0f) {
+        object->collision_y_scale = 0.0f;
+    } else {
+        object->collision_y_scale = (top - bottom) / (object->field_0x1008 * 2.0f);
+    }
+}
+
+void SetToLastSafePos(GameObject_s *object) {
+    NUVEC position = {object->apiobj.last_safe_position.x, object->apiobj.last_safe_position.y,
+                      object->apiobj.last_safe_position.z};
+    object->apiobj.start_position = position;
+    object->saved_position = object->apiobj.position = object->apiobj.start_position;
+}
+
+i32 UnderPlayerControl(GameObject_s *object) {
+    return object->apiobj.player_controlled ||
+           (object->field_0xcc0 != NULL && object->field_0xcc0->apiobj.player_controlled);
+}
+
+GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_only, i32 vehicle_only,
+                             i32 non_level_only) {
+    GameObject_s *object = Obj;
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
+        if ((object->apiobj.flags_low & APIOBJECT_FLAG_IN_USE) != 0 &&
+            (vehicle_only == 0 || (object->apiobj.flags_high & 0x10) != 0) &&
+            (required_flags == 0 || (object->apiobj.field_0x1f4 & required_flags) == required_flags) &&
+            (character_id == -1 || object->id == character_id) &&
+            (alive_only == 0 ||
+             (object->apiobj.field_0x287 == 0 && (CInfo[object->character_context].flags & 0x8000) == 0)) &&
+            (non_level_only == 0 || object->field_0x107c == -1)) {
+            return object;
+        }
+    }
+    return NULL;
+}
+
+GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
+                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
+                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
+                                    bool first_match) {
+    GameObject_s *nearest = NULL;
+    f32 nearest_distance = 100000000.0f;
+    f32 radius_squared = radius * radius;
+    GameObject_s *object = Obj;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
+        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
+            (object->field_0xe20 & 0x20) || (CInfo[object->character_context].flags & 0x8000))
+            continue;
+        if (character_id != -1 && object->id != character_id)
+            continue;
+        if (player_index >= 0) {
+            if (player_index <= 1) {
+                if (object->apiobj.field_0x27c != player_index)
+                    continue;
+            } else if (player_index == 99) {
+                if (object->apiobj.field_0x27c == -1)
+                    continue;
+            } else if (player_index == 100) {
+                if (object->apiobj.field_0x27c != -1)
+                    continue;
+            }
+        }
+        if (exclude && object == exclude)
+            continue;
+        if (required_flags && (object->apiobj.character_data->model_flags & required_flags) != required_flags)
+            continue;
+        if (animation != -1 && object->apiobj.character_model->model_data_b[animation] == NULL)
+            continue;
+        if (filter && !filter(object))
+            continue;
+        f32 x = object->apiobj.collision_position.x - position->x;
+        f32 y = object->apiobj.collision_position.y - position->y;
+        f32 z = object->apiobj.collision_position.z - position->z;
+        f32 distance = horizontal_only ? x * x + z * z : x * x + y * y + z * z;
+        if (exclude) {
+            if (radius_squared <= 0.0f || distance < radius_squared) {
+                f32 combined_radius = exclude->apiobj.collision_radius + object->apiobj.collision_radius + extra_radius;
+                if (distance < combined_radius * combined_radius && distance < nearest_distance) {
+                    nearest_distance = distance;
+                    nearest = object;
+                    if (first_match)
+                        break;
+                }
+            }
+        } else if ((radius_squared <= 0.0f || distance < radius_squared) && distance < nearest_distance) {
+            nearest_distance = distance;
+            nearest = object;
+            if (first_match)
+                break;
+        }
+    }
+    if (nearest && distance_squared)
+        *distance_squared = nearest_distance;
+    return nearest;
+}
+
+i32 GameObjectNearFloor(GameObject_s *object, f32 height, f32 *distance) {
+    const f32 no_floor_height = 2000000.0f;
+    const f32 floor_height = object->apiobj.field_0x218;
+    if (floor_height != no_floor_height) {
+        const f32 radius_scale = object->apiobj.collision_radius / 0.225f;
+        i32 height_steps = static_cast<i32>(height);
+        if (height_steps < 0) {
+            height_steps = 0;
+        }
+        f32 tolerance = static_cast<f32>(height_steps) * 0.025f;
+        f32 radius_tolerance = radius_scale * tolerance;
+        if (radius_tolerance < tolerance) {
+            radius_tolerance = tolerance;
+        }
+        tolerance = radius_tolerance;
+
+        const f32 floor_distance = object->apiobj.collision_min.y - floor_height;
+        if (distance != NULL) {
+            *distance = floor_distance;
+        }
+        return tolerance > floor_distance;
+    }
+
+    if (distance != NULL) {
+        *distance = no_floor_height;
+    }
+    return 0;
+}
+
+void GameObjectToCameraDistances() {
+    const NUVEC camera_position = GameCam->pos;
+    GameObject_s *object = Obj;
+    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
+        const u16 required_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & required_flags) != required_flags) {
+            continue;
+        }
+
+        const f32 dx = camera_position.x - object->apiobj.position.x;
+        const f32 dy = camera_position.y - object->apiobj.position.y;
+        const f32 dz = camera_position.z - object->apiobj.position.z;
+        object->ai_update_distance = NuFsqrt(dx * dx + dy * dy + dz * dz);
+    }
 }
 
 void GameObjectOrigin(GameObject_s *object) {
@@ -3639,350 +1162,102 @@ void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINF
     }
 }
 
-i32 Game_IgnoreInput() {
-    extern i32 newgamecam;
-    return newgamecam != 0;
-}
-
-extern i16 id_GONKDROID;
-u32 GameAI_TotalScore() {
-    GameObject_s *object = Obj;
-    u32 total = 0;
-    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
-        if ((object->apiobj.flags_low & 1) == 0 || (object->apiobj.field_0x1f4 & 0x400) == 0 ||
-            object->ai.field_0x134 == 0xff)
-            continue;
-        GAMECHARACTERDATA_s *config = static_cast<GAMECHARACTERDATA_s *>(object->apiobj.character_data->field11_0x24);
-        if ((config->flags_090 & 0x40) == 0 && object->id != id_GONKDROID)
-            total += static_cast<u16>(config->field_0xee);
-    }
-    return total;
-}
-
-void GameDrawMenuEntry(MENU_s *menu, char *text) {
-    if (Paused != 0) {
-        dme_align = PauseMenus_Align;
-        menu->draw_x = PauseMenus_X;
-    }
-    DrawMenuEntryEx(menu, text, static_cast<u8>(MenuA));
-}
-
-void GameAnimSys_Update(GAMEANIMSYS_s *system) {
-    if (system == NULL) {
-        return;
-    }
-
-    GAMEANIMSET_s *set = reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetHead(&system->active_sets));
-    while (set != NULL) {
-        GAMEANIMSET_s *next_set =
-            reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetNext(&system->active_sets, &set->links));
-
-        const u8 was_no_visibility_test = set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
-        set->flags &= ~GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
-
-        if ((set->flags & GAMEANIMSET_FLAG_STOP_REQUESTED) != 0) {
-            set->flags &= ~(GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED);
-            GameAnimSet_RemoveFromSystemList(set);
-            set = next_set;
-            continue;
-        }
-
-        set->state = GAMEANIMSET_STATE_AT_START;
-        i32 all_playing_forward = 1;
-        i32 all_at_start = 1;
-        i32 all_at_end = 1;
-        i32 any_special_no_visibility_test = 0;
-
-        GAMEANIMOBJ_s *object = set->objects;
-        while (object != NULL) {
-            if (NuSpecialGetNoVisiTestFn(&object->special) != 0) {
-                any_special_no_visibility_test = 1;
-            }
-
-            if (object->instance_animation != NULL) {
-                const f32 direction = object->start_frame > object->end_frame ? -1.0f : 1.0f;
-                const f32 previous_frame = object->instance_animation->ltime;
-
-                if (previous_frame * direction >= object->end_frame * direction) {
-                    if (object->instance_animation->tfactor * direction < 0.0f) {
-                        object->instance_animation->ltime = object->end_frame;
-                    } else if (object->instance_animation->repeating != 0) {
-                        object->instance_animation->ltime = previous_frame - object->end_frame + object->start_frame;
-                    } else {
-                        object->instance_animation->ltime = object->end_frame;
-                        object->instance_animation->playing = 0;
-                    }
-                } else if (previous_frame * direction <= object->start_frame * direction) {
-                    if (object->instance_animation->tfactor * direction > 0.0f) {
-                        object->instance_animation->ltime = object->start_frame;
-                    } else if (object->instance_animation->repeating != 0) {
-                        object->instance_animation->ltime = object->end_frame - (object->start_frame - previous_frame);
-                    } else {
-                        object->instance_animation->ltime = object->start_frame;
-                        object->instance_animation->playing = 0;
-                    }
-                }
-
-                if (previous_frame != object->instance_animation->ltime) {
-                    EvalAnim2(&object->special, object->instance_animation->ltime);
-                }
-
-                if (object->instance_animation->playing != 0) {
-                    set->flags |= GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
-                    if (object->instance_animation->tfactor * direction < 0.0f) {
-                        all_playing_forward = 0;
-                    }
-                }
-
-                const f32 directed_frame = object->instance_animation->ltime * direction;
-                if (directed_frame > object->start_frame * direction) {
-                    all_at_start = 0;
-                }
-                if (directed_frame < object->end_frame * direction) {
-                    all_at_end = 0;
-                }
-            }
-            object = object->next;
-        }
-
-        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != any_special_no_visibility_test) {
-            object = set->objects;
-            auto set_flags = set->flags;
-            while (object != NULL) {
-                NuSpecialSetNoVisiTest(&object->special, set_flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST);
-                object = object->next;
-            }
-        }
-
-        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != 0) {
-            set->state =
-                all_playing_forward != 0 ? GAMEANIMSET_STATE_ACTIVE_FORWARD : GAMEANIMSET_STATE_ACTIVE_BACKWARD;
+void UpdateLastSafePosition(GameObject_s *object) {
+    APIOBJECT &api = object->apiobj;
+    object->field_0xf02 &= ~0x40;
+    if (api.field_0x287 == 0 && (LEGOCONTEXT_DOOMED == -1 || object->character_context != LEGOCONTEXT_DOOMED) &&
+        (api.flags_low & 4) == 0) {
+        api.field_0x1c0 = api.position;
+        GameObject_s *terrain_object = object->field_0xcc0 != NULL && LEGOCONTEXT_BEENTAKENOVER != -1 &&
+                                               object->character_context == LEGOCONTEXT_BEENTAKENOVER
+                                           ? object->field_0xcc0
+                                           : object;
+        const i32 surface = static_cast<i8>(terrain_object->apiobj.field_0x281);
+        i32 unsafe;
+        if (surface != -1 && (TerSurface[surface].flags & 0xc041) != 0) {
+            unsafe = 1;
         } else {
-            if (all_at_end != 0) {
-                set->state = GAMEANIMSET_STATE_AT_END;
-            } else if (all_at_start == 0) {
-                set->state = GAMEANIMSET_STATE_BETWEEN_ENDPOINTS;
+            const i8 layer = terrain_object->apiobj.field_0x27f;
+            unsafe = 0;
+            if (layer != -1 && ((TerLayer[layer].flags & 1) != 0 || layer == 9))
+                unsafe = 1;
+        }
+        if (unsafe && VehicleArea != 0 && BonusArea != 0)
+            unsafe =
+                !(static_cast<GAMECHARACTERDATA *>(terrain_object->apiobj.character_data->field11_0x24)->field_0x28 >
+                  0.0f);
+        if (WORLD->current_level == NEWTOWN_LDATA && terrain_object->field_0xe31 == 1 &&
+            terrain_object->apiobj.position.y > 0.7f)
+            unsafe = true;
+        do {
+            if ((object->field_0xf00 & 4) != 0)
+                break;
+            const i8 context = object->character_context;
+            if ((CInfo[context].parameter & 8) != 0)
+                break;
+            if (api.field_0x27d == 0 &&
+                (context == -1 || (context != LEGOCONTEXT_BEENTAKENOVER && context != LEGOCONTEXT_EATEN &&
+                                   context != LEGOCONTEXT_GETIN)) &&
+                VehicleArea == 0 && object->id != id_TRAININGREMOTE) {
+                const u32 flags = api.character_data->model_flags;
+                if (((flags & 0x2000) == 0 ||
+                     !(static_cast<GAMECHARACTERDATA *>(api.character_data->field11_0x24)->field_0x28 > 0.0f)) &&
+                    ((flags & 0x8000) == 0 || object->field_0xe31 != 1))
+                    break;
             }
-            if (was_no_visibility_test != 0) {
-                set->flags |= GAMEANIMSET_FLAG_STOP_REQUESTED;
+            if (!(object->surface_normal.y > 0.9f) || api.field_0x218 == 2000000.0f)
+                break;
+            const i16 platform = object->field_0x1078;
+            i16 shadow_platform;
+            if (!((platform == -1 || platform == LevSafePlatID[0] || platform == LevSafePlatID[1]) &&
+                  ((shadow_platform = api.supporting_platform_id) == -1 || shadow_platform == LevSafePlatID[0] ||
+                   shadow_platform == LevSafePlatID[1])) &&
+                (LastSafePosExtraFn == NULL || !LastSafePosExtraFn(object)))
+                break;
+            if (!(api.lower_position.y > api.field_0x218 - 0.1f) || unsafe ||
+                (VehicleArea != 0 && TouchHacks::CheckForAboutToRunIntoKillTerrain(*object, 1.0f)))
+                break;
+            object->field_0xf02 |= 0x40;
+            api.last_safe_position = api.position;
+            object->fall_recovery_timer = 0.0f;
+            if ((object->ai.path_info.flags & 1) != 0 && (object->ai.path_info.connection->traversal_flags[1] |
+                                                          object->ai.path_info.connection->traversal_flags[0]) == 0) {
+                ClearLastSafeTakeoverSource(object);
+                api.respawn_position = api.last_safe_position;
+                api.flags_high |= 0x20;
+            }
+            if (static_cast<u8>(api.field_0x27c) < 2 && object->field_0xda8 <= 0.0f &&
+                GameCam->blend_time >= GameCam->blend_duration && object->sock_position.location.sock != -1) {
+                ClearLastSafeTakeoverSource(object);
+                object->last_safe_camera_position = api.last_safe_position;
+            }
+            goto safe_position_done;
+        } while (false);
+        {
+            i8 edge_layer;
+            if ((api.flags_low & 0x80) != 0 && (edge_layer = api.field_0x27f) != -1 &&
+                (TerLayer[edge_layer].flags & 1) != 0 && !NoLayerKill(object)) {
+                if (object->fall_recovery_timer <= 0.0f)
+                    object->fall_hover_height = api.position.y;
+                object->fall_recovery_timer += FRAMETIME;
+            } else {
+                object->fall_recovery_timer = 0.0f;
+            }
+            if ((WORLD->current_level->flags & 0x40000) != 0) {
+                api.last_safe_position = api.position;
             }
         }
-
-        if ((set->flags & (GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED)) == 0) {
-            GameAnimSet_RemoveFromSystemList(set);
-        }
-        set = next_set;
     }
+safe_position_done:
+    if ((object->field_0xf03 & 1) == 0 && !api.player_controlled &&
+        (LEGOCONTEXT_EATEN == -1 || object->character_context != LEGOCONTEXT_EATEN) && (api.flags_high & 0x20) != 0) {
+        if ((object->ai.path_info.flags & 1) != 0)
+            ClearLastSafeTakeoverSource(object);
+        api.last_safe_position = api.respawn_position;
+    }
+    object->field_0xf00 &= ~4;
 }
 
-CABLE_s cables[8];
-CABLE_s *GameObjIsCableTied(GameObject_s *object) {
-    if (__builtin_expect(cables[0].target != object, 1))
-        return NULL;
-
-    if ((cables[0].flags_1e9 & 1) != 0)
-        return &cables[0];
-    if ((cables[1].flags_1e9 & 1) != 0)
-        return &cables[1];
-    if ((cables[2].flags_1e9 & 1) != 0)
-        return &cables[2];
-    if ((cables[3].flags_1e9 & 1) != 0)
-        return &cables[3];
-    if ((cables[4].flags_1e9 & 1) != 0)
-        return &cables[4];
-    if ((cables[5].flags_1e9 & 1) != 0)
-        return &cables[5];
-    if ((cables[6].flags_1e9 & 1) != 0)
-        return &cables[6];
-    if ((cables[7].flags_1e9 & 1) != 0)
-        return &cables[7];
-    return NULL;
-}
-
-void FindAnglesZX(NUVEC *, u16 *, u16 *);
-f32 GetVehicleHoverHeight(GameObject_s *, f32 *);
-u16 SeekRot(u16, u16, f32);
-i32 RotDiff(u16, u16);
-extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER, id_ATST;
-
-// Original: reads the user's music volume from the options save as the product
-// of two 0..10 sliders scaled to 0..1 (option bytes at 0x4 and 0x5).
-f32 GameGetMusicVolume(OPTIONSSAVE_s *options) {
-    return ((f32)(u8)options->field5_0x5 / 10.0f) * ((f32)(u8)options->field4_0x4 / 10.0f);
-}
-
-// Original: applies GameGetMusicVolume, zeroing it while the title logos are
-// up (SuperOptions.music_enabled == 0 on the titles level); the title menu restores
-// the user's volume via GameGetMusicVolume once the menu phase starts.
-f32 GameSetMusicVolume(OPTIONSSAVE_s *options) {
-    f32 volume = GameGetMusicVolume(options);
-    if (SuperOptions.music_enabled == 0 && WORLD->current_level == TITLES_LDATA) {
-        volume = 0.0f;
-    }
-    legoSetMusicVolume(volume);
-    return volume;
-}
-
-void GameAISysStartFrame(AISYS_s *system) {
-    if (system == NULL || netclient != 0) {
-        return;
-    }
-
-    if (system->path_sys != NULL && system->path_sys->path_count != 0) {
-        for (i32 index = 0; index < system->path_sys->path_count; ++index) {
-            memset(&system->path_sys->paths[index]->updated_node_bits[0], 0, 0x20);
-            memmove(system->path_sys->paths[index]->previous_inside_node_bits,
-                    system->path_sys->paths[index]->inside_node_bits, 0x20);
-            memset(system->path_sys->paths[index]->inside_node_bits, 0,
-                   sizeof(system->path_sys->paths[index]->inside_node_bits));
-        }
-
-        // Moving specials can carry path endpoints. Update both ends of each
-        // connection; AIPathNodeUpdatePos uses updated_node_bits to ensure a
-        // shared endpoint is transformed only once this frame.
-        for (i32 path_index = 0; path_index < system->path_sys->path_count; ++path_index) {
-            AIPATH *path = system->path_sys->paths[path_index];
-            for (i32 connection_index = 0; connection_index < path->connection_count; ++connection_index) {
-                AIPATHCNX *connection = &path->connections[connection_index];
-                AIPATHNODE *node = &path->nodes[connection->direction_a];
-                if (__builtin_expect(node->has_special != 0, 0)) {
-                    AIPathNodeUpdatePos(system, path, node);
-                }
-                path = system->path_sys->paths[path_index];
-                node = &path->nodes[connection->direction_b];
-                if (__builtin_expect(node->has_special != 0, 0)) {
-                    AIPathNodeUpdatePos(system, path, node);
-                    path = system->path_sys->paths[path_index];
-                }
-            }
-        }
-    }
-
-    // Spread the object/area overlap work across frames. Area runtime flags
-    // summarize the kinds of live characters inside it, while every object
-    // retains a 64-area occupancy mask for script queries.
-    if (__builtin_expect(system->next_area_check < system->area_count, 0)) {
-        AIAREA *area = &system->areas[system->next_area_check];
-        const i32 area_index = static_cast<i32>(area - WORLD->ai_sys->areas);
-        area->runtime_flags &= static_cast<u8>(
-            ~(AIAREA_RUNTIME_PLAYER_PRESENT | AIAREA_RUNTIME_OBJECT_STATE_CLEAR | AIAREA_RUNTIME_OBJECT_STATE_SET));
-
-        GameObject_s *object = Obj;
-        for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
-            if ((object->apiobj.field_0x1f8 & (APIOBJECT_FLAG_CHARACTER | APIOBJECT_FLAG_IN_USE)) !=
-                (APIOBJECT_FLAG_CHARACTER | APIOBJECT_FLAG_IN_USE)) {
-                continue;
-            }
-            if (object->apiobj.field_0x287 != 0 && !(object->field_0x101c > 0.0f) &&
-                !object->apiobj.player_controlled) {
-                continue;
-            }
-
-            NUVEC local_position;
-            NuVecSub(&local_position, &object->apiobj.position, &area->position);
-            NuVecRotateY(&local_position, &local_position, -area->rotation);
-            const bool is_inside = local_position.x >= -area->half_width && local_position.y >= -0.1f &&
-                                   local_position.z >= -area->half_depth && local_position.x <= area->half_width &&
-                                   local_position.y <= area->height && local_position.z <= area->half_depth;
-            if (!is_inside) {
-                // Outside removal addresses the full 64-bit area bit.
-                const u64 area_bit = 1ULL << area_index;
-                object->apiobj.ai_area_mask_low &= ~static_cast<u32>(area_bit);
-                object->apiobj.ai_area_mask_high &= ~static_cast<u32>(area_bit >> 32);
-                continue;
-            }
-
-            // Inside occupancy uses the signed, wrapping 32-bit area bit.
-            const i64 inside_area_bit = static_cast<i32>(1u << (area_index & 31));
-            object->apiobj.ai_area_mask_low |= static_cast<u32>(inside_area_bit);
-            object->apiobj.ai_area_mask_high |= static_cast<u32>(inside_area_bit >> 32);
-            if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0) {
-                area->runtime_flags |= AIAREA_RUNTIME_PLAYER_PRESENT;
-            }
-            if (object->apiobj.field_0x27c != -1) {
-                area->runtime_flags |= AIAREA_RUNTIME_CHARACTER_SLOT_SEEN;
-            }
-            if ((object->apiobj.field_0x1f4 & 1) != 0) {
-                area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_SET;
-            } else if ((object->apiobj.field_0x1f4 & 4) == 0) {
-                area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_CLEAR;
-            }
-        }
-
-        ++system->next_area_check;
-        if (__builtin_expect(system->next_area_check >= system->area_count, 0)) {
-            system->next_area_check = 0;
-        }
-    }
-
-    // Level scripts are ordinary AI processors without an object or packet.
-    // Disabled processors retain their state but do not advance this frame.
-    for (i32 index = 0; index < WORLD->processor_count; ++index) {
-        if (!WORLD->processors[index].processor.is_disabled) {
-            AIScriptProcess(system, NULL, NULL, &WORLD->processors[index].processor, FRAMETIME);
-        }
-    }
-}
-
-void GameDisplaySettings(LEVELDATADISPLAY *display, i32 *background_colours) {
-    CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
-    if (cut != NULL && cut->camera_near_clip != 0.0f) {
-        pNuCam->near_clip = cut->camera_near_clip;
-    } else {
-        pNuCam->near_clip = display->unknown_04;
-    }
-
-    u16 far_clip;
-    if (cut != NULL) {
-        far_clip = cut->camera_far_clip;
-        if (far_clip == 0) {
-            far_clip = static_cast<u16>(display->unknown_14);
-        }
-    } else {
-        far_clip = static_cast<u16>(display->unknown_14);
-    }
-    pNuCam->far_clip = static_cast<f32>(static_cast<u32>(far_clip));
-
-    LEVELDATA *level = WORLD->current_level;
-    const bool use_backdrop = level == TITLES_LDATA || (level->flags & LEVEL_STATUS) != 0 || level == STATUS_LDATA ||
-                              level == CREDITS_LDATA || MainRenderTime < 0.0f;
-    if (!use_backdrop) {
-        background_colours[0] =
-            0x80000000u | static_cast<u8>(display->bg_red_top) |
-            (static_cast<u8>(display->bg_green_top) << 8 | static_cast<u8>(display->bg_blue_top) << 16);
-        background_colours[1] =
-            0x80000000u | static_cast<u8>(display->bg_red_bottom) |
-            (static_cast<u8>(display->bg_green_bottom) << 8 | static_cast<u8>(display->bg_blue_bottom) << 16);
-        return;
-    }
-
-    BackDrop_UpdateColours(0);
-
-    i32 top_b = static_cast<i32>(backdrop_top_b);
-    i32 top_g = static_cast<i32>(backdrop_top_g);
-    i32 top_r = static_cast<i32>(backdrop_top_r);
-    i32 bottom_r = static_cast<i32>(backdrop_bot_r);
-    i32 bottom_b = static_cast<i32>(backdrop_bot_b);
-    i32 bottom_g = static_cast<i32>(backdrop_bot_g);
-
-    f32 alpha = 1.0f;
-    if (BackDrop_AlphaFn != NULL) {
-        BackDrop_AlphaFn(&alpha);
-        if (alpha != 0.0f) {
-            top_r = static_cast<i32>(static_cast<f32>(top_r) * alpha);
-            top_b = static_cast<i32>(static_cast<f32>(top_b) * alpha);
-            top_g = static_cast<i32>(static_cast<f32>(top_g) * alpha);
-            bottom_r = static_cast<i32>(static_cast<f32>(bottom_r) * alpha);
-            bottom_g = static_cast<i32>(static_cast<f32>(bottom_g) * alpha);
-            bottom_b = static_cast<i32>(static_cast<f32>(bottom_b) * alpha);
-        }
-    }
-
-    background_colours[0] = 0x80000000u | (top_r & 0xff) | (top_g & 0xff) << 8 | (top_b & 0xff) << 16;
-    background_colours[1] = 0x80000000u | (bottom_r & 0xff) | (bottom_g & 0xff) << 8 | (bottom_b & 0xff) << 16;
-}
-
-u8 grapple_attach_frames = 5;
 void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char action, unsigned char, float parameter) {
     object->can_use_object = target;
     object->use_action = action;
@@ -3990,2338 +1265,3 @@ void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char actio
     object->use_action_frames = grapple_attach_frames;
 }
 
-CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
-    // The original checks the first cable's owner for the entire array.
-    if (__builtin_expect(cables[0].source != object, 1))
-        return NULL;
-
-    if ((cables[0].flags_1e9 & 1) != 0)
-        return &cables[0];
-    if ((cables[1].flags_1e9 & 1) != 0)
-        return &cables[1];
-    if ((cables[2].flags_1e9 & 1) != 0)
-        return &cables[2];
-    if ((cables[3].flags_1e9 & 1) != 0)
-        return &cables[3];
-    if ((cables[4].flags_1e9 & 1) != 0)
-        return &cables[4];
-    if ((cables[5].flags_1e9 & 1) != 0)
-        return &cables[5];
-    if ((cables[6].flags_1e9 & 1) != 0)
-        return &cables[6];
-    if ((cables[7].flags_1e9 & 1) != 0)
-        return &cables[7];
-    return NULL;
-}
-
-void GameObjectDimensionsExtra_LSW(GameObject_s *object);
-
-void GameObjectDimensions(GameObject_s *object) {
-    APIOBJECT &api = object->apiobj;
-    if (object->use_model_origin != 0 && object->field_0xd24 == 1.0f &&
-        api.character_data->player_config->collision_origin_joint != -1 &&
-        api.character_model->points_of_interest[api.character_data->player_config->collision_origin_joint] != NULL &&
-        api.field_0x288 != 0) {
-        const f32 radius = object->field_0x1004 * api.character_data->player_config->collision_origin_radius;
-        api.field_0x1dc = radius;
-        api.field_0x1e0 = radius;
-    } else {
-        api.field_0x1dc = api.collision_radius;
-        api.field_0x1e0 = api.collision_height;
-    }
-    if (GameObjectDimensionsExtraFn != NULL)
-        GameObjectDimensionsExtraFn(object);
-}
-
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special) {
-    if (data != NULL) {
-        memset(data, 0, sizeof(*data));
-        if (special != NULL && NuSpecialExistsFn(special)) {
-            NUVEC minimum;
-            NUVEC maximum;
-            NuSpecialGetBounds(special, &minimum, &maximum);
-            NUMTX *matrix = NuSpecialGetMtx(special);
-            NuVecMtxTransform(&minimum, &minimum, matrix);
-            NuVecMtxTransform(&maximum, &maximum, matrix);
-            f32 x = NuFabs((maximum.x - minimum.x) * 0.5f);
-            f32 z = NuFabs((maximum.z - minimum.z) * 0.5f);
-            if (NuFabs(x - z) < 0.01f) {
-                data->radius = x;
-                data->use_largest_extent = 0;
-            } else {
-                data->radius = x > z ? x : z;
-                data->use_largest_extent = 1;
-            }
-            data->extent_x = x;
-            data->extent_z = z;
-            data->max_y = NuFabs((maximum.y - minimum.y) * 0.5f);
-            data->min_y = -data->max_y;
-        }
-    }
-}
-
-void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data) {
-    if (EdFileReadChar() == 0) {
-        return;
-    }
-    EdFileReadNuVec(&data->position);
-    data->radius = EdFileReadFloat();
-    data->min_y = EdFileReadFloat();
-    data->max_y = EdFileReadFloat();
-    data->extent_x = EdFileReadFloat();
-    data->extent_z = EdFileReadFloat();
-    data->flags = EdFileReadShort();
-    data->use_largest_extent = static_cast<u8>(EdFileReadChar());
-    data->mode = static_cast<u8>(EdFileReadChar());
-}
-
-APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id) {
-    if (object_id >= HIGHGAMEOBJECT) {
-        return NULL;
-    }
-
-    GameObject_s *object = &Obj[object_id];
-    if ((object->apiobj.flags_low & APIOBJECT_FLAG_IN_USE) == 0) {
-        return NULL;
-    }
-
-    if ((object->apiobj.flags_high & APIOBJECT_HIGH_FLAG_PLAYER_CHARACTER) != 0 ||
-        object->ai.reset_mode == AI_OBJECT_ROUTE_STATE_SCRIPT_VISIBLE) {
-        if (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) {
-            return &object->apiobj;
-        }
-    }
-    return NULL;
-}
-
-i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
-                           NUMTX *reflection_matrix, NUMTX *auxiliary_matrix, GameObject_s *object, u32 flags) {
-    NUMTX special_matrix;
-    NUMTX scaled_matrix;
-    NUMTX scaled_reflection;
-    NUMTX output_matrices[256];
-    i32 drag_bomb = 0;
-    if (object != NULL && object->id == id_DRAGBOMB && Cheat_IsOn(5) && WORLD->lev_objs[0x135].active) {
-        ResetShadowMapRendering();
-        special_matrix = *matrix;
-        NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
-        if (reflection_matrix != NULL) {
-            special_matrix = *reflection_matrix;
-            NuRndrStartReflectionRender(1);
-            NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
-            NuRndrEndReflectionRender();
-        }
-        scaled_matrix = *matrix;
-        NUVEC scale = {0.5f, 0.5f, 0.5f};
-        NuMtxPreScale(&scaled_matrix, &scale);
-        matrix = &scaled_matrix;
-        if (reflection_matrix != NULL) {
-            scaled_reflection = *reflection_matrix;
-            NuMtxPreScale(&scaled_reflection, &scale);
-            reflection_matrix = &scaled_reflection;
-        }
-        drag_bomb = 1;
-    }
-
-    if (TimingBarSet == 5)
-        TBOPENFN("chrs", 5);
-    i32 complex_shadow = 0;
-    if (!(object != NULL && (object->apiobj.character_data->model_flags & 0x10000) != 0 &&
-          (WORLD->area == NULL || WORLD->area != DOGFIGHT_ADATA))) {
-        model->hierarchy->suppress_shadow_surface_points = 1;
-    } else {
-        model->hierarchy->suppress_shadow_surface_points = 0;
-        if (reflection_matrix != NULL) {
-            ConfigureComplexShadow(object);
-            complex_shadow = 1;
-        }
-    }
-    drawcharactermodel_keepmergeaction = game_keepmergeaction;
-    MakeLayerList = GCDataList[model->model_id].make_layer_list;
-    i32 result = APIDrawCharacterModel(model, object != NULL ? object->apiobj.character_data : NULL, animation, matrix,
-                                       secondary_matrix, reflection_matrix, NULL, auxiliary_matrix, object, flags,
-                                       object != NULL && JointRotation_On ? object->joint_modifiers : NULL,
-                                       object != NULL && JointRotation_On ? object->field_0x1089 : 0, Paused, FRAMETIME,
-                                       output_matrices, NULL, WORLD->debris_sys);
-    if (TimingBarSet == 5)
-        TBCLOSEFN("chrs", 5);
-
-    i32 draw_shadow = 0;
-    if (result == 0 && object != NULL) {
-        if (auxiliary_matrix != NULL) {
-            for (i32 i = 0; i < 16; ++i) {
-                if (model->points_of_interest[i] != NULL) {
-                    auxiliary_matrix[i] = object->apiobj.field_0xb8;
-                    auxiliary_matrix[i].m30 = object->apiobj.position.x;
-                    auxiliary_matrix[i].m31 = object->apiobj.position.y;
-                    auxiliary_matrix[i].m32 = object->apiobj.position.z;
-                    auxiliary_matrix[i].m31 -=
-                        (object->character_bottom + object->character_top) * object->apiobj.field_0xa8 * 0.5f;
-                }
-            }
-        }
-    } else if (__builtin_expect(result != 0 && object != NULL && (object->field_0xeff & 4) == 0 &&
-               (object->apiobj.character_data->model_flags & 0x10000) == 0, 0)) {
-        draw_shadow = 1;
-    }
-    if (g_lowEndLevelBehaviour != 0 && object != NULL && (object->apiobj.flags_low & 0x80) == 0)
-        draw_shadow = 0;
-
-    if (draw_shadow && object != NULL && secondary_matrix != NULL) {
-        i32 level_alpha = static_cast<u8>(WORLD->current_level->blob_shadow_alpha);
-        if (level_alpha != 0 && object->shadow_opacity > 0.0f && object->surface_normal.y > 0.0f &&
-            (object->apiobj.water_height == -1.0f ||
-             (TerLayer[static_cast<i8>(object->apiobj.field_0x27f)].flags & 1) == 0)) {
-            if (object->id == id_MOUSEDROID && WORLD->lev_objs[0xa2].active) {
-                special_matrix = *secondary_matrix;
-                NuSpecialDrawAtAlpha(&WORLD->lev_objs[0xa2].special, &special_matrix,
-                                     object->shadow_opacity * object->surface_normal.y);
-            } else if (__builtin_expect(!!(CHARSHADOWS_ON), 1)) {
-                PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
-                i32 alpha = config->blob_shadow_alpha;
-                if (alpha == 0xff)
-                    alpha = level_alpha;
-                if (alpha > 0) {
-                    f32 radius = config->shadow_radius;
-                    if (!(radius < 99.0f))
-                        radius = object->apiobj.character_data->collision_radius;
-                    if (radius > 0.0f) {
-                        f32 drop_scale = DropInOutScale(object);
-                        NuRndrAddShadow(NUMTX_GET_ROW_VEC(secondary_matrix, 3),
-                                        drop_scale * radius * object->apiobj.field_0xa8,
-                                        static_cast<i32>(alpha * object->shadow_opacity * object->surface_normal.y),
-                                        object->field_0x105e, 0, object->field_0x1060);
-                    }
-                }
-            }
-        }
-    }
-    if (complex_shadow)
-        ConfigureComplexShadow(NULL);
-    if (drag_bomb)
-        EnableShadowMapRendering(0);
-    return result;
-}
-
-extern i16 id_ANAKINJEDISCARRED;
-
-void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *blowup) {
-    extern AREADATA *MOSEISLEY_ADATA;
-    extern AREADATA *TATOOINE_ADATA;
-    if (blowup == NULL || blowup->type == NULL || WORLD->area == NULL || netclient != 0)
-        return;
-    if (WORLD->area == MOSEISLEY_ADATA || WORLD->area == HUB_ADATA) {
-        char *name = NuSpecialGetName(&blowup->type->special);
-        if (name == NULL || NuStrIStr(name, "bin_lid") != NULL || NuStrIStr(name, "bin") == NULL || qrand() >= 49200)
-            return;
-    } else if (WORLD->area == TATOOINE_ADATA) {
-        char *name = NuSpecialGetName(&blowup->type->special);
-        if (name == NULL || NuStrIStr(name, "womp_gen") == NULL)
-            return;
-    } else {
-        return;
-    }
-    AddDynamicCreature(id_WOMPRAT, &blowup->position, 0, "spawned_womprat", NULL, NULL, 1, NULL, NULL, 0, 16);
-}
-
-void GameLoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR *buf, VARIPTR *buf_end, i32 area_models,
-                             i32 area) {
-    if (area_models != 0 && CutScenePlayer_Active() != 0 && area != -1 && &ADataList[area] != HUB_ADATA) {
-        area_models = 0;
-    }
-
-    APILoadCharacterModels(list, append, buf, *buf_end, area_models);
-}
-
-void Game_WorldInfo_InitMenu(WORLDINFO_s *world, i32 *menu_id, i32 *) {
-    if (world->current_level == TITLES_LDATA) {
-        *menu_id = 0;
-    } else if (world->current_level == CREDITS_LDATA) {
-        *menu_id = 30;
-    }
-}
-
-extern GameObject_s *alert_obj;
-extern NUVEC alert_pos;
-extern f32 alert_timer;
-extern "C" {
-    i32 party_under_cover;
-}
-i32 ZapTarget(GameObject_s *object);
-
-void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **objects, i32 goody_count,
-                                   APIOBJECT_s **goodies, i32 baddy_count, APIOBJECT_s **baddies, u64 awareness,
-                                   float) {
-    NUVEC difference = {0.0f, 0.0f, 0.0f};
-    if (system != NULL) {
-        if (goody_count == 0)
-            return;
-        f32 distance = 0.0f;
-        i32 complete = baddy_count == 0;
-        if (alert_obj != NULL && (alert_obj->apiobj.flags_high & 0x10) != 0 &&
-            (alert_obj->apiobj.field_0x1f4 & 5) == 0 &&
-            (static_cast<GAMECHARACTERDATA *>(alert_obj->apiobj.character_data->field11_0x24)->flags_090 & 0x8000) ==
-                0) {
-            const u64 alert_mask = (u64)1 << alert_obj->apiobj.field_0x289;
-            for (i32 i = 0; i < baddy_count; ++i) {
-                APIOBJECT_s *object = baddies[i];
-                if ((object->ai_awareness_mask & alert_mask) != 0) {
-                    object->objptr->alert_target_timer = 5.0f;
-                    object->objptr->alert_target = &alert_obj->apiobj;
-                } else if (WORLD->rooms_visible_ptr[object->objptr->room_id] != 0) {
-                    difference.x = alert_pos.x - object->collision_position.x;
-                    if (object->heardistance > difference.x) {
-                        difference.z = alert_pos.z - object->collision_position.z;
-                        if (object->heardistance > difference.z) {
-                            difference.y = alert_pos.y - object->collision_position.y;
-                            if (object->maxviewheight > difference.y && difference.y > object->minviewheight) {
-                                distance = difference.x * difference.x + difference.z * difference.z;
-                                if (!(object->heardistance * object->heardistance > distance))
-                                    continue;
-                                if ((WORLD->api_object_sys->line_of_sight[object->field_0x289] & alert_mask) == 0) {
-                                    const f32 dx =
-                                        alert_obj->apiobj.collision_position.x - object->collision_position.x;
-                                    const f32 dz =
-                                        alert_obj->apiobj.collision_position.z - object->collision_position.z;
-                                    if (!(dx * dx + dz * dz > object->viewdistance * object->viewdistance))
-                                        continue;
-                                }
-                                object->objptr->alert_target = &alert_obj->apiobj;
-                                object->ai_awareness_mask |= alert_mask;
-                                awareness |= object->ai_awareness_mask;
-                                object->objptr->alert_target_timer = 5.0f;
-                            }
-                        }
-                    }
-                }
-            }
-            alert_timer -= FRAMETIME;
-            if (alert_timer <= 0.0f)
-                alert_obj = NULL;
-        }
-        if (system->goody_idx >= goody_count)
-            system->goody_idx = 0;
-        i32 budget = 32;
-        // Pending choices survive budget exhaustion. Publish only after a pass
-        // finishes without changing the baddies' assignments.
-        while (!complete && budget > 0) {
-            complete = 0;
-            while (system->goody_idx < goody_count && budget > 0) {
-                APIOBJECT_s *goody = goodies[system->goody_idx];
-                f32 best_distance = 1.0e9f;
-                APIOBJECT_s *best_baddy = NULL;
-                for (i32 i = 0; i < baddy_count; ++i) {
-                    APIOBJECT_s *baddy = baddies[i];
-                    if (baddy == goody || baddy->ai->pending_opponent == goody)
-                        continue;
-                    i32 have_distance = 0;
-                    if (baddy->objptr->field_0xefc & 2) {
-                        goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
-                    } else if ((goody->ai_awareness_mask >> baddy->field_0x289) & 1) {
-                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                        have_distance = 1;
-                        if (distance >= goody->viewdistance + baddy->visibility_range_extension)
-                            goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
-                    } else if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) {
-                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                        have_distance = 1;
-                        if ((!party_under_cover || ((goody->field_0x1f4 & 0x400) && (baddy->field_0x1f4 & 0x400))) &&
-                            (((awareness >> baddy->field_0x289) & 1) ||
-                             (((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) &&
-                              ((goody->flags_high & 8) ||
-                               difference.x * goody->objptr->facing_direction.x +
-                                       difference.z * goody->objptr->facing_direction.z >=
-                                   0.0f ||
-                               (goody->heardistance > distance && (baddy->objptr->field_0xef9 & 8)))))) {
-                            goody->ai_awareness_mask |= (u64)1 << baddy->field_0x289;
-                            awareness |= goody->ai_awareness_mask;
-                        }
-                    }
-                    if (goody->objptr->field_0xefc & 2) {
-                        baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
-                    } else if (baddy->objptr->alert_target == goody) {
-                        baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
-                        awareness |= baddy->ai_awareness_mask;
-                    } else if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                        if (!have_distance)
-                            distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                        have_distance = 1;
-                        if (distance >= baddy->viewdistance + goody->visibility_range_extension)
-                            baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
-                    } else if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) {
-                        if (!have_distance)
-                            distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                        have_distance = 1;
-                        if ((!party_under_cover || ((baddy->field_0x1f4 & 0x400) && (goody->field_0x1f4 & 0x400))) &&
-                            (((awareness >> goody->field_0x289) & 1) ||
-                             (((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) &&
-                              ((baddy->flags_high & 8) ||
-                               -difference.z * baddy->objptr->facing_direction.z -
-                                       difference.x * baddy->objptr->facing_direction.x >=
-                                   0.0f ||
-                               (baddy->heardistance > distance && (goody->objptr->field_0xef9 & 8)))))) {
-                            baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
-                            awareness |= baddy->ai_awareness_mask;
-                        }
-                    }
-                    if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
-                        !((baddy->ai_awareness_mask >> goody->field_0x289) & 1))
-                        continue;
-                    if (!have_distance)
-                        distance = NuVecDist(&baddy->position, &goody->position, &difference);
-                    GameObject_s *baddy_object = baddy->objptr;
-                    i16 baddy_id = baddy_object->id;
-                    if (baddy_id != id_JAWA && baddy_id != id_UGNAUGHT) {
-                        if (!(goody->character_data->model_flags & 0x80000)) {
-                            if ((baddy_object->field_0xefb & 1) && goody->objptr != player &&
-                                goody->objptr != player2) {
-                                baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                            } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
-                                baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                            }
-                        } else {
-                            baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                        }
-                    } else {
-                        if (!ZapTarget(goody->objptr))
-                            baddy->objptr->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                        baddy_object = baddy->objptr;
-                        baddy_id = baddy_object->id;
-                    }
-                    GameObject_s *goody_object = goody->objptr;
-                    if (!((baddy_object->ai_opponent_exclusion_mask >> goody->field_0x289) & 1)) {
-                        AIPACKET *packet = baddy->ai;
-                        if (packet->pending_nearest_metric > distance) {
-                            packet->pending_nearest_metric = distance;
-                            packet->pending_nearest_opponent = goody;
-                        }
-                        f32 metric = distance;
-                        if (packet->opponent_object == goody)
-                            metric -= 0.5f;
-                        if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                            if (packet->pending_opponent == NULL) {
-                                if (!(packet->runtime_flags & 2) ||
-                                    ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) &
-                                     1) ||
-                                    baddy_object->alert_target == goody) {
-                                    if (best_distance > metric) {
-                                        best_distance = distance;
-                                        best_baddy = baddy;
-                                    }
-                                }
-                            } else if (goody->player_controlled && (baddy_object->field_0xefb & 0x40)) {
-                                if (!packet->pending_opponent->player_controlled ||
-                                    packet->pending_opponent_metric > metric) {
-                                    best_distance = distance;
-                                    best_baddy = baddy;
-                                }
-                            }
-                        }
-                    }
-                    if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT ||
-                        (baddy->character_data->model_flags & 0x80000))
-                        goody_object->ai_opponent_exclusion_mask |= (u64)1 << baddy->field_0x289;
-                    if (!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1)) {
-                        AIPACKET *packet = goody->ai;
-                        if (packet->pending_nearest_metric > distance) {
-                            packet->pending_nearest_metric = distance;
-                            packet->pending_nearest_opponent = baddy;
-                        }
-                        f32 metric = distance;
-                        if (packet->opponent_object == baddy)
-                            metric -= 0.5f;
-                        if (((goody->ai_awareness_mask >> baddy->field_0x289) & 1) &&
-                            (!(packet->runtime_flags & 2) ||
-                             ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1))) {
-                            if (packet->pending_opponent_metric > metric ||
-                                (packet->pending_opponent != NULL && packet->pending_opponent->objptr != NULL &&
-                                 packet->pending_opponent->objptr->character_context == 0x5a &&
-                                 baddy_object->character_context != 0x5a)) {
-                                packet->pending_opponent_metric = distance;
-                                packet->pending_opponent = baddy;
-                            }
-                        }
-                    }
-                }
-                if (baddy_count > 0) {
-                    budget -= baddy_count;
-                    if (best_baddy != NULL && best_baddy->ai->pending_opponent != goody) {
-                        best_baddy->ai->pending_opponent = goody;
-                        best_baddy->ai->pending_opponent_metric = best_distance;
-                        system->unknown_flag_2 = 1;
-                        if (!((goody->objptr->ai_opponent_exclusion_mask >> best_baddy->field_0x289) & 1) &&
-                            ((goody->ai_awareness_mask >> best_baddy->field_0x289) & 1)) {
-                            AIPACKET *packet = goody->ai;
-                            if (!(packet->field_0x1e5 & 0x10) || packet->pending_opponent_metric > best_distance) {
-                                packet->pending_opponent = best_baddy;
-                                packet->pending_opponent_metric = best_distance;
-                                packet->field_0x1e5 |= 0x10;
-                            }
-                        }
-                    }
-                }
-                ++system->goody_idx;
-                if (system->goody_idx >= goody_count) {
-                    system->goody_idx = 0;
-                    if (system->unknown_flag_2) {
-                        system->unknown_flag_2 = 0;
-                        complete = 0;
-                    } else {
-                        complete = 1;
-                    }
-                }
-            }
-        }
-        if (!complete)
-            return;
-        system->goody_idx = 0;
-        nbaddies_can_see_players = 0;
-        // Losing LOS alone does not erase the seen history; losing awareness does.
-        for (i32 i = 0; i < goody_count; ++i) {
-            APIOBJECT_s *goody = goodies[i];
-            for (i32 j = 0; j < baddy_count; ++j) {
-                APIOBJECT_s *baddy = baddies[j];
-                if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1)) {
-                    if ((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1) {
-                        goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
-                    }
-                } else {
-                    if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1)
-                        goody->objptr->ai_seen_mask |= (u64)1 << baddy->field_0x289;
-                }
-                if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                    if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1)
-                        baddy->objptr->ai_seen_mask |= (u64)1 << goody->field_0x289;
-                } else if ((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1) {
-                    baddy->objptr->ai_seen_mask &= ~((u64)1 << goody->field_0x289);
-                }
-            }
-        }
-        for (i32 i = 0; i < count; ++i) {
-            APIOBJECT_s *object = objects[i];
-            AIPACKET *packet = object->ai;
-            packet->opponent_metric = packet->pending_opponent_metric;
-            packet->opponent_object = packet->pending_opponent;
-            packet->field_0x1e5 = (packet->field_0x1e5 & ~8) | ((packet->field_0x1e5 >> 1) & 8);
-            packet = object->ai;
-            packet->nearest_opponent_metric = packet->pending_nearest_metric;
-            packet->nearest_opponent_object = packet->pending_nearest_opponent;
-            packet->pending_opponent_metric = 1.0e9f;
-            packet->pending_nearest_metric = 1.0e9f;
-            packet->field_0x1e5 &= ~0x10;
-            packet->pending_nearest_opponent = NULL;
-            packet->pending_opponent = NULL;
-            if ((awareness >> object->field_0x289) & 1)
-                object->ai->field_0x1e5 |= 0x40;
-            else
-                object->ai->field_0x1e5 &= ~0x40;
-            object->objptr->field_0xef9 &= ~8;
-            GameObject_s *game_object = object->objptr;
-            game_object->ai_opponent_exclusion_mask = 0;
-            if ((player != NULL && ((game_object->ai_seen_mask >> player->apiobj.field_0x289) & 1)) ||
-                (player2 != NULL && ((game_object->ai_seen_mask >> player2->apiobj.field_0x289) & 1)))
-                ++nbaddies_can_see_players;
-            if (game_object->opponent != NULL) {
-                packet = object->ai;
-                packet->opponent_object = static_cast<APIOBJECT_s *>(game_object->opponent);
-                packet->opponent_metric = NuVecDist(&packet->opponent_object->position, &object->position, &difference);
-                packet = object->ai;
-                if (packet->opponent_object->ai->opponent_object == object)
-                    packet->field_0x1e5 |= 8;
-                else
-                    packet->field_0x1e5 &= ~8;
-            }
-        }
-    }
-}
-
-void GameObjectDimensionsExtra_LSW(GameObject_s *object) {
-    if (object->id == id_ATAT && object->character_context == 0x17 && object->context_animation == 0x41)
-        object->apiobj.field_0x1dc *= 2.0f;
-}
-
-i32 AnakinGreenSabre(GameObject_s *object);
-extern "C" i16 id_THEEMPEROR, id_IMPERIALGUARD, id_BODYGUARD;
-i32 CannotKill(GameObject_s *object);
-i32 SphereSphereOverlapScaleY(NUVEC *, f32, f32, NUVEC *, f32, f32);
-GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *, NUVEC *, i32, f32, NUVEC *, NUVEC *, BOLT_s *, u32, u8 *);
-void AlertSurroundingCreatures(GameObject_s *, NUVEC *);
-extern "C" i32 AddGameDebrisRot(APIDEBRISSYS_s *, i32, NUVEC *, i32, u16, u16);
-extern f32 ForceThrowSpeed, ForceThrowGravity;
-void DeflectPart(PART_s *, GameObject_s *, f32, f32, i32, i32);
-
-static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
-    if (object->weapon_scale < 1.0f)
-        return;
-    const i8 context = object->character_context;
-    if ((context == 0 && (object->action_movement_state == 4 || object->action_movement_state == 2)) || context == 4 ||
-        context == 16 || (context == 13 && object->id != id_THEEMPEROR) || context == 14 ||
-        (context == 31 && object->field_0x7a3 == 1) ||
-        (object->apiobj.player_controlled && Cheat_PowerUpActive(object->apiobj.field_0x27c))) {
-        object->sabre_flags |= 2;
-    }
-    if (object->id == id_IMPERIALGUARD)
-        object->sabre_flags &= ~3;
-    if (object->sabre_flags == 0 || object->apiobj.field_0x288 == 0 || (object->field_0xe23 & 8) == 0)
-        return;
-    GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    const i32 joint_a = data->streak_joints[blade][0];
-    if (joint_a == -1 || object->apiobj.character_model->points_of_interest[joint_a] == NULL)
-        return;
-    const i32 joint_b = data->streak_joints[blade][1];
-    if (joint_b == -1 || object->apiobj.character_model->points_of_interest[joint_b] == NULL)
-        return;
-    object->blade_states[blade] = -1;
-    NUVEC points[3];
-    memcpy(&points[0],
-           reinterpret_cast<const u8 *>(object) + offsetof(GameObject_s, joint_matrices) + joint_a * sizeof(NUMTX) +
-               offsetof(NUMTX, m30),
-           sizeof(points[0]));
-    points[1] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
-    if ((object->sabre_flags & 2) != 0) {
-        i32 colour;
-        if (object->apiobj.field_0x27c != -1 && Cheat_IsOn(25))
-            colour = 0;
-        else if (object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object))
-            colour = 3;
-        else if (object->id == id_GRIEVOUS && (blade == 3 || blade == 0))
-            colour = 2;
-        else if (AnakinGreenSabre(object) || (object->id == id_BOB && (object->field_0xefd & 2) != 0))
-            colour = 1;
-        else
-            colour = static_cast<i8>(GCDataList[object->id].field_0x117);
-        object->blade_states[blade] = colour;
-        const u8 *rgb = BladeTab[colour].colour;
-        const u32 red = rgb[0], green = rgb[1], blue = rgb[2];
-        if (object->apiobj.model_draw_result != 0) {
-            const u32 packed = 0xff000000u | red | (green << 8) | (blue << 16);
-            AddStreakPoints(points, 0.25f, packed, &object->sabre_streaks[blade][0], 0, object);
-            if (object->field_0x1087 != 0 && object->field_0x1020 != 2000000.0f) {
-                f32 plane = object->field_0x1020;
-                if (WORLD->current_level->unknown_0cc != 2000000.0f)
-                    plane = WORLD->current_level->unknown_0cc;
-                NUVEC reflected[2] = {{points[0].x, plane - (points[0].y - plane), points[0].z},
-                                      {points[1].x, plane - (points[1].y - plane), points[1].z}};
-                AddStreakPoints(reflected, 0.25f, packed, &object->sabre_streaks[blade][1], 1, object);
-            }
-        }
-    }
-    if ((object->sabre_flags & 7) == 0)
-        return;
-    if (object->apiobj.field_0x27c != -1 && Cheat_IsOn(25))
-        effect = 1;
-    else if (object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object))
-        effect = 4;
-    else if (object->id == id_GRIEVOUS)
-        effect = (blade == 3 || blade == 0) ? 3 : 2;
-    data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    if (data->field275_0x116 == 12 && object->character_context == 5 && object->combo_stage == 2 &&
-        object->context_animation == 52 && object->apiobj.character_model->points_of_interest[4] != NULL) {
-        points[0] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[4], 3);
-        NuVecAdd(&points[1], &points[0], &object->apiobj.collision_position);
-        NuVecScale(&points[1], &points[1], 0.5f);
-    }
-    NUVEC difference;
-    f32 length = NuVecDist(&points[0], &points[1], &difference);
-    points[2].x = difference.x * 0.5f + points[1].x;
-    points[2].y = difference.y * 0.5f + points[1].y;
-    points[2].z = difference.z * 0.5f + points[1].z;
-    object->sabre_collision_radius = length * 0.25f;
-    f32 extent = length * 1.5f;
-    NUVEC minimum = {points[2].x - extent, points[2].y - extent, points[2].z - extent};
-    NUVEC maximum = {points[2].x + extent, points[2].y + extent, points[2].z + extent};
-    if ((object->sabre_flags & 4) != 0) {
-        NUVEC direction;
-        u16 angle;
-        if (object->character_context == 16)
-            angle = object->apiobj.field_0x276 + 0x8000;
-        else
-            angle = object->apiobj.field_0x276;
-        NuVecRotateY(&direction, &v001, angle);
-        NuVecScale(&difference, &direction, 0.2f);
-        NuVecAdd(&points[0], &object->apiobj.collision_position, &difference);
-        NuVecScale(&difference, &direction, 0.5f);
-        NuVecAdd(&points[1], &object->apiobj.collision_position, &difference);
-        NuVecScale(&difference, &direction, 0.35f);
-        NuVecAdd(&points[2], &object->apiobj.collision_position, &difference);
-        if (object->character_context == 13) {
-            points[0].y = (object->apiobj.upper_position.y - object->apiobj.lower_position.y) * 0.333f +
-                          object->apiobj.lower_position.y;
-            points[1].y = points[2].y = points[0].y;
-        }
-        length = NuVecDist(&points[0], &points[1], &difference);
-        points[2].x = difference.x * 0.5f + points[1].x;
-        points[2].y = difference.y * 0.5f + points[1].y;
-        points[2].z = difference.z * 0.5f + points[1].z;
-        object->sabre_collision_radius = length * 0.25f;
-        extent = length * 1.5f;
-        minimum = NUVEC{points[2].x - extent, points[2].y - extent, points[2].z - extent};
-        maximum = NUVEC{points[2].x + extent, points[2].y + extent, points[2].z + extent};
-    }
-    // The original rechecks power-up effects after the geometry callbacks.
-    if ((object->sabre_flags & 5) != 0) {
-        if (object->apiobj.field_0x27c != -1 && Cheat_IsOn(25))
-            effect = 1;
-        else if (object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object))
-            effect = 4;
-        else if (object->id == id_GRIEVOUS)
-            effect = (blade == 3 || blade == 0) ? 3 : 2;
-        GameObject_s *nearest = NULL;
-        i32 nearest_point = 0;
-        f32 nearest_distance = 1000000.0f;
-        GameObject_s *target = Obj;
-        for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++target) {
-            if (target == object || (target->apiobj.field_0x1f8 & 0x1001) != 0x1001 || target->use_model_origin <= 1 ||
-                target->apiobj.field_0x287 != 0 || (target->character_context & 0xfd) == 57 ||
-                target->character_context == 60 || (CInfo[target->character_context].flags & 0x8000) != 0)
-                continue;
-            GAMECHARACTERDATA *target_data =
-                static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
-            if ((target_data->flags_090 & 0x8000) != 0 || target->apiobj.collision_min.x > maximum.x ||
-                minimum.x > target->apiobj.collision_max.x || target->apiobj.collision_min.z > maximum.z ||
-                minimum.z > target->apiobj.collision_max.z || target->apiobj.collision_min.y > maximum.y ||
-                minimum.y > target->apiobj.collision_max.y)
-                continue;
-            for (i32 point = 2; point >= 0; --point) {
-                if (!SphereSphereOverlapScaleY(&target->apiobj.collision_position, target->apiobj.field_0x1dc,
-                                               target->apiobj.field_0x1e0, &points[point],
-                                               object->sabre_collision_radius, object->sabre_collision_radius))
-                    continue;
-                if ((object->sabre_flags & 1) != 0) {
-                    target_data = static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
-                    if ((target->apiobj.field_0x1f8 & 2) == 0 && (target_data->flags_090 & 0x1040) == 0) {
-                        NuVecSub(&difference, &target->apiobj.collision_position, &object->apiobj.collision_position);
-                        if (difference.x == 0.0f && difference.z == 0.0f) {
-                            difference.x = static_cast<f32>(qrand()) * (1.0f / 65535.0f) - 0.5f;
-                            difference.z = static_cast<f32>(qrand()) * (1.0f / 65535.0f) - 0.5f;
-                        }
-                        NuVecNorm(&difference, &difference);
-                        target_data = static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
-                        const f32 walk_speed = target_data->walk_speed;
-                        target->apiobj.movement_direction.z = walk_speed * difference.z + target->apiobj.velocity.z;
-                        target->apiobj.movement_direction.x = difference.x * walk_speed + target->apiobj.velocity.x;
-                        const f32 speed = target_data->run_speed;
-                        const f32 speed_squared =
-                            target->apiobj.movement_direction.x * target->apiobj.movement_direction.x +
-                            target->apiobj.movement_direction.z * target->apiobj.movement_direction.z;
-                        if (speed * speed < speed_squared) {
-                            const f32 scale = speed / NuFsqrt(speed_squared);
-                            target->apiobj.movement_direction.x *= scale;
-                            target->apiobj.movement_direction.z = scale * target->apiobj.movement_direction.z;
-                        }
-                    }
-                    AddGameDebrisRot(WORLD->debris_sys, effect, &points[point], ParticlesPerSecond(10.0f, FRAMETIME), 0,
-                                     0);
-                    if (sabrerubwait <= 0.0f && object->apiobj.anim_packet.blending == 0 &&
-                        object->character_context != 5 && object->character_context != 16 &&
-                        object->character_context != 13 && object->character_context != 14 &&
-                        (CInfo[object->character_context].flags & 0x4000000) == 0 &&
-                        ((CInfo[object->character_context].flags & 0x8000000) == 0 || (object->jump_flags & 2) == 0) &&
-                        target->character_context != 5 && target->character_context != 16 &&
-                        target->character_context != 13 && target->character_context != 14 &&
-                        (CInfo[target->character_context].flags & 0x4000000) == 0 &&
-                        ((CInfo[target->character_context].flags & 0x8000000) == 0 || (target->jump_flags & 2) == 0)) {
-                        PlaySfx("SaberSparks", &points[point]);
-                        sabrerubwait = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 0.3f + 0.3f;
-                        NewRumble(object->pad_gamepad->pad, static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 0.2f + 0.2f,
-                                  0);
-                        NewRumble(target->pad_gamepad->pad, static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 0.2f + 0.2f,
-                                  0);
-                    }
-                }
-                const f32 distance =
-                    NuVecDistSqr(&object->apiobj.collision_position, &target->apiobj.collision_position, NULL);
-                if (distance < nearest_distance) {
-                    nearest_distance = distance;
-                    nearest_point = point;
-                    nearest = target;
-                }
-            }
-        }
-        if (nearest != NULL && (object->sabre_flags & 4) != 0) {
-            AddGameDebris(WORLD->debris_sys, effect, &points[nearest_point]);
-            if (!CannotKill(nearest)) {
-                i32 damage = object->sabre_damage;
-                if (damage != 0 && nearest->apiobj.player_controlled) {
-                    damage = object->apiobj.player_controlled && Player_HasDoubleWeaponDamage(object) ? 2 : 1;
-                }
-                ObjHitObj(object, nearest, damage, ObjHitObj_Flags(object) | 0x100, 0, 1);
-            } else {
-                NewRumble(object->pad_gamepad->pad, 0.5f, 0);
-                NewRumble(nearest->pad_gamepad->pad, 0.5f, 0);
-            }
-            return;
-        }
-        if ((object->apiobj.player_controlled || (object->field_0xef8 & 0x40) != 0 || object->use_action == 5) &&
-            (object->sabre_flags & 4) != 0) {
-            if (!object->apiobj.player_controlled && object->apiobj.model_draw_result == 0) {
-                if (object->blowup_target == NULL)
-                    return;
-                GizmoBlowupBlowup(object->blowup_target, 1, -1, 1, NULL, 1);
-                AlertSurroundingCreatures(object, &points[0]);
-                return;
-            }
-            if (GizmoBlowUp_Hit(object, points, 3, object->sabre_collision_radius, &minimum, &maximum, NULL, 0, NULL)) {
-                AddGameDebris(WORLD->debris_sys, effect, &points[0]);
-                AddGameDebris(WORLD->debris_sys, effect, &points[1]);
-                AddGameDebris(WORLD->debris_sys, effect, &points[2]);
-                NewRumble(object->pad_gamepad->pad, 0.75f, 0);
-                return;
-            }
-        }
-    }
-    if ((object->sabre_flags & 6) == 0)
-        return;
-    PART_s *part = HitParts(object, points, 3, object->sabre_collision_radius, &minimum, &maximum, 0x8000008);
-    if (part == NULL)
-        return;
-    if ((part->flags & 8) == 0)
-        KillPart(part, 0);
-    else
-        DeflectPart(part, object, ForceThrowSpeed, ForceThrowGravity, 0, effect);
-    AlertSurroundingCreatures(object, &points[0]);
-}
-
-void GameObjectStuffAfterAnimation() {
-    GameObject_s *object = Obj;
-    i32 count = HIGHGAMEOBJECT;
-    for (i32 i = 0; i < count; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
-            object->apiobj.field_0x288 == 0)
-            continue;
-        ADDPART_s part;
-        NUMTX matrix;
-        NUVEC points[2];
-        bool drawn = true;
-        if (object->apiobj.model_draw_result == 0) {
-            drawn = false;
-            if ((object->field_0x1050 & 4) == 0)
-                goto after_shooting_and_streaks;
-        }
-        {
-            if (object->script_fire_target != NULL && (object->script_fire_target->apiobj.field_0x1f8 & 1) == 0)
-                object->script_fire_target = NULL;
-            if (static_cast<i8>(object->quick_shoot_bolt_id) != -1) {
-                if (object->id == id_BASKETCANNON) {
-                    GameAudio_PlaySfxById(
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->sfx_shoot,
-                        &object->apiobj.collision_position, 0, 0);
-                    // The original reacquires the locator after the audio callback.
-                    i32 joint = drawn ? static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
-                                            ->weapon_shoot_joints[0]
-                                      : -1;
-                    if (drawn && joint != -1 && object->apiobj.character_model->points_of_interest[joint] != NULL)
-                        matrix = object->joint_matrices[joint];
-                    else {
-                        matrix = object->apiobj.field_0xb8;
-                        *NUMTX_GET_ROW_VEC(&matrix, 3) = object->apiobj.collision_position;
-                    }
-                    NUVEC velocity = {0.0f, 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)),
-                                      -(3.0f + 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)))};
-                    NuVecMtxRotate(&velocity, &velocity, &matrix);
-                    part = Default_ADDPART;
-                    part.matrix = &matrix;
-                    part.velocity = &velocity;
-                    part.field_28 = 90;
-                    part.gravity = -10.0f;
-                    part.flags = 0x10;
-                    part.field_14 = 0.05f;
-                    part.field_18 = 0.05f;
-                    part.special = &WORLD->lev_objs[90].special;
-                    part.field_48 = PartUpdate_Basketball;
-                    part.field_3c = PartImpact_Basketball;
-                    part.stop_fn = PartStop_Flickerer;
-                    part.draw_fn = PartDraw_Flickerer;
-                    part.time_step = FRAMETIME;
-                    AddPart(&part);
-                } else {
-                    Bolt_Shoot(object, static_cast<i8>(object->quick_shoot_bolt_id), object->quick_shoot_flags);
-                    if (object->quick_shoot_bolt_id == 29)
-                        object->context_flags |= 0x40;
-                }
-            }
-            if ((object->field_0xe23 & 4) != 0)
-                Torpedo_Shoot(object);
-        }
-        if (drawn && ((object->apiobj.character_data->model_flags & 8) != 0 || object->id == id_BODYGUARD ||
-                      object->id == id_IMPERIALGUARD)) {
-            const i32 effect = object->blade_index == -1 ? -1 : BladeTab[object->blade_index].hit_effect;
-            GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-            if ((data->field275_0x116 == 3 || object->id == id_GRIEVOUS || object->id == id_COUNTDOOKU) &&
-                object->character_context == 0 && object->action_movement_state == 3)
-                object->sabre_flags |= 2;
-            if (object->id == id_BODYGUARD && (object->character_context == 12 || object->character_context == 24) &&
-                static_cast<u16>(object->context_animation - 26) <= 1)
-                object->sabre_flags |= 2;
-            u8 streak = object->sabre_flags & 2;
-            const u8 damage = object->sabre_flags & 4;
-            if (object->id == id_GRIEVOUS) {
-                bool reset_streak = (object->character_context == 12 || object->character_context == 24) &&
-                                    object->context_animation == 26;
-                if (reset_streak) {
-                    object->sabre_flags |= 2;
-                    streak = 2;
-                }
-                i32 first = -1, second = -1;
-                if (damage != 0) {
-                    if (object->character_context == 13) {
-                        first = 2;
-                        second = 0;
-                    } else if (object->character_context == 16) {
-                        first = 3;
-                        second = 2;
-                    } else if (object->character_context == 5 &&
-                               static_cast<u16>(object->context_animation - 46) <= 13) {
-                        static const i32 first_blade[14] = {-1, -1, -1, 2, 2, 2, 2, 1, 3, 3, -1, -1, -1, -1};
-                        static const i32 second_blade[14] = {0, 3, 3, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2};
-                        first = first_blade[object->context_animation - 46];
-                        second = second_blade[object->context_animation - 46];
-                    }
-                }
-                u8 flags = streak | 1;
-                for (i32 blade = 0; blade < 4; ++blade) {
-                    if (blade == 2 && reset_streak)
-                        flags = 1;
-                    object->sabre_flags = flags;
-                    if (damage != 0 && (first == blade || second == blade))
-                        object->sabre_flags |= damage;
-                    if (object->character_context == 16) {
-                        if (blade < 2)
-                            object->sabre_flags &= ~2;
-                        else
-                            object->sabre_flags |= 2;
-                    }
-                    LightSabreStreakCode(object, blade, effect);
-                }
-            } else if (object->id == id_DARTHMAUL) {
-                LightSabreStreakCode(object, 0, effect);
-                object->sabre_flags = streak | 1;
-                LightSabreStreakCode(object, 1, effect);
-            } else if (object->id == id_BODYGUARD) {
-                u8 first = object->sabre_flags;
-                u8 second = first;
-                if (object->character_context == 5 && damage != 0) {
-                    if (object->combo_stage == 2) {
-                        first &= ~4;
-                        second |= 4;
-                    } else {
-                        first |= 4;
-                        second &= ~4;
-                    }
-                } else if (object->character_context == 0 && object->action_movement_state == 4) {
-                    first |= 2;
-                    second = first;
-                }
-                object->sabre_flags = first;
-                LightSabreStreakCode(object, 0, effect);
-                object->sabre_flags = second;
-                LightSabreStreakCode(object, 1, effect);
-            } else
-                LightSabreStreakCode(object, 0, effect);
-        }
-    after_shooting_and_streaks:
-        const i32 debris_joint = static_cast<i8>(object->pad_e3c[1]);
-        if (debris_joint != -1)
-            AddGameDebris(WORLD->debris_sys, (object->movement_runtime_flags & 1) != 0 ? 139 : 138,
-                          NUMTX_GET_ROW_VEC(&object->joint_matrices[debris_joint], 3));
-        if (object->character_context == 38) {
-            CHARACTERANIM_s *animation =
-                static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[object->context_animation]);
-            if (animation != NULL && static_cast<i8>(animation->locator) != -1 &&
-                ((object->context_flags & 0x40) == 0 || static_cast<i8>(object->pad_e3c[1]) != -1)) {
-                points[0] = points[1] =
-                    *NUMTX_GET_ROW_VEC(&object->joint_matrices[static_cast<i8>(animation->locator)], 3);
-                points[0].y += 0.075f;
-                points[1].y -= 0.075f;
-                AddStreakPoints(points, 0.25f, 0xffffffff, &object->sabre_streaks[0][0], 0, object);
-            }
-        }
-        if (object->slam_debris_effect != -1)
-            AddSlamDebris(object);
-        if (object->pad_e3c[0] != 0)
-            Batarang_Release(object, object->pad_e3c[0]);
-        if (static_cast<i8>(object->field_0xe22) < 0)
-            SuperCarry_Throw(object, 0);
-        if ((object->field_0xe20 & 0x10) != 0) {
-            i32 joint =
-                drawn ? static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->rocket_locator
-                      : -1;
-            if (drawn && joint != -1 && object->apiobj.character_model->points_of_interest[joint] != NULL)
-                matrix = object->joint_matrices[joint];
-            else {
-                NuMtxSetRotationX(&matrix, 0x1555);
-                NuMtxRotateY(&matrix, object->apiobj.field_0x276 + 0x8000);
-                *NUMTX_GET_ROW_VEC(&matrix, 3) = object->apiobj.collision_position;
-            }
-            NUVEC velocity = {0.0f, 0.0f, -1.0f};
-            NuVecMtxRotate(&velocity, &velocity, &matrix);
-            part = Default_ADDPART;
-            part.matrix = &matrix;
-            part.velocity = &velocity;
-            part.field_14 = 0.1f;
-            part.field_18 = 0.1f;
-            part.special = &WORLD->lev_objs[232].special;
-            part.field_28 = 232;
-            const bool player = object->apiobj.player_controlled;
-            if (player) {
-                part.flags = 0xc11b;
-            } else {
-                part.flags = 0xc31b;
-            }
-            part.owner = object;
-            part.field_90 = static_cast<u8>(object->apiobj.field_0x289);
-            part.field_44 = BobaRocket_Kill;
-            part.move_fn = BobaRocket_Move;
-            part.update_fn = BobaRocket_Deflect;
-            part.field_40 = PartCollide_3D;
-            part.time_step = FRAMETIME;
-            part.gravity = 0.0f;
-            if (player) {
-                part.field_a4 = 4.0f + 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f));
-            } else {
-                part.field_a4 = 10.0f;
-            }
-            NUVEC direction;
-            BoltSys->shoot_direction(object, &direction);
-            f32 range = part.field_a4 * rocket_speed;
-            part.recipient = TargetGameObject(object, &object->apiobj.collision_position, &direction, range,
-                                              range * range, 0, 1, 0, -1);
-            PART_s *created = AddPart(&part);
-            if (created != NULL)
-                created->force_flags = ObjHitObj_Flags(object);
-        }
-        if ((object->movement_runtime_flags & 0x40) != 0)
-            ThermalDetonator_Throw(object);
-        if ((object->field_0xe23 & 2) != 0 && object->field_0x780 != NULL) {
-            // The zap origin callback may change the object's current target.
-            GameObject_s *target = static_cast<GameObject_s *>(object->field_0x780);
-            NUVEC *origin = GetZapOrigin(object);
-            NUVEC delta;
-            f32 distance = NuVecDist(&target->apiobj.collision_position, origin, &delta);
-            NuLgtLaser(testlaser_type, testlaser_sizew, testlaser_sizel, testlaser_sizewab, origin, &delta,
-                       object->id == id_R2Q5 ? 0xff202080 : 0xff808040, testlaser_endw, distance);
-        }
-        if (drawn && (object->apiobj.character_data->model_flags & 8) != 0 && object->weapon_scale == 1.0f) {
-            for (i32 blade = 0; blade < 4; ++blade) {
-                if (object->apiobj.field_0x288 == 0 || (object->field_0xe23 & 8) == 0)
-                    continue;
-                GAMECHARACTERDATA *blade_data =
-                    static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                i32 joint_a = blade_data->streak_joints[blade][0];
-                if (joint_a == -1 || object->apiobj.character_model->points_of_interest[joint_a] == NULL)
-                    continue;
-                i32 joint_b = blade_data->streak_joints[blade][1];
-                if (joint_b == -1 || object->apiobj.character_model->points_of_interest[joint_b] == NULL)
-                    continue;
-                points[0] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_a], 3);
-                points[1] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
-                i32 colour = object->blade_states[blade];
-                if (colour != -1 && object->character_context == 5 && (object->context_flags & 0x1c) == 0 &&
-                    (static_cast<u8>(object->combo_branch) & 0xfb) == 2) {
-                    i32 index = object->combo_branch == 6 ? BladeTab[colour].hit_effect : BladeTab[colour].effect_6;
-                    i32 effect = WORLD->debris_sys->entries[index].effect;
-                    if (effect != -1) {
-                        i32 count = ParticlesPerSecond(100.0f, FRAMETIME);
-                        if (count > 0) {
-                            f32 fraction = static_cast<f32>(qrand()) * (1.0f / 65535.0f);
-                            NUVEC position = {(points[1].x - points[0].x) * fraction + points[0].x,
-                                              (points[1].y - points[0].y) * fraction + points[0].y,
-                                              (points[1].z - points[0].z) * fraction + points[0].z};
-                            AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
-                        }
-                    }
-                }
-                if (!object->apiobj.player_controlled)
-                    continue;
-                bool hit = false;
-                for (i32 side = 0; side < 2; ++side) {
-                    NUVEC delta;
-                    NuVecSub(&delta, &points[1 - side], &points[side]);
-                    if (GameRayCast(&points[side], &delta, 0.0f, TERRAINMASK_NONWEAPON | 0x1f) != 0) {
-                        hit = true;
-                        f32 fraction = NewRayCastGetTOFI();
-                        NUVEC position = {(points[1 - side].x - points[side].x) * fraction + points[side].x,
-                                          (points[1 - side].y - points[side].y) * fraction + points[side].y,
-                                          (points[1 - side].z - points[side].z) * fraction + points[side].z};
-                        i32 index;
-                        if (object->id == id_GRIEVOUS && static_cast<u32>(blade - 1) <= 1 &&
-                            (object->apiobj.field_0x27c == -1 ||
-                             (Cheat_IsOn(25) == 0 &&
-                              (object->apiobj.field_0x27c == -1 || !Player_HasPurpleForce(object)))))
-                            index = 65;
-                        else
-                            index = object->blade_index == -1 ? -1 : BladeTab[object->blade_index].effect_8;
-                        if (index != -1) {
-                            i32 effect = WORLD->debris_sys->entries[index].effect;
-                            if (effect != -1) {
-                                i32 count = ParticlesPerSecond(50.0f, FRAMETIME);
-                                if (count > 0)
-                                    AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
-                            }
-                        }
-                    }
-                }
-                if (hit && sabrerubwait <= 0.0f && object->apiobj.anim_packet.blending == 0 &&
-                    object->character_context != 5 && object->character_context != 16 &&
-                    object->character_context != 13 && object->character_context != 14 &&
-                    (CInfo[object->character_context].flags & 0x4000000) == 0 &&
-                    ((CInfo[object->character_context].flags & 0x8000000) == 0 || (object->jump_flags & 2) == 0)) {
-                    PlaySabreSfx(const_cast<char *>("SaberSparks"), object, &points[blade], 1);
-                    sabrerubwait = 0.3f + 0.3f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f));
-                    if (GetMenuID() == -1)
-                        NewRumble(object->pad_gamepad->pad,
-                                  0.2f + 0.2f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)), 0);
-                }
-            }
-        }
-        if (drawn && object->id == id_LANDSPEEDER) {
-            f32 ratio = object->pad_gamepad->input_magnitude /
-                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->movement_speed;
-            i32 effect = WORLD->debris_sys->entries[105].effect;
-            if (effect != -1)
-                AddVariableShotDebrisEffectTimed1(effect, &object->apiobj.lower_position, 60, FRAMETIME, 0, 0, NULL);
-            effect = WORLD->debris_sys->entries[104].effect;
-            if (effect != -1) {
-                if (object->apiobj.character_model->points_of_interest[2] != NULL &&
-                    static_cast<i32>(60.0f * ratio) > 0)
-                    AddVariableShotDebrisEffectTimed1(effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[2], 3),
-                                                      static_cast<i32>(60.0f * ratio), FRAMETIME, 0, 0, NULL);
-                if (object->apiobj.character_model->points_of_interest[3] != NULL &&
-                    static_cast<i32>(60.0f * ratio) > 0)
-                    AddVariableShotDebrisEffectTimed1(effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[3], 3),
-                                                      static_cast<i32>(60.0f * ratio), FRAMETIME, 0, 0, NULL);
-                if (object->apiobj.character_model->points_of_interest[4] != NULL &&
-                    static_cast<i32>(60.0f * ratio) > 0)
-                    AddVariableShotDebrisEffectTimed1(effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[4], 3),
-                                                      static_cast<i32>(60.0f * ratio), FRAMETIME, 0, 0, NULL);
-            }
-            effect = WORLD->debris_sys->entries[103].effect;
-            if (effect != -1 && object->apiobj.field_0x218 != 2000000.0f) {
-                if (object->apiobj.character_model->points_of_interest[2] != NULL) {
-                    f32 height = object->joint_matrices[2].m31 - object->apiobj.field_0x218;
-                    if (height > 0.0f && height <= 0.2f) {
-                        f32 amount = 25.0f;
-                        if (height >= 0.1f)
-                            amount = (1.0f - (height - 0.1f) / 0.1f) * 25.0f;
-                        if (static_cast<i32>(amount * ratio) > 0) {
-                            NUVEC position = {object->joint_matrices[2].m30, object->apiobj.field_0x218,
-                                              object->joint_matrices[2].m32};
-                            AddVariableShotDebrisEffectTimed1(effect, &position, 60, FRAMETIME, 0, 0, NULL);
-                        }
-                    }
-                }
-                if (object->apiobj.character_model->points_of_interest[3] != NULL) {
-                    f32 height = object->joint_matrices[3].m31 - object->apiobj.field_0x218;
-                    if (height > 0.0f && height <= 0.2f) {
-                        f32 amount = 25.0f;
-                        if (height >= 0.1f)
-                            amount = (1.0f - (height - 0.1f) / 0.1f) * 25.0f;
-                        if (static_cast<i32>(amount * ratio) > 0) {
-                            NUVEC position = {object->joint_matrices[3].m30, object->apiobj.field_0x218,
-                                              object->joint_matrices[3].m32};
-                            AddVariableShotDebrisEffectTimed1(effect, &position, 60, FRAMETIME, 0, 0, NULL);
-                        }
-                    }
-                }
-                if (object->apiobj.character_model->points_of_interest[4] != NULL) {
-                    f32 height = object->joint_matrices[4].m31 - object->apiobj.field_0x218;
-                    if (height > 0.0f && height <= 0.2f) {
-                        f32 amount = 25.0f;
-                        if (height >= 0.1f)
-                            amount = (1.0f - (height - 0.1f) / 0.1f) * 25.0f;
-                        if (static_cast<i32>(ratio * amount) > 0) {
-                            NUVEC position = {object->joint_matrices[4].m30, object->apiobj.field_0x218,
-                                              object->joint_matrices[4].m32};
-                            AddVariableShotDebrisEffectTimed1(effect, &position, 60, FRAMETIME, 0, 0, NULL);
-                        }
-                    }
-                }
-            }
-        }
-        if (VehicleArea != 0 && static_cast<u8>(object->apiobj.field_0x27c) <= 1) {
-            i32 *key = &FalconDebKey[static_cast<u8>(object->apiobj.field_0x27c)];
-            if (object->id == id_MILLENNIUMFALCON && object->apiobj.player_controlled &&
-                (object->field_0xe24 & 8) != 0 && object->apiobj.character_model->points_of_interest[2] != NULL &&
-                object->apiobj.field_0xa8 == 1.0f) {
-                if (*key == -1)
-                    AddDebrisEffect(key, WORLD->debris_sys->entries[136].effect, 0.0f, 0.0f, 0.0f);
-                else {
-                    matrix = object->joint_matrices[2];
-                    NuMtxPreRotateX(&matrix, 0x4000);
-                    DebrisPosOrientationMtx(*key, &matrix);
-                }
-            } else
-                DebFreeInstantly(key);
-        }
-        if (object->field_0xdec > 0.0f && object->apiobj.field_0x287 == 0) {
-            f32 radius = object->apiobj.field_0x1dc * (0.5f + 0.5f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)));
-            u16 angle = qrand();
-            NUVEC position = {object->apiobj.position.x + radius * NuTrigTable[angle >> 1],
-                              object->apiobj.position.y + object->field_0xffc * object->apiobj.field_0xa8 + 0.05f,
-                              object->apiobj.position.z + radius * NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff]};
-            PowerUp_Particles(WORLD, &position);
-        }
-        count = HIGHGAMEOBJECT;
-    }
-}
-
-void GameMsg_DrawAdjustNewPos_CoinToTotal(GAMEMESSAGE_s *message) {
-    message->target_position.x = cointotal_x[message->player_index];
-}
-
-void GameObject_s::ClearAddons() {
-    delete addons;
-    addons = NULL;
-}
-
-void GameObject_s::ClearMechObjectInterface() {
-    delete mech_object_interface;
-}
-
-MechAddonCollection *GameObject_s::GetAddons(bool create) {
-    if (addons == NULL && create) {
-        MechObjectInterface *object = GetMechObjectInterface();
-        addons = new MechAddonCollection(*object);
-    }
-    return addons;
-}
-
-MechObjectInterface *GameObject_s::GetMechObjectInterface() {
-    if (mech_object_interface == NULL)
-        new CharacterObjectInterface(*this);
-    return mech_object_interface;
-}
-
-bool GameObject_s::IsRunningTaskType(HashedKey const &type) {
-    MechTouchTask *task = touch_task;
-    while (task != NULL) {
-        MechTouchTask *next = task->next;
-        if (task->GetHashId().value == type.value)
-            return true;
-        task = next;
-    }
-    return false;
-}
-
-void GameObject_s::KillTasks() {
-    MechTouchTask *task = touch_task;
-    while (task != NULL) {
-        MechTouchTask *next = task->next;
-        task->OnStop();
-        delete task;
-        task = next;
-    }
-    touch_task = NULL;
-}
-
-// ThingManager::AddThing @0x424c10. Appends at count; the pending
-// AddThingAfterThis reservation (field_0x14) is folded into the index and
-// cleared here.
-void ThingManager::AddThing(BaseThing *thing) {
-    i32 index = this->count;
-    if (thing != NULL) {
-        if (index < this->max_things) {
-            this->things[index] = thing;
-            index = index + 1;
-        }
-    }
-    index = index + this->field_0x14;
-    this->field_0x14 = 0;
-    this->count = index;
-}
-
-// ThingManager::AddThingAfterThis @0x424c40. Reserves the slot after the
-// current tail: bumps field_0x14 and stores the thing at count+field_0x14;
-// the next AddThing folds the reservation into count.
-void ThingManager::AddThingAfterThis(BaseThing *thing) {
-    if (thing != NULL) {
-        i32 index = this->field_0x14 + 1;
-        this->field_0x14 = index;
-        index = index + this->count;
-        if (index < this->max_things) {
-            this->things[index] = thing;
-        }
-    }
-}
-
-// ThingManager::DisplayThings @0x4252c0. Single pass over Display,
-// bracketed with timebar slot 3 ("Dis"). PanelRender uses this pass for the
-// display-layer things that render on top of the gameplay panel.
-void ThingManager::DisplayThings(ThingRenderData *data) {
-    const char *name = "Dis"; // timebar slot name @0x5734db
-
-    for (i32 i = 0; i < this->count; ++i) {
-        BaseThing *thing = this->things[i];
-        if (thing != NULL && (thing->flags & THING_FLAG_SKIP_DISPLAY) == 0) {
-            if (__builtin_expect(thing->profiling_0xc != 0, 0)) {
-                _NuTimeBarSlotBegin(this->timebar, 3, name);
-                thing = this->things[i];
-            }
-            thing->Display(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != 0) {
-                _NuTimeBarSlotEnd(this->timebar, 3);
-            }
-        }
-    }
-}
-
-void ThingManager::EffectsThings(ThingRenderData *data) {
-    const char *name = "Fx";
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EFFECTS) != 0) {
-            continue;
-        }
-        if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
-            _NuTimeBarSlotBegin(this->timebar, 5, name);
-        }
-        this->things[i]->Effects(data);
-        if (this->things[i]->profiling_0xc != 0) {
-            _NuTimeBarSlotEnd(this->timebar, 5);
-        }
-    }
-}
-
-// ThingManager::EnableActions @0x425930. Finds the first thing whose 0x4 id
-// matches and sets (invert==0) or clears (invert!=0) the given flags bits.
-void ThingManager::EnableActions(i32 id, i32 flags, i32 invert) {
-    i32 count = this->count;
-    if (count <= 0) {
-        return;
-    }
-    for (i32 i = 0; i < count; i++) {
-        BaseThing *thing = this->things[i];
-        if (thing == NULL) {
-            continue;
-        }
-        if (thing->field_0x4 == (u32)id) {
-            if (invert != 0) {
-                thing->flags &= ~(u32)flags;
-            } else {
-                thing->flags |= (u32)flags;
-            }
-            return;
-        }
-    }
-}
-
-void ThingManager::EnterLevelThings(ThingLevelData *data) {
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_ENTER_LEVEL) != 0) {
-            continue;
-        }
-        this->things[i]->EnterLevel(data);
-    }
-}
-
-void ThingManager::ExitLevelThings(ThingLevelData *data) {
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EXIT_LEVEL) != 0) {
-            continue;
-        }
-        this->things[i]->ExitLevel(data);
-    }
-}
-
-// ThingManager::ProcessThings @0x425460. Pass 1 always runs
-// ProcessEvenWhenPaused first; then, per ThingProcessData.paused, either
-// Process or ProcessOnlyWhenPaused. Each pass has its own opt-out flag. The count
-// is re-read every iteration because thing Process calls may add things.
-// Profiling flags select which things receive NuTimeBarSlotBegin/End calls.
-void ThingManager::ProcessThings(ThingProcessData *data) {
-    const char *name = "PROC";
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] != NULL && (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED) == 0) {
-            if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
-                _NuTimeBarSlotBegin(this->timebar, 0, name);
-            }
-            this->things[i]->ProcessEvenWhenPaused(data);
-            if (this->things[i]->profiling_0xc != 0) {
-                _NuTimeBarSlotEnd(this->timebar, 0);
-            }
-        }
-    }
-    if (data->paused == 0) {
-        for (i32 i = 0; i < this->count; ++i) {
-            if (this->things[i] != NULL && (this->things[i]->flags & THING_FLAG_SKIP_PROCESS) == 0) {
-                if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
-                    _NuTimeBarSlotBegin(this->timebar, 0, name);
-                }
-                this->things[i]->Process(data);
-                if (this->things[i]->profiling_0xc != 0) {
-                    _NuTimeBarSlotEnd(this->timebar, 0);
-                }
-            }
-        }
-    } else {
-        for (i32 i = 0; i < this->count; ++i) {
-            if (this->things[i] != NULL && (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED) == 0) {
-                if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
-                    _NuTimeBarSlotBegin(this->timebar, 0, name);
-                }
-                this->things[i]->ProcessOnlyWhenPaused(data);
-                if (this->things[i]->profiling_0xc != 0) {
-                    _NuTimeBarSlotEnd(this->timebar, 0);
-                }
-            }
-        }
-    }
-}
-
-i32 ThingManager::RemoveDependanciesThings(ThingRemoveData *data) {
-    i32 removed = 1;
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_REMOVE_DEPENDANCIES) != 0) {
-            continue;
-        }
-        removed &= this->things[i]->RemoveDependancies(data);
-    }
-    return removed;
-}
-
-void ThingManager::RemoveTemporaryThings() {
-    i32 i = this->count - 1;
-    if (i >= this->permanent_count) {
-        do {
-            delete this->things[i];
-            this->things[i] = NULL;
-            --i;
-        } while (i >= this->permanent_count);
-    }
-    this->count = this->permanent_count;
-}
-
-// ThingManager::RenderThings @0x425390. Single pass over Render,
-// bracketed with timebar slot 1 ("Rnd").
-void ThingManager::RenderThings(ThingRenderData *data) {
-    const char *name = "Rnd"; // timebar slot name @0x5734df
-
-    for (i32 i = 0; i < this->count; ++i) {
-        BaseThing *thing = this->things[i];
-        if (thing != NULL && (thing->flags & THING_FLAG_SKIP_RENDER) == 0) {
-            if (__builtin_expect(thing->profiling_0xc != 0, 0)) {
-                _NuTimeBarSlotBegin(this->timebar, 1, name);
-                thing = this->things[i];
-            }
-            thing->Render(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != 0) {
-                _NuTimeBarSlotEnd(this->timebar, 1);
-            }
-        }
-    }
-}
-
-void ThingManager::ResetThings(ThingResetData *data) {
-    const char *name = "Res";
-
-    for (i32 i = 0; i < this->count; ++i) {
-        if (this->things[i] != NULL && (this->things[i]->flags & 8) == 0) {
-            if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
-                _NuTimeBarSlotBegin(this->timebar, 4, name);
-            }
-            this->things[i]->Reset(data);
-            if (this->things[i]->profiling_0xc != 0) {
-                _NuTimeBarSlotEnd(this->timebar, 4);
-            }
-        }
-    }
-}
-
-// ThingManager::ThingManager @0x425870. Stores the manager in theThingManager
-// and carves the thing-pointer array from the
-// theMemoryManager linear pool. On allocation failure the array is NULL — the
-// manager then simply never accepts things (AddThing's count < max check).
-ThingManager::ThingManager(i32 max_things) {
-    const usize need = static_cast<usize>(max_things) * sizeof(*things);
-
-    BaseThing **array = NULL;
-    if (*theMemoryManager.end_cell - *theMemoryManager.cursor_cell > need) {
-        const usize aligned = ALIGN(*theMemoryManager.cursor_cell, 0x10);
-        *theMemoryManager.cursor_cell = aligned + need;
-        array = reinterpret_cast<BaseThing **>(aligned);
-        memset(array, 0, need);
-        theMemoryManager.allocated += need;
-        theMemoryManager.remaining -= need;
-        theMemoryManager.high_water = *theMemoryManager.cursor_cell;
-    }
-    this->things = array;
-    this->max_things = max_things;
-    // Profiling sets are a deferred subsystem; the handle is only ever passed
-    // to the NuTimeBarSlotBegin/End stubs, so NULL behaves like the original
-    // with profiling disabled.
-    this->timebar = NuTimeBarCreateSet(0);
-    theThingManager = this;
-}
-
-// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
-inline void ThingManager::operator delete(void *thing, usize size) {
-    theMemoryManager.FreePool(thing, size);
-}
-
-static eduimenu_s *edTimingMenu;
-static u32 EdAttr[] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
-
-void ThingManager::cbEdTimingSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
-    ThingManager *manager = static_cast<ThingManager *>(theThingManager);
-    u32 selection = item->data;
-    manager->ed_timing_state = selection;
-    manager->field_0x1c = selection - 3;
-    if (selection <= 3) {
-        i32 enabled = selection == 3;
-        for (i32 i = 0; i < manager->count; ++i) {
-            manager->things[i]->profiling_0xc = enabled;
-        }
-        if (!(selection <= 1)) {
-            i32 index = 0;
-            for (eduiitem_s *entry = menu->first; entry != NULL; entry = entry->next) {
-                if (index < 3) {
-                    entry->highlighted = 0;
-                } else {
-                    entry->highlighted = enabled;
-                }
-                ++index;
-            }
-        } else {
-            eduiMenuDestroy(menu);
-            edTimingMenu = NULL;
-        }
-        NuTimeBarEnable(item->data != 0);
-    } else {
-        manager->things[selection - 4]->profiling_0xc ^= 1;
-    }
-}
-
-void ThingManager::cbEdTrackCancel(eduimenu_s *menu, eduimenu_s *) {
-    eduiMenuDestroy(menu);
-    edTimingMenu = NULL;
-}
-
-void ThingManager::edTimingEnter() {
-    edTimingMenu = eduiMenuCreate(30, 30, 250, 320, NULL, cbEdTrackCancel, "Timings");
-    if (edTimingMenu != NULL) {
-        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(0, EdAttr, 0, 1, cbEdTimingSelect, "Off"));
-        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(1, EdAttr, 0, 2, cbEdTimingSelect, "System"));
-        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(2, EdAttr, 0, 3, cbEdTimingSelect, "No Things"));
-        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(3, EdAttr, 0, 4, cbEdTimingSelect, "All Things"));
-        for (i32 i = 0; i < static_cast<ThingManager *>(theThingManager)->count; ++i) {
-            eduiMenuAddItem(
-                edTimingMenu,
-                eduiItemToggleCreate(
-                    i + 4, EdAttr, static_cast<ThingManager *>(theThingManager)->things[i]->profiling_0xc, i + 5,
-                    cbEdTimingSelect,
-                    const_cast<char *>(static_cast<ThingManager *>(theThingManager)->things[i]->GetName())));
-        }
-    }
-}
-
-void ThingManager::edTimingInit() {
-    static_cast<ThingManager *>(theThingManager)->ed_timing_state = 0;
-}
-
-i32 ThingManager::edTimingProc(float delta_time, nupad_s *pad) {
-    NuFntSet(0);
-    NuFntScale(12, 12);
-    eduiMenuProcess(edTimingMenu, delta_time, pad);
-    return edTimingMenu == NULL ? 2 : 0;
-}
-
-void ThingManager::edTimingRender() {
-    eduiMenuRender(edTimingMenu);
-}
-
-extern "C" {
-    ed_module_s edTimingDesc = {NULL,
-                                NULL,
-                                "Timings",
-                                ThingManager::edTimingInit,
-                                NULL,
-                                ThingManager::edTimingEnter,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                0x656d6974,
-                                ThingManager::edTimingProc,
-                                ThingManager::edTimingRender,
-                                NULL};
-}
-
-i32 SpecialObject::Exists() const {
-    return NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special));
-}
-
-i32 SpecialObject::GetCollision() const {
-    return NuSpecialGetCollision(const_cast<nuhspecial_s *>(&special)) != 0;
-}
-
-VuVec const *SpecialObject::GetCurrentPosition() const {
-    return reinterpret_cast<VuVec const *>(NuSpecialGetDrawPos(const_cast<nuhspecial_s *>(&special)));
-}
-
-VuMtx const *SpecialObject::GetCurrentTransform() const {
-    return reinterpret_cast<VuMtx const *>(NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
-}
-
-VuVec const *SpecialObject::GetInitialPosition() const {
-    return reinterpret_cast<VuVec const *>(NuSpecialGetPos(const_cast<nuhspecial_s *>(&special)));
-}
-
-VuMtx const *SpecialObject::GetInitialTransform() const {
-    return reinterpret_cast<VuMtx const *>(NuSpecialGetMtx(const_cast<nuhspecial_s *>(&special)));
-}
-
-numtl_s *SpecialObject::GetMtl(i32 index) const {
-    return NuSpecialGetMtl(const_cast<nuhspecial_s *>(&special), index);
-}
-
-char const *SpecialObject::GetName() const {
-    return NuSpecialGetName(const_cast<nuhspecial_s *>(&special));
-}
-
-i32 SpecialObject::GetNumMtls() const {
-    return NuSpecialNumMtls(const_cast<nuhspecial_s *>(&special));
-}
-
-f32 SpecialObject::GetRadius() const {
-    f32 radius = 1.0f;
-    NUVEC position;
-    if (NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special))) {
-        NuSpecialGetRadius(const_cast<nuhspecial_s *>(&special), &position, &radius);
-    }
-    return radius;
-}
-
-i32 SpecialObject::GetVisibility() const {
-    return NuSpecialGetVisibilityFn(const_cast<nuhspecial_s *>(&special));
-}
-
-void SpecialObject::Render(VuMtx const *matrix) const {
-    if (matrix != NULL) {
-        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special), reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
-    } else {
-        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special),
-                        NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
-    }
-}
-
-void SpecialObject::SetCollision(i32 enabled) {
-    NuSpecialSetCollision(&special, enabled);
-}
-
-void SpecialObject::SetCurrentPosition(VuVec const *position) {
-    NuSpecialSetDrawPos(&special, reinterpret_cast<NUVEC *>(const_cast<VuVec *>(position)));
-}
-
-void SpecialObject::SetCurrentTransform(VuMtx const *matrix) {
-    NuSpecialSetDrawMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
-}
-
-void SpecialObject::SetInitialPosition(VuVec const *) {
-}
-
-void SpecialObject::SetInitialTransform(VuMtx const *matrix) {
-    NuSpecialSetMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
-}
-
-void SpecialObject::SetVisibility(i32 enabled) {
-    NuSpecialSetVisibility(&special, enabled);
-}
-
-SpecialObject::SpecialObject() {
-    NuSpecialClear(&special);
-}
-
-void GameThingManager::AddLevelOnlyThings() {
-}
-
-// GameThingManager::AddOnceOnlyThings @0x4e8bb0: registers the MechSystems
-// singleton as the manager's once-only thing (via the virtual AddThing slot).
-void GameThingManager::AddOnceOnlyThings() {
-    this->AddThing(MechSystems::Get());
-}
-
-// GameThingManager::GameThingManager @0x4e8b00: stores the object in
-// theGameThings (the vptr switch to the derived vtable is compiler-generated).
-GameThingManager::GameThingManager(i32 max_things) : ThingManager(max_things) {
-    theGameThings = this;
-}
-
-// GameThingManager D1 dtor @0x4e8a80 clears the global before destruction.
-GameThingManager::~GameThingManager() {
-    theGameThings = NULL;
-}
-
-// BaseThing::BaseThing @0x425840 zeroes the data fields after the vptr.
-BaseThing::BaseThing() {
-    this->field_0x4 = 0;
-    this->flags = 0;
-    this->profiling_0xc = 0;
-}
-
-// BaseThing defaults @0x424bf0 (dtor) and 0x425990..0x425a20 (interface
-// defaults); RemoveDependancies returns 1, the rest are no-ops. GetName holds
-// a 0 slot in the original base vtable (pure) — see basething.h.
-BaseThing::~BaseThing() {
-}
-
-i32 BaseThing::RemoveDependancies(ThingRemoveData *) {
-    return 1;
-}
-
-void BaseThing::EnterLevel(ThingLevelData *) {
-}
-
-void BaseThing::ExitLevel(ThingLevelData *) {
-}
-
-void BaseThing::Reset(ThingResetData *) {
-}
-
-void BaseThing::Process(ThingProcessData *) {
-}
-
-void BaseThing::ProcessEvenWhenPaused(ThingProcessData *) {
-}
-
-void BaseThing::ProcessOnlyWhenPaused(ThingProcessData *) {
-}
-
-void BaseThing::Render(ThingRenderData *) {
-}
-
-void BaseThing::Display(ThingRenderData *) {
-}
-
-void BaseThing::Effects(ThingRenderData *) {
-}
-
-extern CUSTOMISER *CharacterCustomiser;
-extern CUSTOMPIECE *Customiser_FindPieceByName(CUSTOMISER *, char *, i32 *, i32 *);
-extern void Customiser_Set100PercentPieces(CUSTOMISER *);
-
-static __used__ void LEGO_100PercentFn() {
-    if (CharacterCustomiser != NULL) {
-        Customiser_Set100PercentPieces(CharacterCustomiser);
-        i32 index;
-        i32 piece;
-        if (Customiser_FindPieceByName(CharacterCustomiser, "hat_hair_00", &index, &piece) != NULL && index != -1 &&
-            piece != -1) {
-            CharacterCustomiser->save->pieces[index] = static_cast<i16>(piece);
-        }
-    }
-}
-static __used__ void LEGO_AllGoldBricksFn() {
-}
-
-i32 NoLayerKill(GameObject_s *object) {
-    GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    if ((data->flags_094[2] & 0x80) != 0)
-        return object->apiobj.field_0x27f == 6;
-    return 0;
-}
-
-
-
-void InitExtraList() {
-    for (i32 i = 0; i < 44; ++i) {
-        NuStrCpy(ExtraItems[i].special_name, Cheat[i].extra_name);
-        NuSpecialFind(WORLD->current_gscn, &ExtraItems[i].special, ExtraItems[i].special_name, 1);
-        ExtraItems[i].type = 2;
-        ExtraItems[i].unlocked = 0;
-        ExtraItems[i].item_id = i;
-
-        u32 unlocked = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7bf0)[i >> 5];
-        if (((static_cast<u64>(unlocked) >> (i & 0x1f)) & 1) != 0) {
-            ExtraItems[i].unlocked = 1;
-            reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7c00)[i >> 5] |= 1u << (i & 0x1f);
-        }
-        ExtraItems[i].price = Cheat[i].extra_price;
-    }
-
-    SHOPEXTRACOUNT = 44;
-    for (i32 i = 0; i < SHOPEXTRACOUNT; ++i) {
-        char name[32];
-        NuStrCpy(name, ExtraItems[i].special_name);
-        NuStrCat(name, "b");
-        NuSpecialFind(WORLD->current_gscn, &extrasils[i], name, 1);
-    }
-}
-
-GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_only, i32 vehicle_only,
-                             i32 non_level_only) {
-    GameObject_s *object = Obj;
-    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
-        if ((object->apiobj.flags_low & APIOBJECT_FLAG_IN_USE) != 0 &&
-            (vehicle_only == 0 || (object->apiobj.flags_high & 0x10) != 0) &&
-            (required_flags == 0 || (object->apiobj.field_0x1f4 & required_flags) == required_flags) &&
-            (character_id == -1 || object->id == character_id) &&
-            (alive_only == 0 ||
-             (object->apiobj.field_0x287 == 0 && (CInfo[object->character_context].flags & 0x8000) == 0)) &&
-            (non_level_only == 0 || object->field_0x107c == -1)) {
-            return object;
-        }
-    }
-    return NULL;
-}
-
-extern "C" void NuSound3ClearLoopHold(NUVEC *, i32);
-void Grapple_RemoveDynamic(void *);
-void Shards_HandleLostObj(WORLDINFO_s *, GameObject_s *);
-void DestroySnakeBody(GameObject_s *);
-void BlowUpSnakeBody(GameObject_s *);
-void PlayDieSfx(GameObject_s *);
-void DieRumble(GameObject_s *);
-void GetTakeOverPos(GameObject_s *, NUVEC *);
-void SetToLastSafePos(GameObject_s *);
-void ReleaseLever(GameObject_s *);
-void Batarangs_CheckLostData(void *);
-i32 SpecialMove_ReleaseVictim(GameObject_s *);
-void ReleaseEat(GameObject_s *);
-void ReleasePush(GameObject_s *);
-void ReleaseForce(GameObject_s *, i32);
-void LoseHelmet(GameObject_s *, i32, i32);
-EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
-extern EXPLOSION Explosion[8];
-i32 speeder_hitpoints_lost;
-extern i16 id_MOUSEDROID;
-
-void ConstantRumble(GameObject_s *object, f32 strength, f32 phase);
-
-void PowerUp_Update(GameObject_s *object) {
-    if (object->field_0xdec > 0.0f) {
-        object->field_0xdec -= FRAMETIME;
-        if (object->field_0xdec <= 0.0f) {
-            GameAudio_PlaySfx(0x52, NULL, 0, 0);
-        } else {
-            GameAudio_PlaySfx(0x51, NULL, 0, 0);
-            ConstantRumble(object, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.5f, 0.0f);
-        }
-    }
-}
-
-
-GameObject_s *player_tag_to;
-GameObject_s *player_tag_from;
-f32 player_tag_timer;
-i32 do_player_tag;
-i32 TakeOverYodaSeekDistanceHack(GameObject_s *, GameObject_s *, NUVEC *);
-extern char *ASCII_DOWN;
-
-
-
-void ScaleGameObject(GameObject_s *object) {
-    const f32 scale = object->apiobj.field_0xa8;
-    CHARACTERDATA *character = object->apiobj.character_data;
-    object->apiobj.scaled_radius = character->field13_0x2c * scale;
-    object->apiobj.collision_radius = object->field_0x1008 * scale;
-    object->apiobj.collision_height = object->apiobj.collision_radius * object->collision_y_scale;
-    object->apiobj.scaled_height = (character->field16_0x38 - character->field15_0x34) * object->field_0x1004;
-}
-
-void DestroySnakeBody(GameObject_s *obj);
-
-void RemoveGameObject(GameObject_s *obj, i32) {
-    if (obj == NULL) {
-        return;
-    }
-
-    obj->KillTasks();
-    obj->ClearAddons();
-    obj->ClearMechObjectInterface();
-
-    GameObject_s *other = Obj;
-    for (i32 i = 0; i < HIGHGAMEOBJECT; i++, other++) {
-        other->apiobj.collision_contact_mask &= ~obj->apiobj.collision_identity_mask;
-        other->apiobj.ai_awareness_mask &= ~(1ULL << obj->apiobj.field_0x289);
-        other->ai_seen_mask &= ~(1ULL << obj->apiobj.field_0x289);
-        other->ai_opponent_exclusion_mask &= ~(1ULL << obj->apiobj.field_0x289);
-    }
-
-    if (obj->pad_gamepad != NULL) {
-        obj->pad_gamepad->allocated_5a &= ~1u;
-    }
-    DestroySnakeBody(obj);
-    APIObjectDestroy(WORLD->api_object_sys, &obj->apiobj);
-
-    i32 object_count = 0;
-    for (i32 i = 0; i < 64; i++) {
-        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
-            object_count = i + 1;
-        }
-    }
-    HIGHGAMEOBJECT = object_count;
-    for (i32 i = 0; i < 8; i++) {
-        if (LevGameObject[i] == obj) {
-            LevGameObject[i] = NULL;
-        }
-    }
-}
-
-extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
-extern f32 TargetDist_Near2, TargetDist_Mid2;
-BOLTTYPE_s *BoltType_FindByID(i32, WORLDINFO_s *);
-
-extern i32 nethost;
-extern i16 id_PKDROID;
-void ResetAICreature(GameObject_s *, AISYS_s *);
-void SpawnCreatureFromCrate(GameObject_s *, f32, f32);
-void SetToLastSafePos(GameObject_s *);
-GameObject_s *GetOtherActivePlayer(GameObject_s *);
-void TakeOverGameObject(GameObject_s *, GameObject_s *, i32, i32);
-
-extern i32 adaptivedifficulty[3];
-extern i8 (*adtab)[4];
-f32 Hub_PadSpeed[2];
-u16 Hub_PadAngle[2];
-GameObject_s *CarWashHack;
-f32 AIFireIntervalMul = 1.0f;
-f32 GhostLightMul = 1.0f;
-f32 GhostLightTargetMul = 1.0f;
-f32 CurrentSpeedOverride;
-f32 lightning_sizew[2] = {0.02f, 0.02f};
-f32 lightning_sizel[2] = {0.1f, 0.1f};
-f32 lightning_sizewab[2] = {0.01f, 0.01f};
-f32 lightning_endw[2] = {0.1f, 0.1f};
-u32 lightning_col[2] = {0xff808040, 0xff808040};
-f32 CurrentSpeed = 10.0f;
-f32 BaseCurrentSpeed = 10.0f;
-extern AREADATA *PODSPRINT_ADATA;
-extern i16 id_ANAKINSNEWPOD, id_ANAKINSNEWPODGREEN, id_SEBULBASPOD;
-extern f32 tieonsfxwait, tieoffsfxwait;
-void MovePlayer_NETWORK(GameObject_s *);
-void UpdateRumble(RUMBLEPACKET *);
-void Player_ToggleCharacter(GameObject_s *, i32, i32);
-void AveragePlayerCurrentSpeedMul();
-void RegenerateHearts(GameObject_s *);
-void AddSurfaceRipples(GameObject_s *);
-void AddSurfaceDebris(GameObject_s *);
-
-void GameAntinode_Update(GAMEANTINODESYS_s *system);
-
-GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *script_name, AIPATHINFO_s *path_info,
-                                 AIGROUP_s *group, i32 set_on_surface, nugspline_s *spline, nuvec_s *spline_offset,
-                                 i32 spline_mode, i32 creature_set) {
-    u16 yaw, pitch;
-    NUVEC offset, spline_point;
-    const bool has_no_spline = spline == NULL;
-    if (position == NULL && spline == NULL) {
-        return NULL;
-    }
-
-    if (NOAICREATURES != 0 && model != id_DRAGBOMB && (GCDataList[model].flags_090 & 0x40) == 0) {
-        return NULL;
-    }
-
-    u32 arcade_mode;
-    Arcade_GetMode(&arcade_mode);
-    if ((arcade_mode & 0x10) != 0) {
-        return NULL;
-    }
-
-    if (static_cast<u32>(model) >= 0x154 || apicharsys->playermodelids[model] == -1) {
-        return NULL;
-    }
-
-    GameObject_s *object = AddCreature(model, 0);
-    if (object == NULL) {
-        return NULL;
-    }
-
-    object->apiobj.field_0x1f4 |= APIOBJECT_MOTION_FLAG_AI_CONTROLLED;
-    CHARACTERDATA *character = &apicharsys->char_data[model];
-    const u32 model_flags = character->model_flags;
-    if ((model_flags & 0x200) != 0) {
-        object->apiobj.field_0x1f4 |= 0x404;
-    } else if ((model_flags & 0x400) != 0) {
-        object->apiobj.field_0x1f4 |= 0x401;
-    }
-    if ((model_flags & 0x1000) != 0)
-        object->field_0x1050 |= 5;
-    else
-        object->field_0x1050 |= 1;
-
-    GAMECHARACTERDATA &game_character = *(GAMECHARACTERDATA *)character->field11_0x24;
-    object->apiobj.viewdistance = game_character.viewdistance;
-    object->apiobj.heardistance = game_character.heardistance;
-    object->apiobj.maxviewheight = game_character.maxviewheight;
-    object->apiobj.minviewheight = game_character.minviewheight;
-    object->field_0xef9 &= static_cast<u8>(~8u);
-    object->ai.pending_nearest_metric = 1000000000.0f;
-    object->ai.pending_opponent_metric = 1000000000.0f;
-    object->field_0xef8 &= static_cast<u8>(~1u);
-    object->ai.field_0x1e5 &= static_cast<u8>(~0x50u);
-    object->apiobj.ai_awareness_mask = 0;
-    object->ai_seen_mask = 0;
-    object->field_0xecc = 0;
-    object->field_0xed0 = 0;
-    object->field_0xed8 = 0;
-    object->ai.nearest_opponent = NULL;
-    object->ai.pending_nearest_opponent = NULL;
-    object->ai.pending_opponent = NULL;
-    object->ai.opponent = NULL;
-    object->ai.antinode_timer = 0.0f;
-    InitPlayerAI(object);
-
-    if (spline != NULL) {
-        SPLINEPOS_s *spline_position = reinterpret_cast<SPLINEPOS_s *>(&object->movement_spline);
-        InitSplinePosition(spline_position, spline, 0.0f, spline_mode);
-        SPLINEPOSITION_RUNTIME_s *runtime = reinterpret_cast<SPLINEPOSITION_RUNTIME_s *>(spline_position);
-        PointAlongSpline(runtime->spline, runtime->normalized_position, &spline_point, &yaw, &pitch, runtime->looping);
-        object->apiobj.movement_facing_angle = yaw;
-        object->apiobj.facing_angle = yaw;
-        object->apiobj.field_0x276 = yaw;
-        object->apiobj.pitch_angle = static_cast<u16>(-pitch);
-
-        if (spline_offset != NULL) {
-            NUVEC *stored_offset = &object->movement_spline_offset;
-            *stored_offset = *spline_offset;
-            if (spline_offset->x != 0.0f || spline_offset->y != 0.0f || spline_offset->z != 0.0f) {
-                NuVecRotateX(&offset, spline_offset, static_cast<u16>(-pitch));
-                NuVecRotateY(&offset, &offset, yaw);
-                NuVecAdd(&spline_point, &spline_point, &offset);
-            }
-        }
-        object->apiobj.position = spline_point;
-    } else {
-        object->apiobj.position = *position;
-        object->apiobj.movement_facing_angle = static_cast<u16>(angle);
-        object->apiobj.facing_angle = static_cast<u16>(angle);
-        object->apiobj.field_0x276 = static_cast<u16>(angle);
-        if (group != NULL) {
-            AddToAIGroup(group, &object->apiobj);
-            offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
-            if (object->ai.group_column & 1)
-                offset.x = -offset.x;
-            offset.z = -group->z_spacing * object->ai.group_member;
-            offset.y = 0.0f;
-            NuVecRotateY(&offset, &offset, angle);
-            NuVecAdd(&object->apiobj.position, &object->apiobj.position, &offset);
-        }
-    }
-
-    ResetPlayerMoves(object);
-    plr_lastpos = object->apiobj.start_position = object->apiobj.collision_position = object->apiobj.initial_position =
-        object->apiobj.position;
-    object->apiobj.velocity = v000;
-
-    GetTopBot(object);
-    GameObjectDimensions(object);
-    ResetRumble(&object->pad_gamepad->rumble_packet);
-    ResetLights(&object->apiobj.position, &object->light_data, WORLD->rtl_set);
-
-    object->field_0x661 = 0xff;
-    object->sock_segment = -1;
-    if (WORLD->sock_sys != NULL) {
-        extern i32 complexsockposition_forcesock;
-        if (Door_NextSock != -1 && WORLD->sock_sys->sock[Door_NextSock].valid != 0)
-            complexsockposition_forcesock = Door_NextSock;
-        ComplexSockPosition(WORLD->sock_sys, &object->apiobj.position, -1, -1, &object->sock_position);
-        ComplexSockAngles(&object->sock_angles);
-    }
-    NuVecRotateYValZ(&object->facing_direction, 1.0f, object->apiobj.field_0x276);
-    object->apiobj.model_draw_result = 1;
-    object->use_model_origin = 0;
-    object->apiobj.field_0x288 = 0;
-    object->field_0xefe &= ~4u;
-
-    if (has_no_spline) {
-        InitSurfaceInfo(object);
-        if (set_on_surface != 0) {
-            SetObjOnSurface(object, 0);
-        }
-    }
-    PortalGameObject(object, 1, 1, -1, WORLD->current_gscn);
-    if (reset_restart != 0) {
-        GAMECHARACTERDATA *config = (GAMECHARACTERDATA *)object->apiobj.character_data->field11_0x24;
-        object->hitpoints = config->hitpoints;
-        object->field_0xe38 = 4;
-        object->current_hp = config->hitpoints;
-        object->field_0xe37 = config->field_0xf5;
-    }
-
-    object->apiobj.field_0x1f4 &= ~0x100u;
-    object->apiobj.field_0x1f8 &= static_cast<u16>(~4u);
-    object->field_0x1004 = 1.0f;
-    object->apiobj.field_0x287 = 0;
-    object->field_0x7a5 = 0xff;
-    object->apiobj.field_0x285 = 0;
-    memset(&object->ai.path_info, 0, sizeof(object->ai.path_info));
-    object->ai.field_0x124 = -1;
-    object->ai.field_0x138 = 0xff;
-    object->ai.field_0x139 = 0;
-    if (has_no_spline) {
-        if (path_info != NULL) {
-            AISysCharacterSetPath(&object->ai, path_info->path);
-            AISysCharacterSetPathCnx(&object->ai, &object->apiobj.position, path_info->connection,
-                                     path_info->direction);
-        }
-        if (object->ai.path_info.connection == NULL) {
-            AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 0xff,
-                                     static_cast<i8>(object->apiobj.field_0x27d));
-        }
-    }
-    AIScriptProcessorInit(WORLD->ai_sys, &object->ai, &object->ai.script_process, NULL, script_name, NULL, 1, NULL,
-                          NULL);
-    object->apiobj.field_0x214 = 2000000.0f;
-    if (object->ai.group != NULL) {
-        AIGROUP *active_group = object->ai.group;
-        u32 member = object->ai.group_member_index;
-        active_group->member_is_alive |= 1ULL << member;
-        AIROW *row = &active_group->rows[object->ai.group_row];
-        u32 column = object->ai.group_member_index - object->ai.group_row * active_group->count_across;
-        row->is_alive |= 1ULL << column;
-        if (object->ai.group_column == 0) {
-            row->pos = object->apiobj.position;
-            row->path_info = object->ai.path_info;
-            row->next_connection = NULL;
-            row->y_rot = object->apiobj.field_0x276;
-            row->is_turning = 0;
-        }
-    }
-    PreResetCode(object);
-    PostResetCode(object);
-    GameObjectOrigin(object);
-    object->ai_update_position = object->apiobj.last_safe_position = object->apiobj.position;
-    if (static_cast<u32>(creature_set - 1) < 16) {
-        object->ai.creature_set = static_cast<u8>(creature_set);
-        ++aicreature_sets_alive[creature_set - 1];
-    }
-    return object;
-}
-
-GameObject_s *GetNamedGameObject(AISYS_s *system, char *name) {
-    if (GetNamedAPIObjectFn != NULL) {
-        APIOBJECT *object = GetNamedAPIObjectFn(system, name);
-        if (object != NULL) {
-            return object->objptr;
-        }
-    }
-    return NULL;
-}
-
-void TakeOverGameObject2(GameObject_s *, GameObject_s *, i32);
-
-
-void RegisterTakeOverObject(GameObject_s *object);
-
-
-void DeactivateGameObject(GameObject_s *object) {
-    if (object == NULL) {
-        return;
-    }
-
-    if (object->field_0xcc0 != NULL) {
-        if ((object->apiobj.field_0x1f4 & 0x4000) != 0) {
-            ReleaseTakeOver(object, 1);
-        } else {
-            KillGameObject(object->field_0xcc0, 4, 0);
-            object->apiobj.character = 0;
-        }
-    }
-    object->apiobj.character = 0;
-
-    if (object->ai.field_0x134 != 0xff &&
-        AIScriptSetBaseScriptStateByName(reinterpret_cast<AISCRIPTPROCESS *>(&object->ai),
-                                         const_cast<char *>("InActive")) != 0) {
-        object->ai.reset_mode = 0;
-        WORLD->ai_sys->creatures[object->ai.field_0x134].activate_type = 2;
-    } else {
-        object->ai.reset_mode = 4;
-    }
-}
-
-i32 EquivalentObject_Find(WORLDINFO_s *world, nuhspecial_s *special) {
-    if (special != NULL && NuSpecialExistsFn(special)) {
-        EQUIVALENTOBJECTGROUP_s *group = world->equivalent_groups;
-        if (group != NULL) {
-            for (i32 group_index = 0; group_index < world->equivalent_group_count; ++group_index) {
-                for (i32 i = 0; i < group->object_count; ++i) {
-                    if (NuSpecialCompare(special, &group->objects[i])) {
-                        for (i32 j = 0; j < group->object_count; ++j) {
-                            if (NuSpecialGetVisibilityFn(&group->objects[j])) {
-                                *special = group->objects[j];
-                                return 1;
-                            }
-                        }
-                        return 0;
-                    }
-                }
-                group = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(reinterpret_cast<u8 *>(group) + group->byte_size);
-            }
-        }
-    }
-    return 0;
-}
-
-GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
-                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
-                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
-                                    bool first_match) {
-    GameObject_s *nearest = NULL;
-    f32 nearest_distance = 100000000.0f;
-    f32 radius_squared = radius * radius;
-    GameObject_s *object = Obj;
-    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
-            (object->field_0xe20 & 0x20) || (CInfo[object->character_context].flags & 0x8000))
-            continue;
-        if (character_id != -1 && object->id != character_id)
-            continue;
-        if (player_index >= 0) {
-            if (player_index <= 1) {
-                if (object->apiobj.field_0x27c != player_index)
-                    continue;
-            } else if (player_index == 99) {
-                if (object->apiobj.field_0x27c == -1)
-                    continue;
-            } else if (player_index == 100) {
-                if (object->apiobj.field_0x27c != -1)
-                    continue;
-            }
-        }
-        if (exclude && object == exclude)
-            continue;
-        if (required_flags && (object->apiobj.character_data->model_flags & required_flags) != required_flags)
-            continue;
-        if (animation != -1 && object->apiobj.character_model->model_data_b[animation] == NULL)
-            continue;
-        if (filter && !filter(object))
-            continue;
-        f32 x = object->apiobj.collision_position.x - position->x;
-        f32 y = object->apiobj.collision_position.y - position->y;
-        f32 z = object->apiobj.collision_position.z - position->z;
-        f32 distance = horizontal_only ? x * x + z * z : x * x + y * y + z * z;
-        if (exclude) {
-            if (radius_squared <= 0.0f || distance < radius_squared) {
-                f32 combined_radius = exclude->apiobj.collision_radius + object->apiobj.collision_radius + extra_radius;
-                if (distance < combined_radius * combined_radius && distance < nearest_distance) {
-                    nearest_distance = distance;
-                    nearest = object;
-                    if (first_match)
-                        break;
-                }
-            }
-        } else if ((radius_squared <= 0.0f || distance < radius_squared) && distance < nearest_distance) {
-            nearest_distance = distance;
-            nearest = object;
-            if (first_match)
-                break;
-        }
-    }
-    if (nearest && distance_squared)
-        *distance_squared = nearest_distance;
-    return nearest;
-}
-
-i32 GameObjectNearFloor(GameObject_s *object, f32 height, f32 *distance) {
-    const f32 no_floor_height = 2000000.0f;
-    const f32 floor_height = object->apiobj.field_0x218;
-    if (floor_height != no_floor_height) {
-        const f32 radius_scale = object->apiobj.collision_radius / 0.225f;
-        i32 height_steps = static_cast<i32>(height);
-        if (height_steps < 0) {
-            height_steps = 0;
-        }
-        f32 tolerance = static_cast<f32>(height_steps) * 0.025f;
-        f32 radius_tolerance = radius_scale * tolerance;
-        if (radius_tolerance < tolerance) {
-            radius_tolerance = tolerance;
-        }
-        tolerance = radius_tolerance;
-
-        const f32 floor_distance = object->apiobj.collision_min.y - floor_height;
-        if (distance != NULL) {
-            *distance = floor_distance;
-        }
-        return tolerance > floor_distance;
-    }
-
-    if (distance != NULL) {
-        *distance = no_floor_height;
-    }
-    return 0;
-}
-
-void GameObjectToCameraDistances() {
-    const NUVEC camera_position = GameCam->pos;
-    GameObject_s *object = Obj;
-    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
-        const u16 required_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
-        if ((object->apiobj.field_0x1f8 & required_flags) != required_flags) {
-            continue;
-        }
-
-        const f32 dx = camera_position.x - object->apiobj.position.x;
-        const f32 dy = camera_position.y - object->apiobj.position.y;
-        const f32 dz = camera_position.z - object->apiobj.position.z;
-        object->ai_update_distance = NuFsqrt(dx * dx + dy * dy + dz * dz);
-    }
-}
-
-extern "C" {
-    extern debris_chunk_control_s *debris_chunk_control_stack[2];
-    extern debris_chunk_control_s **freechunkcontrols;
-    extern i32 freechunkcontrolsptr;
-}
-void RemoveChunkControlFromStack(debris_chunk_control_s *, debris_chunk_control_s **);
-void RemoveAnyChunkControls(i32 *chunk) {
-    for (i32 i = 0; i < 2; ++i) {
-        for (debris_chunk_control_s *control = debris_chunk_control_stack[i]; control != NULL;) {
-            debris_chunk_control_s *next = control->next;
-            if (control->particle_chunk == reinterpret_cast<dma_particle_chunk_s *>(chunk)) {
-                RemoveChunkControlFromStack(control, &debris_chunk_control_stack[i]);
-                freechunkcontrols[--freechunkcontrolsptr] = control;
-                control->particle_chunk = NULL;
-            }
-            control = next;
-        }
-    }
-}
-
-void RemoveChunkFromRenderStack(particlechunkrendertype_s *chunk, particlechunkrendertype_s **stack) {
-    if (*stack == chunk) {
-        particlechunkrendertype_s *next = chunk->next;
-        *stack = next;
-        if (next != NULL) {
-            next->previous = NULL;
-        }
-    } else if (chunk->previous != NULL) {
-        chunk->previous->next = chunk->next;
-        if (chunk->next != NULL) {
-            chunk->next->previous = chunk->previous;
-        }
-    }
-    chunk->previous = NULL;
-    chunk->next = NULL;
-}
-
-void RemoveChunkControlFromStack(debris_chunk_control_s *control, debris_chunk_control_s **stack) {
-    debris_chunk_control_s **link = stack;
-    while (*link != NULL) {
-        if (*link == control) {
-            *link = control->next;
-            break;
-        }
-        link = &(*link)->next;
-    }
-    control->next = NULL;
-}
-
-extern "C" debkeydatatype_s *debris_keystack;
-
-void RemoveDebrisEffectFromStack(debkeydatatype_s *key) {
-    if (key->next == NULL) {
-        debris_keystack = key->previous;
-        if (debris_keystack != NULL) {
-            debris_keystack->next = NULL;
-        }
-    } else {
-        key->next->previous = key->previous;
-        if (key->previous != NULL) {
-            key->previous->next = key->next;
-        }
-    }
-    key->next = NULL;
-    key->previous = NULL;
-}

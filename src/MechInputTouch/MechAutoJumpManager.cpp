@@ -1,5 +1,8 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
-#include "MechInputTouch_types.h"
+#include "MechInputTouch/MechInputTouch_types.h"
 
 #include "gameapi/ai/aisys/aisys.h"
 #include "legoapi/ai/core/legoai.h"
@@ -12,6 +15,87 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/legoapi_types.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuvec.h"
+#include <string.h>
+#include <float.h>
+#include <math.h>
+#include "editor/edpath.h"
+#include "batman.h"
+#include <stdio.h>
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nulist.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "gameapi/edtools/edui.h"
+#include "nu2api/nucore/nupad.h"
+#include <stdint.h>
+#include "nu2api/nu3d/numtl.h"
+#include "editor/edpath_types.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/render/core/render.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/render/light/shadow.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/props/doors/door.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/characters/motion/contexts.h"
+#include <stdlib.h>
+#include "nu2api/nucore/nuanim3.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "gameframework/saveload.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include <new>
+#include "legoapi/characters/motion/move.h"
 
 i32 testStreakAlpha = 32;
 f32 testColourSecF = 256.0f;
@@ -23,9 +107,6 @@ f32 testStreakMinDist = 1.0f;
 f32 testStreakSpeed = 1.0f;
 f32 testStreakCrossSize = 0.1f;
 f32 testStreakClipTestRadius = 0.2f;
-extern i32 show_autojump_hint;
-extern i32 id_HINT_LSW_AUTOJUMP;
-extern i32 id_HINT_LSW_AUTOJUMP_FAIL;
 
 namespace {
     struct AutoJumpStreakLink {
@@ -43,6 +124,225 @@ namespace {
     };
     DECOMP_ASSERT(sizeof(AutoJumpStreakLink) == 0x40, "AutoJumpStreakLink size");
 } // namespace
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct EDAISHAREDPATHNODE_s;
+struct AIPATH_s;
+struct eduimenu_s;
+struct eduiitem_s;
+struct nuvec_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+struct EDCREATURE_s;
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+// Retail keeps only the IPA-SRA clone, which takes the other object's x and z by address.
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+struct AISYS_s;
+
+// NuFileExists @nufile (nucore_plain.cpp).
+
+MechAutoJumpManager::MechAutoJumpManager(AISYS_s *ai_system) {
+    if (ai_system != nullptr) {
+        streak_time = 0.0f;
+        ai_sys = ai_system;
+        streaks.head = nullptr;
+        streaks.tail = nullptr;
+        jump_connections.head = nullptr;
+        jump_connections.tail = nullptr;
+    }
+}
+
+void MechAutoJumpManager::Init() {
+}
+
+void MechAutoJumpManager::DeleteJumpConnection(MechAutoJumpConnection *connection) {
+    if (connection != NULL) {
+        AutoJumpStreakLink *streak = reinterpret_cast<AutoJumpStreakLink *>(NuLinkedListGetHead(&streaks));
+        while (streak != NULL) {
+            if (streak->connection == connection) {
+                streak->connection = NULL;
+            }
+            streak = reinterpret_cast<AutoJumpStreakLink *>(
+                NuLinkedListGetNext(&streaks, reinterpret_cast<NULISTLNK *>(streak)));
+        }
+
+        NuLinkedListRemove(&jump_connections, reinterpret_cast<NULISTLNK *>(connection));
+        delete connection;
+    }
+}
+
+void MechAutoJumpManager::DeleteJumpConnectionsAndStreaks() {
+    AutoJumpStreakLink *streak;
+    while ((streak = reinterpret_cast<AutoJumpStreakLink *>(NuLinkedListGetHead(&streaks))) != NULL) {
+        NuLinkedListRemove(&streaks, reinterpret_cast<NULISTLNK *>(streak));
+        delete streak;
+    }
+
+    MechAutoJumpConnection *connection =
+        reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
+    while (connection != NULL) {
+        DeleteJumpConnection(connection);
+        connection = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
+    }
+}
+
+MechAutoJumpManager::~MechAutoJumpManager() {
+    DeleteJumpConnectionsAndStreaks();
+}
+
+bool AISysNodeCanReachThisJumpConnection(GameObject_s &, AIPATH_s &path, unsigned char node_index,
+                                         AIPATHCNX_s &jump_connection, i32 jump_direction) {
+    u8 from_node = jump_connection.node_indices[jump_direction];
+    u8 to_node = jump_connection.node_indices[jump_direction == 0];
+    while (node_index != from_node) {
+        if (node_index == to_node) {
+            return 0;
+        }
+        u8 connection_index = path.route_matrix[node_index][from_node];
+        if (connection_index == 0xff) {
+            return 0;
+        }
+        AIPATHCNX *connection = path.nodes[node_index].connections[connection_index];
+        if (connection == NULL) {
+            return 0;
+        }
+        u8 direction = node_index == connection->node_indices[1];
+        if ((connection->traversal_flags[direction] & mechAutoJumpCantReachFlags) != 0) {
+            return 0;
+        }
+        node_index = connection->node_indices[direction ^ 1];
+    }
+    return 1;
+}
+
+bool AISysCharacterCanReachThisJumpConnection(GameObject_s &object, AIPATH_s &path, AIPATHCNX_s &jump_connection,
+                                              i32 jump_direction) {
+    if (object.ai.path_info.path != &path || object.ai.path_info.connection == NULL) {
+        return 0;
+    }
+    u8 node_index = object.ai.path_info.dist < 0.5f ? object.ai.path_info.connection->node_indices[0]
+                                                    : object.ai.path_info.connection->node_indices[1];
+    return AISysNodeCanReachThisJumpConnection(object, path, node_index, jump_connection, jump_direction);
+}
+
+u32 DoSomeChecks(GameObject_s &object, AIPATH_s &path, AIPATHCNX_s &connection, i32 direction) {
+    AIPATHNODE *node = &path.nodes[connection.node_indices[direction]];
+    if (!(object.ai.terrain_origin.y > node->min_height && object.ai.terrain_origin.y < node->max_height)) {
+        return 0;
+    }
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    if (world != NULL && world->current_level == E1CHARACTERBONUSA_LDATA) {
+        AIPATHNODE *other_node = &path.nodes[connection.node_indices[direction == 0]];
+        if (node->position.y - other_node->position.y > 0.5f) {
+            return 0;
+        }
+    }
+    f32 distance = NuVecXZDistSqr(&object.ai.terrain_origin, &node->position, NULL);
+    u32 result = 0;
+    if (distance >= node->radius_squared) {
+        if (distance < testAutoJumpXZCanUseRangeSqr) {
+            result |= 1;
+        }
+        if (distance < testAutoJumpXZCanDisplayRangeSqr) {
+            result |= 2;
+        }
+    } else if (distance < node->radius_squared) {
+        result = 1;
+        if (distance < testAutoJumpXZCanDisplayRangeSqr) {
+            result |= 2;
+        }
+    }
+    if (result == 0 || !AISysCharacterCanReachThisJumpConnection(object, path, connection, direction)) {
+        return 0;
+    }
+    if ((connection.traversal_flags[direction] & object.ai.capabilities & mechAutoJumpFlags) != 0) {
+        result |= 4;
+    }
+    return result;
+}
 
 MechAutoJumpConnection *MechAutoJumpManager::AddAutoJumpConnection(AIPATH_s *path, AIPATHCNX_s *connection,
                                                                    i32 direction, bool use_path_direction, i32 colour,
@@ -90,51 +390,6 @@ MechAutoJumpConnection *MechAutoJumpManager::AddAutoJumpConnection(AIPATH_s *pat
     return NULL;
 }
 
-void MechAutoJumpManager::DeleteJumpConnection(MechAutoJumpConnection *connection) {
-    if (connection != NULL) {
-        AutoJumpStreakLink *streak = reinterpret_cast<AutoJumpStreakLink *>(NuLinkedListGetHead(&streaks));
-        while (streak != NULL) {
-            if (streak->connection == connection) {
-                streak->connection = NULL;
-            }
-            streak = reinterpret_cast<AutoJumpStreakLink *>(
-                NuLinkedListGetNext(&streaks, reinterpret_cast<NULISTLNK *>(streak)));
-        }
-
-        NuLinkedListRemove(&jump_connections, reinterpret_cast<NULISTLNK *>(connection));
-        delete connection;
-    }
-}
-
-void MechAutoJumpManager::DeleteJumpConnectionsAndStreaks() {
-    AutoJumpStreakLink *streak;
-    while ((streak = reinterpret_cast<AutoJumpStreakLink *>(NuLinkedListGetHead(&streaks))) != NULL) {
-        NuLinkedListRemove(&streaks, reinterpret_cast<NULISTLNK *>(streak));
-        delete streak;
-    }
-
-    MechAutoJumpConnection *connection =
-        reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
-    while (connection != NULL) {
-        DeleteJumpConnection(connection);
-        connection = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
-    }
-}
-
-void MechAutoJumpManager::Init() {
-}
-
-MechAutoJumpManager::MechAutoJumpManager(AISYS_s *ai_system) {
-    if (ai_system != nullptr) {
-        streak_time = 0.0f;
-        ai_sys = ai_system;
-        streaks.head = nullptr;
-        streaks.tail = nullptr;
-        jump_connections.head = nullptr;
-        jump_connections.tail = nullptr;
-    }
-}
-
 void MechAutoJumpManager::PreProcessJumpConnections() {
     MechAutoJumpConnection *jump = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
     while (jump != NULL) {
@@ -166,6 +421,36 @@ void MechAutoJumpManager::PreProcessJumpConnections() {
         }
         jump = reinterpret_cast<MechAutoJumpConnection *>(
             NuLinkedListGetNext(&jump_connections, reinterpret_cast<NULISTLNK *>(jump)));
+    }
+}
+
+void MechAutoJumpManager::ProcessJumpConnections() {
+    MechAutoJumpConnection *jump = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
+    while (jump != NULL) {
+        MechAutoJumpConnection *next = reinterpret_cast<MechAutoJumpConnection *>(
+            NuLinkedListGetNext(&jump_connections, reinterpret_cast<NULISTLNK *>(jump)));
+        if (jump->active == 0 && jump->is_using == 0 && !(jump->cooldown > 0.0f)) {
+            DeleteJumpConnection(jump);
+        } else {
+            const u32 colour = jump->colour;
+            if (colour != jump->base_colour) {
+                jump->base_colour_components.x = SeekLinearF(
+                    jump->base_colour_components.x, static_cast<f32>(colour & 0xff), FRAMETIME * testColourSecF);
+                jump->base_colour_components.y = SeekLinearF(
+                    jump->base_colour_components.y, static_cast<f32>((colour >> 8) & 0xff), FRAMETIME * testColourSecF);
+                jump->base_colour_components.z =
+                    SeekLinearF(jump->base_colour_components.z, static_cast<f32>((colour >> 16) & 0xff),
+                                FRAMETIME * testColourSecF);
+                jump->streak_alpha = SeekLinearF(jump->streak_alpha, static_cast<f32>(static_cast<i32>(colour >> 24)),
+                                                 FRAMETIME * testColourSecF);
+                jump->base_colour =
+                    (static_cast<u32>(static_cast<i32>(jump->base_colour_components.x)) & 0xff) |
+                    ((static_cast<u32>(static_cast<i32>(jump->base_colour_components.y)) << 8) & 0xffff) |
+                    ((static_cast<u32>(static_cast<i32>(jump->base_colour_components.z)) & 0xff) << 16) |
+                    (static_cast<u32>(static_cast<i32>(jump->streak_alpha)) << 24);
+            }
+        }
+        jump = next;
     }
 }
 
@@ -284,36 +569,6 @@ void MechAutoJumpManager::Process() {
     ProcessJumpConnections();
 }
 
-void MechAutoJumpManager::ProcessJumpConnections() {
-    MechAutoJumpConnection *jump = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&jump_connections));
-    while (jump != NULL) {
-        MechAutoJumpConnection *next = reinterpret_cast<MechAutoJumpConnection *>(
-            NuLinkedListGetNext(&jump_connections, reinterpret_cast<NULISTLNK *>(jump)));
-        if (jump->active == 0 && jump->is_using == 0 && !(jump->cooldown > 0.0f)) {
-            DeleteJumpConnection(jump);
-        } else {
-            const u32 colour = jump->colour;
-            if (colour != jump->base_colour) {
-                jump->base_colour_components.x = SeekLinearF(
-                    jump->base_colour_components.x, static_cast<f32>(colour & 0xff), FRAMETIME * testColourSecF);
-                jump->base_colour_components.y = SeekLinearF(
-                    jump->base_colour_components.y, static_cast<f32>((colour >> 8) & 0xff), FRAMETIME * testColourSecF);
-                jump->base_colour_components.z =
-                    SeekLinearF(jump->base_colour_components.z, static_cast<f32>((colour >> 16) & 0xff),
-                                FRAMETIME * testColourSecF);
-                jump->streak_alpha = SeekLinearF(jump->streak_alpha, static_cast<f32>(static_cast<i32>(colour >> 24)),
-                                                 FRAMETIME * testColourSecF);
-                jump->base_colour =
-                    (static_cast<u32>(static_cast<i32>(jump->base_colour_components.x)) & 0xff) |
-                    ((static_cast<u32>(static_cast<i32>(jump->base_colour_components.y)) << 8) & 0xffff) |
-                    ((static_cast<u32>(static_cast<i32>(jump->base_colour_components.z)) & 0xff) << 16) |
-                    (static_cast<u32>(static_cast<i32>(jump->streak_alpha)) << 24);
-            }
-        }
-        jump = next;
-    }
-}
-
 void MechAutoJumpManager::Render() {
     if (!TouchHacks::TouchControlsActive) {
         return;
@@ -344,6 +599,81 @@ void MechAutoJumpManager::Render() {
     }
 }
 
-MechAutoJumpManager::~MechAutoJumpManager() {
-    DeleteJumpConnectionsAndStreaks();
+MechAutoJumpConnection *MechAutoJumpGetBest(JumpTriggerPacket const &packet, i32 heading) {
+    if (!TouchHacks::TouchControlsActive || WORLD == NULL || WORLD->mech_auto_jump_manager == NULL) {
+        return NULL;
+    }
+
+    MechAutoJumpConnection *current = reinterpret_cast<MechAutoJumpConnection *>(
+        NuLinkedListGetHead(&WORLD->mech_auto_jump_manager->jump_connections));
+    MechAutoJumpConnection *best = NULL;
+
+    if (packet.type == 3) {
+        i32 desired = NuAtan2D(packet.end.x - packet.start.x, packet.end.y - packet.start.y);
+        if (current == NULL) {
+            return NULL;
+        }
+        i32 best_difference = 0x4000;
+        do {
+            if (current->allow_streak && current->use_path_direction) {
+                AIPATHNODE *nodes = current->path->nodes;
+                AIPATHCNX *connection = current->connection;
+                i32 direction = current->direction;
+                NUVEC *to_position = &nodes[connection->node_indices[direction == 0]].position;
+                NUVEC *from_position = &nodes[connection->node_indices[direction]].position;
+                NUVEC from_screen;
+                NUVEC to_screen;
+                NuCameraTransformScreenClip(&from_screen, from_position, 1, NULL);
+                NuCameraTransformScreenClip(&to_screen, to_position, 1, NULL);
+                i32 angle = NuAtan2D(to_screen.x - from_screen.x, to_screen.y - from_screen.y);
+                i32 difference = RotDiff(static_cast<u16>(angle), static_cast<u16>(desired));
+                difference = difference < 0 ? -difference : difference;
+                if (difference < best_difference) {
+                    best_difference = difference;
+                    best = current;
+                }
+            }
+            current = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetNext(
+                &WORLD->mech_auto_jump_manager->jump_connections, reinterpret_cast<NULISTLNK *>(current)));
+        } while (current != NULL);
+        return best;
+    }
+
+    i32 best_difference = 0x2aab;
+    while (current != NULL) {
+        if (current->allow_streak && current->use_path_direction) {
+            i32 angle = current->connection->rotation;
+            if (current->direction != 0) {
+                angle = NuAngAdd(0x8000, angle);
+            }
+            i32 difference = RotDiff(static_cast<u16>(heading), static_cast<u16>(angle));
+            difference = difference < 0 ? -difference : difference;
+            if (difference < best_difference) {
+                best_difference = difference;
+                best = current;
+            }
+        }
+        current = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetNext(
+            &WORLD->mech_auto_jump_manager->jump_connections, reinterpret_cast<NULISTLNK *>(current)));
+    }
+    return best;
 }
+
+void MechAutoJumpSetIsUsing(GameObject_s &object, MechAutoJumpConnection &connection) {
+    object.ai.path_info.connection = connection.connection;
+    object.ai.path_info.direction = connection.direction;
+
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    if (world != NULL && world->mech_auto_jump_manager != NULL) {
+        for (MechAutoJumpConnection *current = reinterpret_cast<MechAutoJumpConnection *>(
+                 NuLinkedListGetHead(&world->mech_auto_jump_manager->jump_connections));
+             current != NULL;
+             current = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetNext(
+                 &world->mech_auto_jump_manager->jump_connections, reinterpret_cast<NULISTLNK *>(current)))) {
+            current->is_using = 0;
+            current->cooldown = 0.0f;
+        }
+    }
+    connection.is_using = 1;
+}
+

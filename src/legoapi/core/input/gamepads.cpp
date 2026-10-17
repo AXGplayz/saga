@@ -1,36 +1,49 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/misc/androidbatman.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
-#include "legoapi/audio/audio.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/menus/screens/gamestructure.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/items/collect/spacelevel.h"
 #include "nu2api/numusic/numusic.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
-#include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nucore/nupad.h"
 
 #include <string.h>
+#include "gameframework/saveload.h"
+#include "legoapi/menus/screens/store.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nuvec.h"
+#include <math.h>
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/items/base/apiobject.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/numath/nuang.h"
+#include "legoapi/audio/sfx.h"
+#include <stdio.h>
+#include "legoapi/world/levels/levels.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nusound/nusound.h"
+#include "nu2api/nusound/nusound3_include.h"
 
-extern "C" void NuSound3AddRumble(nupad_s *, f32, i32, i32, f32);
-extern "C" void BackupMenu(void);
-extern GAMECAMERA_s *GameCam;
-extern WORLDINFO_s *WORLD;
 extern i32 (*GamePads_IgnoreInputFn)(void);
-extern NUPAD *pActivePad;
 extern "C" {
-    extern i32 Paused;
-    extern i32 NewMode;
-    extern FadeSystem FadeSys;
+    extern "C++" FadeSystem FadeSys;
     extern i32 CutSceneWaiting;
 }
 
@@ -68,6 +81,23 @@ static i32 RotationDistance(i32 difference) {
     return difference < 0 ? -difference : difference;
 }
 
+extern "C" {
+    extern i32 CutSceneWaiting;
+    extern i32 editor_active;
+    extern "C++" i32 (*GamePads_IgnoreInputFn)(void);
+    extern "C++" FadeSystem FadeSys;
+}
+
+GAMEPAD_s *GamePad_Allocate() {
+    for (i32 i = 0; i < 64; i++) {
+        if ((GamePad[i].allocated_5a & 1) == 0) {
+            GamePad[i].allocated_5a |= 1;
+            return &GamePad[i];
+        }
+    }
+    return NULL;
+}
+
 void GamePads_Init() {
     Game_NuPad[0] = NuPadOpen(0, 0);
     Game_NuPad[1] = NuPadOpen(1, 0);
@@ -77,6 +107,15 @@ void GamePads_Init() {
     }
     GamePad[0].pad = Game_NuPad[0];
     GamePad[1].pad = Game_NuPad[1];
+}
+
+void GamePads_NetClient() {
+}
+
+void GamePads_NetHost() {
+}
+
+void GamePads_NetReset(i32) {
 }
 
 f32 GamePad_Rotate(GameObject_s *object) {
@@ -120,69 +159,127 @@ i32 GamePad_Waggle(GAMEPAD_s *pad) {
     return 0;
 }
 
-GAMEPAD_s *GamePad_Allocate() {
-    for (i32 i = 0; i < 64; i++) {
-        if ((GamePad[i].allocated_5a & 1) == 0) {
-            GamePad[i].allocated_5a |= 1;
-            return &GamePad[i];
+void ResetRumble(RUMBLEPACKET *packet) {
+    packet->rumble_time = 0.0f;
+    packet->rumble_amount = 0.0f;
+    packet->active = 0;
+}
+
+void UpdateRumble(RUMBLEPACKET *packet) {
+    if (packet->rumble_time > 0.0f)
+        packet->rumble_time -= FRAMETIME;
+    if (packet->rumble_amount > 0.0f)
+        packet->rumble_amount -= FRAMETIME;
+    if (packet->active != 0)
+        --packet->active;
+}
+
+void NewRumble(nupad_s *pad, float strength, i32) {
+    if (pad != NULL) {
+        i32 amount = static_cast<i32>(strength * 255.0f);
+        if (amount > 255)
+            amount = 255;
+        NuSound3AddRumble(pad, 0.0f, amount, 0, strength);
+    }
+}
+
+void NewBuzz(nupad_s *pad, float duration, i32) {
+    if (pad != NULL)
+        NuSound3AddRumble(pad, duration, 0, 0, 0.0f);
+}
+
+void NewBuzzFrames(nupad_s *pad, i32 frames, i32) {
+    if (pad != NULL)
+        NuSound3AddRumble(pad, static_cast<f32>(frames) / DEFAULTFPS, 0, 0, 0.0f);
+}
+
+void NewRumbleAllPlayers(float strength, float duration, i32 frames, i32) {
+    if (frames > 0) {
+        f32 frame_duration = static_cast<f32>(frames) / DEFAULTFPS;
+        if (frame_duration > duration)
+            duration = frame_duration;
+    }
+    const f32 amount = strength * 255.0f;
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *object = Player[i];
+        if (object != NULL && object->apiobj.player_controlled && object->pad_gamepad->pad != NULL) {
+            NuSound3AddRumble(object->pad_gamepad->pad, duration, static_cast<i32>(amount), 0, strength);
         }
     }
-    return NULL;
 }
 
-void GamePads_NetHost() {
-}
-
-void GamePads_NetReset(i32) {
-}
-
-u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
-    if (!object->apiobj.player_controlled || object->field_0x661 == 0xff) {
-        goto camera_relative;
+void DieRumble(GameObject_s *object) {
+    if (object != NULL && object->apiobj.player_controlled) {
+        NewRumble(object->pad_gamepad->pad, 1.0f, 0);
+        NewBuzz(object->pad_gamepad->pad, 0.3f, 0);
     }
-    {
-        SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
-        if ((socket.flags & 0x40) != 0) {
-            goto socket_relative;
+}
+
+void KillRumble(GameObject_s *object) {
+    if (object != NULL) {
+        if (object->apiobj.player_controlled) {
+            NewRumble(object->pad_gamepad->pad, 0.7f, 0);
+            NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
         }
     }
-
-camera_relative:
-    return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
-
-socket_relative: {
-    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
-    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
-}
 }
 
-void GamePads_NetClient() {
-}
-
-i32 GamePads_SkipMovie() {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    ReadPads();
-    if ((GamePad[0].buttons_held & GAMEPAD_SKIP) != 0) {
-        if (world != NULL && world->current_level == TITLES_LDATA && GAMEDEMO == 0) {
-            PlayerProgress[0].active = 1;
+void HitRumble(GameObject_s *object) {
+    if (object != NULL) {
+        if (object->apiobj.player_controlled) {
+            NewRumble(object->pad_gamepad->pad, 0.5f, 0);
+            NewBuzzFrames(object->pad_gamepad->pad, 2, 0);
         }
-        return 1;
-    } else if ((GamePad[1].buttons_held & GAMEPAD_SKIP) != 0) {
-        if (world != NULL && world->current_level == TITLES_LDATA && GAMEDEMO == 0) {
-            PlayerProgress[1].active = 1;
-        }
-        return 1;
     }
-    return 0;
 }
 
-extern "C" {
-
-    bool TestForController(void) {
-        return Controller_IsConnected() != 0 || enable_touch_controls == 0;
+void TakeHitRumble(GameObject_s *object, float strength) {
+    if (object != NULL && object->apiobj.player_controlled) {
+        NewRumble(object->pad_gamepad->pad, strength, 0);
+        NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
     }
+}
 
-} // extern "C"
+void FloatRumble(GameObject_s *object) {
+    if (object != NULL && object->apiobj.player_controlled) {
+        const f32 strength = MIN(1.0f, NuFabs(object->apiobj.velocity.y) /
+                                               object->apiobj.character_data->game_character->movement_speed * 0.15f +
+                                           0.25f);
+        NewRumble(object->pad_gamepad->pad, strength, 0);
+        NewBuzzFrames(object->pad_gamepad->pad, 1, 0);
+    }
+}
+
+void ConstantRumble(GameObject_s *object, float strength, float phase) {
+    phase = NuFmod(phase + GameTimer.time_elapsed, 1.25f);
+    f32 weight = 0.0f;
+    if (phase < 1.0f) {
+        i32 angle = static_cast<i32>(phase * 32768.0f + 16384.0f);
+        weight = 1.0f - fabsf(NuTrigTable[(angle >> 1) & 0x7fff]);
+    }
+    strength = weight * strength;
+    if (object != NULL) {
+        if (object->apiobj.player_controlled) {
+            NewRumble(object->pad_gamepad->pad, strength, 0);
+        }
+    } else {
+        NewRumbleAllPlayers(strength, 0.0f, 0, 0);
+    }
+}
+
+i32 NoPad(i32 port, i32 require_game_input) {
+    const i32 menu_id = GetMenuID();
+    if ((require_game_input != 0 && GamePad[port].input_state == 0) || GamePad[port].pad->is_valid != 0) {
+        return 0;
+    }
+    if (LEGOMENU_NEWGAME != -1 && menu_id == LEGOMENU_NEWGAME) {
+        return 0;
+    }
+    if (LEGOMENU_CREDITS != -1 && menu_id == LEGOMENU_CREDITS) {
+        return 0;
+    }
+    return 1;
+}
 
 void PadOutPause(i32 port, WORLDINFO_s *world) {
     if (Paused != 0 || NoPad(port, 1) == 0 || NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f) {
@@ -201,270 +298,6 @@ void PadOutPause(i32 port, WORLDINFO_s *world) {
     if (CutSceneWaiting == 0) {
         PauseGame(port);
     }
-}
-
-void ResetRumble(RUMBLEPACKET *packet) {
-    packet->rumble_time = 0.0f;
-    packet->rumble_amount = 0.0f;
-    packet->active = 0;
-}
-
-void UpdateRumble(RUMBLEPACKET *packet) {
-    if (packet->rumble_time > 0.0f)
-        packet->rumble_time -= FRAMETIME;
-    if (packet->rumble_amount > 0.0f)
-        packet->rumble_amount -= FRAMETIME;
-    if (packet->active != 0)
-        --packet->active;
-}
-
-void NewBuzzFrames(nupad_s *pad, i32 frames, i32) {
-    if (pad != NULL)
-        NuSound3AddRumble(pad, static_cast<f32>(frames) / DEFAULTFPS, 0, 0, 0.0f);
-}
-
-void TakeHitRumble(GameObject_s *object, float strength) {
-    if (object != NULL && object->apiobj.player_controlled) {
-        NewRumble(object->pad_gamepad->pad, strength, 0);
-        NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
-    }
-}
-
-extern f32 SpaceRumbleTimer;
-extern "C" f32 NuFsqrt(f32);
-extern "C" f32 NuRandFloat();
-void GameCam_NewShake(GAMECAMERA_s *, f32, f32, f32);
-void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
-i32 GameRayCast(NUVEC *, NUVEC *, f32, i32);
-
-f32 MulDist = 0.5f;
-f32 SpeedAdd = 1.0f;
-f32 SpeedDist = 5.0f;
-f32 MulAdd = 0.0f;
-
-extern "C" void SetPreSeekStartPoint(f32 start_point);
-
-void SpaceResetAudioPoint() {
-    for (i32 door = 6; door >= 0; --door) {
-        for (i32 player = 0; player < 2; ++player) {
-            if (Player[player] != NULL && Player[player]->sock_position.distance > DogFightDoors.doors[door].distance) {
-                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
-                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
-                return;
-            }
-        }
-    }
-    SetPreSeekStartPoint(0.0f);
-}
-
-void SpaceRumbleProcess() {
-    NUVEC_ALIGNED16 origin;
-    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
-        origin = Player[0]->apiobj.position;
-    } else if (Player[1] != NULL) {
-        origin = Player[1]->apiobj.position;
-    }
-
-    NUMTX_ALIGNED16 matrix;
-    NuMtxSetRotationY(&matrix, 0x2000);
-    NuMtxRotateZ(&matrix, 0x2000);
-
-    NUVEC4 ray;
-    ray.w = 1.0f;
-    f32 nearest = 35.0f;
-    for (i32 i = 0; i < 12; ++i) {
-        switch (i) {
-            case 0:
-            case 6:
-                ray.x = -35.0f;
-                ray.y = 0.0f;
-                ray.z = 0.0f;
-                break;
-            case 1:
-            case 7:
-                ray.x = 35.0f;
-                ray.y = 0.0f;
-                ray.z = 0.0f;
-                break;
-            case 2:
-            case 8:
-                ray.y = -35.0f;
-                ray.x = 0.0f;
-                ray.z = 0.0f;
-                break;
-            case 3:
-            case 9:
-                ray.y = 35.0f;
-                ray.x = 0.0f;
-                ray.z = 0.0f;
-                break;
-            case 4:
-            case 10:
-                ray.z = -35.0f;
-                ray.x = 0.0f;
-                ray.y = 0.0f;
-                break;
-            case 5:
-            case 11:
-                ray.z = 35.0f;
-                ray.x = 0.0f;
-                ray.y = 0.0f;
-                break;
-        }
-        if (i > 5) {
-            NuVec4MtxTransformVU0(&ray, &ray, &matrix);
-        }
-        if (GameRayCast(&origin, reinterpret_cast<NUVEC *>(&ray), 0.5f, 0) != 0) {
-            ray.x = NuFsqrt(ray.x * ray.x + ray.y * ray.y + ray.z * ray.z);
-            if (ray.x < nearest) {
-                nearest = ray.x;
-            }
-        }
-    }
-
-    if (nearest < 35.0f) {
-        f32 amount = 1.0f - nearest / 35.0f;
-        GameCam_NewShake(GameCam, MulDist * amount + MulAdd, 0.2f, SpeedDist * amount + SpeedAdd);
-        f32 scaled_strength = amount * 0.5f;
-        f32 strength = 0.35f < scaled_strength ? 0.35f : scaled_strength;
-        NewRumbleAllPlayers(strength, 0.0f, 0, 0);
-    }
-    SpaceRumbleTimer -= FRAMETIME;
-    if (SpaceRumbleTimer < 0.0f) {
-        GameCam_Judder(GameCam, 0.2f, 2, NULL);
-        NewRumbleAllPlayers(0.3f, 0.0f, 0, 0);
-        SpaceRumbleTimer = NuRandFloat() * 10.0f + 3.0f;
-    }
-}
-
-void NewRumbleAllPlayers(float strength, float duration, i32 frames, i32) {
-    if (frames > 0) {
-        f32 frame_duration = static_cast<f32>(frames) / DEFAULTFPS;
-        if (frame_duration > duration)
-            duration = frame_duration;
-    }
-    const f32 amount = strength * 255.0f;
-    for (i32 i = 0; i < 8; ++i) {
-        GameObject_s *object = Player[i];
-        if (object != NULL && object->apiobj.player_controlled && object->pad_gamepad->pad != NULL) {
-            NuSound3AddRumble(object->pad_gamepad->pad, duration, static_cast<i32>(amount), 0, strength);
-        }
-    }
-}
-
-i32 ObjLookingWithLeftStick(GameObject_s *object) {
-    if (object->character_id_0x7a5 == 0x4d) {
-        return object->field_0x7a3 == 0 ? 2 : 1;
-    }
-    return object->character_id_0x7a5 == 0x52 ? 2 : 1;
-}
-
-void PerformPauseButtonStuff() {
-    if (WORLD == NULL) {
-        return;
-    }
-    if (Paused != 0) {
-        BackupMenu();
-        GameAudio_PlaySfx(0x31, NULL, 0, 0);
-        if (GameMenuLevel == 0 && Paused != 0) {
-            ResumeGame(0, 1);
-        }
-        return;
-    }
-    if (__builtin_expect(GameMenuLevel == 0, 0)) {
-        PauseGame(0);
-        return;
-    }
-
-    if (GetMenuID() == 12) {
-        CharacterCustomiser->field_0xd17 = 1;
-        return;
-    }
-
-    const i32 menu_id = GetMenuID();
-    if (menu_id == 13)
-        goto close_menu;
-    if (menu_id == 1)
-        goto close_menu;
-    if (menu_id == 8)
-        goto close_menu;
-    if (menu_id == 17)
-        goto close_menu;
-    if ((menu_id & ~2) == 16)
-        goto close_menu;
-    if (static_cast<u32>(menu_id - 14) <= 1)
-        goto close_menu;
-    if (static_cast<u32>(menu_id - 20) <= 1)
-        goto close_menu;
-    if (menu_id == 22)
-        goto close_menu;
-    if (menu_id == 1000)
-        goto close_menu;
-    if (menu_id == 33)
-        goto close_menu;
-    if ((menu_id & ~8) == 1008)
-        goto close_menu;
-    if (static_cast<u32>(menu_id - 1012) <= 1)
-        goto close_menu;
-    if (menu_id == 1017)
-        goto close_menu;
-    {
-        MechInputTouchMainController *controller = MechSystems::Get()->active_main_controller;
-        if (controller != NULL) {
-            controller->button_pressed[3] = 1;
-        }
-    }
-    return;
-
-close_menu:
-    GameMenu[GameMenuLevel].close_requested = 1;
-}
-
-void VirtualControlDPad_OnDown_Callback(MechTouchUIElement &element, TouchHolder &touch) {
-    f32 *offset = reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(&element) + 0x80);
-    offset[0] = element.position.x - touch.down_position.x;
-    offset[1] = element.position.y - touch.down_position.y;
-}
-
-void VirtualControlButton_OnDown_Callback(MechTouchUIElement &, TouchHolder &) {
-}
-
-void VirtualControlButtonMover_OnDown_Callback(MechTouchUIElement &element, TouchHolder &touch) {
-    f32 *offset = reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(&element) + 0x7c);
-    offset[0] = element.position.x - touch.down_position.x;
-    offset[1] = element.position.y - touch.down_position.y;
-}
-
-void VirtualControlDPad_LockButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder &) {
-    GameAudio_PlaySfx(0x30, NULL, 0, 0);
-    if (SuperOptions.dpad_locked == 0) {
-        SuperOptions.dpad_locked = 1;
-        static_cast<MechTouchUITexButton &>(element).UpdateTexture(
-            MechInputTouchVirtualConsoleController::s_textures[7]);
-    } else {
-        SuperOptions.dpad_locked = 0;
-        static_cast<MechTouchUITexButton &>(element).UpdateTexture(
-            MechInputTouchVirtualConsoleController::s_textures[6]);
-    }
-}
-
-i32 NoPad(i32 port, i32 require_game_input) {
-    const i32 menu_id = GetMenuID();
-    if ((require_game_input != 0 && GamePad[port].input_state == 0) || GamePad[port].pad->is_valid != 0) {
-        return 0;
-    }
-    if (LEGOMENU_NEWGAME != -1 && menu_id == LEGOMENU_NEWGAME) {
-        return 0;
-    }
-    if (LEGOMENU_CREDITS != -1 && menu_id == LEGOMENU_CREDITS) {
-        return 0;
-    }
-    return 1;
-}
-
-void NewBuzz(nupad_s *pad, float duration, i32) {
-    if (pad != NULL)
-        NuSound3AddRumble(pad, duration, 0, 0, 0.0f);
 }
 
 i32 ReadPad(i32 port) {
@@ -562,11 +395,107 @@ void ReadPads() {
     readpads_always = 0;
 }
 
-void NewRumble(nupad_s *pad, float strength, i32) {
-    if (pad != NULL) {
-        i32 amount = static_cast<i32>(strength * 255.0f);
-        if (amount > 255)
-            amount = 255;
-        NuSound3AddRumble(pad, 0.0f, amount, 0, strength);
+void DoInput(WORLDINFO_s *world) {
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
+    }
+
+    const i32 player_0_input = ReadPad(0);
+    const i32 player_1_input = ReadPad(1);
+    i32 player_state_changed = PlayersDropInOut();
+
+    for (i32 player_index = 0; player_index < 2; ++player_index) {
+        nupad_s *pad = GamePad[player_index].pad;
+        GameObject_s *player = Player[player_index];
+        const i32 input_result = player_index == 0 ? player_0_input : player_1_input;
+        if (GamePads_IgnoreInputFn != NULL && GamePads_IgnoreInputFn() != 0) {
+            continue;
+        }
+        if (static_cast<u32>(input_result) <= 1) {
+            if (player != NULL && player->apiobj.player_controlled && pad != NULL && MiniCutCam == 0 && world != NULL &&
+                world->current_level != NULL) {
+                PadOutPause(player_index, world);
+            }
+            continue;
+        }
+        if (player_state_changed != 0) {
+            continue;
+        }
+
+        if (player == NULL || !player->apiobj.player_controlled ||
+            (LEGOCONTEXT_DROPIN != -1 && static_cast<i8>(player->field_0x7a5) == LEGOCONTEXT_DROPIN) || pad == NULL ||
+            (pad->digital_buttons_pressed & GAMEPAD_START) == 0) {
+            continue;
+        }
+        if (NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f || editor_active != 0 ||
+            !(GameTimer.time_elapsed > 0.0f) || world == NULL || world->current_level == NULL ||
+            world->current_level == TITLES_LDATA) {
+            continue;
+        }
+
+        if (Paused == 0) {
+            if (GameMenu[GameMenuLevel].menu == -1 && CutSceneWaiting == 0) {
+                if ((CUTSTOPGAME == 0 || CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) &&
+                    MiniCutCam == 0 && memcard_autosavestarted == 0 && !(memcard_autosavepostdelay > 0.0f) &&
+                    !(memcard_autosavepredelay > 0.0f) && GameTimer.update_count != 0) {
+                    PauseGame(static_cast<i32>(player->pad_gamepad - GamePad));
+                    player_state_changed = 1;
+                    continue;
+                }
+                if (Paused != 0) {
+                    goto resume;
+                }
+            }
+            if (NetPaused == 0) {
+                continue;
+            }
+        }
+    resume:
+        if (pause_i_pad == -1 || pause_i_pad == player_index) {
+            ResumeGame(1, 1);
+            RestoreOptions();
+        }
     }
 }
+
+u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
+    if (!object->apiobj.player_controlled || object->field_0x661 == 0xff) {
+        goto camera_relative;
+    }
+    {
+        SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+        if ((socket.flags & 0x40) != 0) {
+            goto socket_relative;
+        }
+    }
+
+camera_relative:
+    return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
+
+socket_relative: {
+    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
+}
+}
+
+i32 GamePads_SkipMovie() {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    ReadPads();
+    if ((GamePad[0].buttons_held & GAMEPAD_SKIP) != 0) {
+        if (world != NULL && world->current_level == TITLES_LDATA && GAMEDEMO == 0) {
+            PlayerProgress[0].active = 1;
+        }
+        return 1;
+    } else if ((GamePad[1].buttons_held & GAMEPAD_SKIP) != 0) {
+        if (world != NULL && world->current_level == TITLES_LDATA && GAMEDEMO == 0) {
+            PlayerProgress[1].active = 1;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+void FinishLoop_Network() {
+    STUBBED();
+}
+

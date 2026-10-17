@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nutex.h"
 #include <GLES2/gl2.h>
@@ -36,7 +39,6 @@ const char *g_textureName;
 i32 g_fileSize;
 
 extern i32 g_loadingCharacterInHub;
-extern "C" const i16 *_toupper_tab_;
 
 SAGA_HOST_HOOK void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
                                                   GLsizei height, GLint border, GLsizei image_size, const void *data) {
@@ -47,135 +49,18 @@ __attribute__((weak)) bool NuIOS_TextureFormatSupported(i32 format) {
     return g_renderDevice.enabled_extensions[format];
 }
 
-void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat,
-                            bool &outIsCompressed, NUTEXFORMAT &outFormatEnum) {
-    i32 formatToCheck = inFormat;
+#define SQUISH_KDXT1 (1 << 0) // 1
+#define SQUISH_KDXT3 (1 << 1) // 2
+#define SQUISH_KDXT5 (1 << 2) // 4
 
-    if (inFormat != NUTEX_DXT1) {
-        outIsCompressed = false;
-        outBpp = 0;
-    } else {
-        if (g_renderDevice.enabled_extensions[NUTEX_DXT1]) {
-            outBpp = 0;
-        } else if (g_renderDevice.enabled_extensions[NUTEX_ETC1]) {
-            inFormat = NUTEX_ETC1;
-            formatToCheck = NUTEX_ETC1;
-            outBpp = 0;
-        } else {
-            outIsCompressed = false;
-            inFormat = NUTEX_RGBA32;
-            outBpp = 0;
-        }
-    }
+static const i32 CSWTCH_249[] = {SQUISH_KDXT3, SQUISH_KDXT1, SQUISH_KDXT5};
 
-    switch (inFormat) {
-        case NUTEX_DXT1:                                         // 1
-            outInternalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; // 0x83F0
-            outType = GL_UNSIGNED_BYTE;
-            outIsCompressed = true; // 0x1907
-            outFormat = GL_RGB;     // 0x1401
-            break;
-
-        case NUTEX_DX1A:                                          // 2
-            outInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; // 0x83F1
-            outFormat = GL_RGBA;
-            outType = GL_UNSIGNED_BYTE; // 0x1908
-            outIsCompressed = true;     // 0x1401
-            break;
-
-        case NUTEX_DXT5:                 // 6
-            outInternalFormat = GL_RGBA; // 0x1908
-            outType = GL_UNSIGNED_BYTE;
-            outFormat = GL_RGBA;    // 0x1908
-            outIsCompressed = true; // 0x1401
-            break;
-
-        case 0x10:
-            outInternalFormat = GL_LUMINANCE; // 0x1909
-            outType = GL_UNSIGNED_BYTE;
-            outFormat = GL_LUMINANCE; // 0x1909
-            outBpp = 8;               // 0x1401
-            outFormatEnum = inFormat;
-            return;
-
-        case NUTEX_ETC1:                          // 0x11
-            outInternalFormat = GL_ETC1_RGB8_OES; // 0x8D64
-            outFormat = GL_RGB;
-            outType = GL_UNSIGNED_BYTE; // 0x1907
-            outIsCompressed = true;     // 0x1401
-            break;
-
-        case NUTEX_PVRTC2:                                          // 0x14
-            outInternalFormat = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG; // 0x8C01
-            outIsCompressed = true;
-            outFormat = GL_RGB;         // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
-            break;
-
-        case NUTEX_PVRTC2A:                                          // 0x15
-            outInternalFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG; // 0x8C03
-            outType = GL_UNSIGNED_BYTE;
-            outIsCompressed = true; // 0x1908
-            outFormat = GL_RGBA;    // 0x1401
-            break;
-
-        case NUTEX_PVRTC4:                                          // 0x16
-            outInternalFormat = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG; // 0x8C00
-            outFormat = GL_RGB;
-            outIsCompressed = true;     // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
-            break;
-
-        case NUTEX_PVRTC4A:                                          // 0x17
-            outInternalFormat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG; // 0x8C02
-            outIsCompressed = true;
-            outFormat = GL_RGBA;        // 0x1908
-            outType = GL_UNSIGNED_BYTE; // 0x1401
-            break;
-
-        case NUTEX_ATCA:                                            // 0x18
-            outInternalFormat = GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD; // 0x87EE
-            outFormat = GL_RGBA;
-            outIsCompressed = true;     // 0x1908
-            outType = GL_UNSIGNED_BYTE; // 0x1401
-            break;
-
-        case NUTEX_ATC:                         // 0x19
-            outInternalFormat = GL_ATC_RGB_AMD; // 0x8C92
-            outFormat = GL_RGB;
-            outIsCompressed = true;     // 0x1907
-            outType = GL_UNSIGNED_BYTE; // 0x1401
-            break;
-
-        case 0x66:
-            outInternalFormat = GL_RGB; // 0x1907
-            outFormat = GL_RGB;         // 0x18
-            outType = GL_UNSIGNED_BYTE; // 0x1907
-            outBpp = 24;                // 0x1401
-            outFormatEnum = inFormat;
-            return;
-
-        case 0x69:
-        case 0x72:
-            outFormatEnum = inFormat;
-            return;
-
-        default:
-            outInternalFormat = GL_RGBA;
-            outType = GL_UNSIGNED_BYTE;
-            outFormat = GL_RGBA;
-            outFormatEnum = inFormat;
-            outBpp = 32;
-            return;
-    }
-
-    if (__builtin_expect(!NuIOS_TextureFormatSupported(formatToCheck), 1)) {
-        while (true) {
-        }
-    }
-
-    outFormatEnum = inFormat;
+SAGA_HOST_HOOK void *NuIOS_AllocateDefaultTexturePixels(usize bytes) {
+    return malloc(bytes);
 }
+
+i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCubemap, i32 mips, i32 targetMip,
+                 i32 targetSlice);
 
 void GetTextureFormatInfo(NUTEXFORMAT texture, u32 &param_2, u32 &param_3) {
     param_2 = 1;
@@ -315,12 +200,6 @@ i32 GetMipOffset(NuHardwareTexture *tex, i32 targetMip, i32 targetSlice, NUTEXFO
     return totalOffset;
 }
 
-#define SQUISH_KDXT1 (1 << 0) // 1
-#define SQUISH_KDXT3 (1 << 1) // 2
-#define SQUISH_KDXT5 (1 << 2) // 4
-
-static const i32 CSWTCH_249[] = {SQUISH_KDXT3, SQUISH_KDXT1, SQUISH_KDXT5};
-
 void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&outBuffer) {
     i32 squishFlags;
     NuMemory *v8;
@@ -395,10 +274,6 @@ GLuint CreateTexturePS(void) {
     return tex;
 }
 
-SAGA_HOST_HOOK void *NuIOS_AllocateDefaultTexturePixels(usize bytes) {
-    return malloc(bytes);
-}
-
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target) {
     isize pixel_count = size * size;
     u8 *pixels = (u8 *)NuIOS_AllocateDefaultTexturePixels(pixel_count * 4);
@@ -466,6 +341,306 @@ GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum text
     return textures[0];
 }
 
+GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_height) {
+    extern bool comeFromHash;
+    extern i32 g_loadDefaultTexture;
+    extern i32 g_loadingCharacterInHub;
+
+    GLenum cube_faces[6] = {
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    };
+
+    comeFromHash = false;
+
+    u8 *header = (u8 *)data;
+    const u32 pixel_format = *(u32 *)(header + 0x08);
+    u8 *pixels = header + 0x34 + *(u32 *)(header + 0x30);
+    const u32 channel_bits = *(u32 *)(header + 0x0c);
+    const i32 &height = *(i32 *)(header + 0x18);
+    const i32 &width = *(i32 *)(header + 0x1c);
+    const u32 &depth = *(u32 *)(header + 0x20);
+    const u32 &surfaces = *(u32 *)(header + 0x24);
+    const u32 &faces = *(u32 *)(header + 0x28);
+    const u32 &mip_count = *(u32 *)(header + 0x2c);
+
+    if (faces == 6) {
+        struct PVRMetadataHeader {
+            u32 fourcc;
+            u32 key;
+            u32 data_size;
+        };
+        const u8 *metadata = header + 0x34;
+        usize remaining = *(u32 *)(header + 0x30);
+        while (remaining >= sizeof(PVRMetadataHeader)) {
+            PVRMetadataHeader record;
+            memcpy(&record, metadata, sizeof(record));
+            metadata += sizeof(record);
+            remaining -= sizeof(record);
+            if (__builtin_expect(record.data_size > remaining, 1)) {
+                break;
+            }
+            if (record.fourcc == 0x03525650 && record.key == 2 && record.data_size == 6) {
+
+                switch (metadata[0]) {
+                    case 'X':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[0] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+
+                switch (metadata[1]) {
+                    case 'X':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[1] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+
+                switch (metadata[2]) {
+                    case 'X':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[2] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+
+                switch (metadata[3]) {
+                    case 'X':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[3] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+
+                switch (metadata[4]) {
+                    case 'X':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[4] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+
+                switch (metadata[5]) {
+                    case 'X':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                        break;
+                    case 'x':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                        break;
+                    case 'Y':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                        break;
+                    case 'y':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                        break;
+                    case 'Z':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                        break;
+                    case 'z':
+                        cube_faces[5] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                        break;
+                }
+            }
+            remaining -= record.data_size;
+            metadata += record.data_size;
+        }
+    }
+
+    GLenum internal_format = 0;
+    GLenum format = 0;
+    GLenum type = 0;
+    i32 bits_per_pixel = 0;
+    bool compressed = false;
+
+    if (__builtin_expect(channel_bits == 0, 0)) {
+        static const GLenum compressed_formats[6] = {
+            0x8c01, // GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
+            0x8c03, // GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+            0x8c00, // GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG
+            0x8c02, // GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG
+            0x9137, // GL_COMPRESSED_RGBA_PVRTC_2BPPV2_IMG
+            0x9138, // GL_COMPRESSED_RGBA_PVRTC_4BPPV2_IMG
+        };
+        if (pixel_format >= 6) {
+            return 0;
+        }
+        bits_per_pixel = pixel_format < 2 ? 2 : 4;
+        internal_format = compressed_formats[pixel_format];
+        compressed = true;
+    } else if (pixel_format == 0x61626772 && channel_bits == 0x08080808) { // "rgba", 8 bits each
+        internal_format = GL_RGBA;
+        format = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+        bits_per_pixel = 32;
+    } else if (pixel_format == 0x61626772 && channel_bits == 0x04040404) { // "rgba", 4 bits each
+        internal_format = GL_RGBA;
+        format = GL_RGBA;
+        type = GL_UNSIGNED_SHORT_4_4_4_4;
+        bits_per_pixel = 16;
+    }
+
+    if (out_width != NULL) {
+        *out_width = width;
+    }
+    if (out_height != NULL) {
+        *out_height = height;
+    }
+
+    const GLenum texture_target = faces > 1 ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+    GLuint texture = 0;
+    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x2e7);
+    glGenTextures(1, &texture);
+    if (faces <= 1) {
+        glActiveTexture(GL_TEXTURE0);
+        g_currentTexUnit = 0;
+        glBindTexture(GL_TEXTURE_2D, texture);
+    } else {
+        if (g_currentTexUnit != 0) {
+            glActiveTexture(GL_TEXTURE0);
+            g_currentTexUnit = 0;
+        }
+        if (g_lastBoundCubeTexIds[0] != texture) {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+            g_lastBoundCubeTexIds[0] = texture;
+        }
+    }
+    glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, mip_count < 2 ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (faces > 1) {
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x2fe);
+
+    if (g_loadingCharacterInHub != 0 && bgProcIsBgThread() != 0) {
+        NuIOS_YieldThread();
+    }
+
+    usize offset = 0;
+    for (u32 mip = 0; mip < mip_count; ++mip) {
+        const i32 mip_height = height >> mip;
+        const i32 mip_width = width >> mip;
+        usize mip_size = (usize)mip_width * (usize)mip_height * (usize)bits_per_pixel / 8;
+        if (mip_size < 0x20) {
+            mip_size = 0x20;
+        }
+
+        for (u32 surface = 0; surface < surfaces; ++surface) {
+            for (u32 face = 0; face < faces; ++face) {
+                const GLenum target = faces > 1 ? cube_faces[face] : GL_TEXTURE_2D;
+                for (u32 z = 0; z < depth; ++z) {
+                    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                           0x31d);
+                    if (faces <= 1) {
+                        glActiveTexture(GL_TEXTURE0);
+                        g_currentTexUnit = 0;
+                        glBindTexture(GL_TEXTURE_2D, texture);
+                    } else {
+                        if (g_currentTexUnit != 0) {
+                            glActiveTexture(GL_TEXTURE0);
+                            g_currentTexUnit = 0;
+                        }
+                        if (g_lastBoundCubeTexIds[0] != texture) {
+                            glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+                            g_lastBoundCubeTexIds[0] = texture;
+                        }
+                    }
+
+                    if (compressed) {
+                        if ((NuPlatform::Get()->GetCurrentPlatform() == IOS_PLATFORM ||
+                             NuPlatform::Get()->GetCurrentPlatform() == ANDROID_PVRTC_PLATFORM) &&
+                            g_loadDefaultTexture == 0) {
+                            glCompressedTexImage2D(target, mip, internal_format, mip_width, mip_height, 0, mip_size,
+                                                   pixels + offset);
+                        } else {
+                            loadDefaultTexture(texture, mip, mip_width, target, target);
+                        }
+                    } else {
+                        glTexImage2D(target, mip, internal_format, mip_width, mip_height, 0, format, type,
+                                     pixels + offset);
+                    }
+                    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                         0x341);
+
+                    if (bgProcIsBgThread() != 0) {
+                        NuIOS_YieldThread();
+                    }
+                    offset += mip_size;
+                }
+            }
+        }
+    }
+
+    return texture;
+}
+
 char const *GetNativeTextureFormatName(NUTEXFORMAT format) {
     switch (format) {
         case NUTEX_DXT1:
@@ -523,6 +698,342 @@ char const *GetNativeTextureFormatName(NUTEXFORMAT format) {
         default:
             return "Not defined";
     }
+}
+
+void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat,
+                            bool &outIsCompressed, NUTEXFORMAT &outFormatEnum) {
+    i32 formatToCheck = inFormat;
+
+    if (inFormat != NUTEX_DXT1) {
+        outIsCompressed = false;
+        outBpp = 0;
+    } else {
+        if (g_renderDevice.enabled_extensions[NUTEX_DXT1]) {
+            outBpp = 0;
+        } else if (g_renderDevice.enabled_extensions[NUTEX_ETC1]) {
+            inFormat = NUTEX_ETC1;
+            formatToCheck = NUTEX_ETC1;
+            outBpp = 0;
+        } else {
+            outIsCompressed = false;
+            inFormat = NUTEX_RGBA32;
+            outBpp = 0;
+        }
+    }
+
+    switch (inFormat) {
+        case NUTEX_DXT1:                                         // 1
+            outInternalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; // 0x83F0
+            outType = GL_UNSIGNED_BYTE;
+            outIsCompressed = true; // 0x1907
+            outFormat = GL_RGB;     // 0x1401
+            break;
+
+        case NUTEX_DX1A:                                          // 2
+            outInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; // 0x83F1
+            outFormat = GL_RGBA;
+            outType = GL_UNSIGNED_BYTE; // 0x1908
+            outIsCompressed = true;     // 0x1401
+            break;
+
+        case NUTEX_DXT5:                 // 6
+            outInternalFormat = GL_RGBA; // 0x1908
+            outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_RGBA;    // 0x1908
+            outIsCompressed = true; // 0x1401
+            break;
+
+        case 0x10:
+            outInternalFormat = GL_LUMINANCE; // 0x1909
+            outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_LUMINANCE; // 0x1909
+            outBpp = 8;               // 0x1401
+            outFormatEnum = inFormat;
+            return;
+
+        case NUTEX_ETC1:                          // 0x11
+            outInternalFormat = GL_ETC1_RGB8_OES; // 0x8D64
+            outFormat = GL_RGB;
+            outType = GL_UNSIGNED_BYTE; // 0x1907
+            outIsCompressed = true;     // 0x1401
+            break;
+
+        case NUTEX_PVRTC2:                                          // 0x14
+            outInternalFormat = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG; // 0x8C01
+            outIsCompressed = true;
+            outFormat = GL_RGB;         // 0x1907
+            outType = GL_UNSIGNED_BYTE; // 0x1401
+            break;
+
+        case NUTEX_PVRTC2A:                                          // 0x15
+            outInternalFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG; // 0x8C03
+            outType = GL_UNSIGNED_BYTE;
+            outIsCompressed = true; // 0x1908
+            outFormat = GL_RGBA;    // 0x1401
+            break;
+
+        case NUTEX_PVRTC4:                                          // 0x16
+            outInternalFormat = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG; // 0x8C00
+            outFormat = GL_RGB;
+            outIsCompressed = true;     // 0x1907
+            outType = GL_UNSIGNED_BYTE; // 0x1401
+            break;
+
+        case NUTEX_PVRTC4A:                                          // 0x17
+            outInternalFormat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG; // 0x8C02
+            outIsCompressed = true;
+            outFormat = GL_RGBA;        // 0x1908
+            outType = GL_UNSIGNED_BYTE; // 0x1401
+            break;
+
+        case NUTEX_ATCA:                                            // 0x18
+            outInternalFormat = GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD; // 0x87EE
+            outFormat = GL_RGBA;
+            outIsCompressed = true;     // 0x1908
+            outType = GL_UNSIGNED_BYTE; // 0x1401
+            break;
+
+        case NUTEX_ATC:                         // 0x19
+            outInternalFormat = GL_ATC_RGB_AMD; // 0x8C92
+            outFormat = GL_RGB;
+            outIsCompressed = true;     // 0x1907
+            outType = GL_UNSIGNED_BYTE; // 0x1401
+            break;
+
+        case 0x66:
+            outInternalFormat = GL_RGB; // 0x1907
+            outFormat = GL_RGB;         // 0x18
+            outType = GL_UNSIGNED_BYTE; // 0x1907
+            outBpp = 24;                // 0x1401
+            outFormatEnum = inFormat;
+            return;
+
+        case 0x69:
+        case 0x72:
+            outFormatEnum = inFormat;
+            return;
+
+        default:
+            outInternalFormat = GL_RGBA;
+            outType = GL_UNSIGNED_BYTE;
+            outFormat = GL_RGBA;
+            outFormatEnum = inFormat;
+            outBpp = 32;
+            return;
+    }
+
+    if (__builtin_expect(!NuIOS_TextureFormatSupported(formatToCheck), 1)) {
+        while (true) {
+        }
+    }
+
+    outFormatEnum = inFormat;
+}
+
+i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCubemap, i32 mips, i32 targetMip,
+                 i32 targetSlice) {
+    i32 totalOffset = 0;
+    i32 currentSlice = 0;
+    bool isAuto;
+
+    if (depth == 0) {
+        depth = 1;
+    }
+
+    isAuto = targetMip < 0 && targetSlice < 0;
+
+    if (isAuto != 0) {
+        targetSlice = isCubemap ? 5 : depth;
+        targetMip = mips;
+    }
+
+    bool isCompressed;
+    i32 bytesPerBlockOrPixel;
+    i32 blockWidth;
+    i32 minBlocks;
+
+    if (format > 0 && format < 119) {
+        const i32 formatIndex = format - 1;
+        isCompressed = FormatIsCompressedTable[formatIndex];
+        minBlocks = static_cast<i8>(FormatMinBlocksYTable[formatIndex]);
+        bytesPerBlockOrPixel = static_cast<i8>(FormatBytesPerElementTable[formatIndex]);
+        blockWidth = static_cast<i8>(FormatBlockWidthTable[formatIndex]);
+    } else {
+        isCompressed = false;
+        minBlocks = 1;
+        bytesPerBlockOrPixel = 0;
+        blockWidth = 4;
+    }
+
+    while (true) {
+        i32 innerMipLimit = targetMip;
+
+        if (isCubemap && (currentSlice < targetSlice)) {
+            innerMipLimit = mips;
+        }
+
+        i32 m = 0;
+
+        while (true) {
+            i32 w = width >> m;
+            if (w < 1)
+                w = 1;
+
+            i32 h = height >> m;
+            if (h < 1)
+                h = 1;
+
+            i32 levelSize;
+
+            if (!isCompressed) {
+                levelSize = w * h * bytesPerBlockOrPixel;
+            } else {
+                i32 blocksY = h >> 2;
+                if (blocksY < minBlocks)
+                    blocksY = minBlocks;
+
+                i32 blocksX = w / blockWidth;
+                if (blocksX < minBlocks)
+                    blocksX = minBlocks;
+
+                levelSize = blocksX * blocksY * bytesPerBlockOrPixel;
+            }
+
+            if (m == innerMipLimit) {
+                if (isAuto == 0 && depth > 1) {
+                    totalOffset += levelSize * targetSlice;
+                }
+                break;
+            }
+
+            i32 d = depth >> m;
+            if (d <= 0)
+                d = 1;
+
+            totalOffset += d * levelSize;
+            m++;
+        }
+
+        if (!isCubemap || (currentSlice == targetSlice)) {
+            break;
+        }
+
+        currentSlice++;
+    }
+
+    return totalOffset;
+}
+
+void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
+                     NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
+    const i32 lastSlice = isCubemap ? 5 : 0;
+    const i32 faceCount = isCubemap ? 6 : 1;
+
+    for (i32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X; faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X < faceCount;
+         ++faceTarget) {
+        if (mips != 0) {
+            u32 texTarget = GL_TEXTURE_2D;
+            if (isCubemap) {
+                texTarget = faceTarget;
+            }
+
+            i32 mipWidth;
+            i32 hLimit;
+
+            for (i32 mip = 0; mip != mips; ++mip) {
+                mipWidth = width >> mip;
+                mipWidth = mipWidth > 0 ? mipWidth : 1;
+
+                i32 mipHeight = height >> mip;
+                hLimit = mipHeight > 0 ? mipHeight : 1;
+
+                i32 currentOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip,
+                                                 faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+
+                unsigned char *mipData = (unsigned char *)pixels + currentOffset;
+
+                if (!isCompressed) {
+                    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                           0x58e);
+
+                    u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+                    glBindTexture(bindTarget, texID);
+
+                    if (g_loadDefaultTexture != 0) {
+                        loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
+                    } else {
+                        glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
+                    }
+                    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                         0x5b3);
+                } else {
+                    i32 nextOffset;
+                    i32 sizeOffset;
+                    i32 targetSlice;
+
+                    if (mips - 1 == mip) {
+                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
+                        sizeOffset = mips - 1;
+                        targetSlice = lastSlice;
+                    } else {
+                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
+                        sizeOffset = mip;
+                        targetSlice = 0;
+                    }
+
+                    sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
+                    i32 mipSize = nextOffset - sizeOffset;
+
+                    if (!isCubemap) {
+                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                               0x56e);
+                        glBindTexture(GL_TEXTURE_2D, texID);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                        if (g_loadDefaultTexture == 0) {
+                            NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
+                                                          mipSize, mipData);
+                        } else {
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
+                        }
+                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                             0x589);
+                    } else {
+                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                               0x54b);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                        if (g_loadDefaultTexture == 0) {
+                            NuIOS_UploadCompressedTexture(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0,
+                                                          mipSize, mipData);
+                        } else {
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
+                        }
+                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                             0x566);
+
+                        g_loadDefaultTexture = 0;
+                    }
+                }
+                if (hLimit == 1 && mipWidth == 1) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!isCompressed) {
+        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5bf);
+        u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+        glGenerateMipmap(bindTarget);
+        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5c1);
+    }
+
+    glFlush();
+    g_loadDefaultTexture = 0;
 }
 
 GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out_height) {
@@ -769,208 +1280,3 @@ GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
     return texture;
 }
 
-i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCubemap, i32 mips, i32 targetMip,
-                 i32 targetSlice) {
-    i32 totalOffset = 0;
-    i32 currentSlice = 0;
-    bool isAuto;
-
-    if (depth == 0) {
-        depth = 1;
-    }
-
-    isAuto = targetMip < 0 && targetSlice < 0;
-
-    if (isAuto != 0) {
-        targetSlice = isCubemap ? 5 : depth;
-        targetMip = mips;
-    }
-
-    bool isCompressed;
-    i32 bytesPerBlockOrPixel;
-    i32 blockWidth;
-    i32 minBlocks;
-
-    if (format > 0 && format < 119) {
-        const i32 formatIndex = format - 1;
-        isCompressed = FormatIsCompressedTable[formatIndex];
-        minBlocks = static_cast<i8>(FormatMinBlocksYTable[formatIndex]);
-        bytesPerBlockOrPixel = static_cast<i8>(FormatBytesPerElementTable[formatIndex]);
-        blockWidth = static_cast<i8>(FormatBlockWidthTable[formatIndex]);
-    } else {
-        isCompressed = false;
-        minBlocks = 1;
-        bytesPerBlockOrPixel = 0;
-        blockWidth = 4;
-    }
-
-    while (true) {
-        i32 innerMipLimit = targetMip;
-
-        if (isCubemap && (currentSlice < targetSlice)) {
-            innerMipLimit = mips;
-        }
-
-        i32 m = 0;
-
-        while (true) {
-            i32 w = width >> m;
-            if (w < 1)
-                w = 1;
-
-            i32 h = height >> m;
-            if (h < 1)
-                h = 1;
-
-            i32 levelSize;
-
-            if (!isCompressed) {
-                levelSize = w * h * bytesPerBlockOrPixel;
-            } else {
-                i32 blocksY = h >> 2;
-                if (blocksY < minBlocks)
-                    blocksY = minBlocks;
-
-                i32 blocksX = w / blockWidth;
-                if (blocksX < minBlocks)
-                    blocksX = minBlocks;
-
-                levelSize = blocksX * blocksY * bytesPerBlockOrPixel;
-            }
-
-            if (m == innerMipLimit) {
-                if (isAuto == 0 && depth > 1) {
-                    totalOffset += levelSize * targetSlice;
-                }
-                break;
-            }
-
-            i32 d = depth >> m;
-            if (d <= 0)
-                d = 1;
-
-            totalOffset += d * levelSize;
-            m++;
-        }
-
-        if (!isCubemap || (currentSlice == targetSlice)) {
-            break;
-        }
-
-        currentSlice++;
-    }
-
-    return totalOffset;
-}
-
-void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
-                     NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
-    const i32 lastSlice = isCubemap ? 5 : 0;
-    const i32 faceCount = isCubemap ? 6 : 1;
-
-    for (i32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X; faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X < faceCount;
-         ++faceTarget) {
-        if (mips != 0) {
-            u32 texTarget = GL_TEXTURE_2D;
-            if (isCubemap) {
-                texTarget = faceTarget;
-            }
-
-            i32 mipWidth;
-            i32 hLimit;
-
-            for (i32 mip = 0; mip != mips; ++mip) {
-                mipWidth = width >> mip;
-                mipWidth = mipWidth > 0 ? mipWidth : 1;
-
-                i32 mipHeight = height >> mip;
-                hLimit = mipHeight > 0 ? mipHeight : 1;
-
-                i32 currentOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip,
-                                                 faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-
-                unsigned char *mipData = (unsigned char *)pixels + currentOffset;
-
-                if (!isCompressed) {
-                    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                           0x58e);
-
-                    u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
-                    glBindTexture(bindTarget, texID);
-
-                    if (g_loadDefaultTexture != 0) {
-                        loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
-                    } else {
-                        glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
-                    }
-                    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                         0x5b3);
-                } else {
-                    i32 nextOffset;
-                    i32 sizeOffset;
-                    i32 targetSlice;
-
-                    if (mips - 1 == mip) {
-                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
-                        sizeOffset = mips - 1;
-                        targetSlice = lastSlice;
-                    } else {
-                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
-                        sizeOffset = mip;
-                        targetSlice = 0;
-                    }
-
-                    sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
-                    i32 mipSize = nextOffset - sizeOffset;
-
-                    if (!isCubemap) {
-                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                               0x56e);
-                        glBindTexture(GL_TEXTURE_2D, texID);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                        if (g_loadDefaultTexture == 0) {
-                            NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
-                                                          mipSize, mipData);
-                        } else {
-                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
-                        }
-                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                             0x589);
-                    } else {
-                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                               0x54b);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
-                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                        if (g_loadDefaultTexture == 0) {
-                            NuIOS_UploadCompressedTexture(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0,
-                                                          mipSize, mipData);
-                        } else {
-                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
-                        }
-                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                             0x566);
-
-                        g_loadDefaultTexture = 0;
-                    }
-                }
-                if (hLimit == 1 && mipWidth == 1) {
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!isCompressed) {
-        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5bf);
-        u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
-        glGenerateMipmap(bindTarget);
-        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5c1);
-    }
-
-    glFlush();
-    g_loadDefaultTexture = 0;
-}

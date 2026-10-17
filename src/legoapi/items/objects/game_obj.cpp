@@ -1,6 +1,5 @@
 #include "decomp.h"
 #include "nu2api/nucore/nuvuvec.hpp"
-#include "decomp.h"
 #include "legoapi/ai/game/creature.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
@@ -10,7 +9,6 @@
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/items/collect/torpedo.h"
 #include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/gizmos/transport/gizportal.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/levels.h"
@@ -28,19 +26,10 @@
 #include "legoapi/actions/combat/hits.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "gamelib/util/gamelib_util_types.h"
-#include "gameapi/edtools/edfile.h"
-#include "gameapi/edtools/edpart_internal.h"
-#include "gameapi/edtools/edpp_internal.h"
-#include "gameapi/edtools/edstubs.h"
-#include "gameapi/gui/apimenu.h"
 #include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/core/panel.h"
-#include "legoapi/render/core/terrain.h"
-#include "legoapi/render/core/rtl.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/gizmo/object/gizmopickup.h"
-#include "legoapi/gizmo/object/giztorpedo.h"
-#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/world/world_shared.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/customiser.h"
@@ -48,7 +37,6 @@
 #include "legoapi/characters/motion/gameanim.h"
 #include "nu2api/nu3d/nuportal.h"
 #include "nu2api/numath/numtx_inline.h"
-#include "nu2api/nu3d/android/nuptl_android.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/core/input/gamepads.h"
 #include "nu2api/numath/nufloat.h"
@@ -61,69 +49,34 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "legoapi/actions/movement/jumping.h"
-#include "legoapi/gizmos/object/hatmachine.h"
 #include "legoapi/characters/motion/action_info.h"
 #include "legoapi/actions/character/snake.h"
 #include "MechInputTouch/MechInputTouch_types.h"
-#include "nu2api/nu3d/nuqfnt.h"
-#include "legoapi/actions/movement/carrying.h"
-#include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/gizmos/traps/attracto.h"
-#include "legoapi/props/objects/signal.h"
 #include "legoapi/gizmos/door/securitydoors.h"
 #include "legoapi/props/objects/techno.h"
-#include "legoapi/gizmos/object/gizpanel.h"
-#include "legoapi/gizmos/transport/tubes.h"
-#include "legoapi/gizmos/transport/teleport.h"
 #include "legoapi/gizmos/door/zipups.h"
 #include "legoapi/gizmos/transport/grapples.h"
-#include "legoapi/props/objects/tightrope.h"
-#include "legoapi/menus/screens/shop.h"
-#include "legoapi/menus/core/gamemessage.h"
 #include "legoapi/props/system/socksys.h"
-#include "legoapi/render/core/render.h"
 #include "legoapi/render/fx/spline_position.h"
-#include "legoapi/render/light/surfaces.h"
-#include "nu2api/nucore/nupad.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nu3d/nucamera.h"
-#include "nu2api/nu3d/nulgtlaser.h"
-#include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/numath/nuang.h"
 #include "legoapi/actions/character/speederchase.h"
 #include "legoapi/audio/audio.h"
-#include "legoapi/ai/core/legoai.h"
-#include "legoapi/items/objects/objectsall.h"
-#include "legoapi/actions/character/streaks.h"
 #include "legoapi/menus/screens/arcade.h"
 #include "gameapi/edtools/edui.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/render/light/lighting.h"
-#include "legoapi/render/light/shadow.h"
-#include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/characters/core/CharacterObjectInterface.h"
-#include "legoapi/characters/core/charconfig.h"
 #include "legoapi/menus/core/gamehint.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/trigger/gizspecial.h"
-#include "legoapi/gizmos/door/spinner.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/core/input/timer.h"
-#include "legoapi/core/input/timing.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nucore/numemory.h"
-#include "nu2api/nu3d/android/nutimebar_plain.h"
-#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/nuhgobj.h"
-#include "legoapi/items/base/collection.h"
-#include "legoapi/world/levels/episode.h"
 #include "legogame/game.h"
-#include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufpar.h"
-#include "legoapi/actions/combat/fighting.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/characters/motion/animlist.h"
@@ -132,94 +85,47 @@
 #include "legoapi/misc/utilities.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
-#include "legoapi/menus/screens/gamestructure.h"
 #include "gameapi/ai/aisys/aipath.h"
-#include "legoapi/gizmos/object/newblowup.h"
-#include "legoapi/gizmos/traps/gizbombgen.h"
-#include "legoapi/gizmos/traps/gizturrets.h"
 #include "nu2api/nucore/numechptr.hpp"
-#include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/nu3d/nuspline.h"
 #include "gameframework/saveload.h"
+#include "legoapi/actions/character/legoapi_tag.h"
+#include "legoapi/actions/character/specialmoves.h"
+#include "legoapi/actions/movement/climbing.h"
+#include "legoapi/actions/movement/pushing.h"
+#include "legoapi/ai/core/gameai.h"
+#include "legoapi/ai/game/gameantinode.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/gizmos/object/lever.h"
+#include "legoapi/items/collect/batarang.h"
+#include "legoapi/items/collect/bolts.h"
+#include "legoapi/items/collect/shard.h"
+#include "legoapi/items/fx/explosions.h"
+#include "legoapi/items/objects/game_obj.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "legoapi/world/levels/episodeV.h"
+#include "legoapi/world/levels/hub.h"
+#include "nu2api/nusound/nusound3_include.h"
 
 // Game-object update, hit and part-kill code (retail game_obj.cpp).
 
 extern f32 AIFireIntervalMul, BaseCurrentSpeed, CurrentSpeed, CurrentSpeedOverride, GhostLightMul, GhostLightTargetMul;
 extern f32 DEFENDTIME, SHIELDFLICKERTIME, Hub_PadSpeed[2];
-extern f32 tieonsfxwait, tieoffsfxwait;
+extern "C" f32 tieonsfxwait, tieoffsfxwait;
 extern char *ASCII_DOWN;
-extern GameObject_s *CarWashHack;
-extern i32 DoubleScore;
-extern EXPLOSION Explosion[8];
+extern "C" i32 DoubleScore;
 extern i32 FalconDebKey[2];
-extern i32 timebase_updates;
-extern AREADATA_s *SPEEDERCHASE_ADATA;
 extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
 extern f32 TargetDist_Near2, TargetDist_Mid2;
-extern i32 adaptivedifficulty[3];
+extern "C" i32 adaptivedifficulty[3];
 extern i8 (*adtab)[4];
-extern i32 do_player_tag;
-extern f32 player_tag_timer;
 extern GameObject_s *player_tag_from, *player_tag_to;
-extern i32 disable_narrow_socks, players_cannot_exit_speeder, BuildUpDone;
 extern i16 id_ANAKINJEDI, id_ANAKINJEDISCARRED, id_GAMORREANGUARD, id_MOUSEDROID, id_OBIWANKENOBIEP3, id_PKDROID, id_SNAKE,
     id_WOOKIEE;
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
-extern BOLT_s *objhitobj_bolt;
-extern i16 *objhitobj_killparts_yrot;
 extern i32 objhitobj_noattackerrumble, objhitobj_nohurtsfx, objhitobj_noimpactsfx, objhitobj_throwkillpartsup;
 
-EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
-void AddSurfaceDebris(GameObject_s *);
-void AddSurfaceRipples(GameObject_s *);
-extern "C" void AddVariableShotDebrisEffectTimed3(i32, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *);
-void AlertSurroundingCreatures(GameObject_s *, NUVEC *);
-void AveragePlayerCurrentSpeedMul();
-void Batarangs_CheckLostData(void *);
-i32 ForcePushed_SuperPush_Occurring(GameObject_s *, GameObject_s *);
-void GameAIProcess();
-void GameAntinode_Update(GAMEANTINODESYS_s *);
-void GameObjectDimensions(GameObject_s *);
-GameObject_s *GetOtherActivePlayer(GameObject_s *);
-void GetTakeOverPos(GameObject_s *, NUVEC *);
-f32 GetVehicleHoverHeight(GameObject_s *, f32 *);
-GIZMOPICKUP_s *GizmoPickups_Collide(WORLDINFO_s *, GameObject_s *, i32);
-void Grapple_RemoveDynamic(void *);
-void HitRumble(GameObject_s *);
-i32 Hub_InMenu();
-void KeepOnScreen(GameObject_s *);
-void KillRumble(GameObject_s *);
-void MovePlayer(GameObject_s *);
-void MovePlayerSpline(GameObject_s *);
-void MovePlayer_NETWORK(GameObject_s *);
-i32 NewBlockAction(GameObject_s *);
-extern "C" void NuSound3ClearLoopHold(NUVEC *, i32);
-void PlayDieSfx(GameObject_s *);
-void PlayHurtSfx(GameObject_s *);
-void Player_ClearContext(GameObject_s *, i32);
-void Player_ResetContexts(PLAYERPACKET_s *);
-void PopBalloon(GameObject_s *);
-void PowerUp_Update(GameObject_s *);
-void RegenerateHearts(GameObject_s *);
-void ReleaseEat(GameObject_s *);
-void ReleaseForce(GameObject_s *, i32);
-void ReleaseLever(GameObject_s *);
-void ReleasePush(GameObject_s *);
-void ResetAICreature(GameObject_s *, AISYS_s *);
-void ResetCoinPacket(COINPACKET_s *);
-void ResetPlayerMoves(GameObject_s *);
-void ScaleGameObject(GameObject_s *);
-void SetPlayer();
-void SetProtocolDroidDeactivatedAction(GameObject_s *);
-void SetToLastSafePos(GameObject_s *);
-void Shards_HandleLostObj(WORLDINFO_s *, GameObject_s *);
-void SnakeBeenHit(GameObject_s *);
-i32 SpecialMove_ReleaseVictim(GameObject_s *);
-void StartFlatten(GameObject_s *, GameObject_s *);
-i32 TagCode(GameObject_s *, GameObject_s *, i32, i32, i32);
-void TakeHitRumble(GameObject_s *, f32);
-i32 TakeOverYodaSeekDistanceHack(GameObject_s *, GameObject_s *, NUVEC *);
-void TerrainPlayer(GameObject_s *);
 void UpdateCoinPacket(COINPACKET_s *, i32, i32);
 void UpdateRumble(RUMBLEPACKET *);
 
@@ -245,15 +151,7 @@ DECOMP_ASSERT(offsetof(BIKEPART_s, active) == 0x20, "BIKEPART active offset");
 DECOMP_ASSERT(offsetof(BIKEPART_s, rider) == 0x24, "BIKEPART rider offset");
 DECOMP_ASSERT(offsetof(BIKEPART_s, rider_position) == 0x28, "BIKEPART rider position offset");
 static BIKEPART_s bikeParts[8];
-
-void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
-void KillParts_SpeederBike(ADDPART_s *, i32, i32, GameObject_s *);
-void KillParts_TIEFIGHTER(ADDPART_s *, i32, i32, GameObject_s *, i32, u16, u16, NUVEC *);
-void KillParts_ATAT(ADDPART_s *, i32, i32, GameObject_s *);
-static i32 SpeederPart_Draw(PART_s *);
 static void SpeederPart_Kill(PART_s *, i32);
-static void SpeederPart_Update(PART_s *);
-
 static i32 lastrandkillmode;
 
 static i32 GameObjectAIUpdateInterval(WORLDINFO_s *world, GameObject_s *object) {
@@ -293,7 +191,6 @@ static i32 GameObjectAIUpdateInterval(WORLDINFO_s *world, GameObject_s *object) 
     // values are selected only beyond that tier's distance threshold.
     return interval < 7 ? interval : 7;
 }
-
 
 void CreatureCrate_MoveFn(PART_s *part, f32 elapsed) {
     part->crate_spawn_delay -= elapsed;

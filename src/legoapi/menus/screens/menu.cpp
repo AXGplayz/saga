@@ -18,104 +18,54 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/core/config/fileselect.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/audio/audio.h"
 #include "nu2api/nu3d/nugscn.h"
-#include "nu2api/nu3d/nuqfnt.h"
-#include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nufile/nufile.h"
-#include "gameapi/edtools/edbri_internal.h"
-#include "gameapi/edtools/edstubs.h"
 #include "legoapi/items/collect/torpedo.h"
-#include "legoapi/actions/character/transform.h"
-#include "legoapi/actions/movement/carrying.h"
-#include "legoapi/actions/character/snake.h"
-#include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmos/door/zipups.h"
 #include "gamelib/util/gamelib_util_types.h"
-#include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/screens/arcade.h"
-#include "legoapi/render/light/fade_material.h"
 #include "legoapi/render/fx/edsplines.h"
-#include "legoapi/render/fx.h"
 #include "nu2api/nu3d/nurndrstat.h"
-#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nuandroid/ios_graphics.h"
-#include "nu2api/nu3d/android/nuportal_android.h"
-#include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/nu3d/nurndr.h"
 #include "gameapi/gui/apimenu.h"
-#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/motion/animlist.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/base/collection.h"
-#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world_shared.h"
-#include "nu2api/nu3d/nutexanm.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
-#include "nu2api/nu3d/nuprim_internal.h"
 #include "nu2api/nu3d/nudlist.h"
-#include "nu2api/nu3d/NuRenderDevice.h"
-#include "nu2api/nu3d/android/nurndr_android.h"
 #include "nu2api/nu3d/android/nugscn_android.h"
 #include "nu2api/nucore/bgproc.h"
-#include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuhgobj.h"
-#include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nucore/nuthread.h"
-#include "nu2api/numath/numath.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nu3d/nupostparams.h"
 #include "batman.h"
-#include "gamelib/crc/crc.h"
-#include "legoapi/render/light/fade.h"
-#include "legoapi/core/input/qrand.h"
+#include "globals.h"
+#include "legoapi/actions/movement/dropinout.h"
+#include "legoapi/core/startup/text.h"
+#include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/lib/text.h"
+#include "legoapi/menus/core/hint.h"
+#include "legoapi/menus/screens/customise.h"
+#include "legoapi/menus/screens/menu.h"
+#include "legoapi/menus/screens/missions.h"
+#include "legoapi/world/levels.h"
+#include "legoapi/world/levels/hub.h"
+#include "legogame/game.h"
+#include "nu2api/nucore/nu2api_nucore_misc.h"
 
-extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
-extern "C" void BackupMenu(void);
-extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
-extern "C" i32 NuIOS_IsWidescreen(void);
-f32 GameGetMusicVolume(OPTIONSSAVE_s *options);
-f32 GameSetSoundVolume(OPTIONSSAVE_s *options);
-i32 GameAudio_GetSfxId(i32 sfx);
-void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 volume, i32 flags);
-void legoSetMusicVolume(f32 volume);
-extern u8 cutskip_dontplaylevelintro;
-void Hint_LoadAllGameState(void);
-void NuIOS_RestoreInAppPurchases(void);
-void NewGame(void);
-void Hub_UpdateKit(void);
-void MenuDrawNewGame(MENU *menu);
-void MenuUpdateNewGame(MENU *menu);
-extern char *Trailer[3];
-extern OPTIONSSAVE TempOptions;
-extern VARIPTR characterbuffer_ptr;
-extern VARIPTR characterbuffer_end;
-void MusicClearAll(void);
-extern "C" void SoundKillAll(void);
-void GameDrawMenuEntry(MENU *menu, char *text);
-void DropOut(i32 player, i32 show_effect, i32 silent, i32 force);
-void NewLevelFromMenu(LEVELDATA_s *level, i32 menu_id, i32 menu_y, i32 remember_hub);
-extern i32 saveload_autosave;
-extern FadeSystem FadeSys;
-extern i32 level_already_loaded;
-extern "C" i32 NewMode;
-extern i32 from_save_and_exit;
-extern i16 tCANCEL;
 extern u8 MENULOSTR1, MENULOSTG1, MENULOSTB1, MENULOSTA1;
 extern u8 MENULOSTR2, MENULOSTG2, MENULOSTB2, MENULOSTA2;
 extern i16 tALLLEVELPROGRESSWILLBELOST, tALLSUPERSTORYPROGRESSWILLBELOST;
 extern i16 tGAMEPROGRESSWILLBELOST, tEXITTOMAP, tQUITGAME, tRESTARTDEMO2;
 extern i16 tARCADE_NOWIN, tEXITWITHOUTSAVING, tSAVEANDEXIT;
-extern i32 SuperStory;
-extern GAMEPAD_s GamePad[64];
-extern i32 pause_i_pad;
 extern i16 tHELPANDOPTIONS;
 extern i16 tEXTRAS;
 extern i16 tDROPOUT;
@@ -140,47 +90,9 @@ extern i16 tHOWTOPLAY;
 extern i16 tON;
 extern i16 tOFF;
 extern i16 tALLSTUDSCOLLECTED;
-extern i16 tEXIT;
 extern i16 tSELECTING;
 extern i16 tCONTROLLER;
-extern f32 PauseMenus_X;
-extern i32 PauseMenus_Align;
-extern u8 MENUEXITR;
-extern u8 MENUEXITG;
-extern u8 MENUEXITB;
-extern i32 reset_restart;
-extern u32 ResetBits;
-void Door_Reset(void);
-void Arcade_DrawEndMenu(MENU *menu);
-void Arcade_UpdateEndMenu(MENU *menu);
 void Credits_UpdateMenu(MENU *menu);
-void CustomiserMenu_Draw(MENU *menu);
-void CustomiserMenu_Update(MENU *menu);
-void MenuDrawClips(MENU *menu);
-void MenuDrawEndChallenge(MENU *menu);
-void MenuDrawEndMission(MENU *menu);
-void MenuDrawEpisodes(MENU *menu);
-void MenuDrawExtras(MENU *menu);
-void MenuDrawFreePlay(MENU *menu);
-void MenuDrawMissions(MENU *menu);
-void MenuDrawOptions(MENU *menu);
-void MenuDrawRestoreNewGame(MENU *menu);
-void MenuDrawSelectControls(MENU *menu);
-void MenuEnterOptions(MENU *menu);
-void MenuExitOptions(MENU *menu);
-void MenuInitClips(MENU *menu);
-void MenuInitFreePlay(MENU *menu);
-void MenuInitMissions(MENU *menu);
-void MenuUpdateClips(MENU *menu);
-void MenuUpdateEndChallenge(MENU *menu);
-void MenuUpdateEndMission(MENU *menu);
-void MenuUpdateEpisodes(MENU *menu);
-void MenuUpdateExtras(MENU *menu);
-void MenuUpdateFreePlay(MENU *menu);
-void MenuUpdateMissions(MENU *menu);
-void MenuUpdateOptions(MENU *menu);
-void MenuUpdateRestoreNewGame(MENU *menu);
-void MenuUpdateSelectControls(MENU *menu);
 extern i16 tTOUCHTOSTART;
 extern i16 tNEWGAME;
 extern i16 tLOADGAME;
@@ -188,25 +100,10 @@ extern i16 tCONTROLS;
 extern i16 tCONTROLLERCONNECTED;
 extern i16 tTOUCH;
 extern i16 tCONSOLE;
-extern "C" bool TestForController();
-extern "C" void SmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment,
-                            u8 red, u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box,
-                            i32 suppress_draw, u32 alpha);
 extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                           u8 green, u8 blue, f32 max_width, i32 max_lines);
-extern i32 hub_forceshopsave;
-extern "C" i32 TriggerAutoSave(void);
-void Hub_ClearStats();
-void Text_FillInExtendedSaveInfo();
-i32 UpdateAchievements(STATUSPACKET_s *packet);
-void ReCalculateCompletionPoints();
-void DrawShopPrompts();
-extern f32 ICONSIZE, ICONX, DROPINALPHA, HUB_EPISODETITLEY;
-extern i16 tSELECT, tSELECTED, tSELECTING, tEXIT, tCANCEL;
-void DrawCharIcon(i32, f32, f32, f32, f32, i32, f32, f32, i32, nuhspecial_s *);
-extern "C" void BackupMenuNoFn(void);
-extern i32 MenuSFX;
-extern char **TTab;
+extern f32 HUB_EPISODETITLEY;
+extern i16 tSELECT, tSELECTED, tSELECTING;
 extern i16 tSELECTCONTROLS;
 extern i16 tCONTROLSCANBECHANGED;
 extern i16 tCLASSIC;
@@ -220,65 +117,14 @@ extern i16 tCONTINUE;
 extern i16 tLOCKED;
 extern i16 tAVAILABLETOBUY;
 extern i16 tPOWERBRICK;
-extern i32 GAMEDEMO;
-extern i32 menu_flash;
-extern f32 text3d_height;
-extern f32 text3d_width;
-extern i32 Paused;
-i32 GetParentMenuID(void);
-f32 GameSetSoundVolume(OPTIONSSAVE *options);
-f32 GameSetMusicVolume(OPTIONSSAVE *options);
-void SfxCheckMusicOnOff(OPTIONSSAVE *options);
-extern i32 startnewgame;
-extern i32 startnewgame_initiated;
 extern f32 newgamecamtime;
-extern i32 newgamecam;
-extern "C" u8 MENUNORMALR;
-extern "C" u8 MENUNORMALG;
-extern "C" u8 MENUNORMALB;
 struct MENU_s;
 extern i16 tCURRENTGAME;
 extern i16 tEMPTY;
 extern i16 tGAME;
 extern i16 tNOSPACE;
-extern f32 MENUTEXTSCALE;
-extern i32 MenuA;
-extern u8 MENUNORMALR;
-extern u8 MENUNORMALG;
-extern u8 MENUNORMALB;
-extern u8 MENUENTRYR, MENUENTRYG, MENUENTRYB;
-extern u8 MENUFLASH0R;
-extern u8 MENUFLASH0G;
-extern u8 MENUFLASH0B;
-extern u8 MENUFLASH1R;
-extern u8 MENUFLASH1G;
-extern u8 MENUFLASH1B;
-extern f32 menu_pulse;
-extern f32 menu_pulsate;
-extern i32 editor_active;
-extern f32 ICONX;
-extern f32 ICONSIZE;
-extern f32 DROPINALPHA;
-extern "C" void Text3D(char *, f32, f32, f32, f32, f32, f32, u32, u8, u8, u8);
-extern i16 tUNKNOWN, tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern "C" void PlaySfx(char *, NUVEC *);
-void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
-extern void DrawMenuEntry(MENU_s *, char *);
-extern i32 GetMenuID(void);
-extern "C" void loadsaveCallEachFrame(void);
-extern "C" bool TestForController(void);
-i32 GetMenuID(void);
-extern u32 GAMEPAD_START;
-extern u32 GAMEPAD_SELECT;
-extern u32 GAMEPAD_MENUSELECT;
-extern u32 GAMEPAD_MENUCANCEL;
-extern i32 readpads_always;
-extern i32 reset_area;
-
-extern i32 pausecut_skip_to_level;
-extern u8 pausecut_skip_to_gameplay;
-extern i32 shop_save_done;
-extern GAMESAVE_s TempGame;
 static f32 newgamewait;
 static u32 buttons_store[15];
 // Initialised by the unit's static constructor; nothing in the retail binary reads it.
@@ -306,7 +152,6 @@ static bool MenuCheatAvailable(i32 cheat) {
 static void MenuDrawTitles(MENU *);
 static void MenuUpdateTitles(MENU *);
 static void MenuEnterTitles(MENU *);
-static i32 UpdateTitleSequence(MENU *);
 static void MenuDrawBonusComplete(MENU *);
 static void MenuDrawBonusWin(MENU *);
 static void MenuDrawHowToPlay(MENU *);

@@ -1,674 +1,881 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "globals.h"
 #include "gameapi/edtools/edfile.h"
-#include "legoapi/characters/motion.h"
 #include "nu2api/numath/nufloat.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/misc/utilities.h"
 #include "legoapi/render/fx/spline_position.h"
-#include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/world.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/world/mission.h"
-#include "legoapi/world/area.h"
-#include "legoapi/world/levels/podrace.h"
-#include "legoapi/world/levels/levels.h"
-#include "legoapi/world/area.h"
-#include "legoapi/world/mission.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/numath/nufloat.h"
-#include "nu2api/numath/nutrig.h"
 
 #include <string.h>
 #include <stdio.h>
+#include "legoapi/items/collect/torpedo.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edui.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/core/config/cheat.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/numath/nuvec.h"
+#include "legoapi/world/level.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/store.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "legoapi/items/base/apiobject.h"
+#include <new>
+#include "nu2api/numath/nuang.h"
+#include <stdlib.h>
+#include "nu2api/nu3d/nurndrstat.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "editor/edpath.h"
+#include "nu2api/nucore/nulist.h"
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/gizmos/door/securitydoors.h"
+#include "gameapi/ai/aisys/aipath.h"
+#include "nu2api/nucore/numechptr.hpp"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "nu2api/nu3d/nuhspecial.h"
+#include <stdint.h>
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include <ctype.h>
+#include <limits.h>
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
-// The original translation unit exports this internal counter under its unmangled C name.
-static i32 bezierline_depth asm("bezierline_depth");
-
-extern "C" {
-    char *FSP_Extension = ".FSP";
-    extern f32 PODRACE_SPLINEINC;
-}
-
-f32 BezierLineLength(VuVec &, VuVec &, VuVec &, VuVec &);
-
-// The original copies the aligned spline point to the caller's vector as
-// one unaligned 4-float vector store.
 typedef f32 BezierVec4 __attribute__((vector_size(16)));
 typedef f32 BezierVec4Unaligned __attribute__((vector_size(16), aligned(4)));
 
-i32 BezierLinePos(VuVec &result, VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control, f32 distance) {
-    f32 t = 0.5f;
-    f32 step = 0.25f;
-    for (i32 count = 256; count != 0; --count) {
-        f32 complement = 1.0f - t;
-        VuVec middle{second_control.x * complement + first_control.x * t,
-                     second_control.y * complement + first_control.y * t,
-                     second_control.z * complement + first_control.z * t, 0.0f};
-        VuVec first{first_control.x * complement + start.x * t, first_control.y * complement + start.y * t,
-                    first_control.z * complement + start.z * t, 0.0f};
-        VuVec last{end.x * complement + second_control.x * t, end.y * complement + second_control.y * t,
-                   end.z * complement + second_control.z * t, 0.0f};
-        VuVec first_middle{middle.x * complement + first.x * t, middle.y * complement + first.y * t,
-                           middle.z * complement + first.z * t, 0.0f};
-        VuVec middle_last{last.x * complement + middle.x * t, last.y * complement + middle.y * t,
-                          last.z * complement + middle.z * t, 0.0f};
-        VuVec point{middle_last.x * complement + first_middle.x * t, middle_last.y * complement + first_middle.y * t,
-                    middle_last.z * complement + first_middle.z * t, 1.0f};
-        f32 length = BezierLineLength(start, first, point, first_middle);
-        f32 difference = distance - length;
-        if (difference < 0.0f)
-            difference = -difference;
-        if (!(difference > 0.01f)) {
-            *reinterpret_cast<BezierVec4Unaligned *>(&result) = *reinterpret_cast<BezierVec4 *>(&point);
-            return 1;
-        }
-        if (distance < length)
-            t += step;
-        else
-            t -= step;
-        step *= 0.5f;
-        if (count == 1) {
-            *reinterpret_cast<BezierVec4Unaligned *>(&result) = *reinterpret_cast<BezierVec4 *>(&point);
-            return 1;
-        }
-    }
-    return 1;
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
 }
 
-void BezierLineEval(VuVec &result, VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control, float along) {
-    const f32 complement = 1.0f - along;
-    const f32 complement_squared = complement * complement;
-    const f32 squared = along * along;
-    const f32 start_weight = complement_squared * complement;
-    const f32 first_weight = (along * 3.0f) * complement_squared;
-    const f32 second_weight = (3.0f * squared) * complement;
-    const f32 end_weight = along * squared;
-    const f32 z = end.z * end_weight +
-                  ((first_control.z * first_weight + start.z * start_weight) + second_control.z * second_weight);
-    const f32 y = end.y * end_weight +
-                  (second_control.y * second_weight + (first_control.y * first_weight + start.y * start_weight));
-    const f32 x = end_weight * end.x +
-                  (second_weight * second_control.x + (first_weight * first_control.x + start_weight * start.x));
-    result.w = 0.0f;
-    result.y = y;
-    result.z = z;
-    result.x = x;
-}
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
 
-void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
-    const f32 scaled = (spline->point_count - 1) * along;
-    i32 index = static_cast<i32>(scaled);
-    const f32 fraction = scaled - index;
-    // The endpoint vectors occupy aligned stack slots in the retail evaluator.
-    _vuv_s first __attribute__((aligned(16)));
-    _vuv_s last __attribute__((aligned(16)));
-    NUVEC_ALIGNED16 direction;
-    _vuv_s *previous;
-    if (!(index <= 0)) {
-        // Retail retains the pre-clamp fraction and permits index == count;
-        // callers must supply the corresponding neighboring point storage.
-        if (index > spline->point_count)
-            index = spline->point_count;
-        previous = &spline->points[index - 1];
-    } else {
-        direction.x = spline->points[0].x - spline->points[1].x;
-        direction.y = spline->points[0].y - spline->points[1].y;
-        direction.z = spline->points[0].z - spline->points[1].z;
-        NuVecNorm(&direction, &direction);
-        direction.x *= 10.0f;
-        direction.y *= 10.0f;
-        direction.z *= 10.0f;
-        first.x = spline->points[0].x + direction.x;
-        first.y = spline->points[0].y + direction.y;
-        first.z = spline->points[0].z + direction.z;
-        first.w = spline->points[0].w;
-        previous = &first;
-        index = 0;
-    }
+extern i32 LevFlag[4];
 
-    _vuv_s *current = &spline->points[index];
-    _vuv_s *next = &spline->points[index + 1];
-    _vuv_s *following;
-    if (!(index < spline->point_count - 2)) {
-        const i32 end = spline->point_count - 1;
-        direction.x = spline->points[end].x - spline->points[end - 1].x;
-        direction.y = spline->points[end].y - spline->points[end - 1].y;
-        direction.z = spline->points[end].z - spline->points[end - 1].z;
-        NuVecNorm(&direction, &direction);
-        direction.x *= 10.0f;
-        direction.y *= 10.0f;
-        direction.z *= 10.0f;
-        _vuv_s *end_point = &spline->points[spline->point_count - 1];
-        last.x = end_point->x + direction.x;
-        last.y = end_point->y + direction.y;
-        last.z = end_point->z + direction.z;
-        last.w = end_point->w;
-        following = &last;
-    } else {
-        following = &spline->points[index + 2];
-    }
+struct nuhspecial_s;
+struct VuVec;
 
-    const _vuv_s after = *following;
-    const _vuv_s before = *previous;
-    const f32 squared = fraction * fraction;
-    const f32 cubed = fraction * squared;
-    result->x = (((current->x - next->x) * 3.0f - before.x + after.x) * cubed +
-                 ((before.x * 2.0f - current->x * 5.0f + next->x * 4.0f - after.x) * squared +
-                  (current->x * 2.0f + (next->x - before.x) * fraction))) *
-                0.5f;
-    result->y = (((current->y - next->y) * 3.0f - before.y + after.y) * cubed +
-                 ((before.y * 2.0f - current->y * 5.0f + next->y * 4.0f - after.y) * squared +
-                  (current->y * 2.0f + (next->y - before.y) * fraction))) *
-                0.5f;
-    result->w = current->w + (next->w - current->w) * fraction;
-    result->z = (((current->z - next->z) * 3.0f - before.z + after.z) * cubed +
-                 ((before.z * 2.0f - current->z * 5.0f + next->z * 4.0f - after.z) * squared +
-                  (current->z * 2.0f + (next->z - before.z) * fraction))) *
-                0.5f;
-}
-
-f32 BezierLineLength(VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control) {
-    VuVec first{(start.x + first_control.x) * 0.5f, (start.y + first_control.y) * 0.5f,
-                (start.z + first_control.z) * 0.5f, 0.0f};
-    VuVec middle{(first_control.x + second_control.x) * 0.5f, (first_control.y + second_control.y) * 0.5f,
-                 (first_control.z + second_control.z) * 0.5f, 0.0f};
-    VuVec last{(second_control.x + end.x) * 0.5f, (second_control.y + end.y) * 0.5f, (second_control.z + end.z) * 0.5f,
-               0.0f};
-    VuVec first_middle{(first.x + middle.x) * 0.5f, (first.y + middle.y) * 0.5f, (first.z + middle.z) * 0.5f, 0.0f};
-    VuVec middle_last{(middle.x + last.x) * 0.5f, (middle.y + last.y) * 0.5f, (middle.z + last.z) * 0.5f, 0.0f};
-    VuVec midpoint{(first_middle.x + middle_last.x) * 0.5f, (first_middle.y + middle_last.y) * 0.5f,
-                   (first_middle.z + middle_last.z) * 0.5f, 0.0f};
-    NUVEC error{(start.x + end.x) * 0.5f - midpoint.x, (start.y + end.y) * 0.5f - midpoint.y,
-                (start.z + end.z) * 0.5f - midpoint.z};
-    if (!(NuVecMag(&error) < 0.01f) && bezierline_depth < 2) {
-        ++bezierline_depth;
-        f32 first_length = BezierLineLength(start, first, midpoint, first_middle);
-        f32 second_length = BezierLineLength(midpoint, middle_last, end, last);
-        --bezierline_depth;
-        return first_length + second_length;
-    }
-    NUVEC chord{start.x - end.x, start.y - end.y, start.z - end.z};
-    return NuVecMag(&chord);
-}
-
-f32 BezierLineLength(VuVec &start, VuVec &first_control, VuVec &end, VuVec &second_control, f32 t) {
-    f32 complement = 1.0f - t;
-    VuVec middle{second_control.x * complement + first_control.x * t,
-                 second_control.y * complement + first_control.y * t,
-                 second_control.z * complement + first_control.z * t, 0.0f};
-    VuVec first{first_control.x * complement + start.x * t, first_control.y * complement + start.y * t,
-                first_control.z * complement + start.z * t, 0.0f};
-    VuVec last{end.x * complement + second_control.x * t, end.y * complement + second_control.y * t,
-               end.z * complement + second_control.z * t, 0.0f};
-    VuVec first_middle{middle.x * complement + first.x * t, middle.y * complement + first.y * t,
-                       middle.z * complement + first.z * t, 0.0f};
-    VuVec middle_last{last.x * complement + middle.x * t, last.y * complement + middle.y * t,
-                      last.z * complement + middle.z * t, 0.0f};
-    VuVec point{middle_last.x * complement + first_middle.x * t, middle_last.y * complement + first_middle.y * t,
-                middle_last.z * complement + first_middle.z * t, 0.0f};
-    return BezierLineLength(start, first, point, first_middle);
-}
-
-// Retail only keeps the split-out body of the IPA-SRA clone, which takes
-// &spline->length and &spline->pts in place of the spline.
 #if defined(__i386__)
-#define SPLINE_POINT_ANGLES_ATTR __attribute__((noinline, noclone, regparm(2)))
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
 #else
-#define SPLINE_POINT_ANGLES_ATTR __attribute__((noinline, noclone))
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
 #endif
-static SPLINE_POINT_ANGLES_ATTR void SplinePointAnglesBody(const i16 *length, NUVEC *const *pts, i32 index,
-                                                           i32 looping, u16 *pitch, u16 *angle)
-    __asm__("_ZL17SplinePointAnglesP11nugspline_siiPtS1_.isra.1.part.2");
-static void SplinePointAnglesBody(const i16 *length, NUVEC *const *pts, i32 index, i32 looping, u16 *pitch,
-                                  u16 *angle) {
-    NUVEC *current = &(*pts)[index];
-    i32 previous_index = index - 1;
-    NUVEC *previous = NULL;
-    if (looping && previous_index < 0)
-        previous = &(*pts)[*length - 1];
-    else if (previous_index >= 0)
-        previous = &(*pts)[previous_index];
-    NUVEC direction = {0.0f, 0.0f, 0.0f};
-    if (previous != NULL) {
-        direction.x += current->x - previous->x;
-        direction.y += current->y - previous->y;
-        direction.z += current->z - previous->z;
-    }
-    NUVEC *next = NULL;
-    if (index + 1 < *length)
-        next = &(*pts)[index + 1];
-    else if (looping)
-        next = *pts;
-    if (next != NULL) {
-        direction.x += next->x - current->x;
-        direction.y += next->y - current->y;
-        direction.z += next->z - current->z;
-    }
-    if (pitch != NULL)
-        *pitch = NuAtan2D(direction.y, NuFsqrt(direction.x * direction.x + direction.z * direction.z));
-    if (angle != NULL)
-        *angle = NuAtan2D(direction.x, direction.z);
+
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
+
+namespace {
+
+} // namespace
+
+struct EDCREATURE_s;
+
+struct AISYS_s;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
-static inline void SplinePointAngles(NUGSPLINE *spline, i32 index, i32 looping, u16 *pitch, u16 *angle) {
-    SplinePointAnglesBody(&spline->length, &spline->pts, index, looping, pitch, angle);
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
 }
 
-void FlightSpline_Init(WORLDINFO_s *world, flightspline_s *splines, i32 capacity) {
-    char filename[256];
-    sprintf(filename, "%s%s", world->config_file, FSP_Extension);
-    EdFileSetMedia(1);
-    if (!EdFileOpen(filename, NUFILE_READ))
-        return;
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
 
-    const i32 version = EdFileReadInt();
-    const i32 count = EdFileReadInt();
-    // The file is trusted to fit the supplied storage, as in the retail loader.
-    for (i32 i = 0; i < count; ++i) {
-        flightspline_s *spline = &splines[i];
-        spline->point_count = EdFileReadInt();
-        spline->field_0x408 = EdFileReadFloat();
-        spline->id = EdFileReadInt();
-        spline->unknown_528 = 1;
-        if (version > 1) {
-            spline->field_0x40c = EdFileReadFloat();
-            spline->field_0x514 = EdFileReadInt();
-        } else {
-            spline->field_0x40c = 0.0f;
-            spline->field_0x514 = 0;
-        }
-        if (version > 2) {
-            spline->field_0x51c = EdFileReadInt();
-            spline->field_0x520 = EdFileReadInt();
-        } else {
-            spline->field_0x51c = -1;
-            spline->field_0x520 = i;
-        }
-        for (i32 point = 0; point < spline->point_count; ++point) {
-            spline->points[point].x = EdFileReadFloat();
-            spline->points[point].y = EdFileReadFloat();
-            spline->points[point].z = EdFileReadFloat();
-            spline->points[point].w = EdFileReadFloat();
-        }
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
 
-    i32 i;
-    if (version > 3) {
-        for (i = 0; i < count; ++i) {
-            flightspline_s *spline = &splines[i];
-            spline->length = EdFileReadFloat();
-            if (version == 4) {
-                f32 distance = 0.0f;
-                _vuv_s previous, current;
-                NUVEC difference;
-                for (i32 point = 0; point < spline->point_count; ++point) {
-                    CalcSplinePoint(spline, &previous, static_cast<f32>(point) / spline->point_count);
-                    for (i32 sample = 1; sample <= 10; ++sample) {
-                        CalcSplinePoint(spline, &current, (sample / 10.0f + point) / spline->point_count);
-                        difference.x = current.x - previous.x;
-                        difference.y = current.y - previous.y;
-                        difference.z = current.z - previous.z;
-                        distance += NuVecMag(&difference);
-                        previous = current;
-                    }
-                    spline->cumulative_distances[point] = distance;
-                }
-                spline->length = distance;
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct FLOWBOX_s;
+
+struct JEDIBNETPACKET_s;
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+extern u32 flagremaptab[32][2];
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+static NUGSPLINE *splineStore;
+static i32 numSplinesLoaded;
+char *EDSPLINE_FILECHECK = const_cast<char *>("EDSPLINE v. ");
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special) {
+    if (data != NULL) {
+        memset(data, 0, sizeof(*data));
+        if (special != NULL && NuSpecialExistsFn(special)) {
+            NUVEC minimum;
+            NUVEC maximum;
+            NuSpecialGetBounds(special, &minimum, &maximum);
+            NUMTX *matrix = NuSpecialGetMtx(special);
+            NuVecMtxTransform(&minimum, &minimum, matrix);
+            NuVecMtxTransform(&maximum, &maximum, matrix);
+            f32 x = NuFabs((maximum.x - minimum.x) * 0.5f);
+            f32 z = NuFabs((maximum.z - minimum.z) * 0.5f);
+            if (NuFabs(x - z) < 0.01f) {
+                data->radius = x;
+                data->use_largest_extent = 0;
             } else {
-                for (i32 point = 0; point < spline->point_count; ++point)
-                    spline->cumulative_distances[point] = EdFileReadFloat();
+                data->radius = x > z ? x : z;
+                data->use_largest_extent = 1;
             }
-        }
-    } else {
-        for (i = 0; i < count; ++i) {
-            flightspline_s *spline = &splines[i];
-            f32 distance = 0.0f;
-            if (spline->point_count != 0) {
-                _vuv_s current;
-                CalcSplinePoint(spline, &current, 1.0f);
-                f32 along = 1.0f;
-                do {
-                    const _vuv_s previous = current;
-                    if (PODRACE_ADATA != NULL && PODRACE_ADATA == WORLD->area)
-                        along -= PODRACE_SPLINEINC;
-                    else
-                        along -= 0.01f;
-                    if (along < 0.0f)
-                        along = 0.0f;
-                    CalcSplinePoint(spline, &current, along);
-                    NUVEC difference{current.x - previous.x, current.y - previous.y, current.z - previous.z};
-                    distance += NuVecMag(&difference);
-                } while (along > 0.0f);
-            }
-            spline->length = distance;
+            data->extent_x = x;
+            data->extent_z = z;
+            data->max_y = NuFabs((maximum.y - minimum.y) * 0.5f);
+            data->min_y = -data->max_y;
         }
     }
-    for (; i < capacity; ++i)
-        splines[i].point_count = 0;
+}
+
+void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data) {
+    if (EdFileReadChar() == 0) {
+        return;
+    }
+    EdFileReadNuVec(&data->position);
+    data->radius = EdFileReadFloat();
+    data->min_y = EdFileReadFloat();
+    data->max_y = EdFileReadFloat();
+    data->extent_x = EdFileReadFloat();
+    data->extent_z = EdFileReadFloat();
+    data->flags = EdFileReadShort();
+    data->use_largest_extent = static_cast<u8>(EdFileReadChar());
+    data->mode = static_cast<u8>(EdFileReadChar());
+}
+
+i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
+    NUGSPLINE *store = reinterpret_cast<NUGSPLINE *>(buf->void_ptr);
+    splineStore = store;
+    buf->addr = (buf->addr + 3) & ~static_cast<usize>(3);
+
+    EdFileSetMedia(1);
+    if (EdFileOpen(path, NUFILE_READ) == 0) {
+        splineStore = NULL;
+        return 0;
+    }
+
+    const i32 file_check_length = NuStrLen(EDSPLINE_FILECHECK);
+    for (i32 i = 0; i < file_check_length; ++i) {
+        if (EDSPLINE_FILECHECK[i] != EdFileReadChar()) {
+            EdFileClose();
+            splineStore = NULL;
+            return 0;
+        }
+    }
+
+    EdFileReadInt();
+    i32 spline_count = EdFileReadInt();
+    i32 point_count = EdFileReadInt();
+    i32 string_bytes = EdFileReadInt();
+
+    char *name_cursor = reinterpret_cast<char *>(store + spline_count);
+    char *name_end = name_cursor + string_bytes;
+    NUVEC *point_cursor = reinterpret_cast<NUVEC *>((reinterpret_cast<usize>(name_end) + 3) & ~static_cast<usize>(3));
+    NUVEC *data_end = point_cursor + point_count;
+    if (reinterpret_cast<usize>(data_end) > buf_end->addr) {
+        EdFileClose();
+        splineStore = NULL;
+        return 0;
+    }
+
+    for (i32 i = 0; i < spline_count; ++i) {
+        EdFileReadChar();
+        i32 name_length = EdFileReadInt();
+        splineStore[i].name = name_cursor;
+        splineStore[i].pt_size = sizeof(NUVEC);
+        splineStore[i].length = static_cast<i16>(EdFileReadInt());
+        splineStore[i].pts = point_cursor;
+
+        for (i32 j = 0; j < name_length; ++j) {
+            splineStore[i].name[j] = EdFileReadChar();
+        }
+        name_cursor += name_length;
+        if (name_cursor > name_end) {
+            EdFileClose();
+            splineStore = NULL;
+            EdFileClose();
+            numSplinesLoaded = spline_count;
+            buf->void_ptr = data_end;
+            return 0;
+        }
+
+        for (i32 j = 0; j < splineStore[i].length; ++j) {
+            NUVEC *point = &splineStore[i].pts[j];
+            point->x = EdFileReadFloat();
+            point->y = EdFileReadFloat();
+            point->z = EdFileReadFloat();
+        }
+        point_cursor += splineStore[i].length;
+        if (point_cursor > data_end) {
+            EdFileClose();
+            splineStore = NULL;
+            EdFileClose();
+            numSplinesLoaded = spline_count;
+            buf->void_ptr = data_end;
+            return 0;
+        }
+    }
+
     EdFileClose();
+    numSplinesLoaded = spline_count;
+    buf->void_ptr = data_end;
+    return spline_count;
 }
 
-void PointAlongSpline(NUGSPLINE *spline, f32 along, NUVEC *position, u16 *angle, u16 *pitch, i32 looping) {
-    if (angle != NULL)
-        *angle = 0;
-    if (pitch != NULL)
-        *pitch = 0;
-    if (__builtin_expect(spline == NULL, 0))
-        return;
-    if (__builtin_expect(along > 1.0f, 1))
-        along = 1.0f;
-    else if (along < 0.0f)
-        along = 0.0f;
-    u32 extent = (u32)(looping ? spline->length : spline->length - 1) << 16;
-    u32 fixed = (i32)((f32)extent * along);
-    i32 index = fixed >> 16;
-    NUVEC *current = &spline->pts[index];
-    *position = *current;
-    if (__builtin_expect(pitch != NULL || angle != NULL, 1))
-        SplinePointAngles(spline, index, looping, pitch, angle);
-    index++;
-    if (index >= spline->length) {
-        if (!looping)
-            return;
-        index = 0;
+NUGSPLINE *edSpline_SplineFind(NUGSCN *scene, char *name) {
+    if (splineStore != NULL) {
+        for (i32 i = 0; i < numSplinesLoaded; ++i) {
+            if (NuStrICmp(splineStore[i].name, name) == 0) {
+                return &splineStore[i];
+            }
+        }
     }
-    fixed &= 0xffff;
-    if (__builtin_expect(fixed == 0, 0))
-        return;
-    NUVEC *next = &spline->pts[index];
-    f32 fraction = fixed * (1.0f / 65536.0f);
-    position->x += (next->x - current->x) * fraction;
-    position->y += (next->y - current->y) * fraction;
-    position->z += (next->z - current->z) * fraction;
-    if (angle != NULL || pitch != NULL) {
-        u16 next_angle, next_pitch;
-        SplinePointAngles(spline, index, looping, pitch != NULL ? &next_pitch : NULL,
-                          angle != NULL ? &next_angle : NULL);
-        if (angle != NULL)
-            *angle += (i32)(RotDiff(*angle, next_angle) * fraction);
-        if (pitch != NULL)
-            *pitch += (i32)(RotDiff(*pitch, next_pitch) * fraction);
-    }
+    return NuSplineFind(scene, name);
 }
 
-i32 LineIntersectXY(NUVEC *, NUVEC *, NUVEC *, NUVEC *, NUVEC *, NUVEC *);
+void edSpline_SplineList(nugscn_s *) {
+}
 
-i32 OutSideSplineArea(nuvec_s *position, nugspline_s *spline, nuvec_s *edge_end, nuvec_s *edge_start, i32 inside) {
-    if (__builtin_expect(spline == NULL || position == NULL, 0))
+i32 edSpline_FindAllBeg(NUGSCN *scene, char *prefix, NUGSPLINE **results, i32 capacity) {
+    i32 count = 0;
+    if (capacity <= 0)
         return 0;
-    NUVEC ray_start = {position->x, -position->z, position->y};
-    NUVEC ray_end = {position->x, 100000.0f, position->y};
-    NUVEC end = spline->pts[0];
-    f32 end_y = end.y;
-    end.y = -end.z;
-    end.z = end_y;
-    i32 intersections = 0;
-    for (i32 i = 1; i < spline->length; ++i) {
-        NUVEC start = end;
-        end = spline->pts[i];
-        end_y = end.y;
-        end.y = -end.z;
-        end.z = end_y;
-        intersections += LineIntersectXY(&ray_start, &ray_end, &start, &end, NULL, NULL);
+    if (splineStore != NULL) {
+        NUGSPLINE *spline = splineStore;
+        for (i32 i = 0; i < numSplinesLoaded; ++spline, ++i) {
+            if (NuStrNICmp(prefix, spline->name, -1) == 0) {
+                results[count++] = spline;
+                if (count >= capacity)
+                    return count;
+            }
+        }
     }
-    if ((intersections & 1) != 0 ? inside == 0 : inside != 0)
+    if (scene != NULL) {
+        NUGSPLINE *spline = scene->splines;
+        for (i32 i = 0; i < scene->numsplines; ++spline, ++i) {
+            if (NuStrNICmp(prefix, spline->name, -1) == 0) {
+                results[count++] = spline;
+                if (count >= capacity)
+                    return count;
+            }
+        }
+    }
+    return count;
+}
+
+i32 edSpline_FindAllSub(NUGSCN *scene, char *name, NUGSPLINE **results, i32 capacity) {
+    i32 count = 0;
+    if (capacity <= 0)
         return 0;
-    i32 closest_index = 0;
-    NUVEC closest = spline->pts[0];
-    f32 best = 1000000000.0f;
-    auto position_z = position->z;
-    for (i32 i = 0; i < spline->length - 1; ++i) {
-        f32 dx = spline->pts[i].x - position->x;
-        f32 dz = spline->pts[i].z - position_z;
-        f32 distance = dx * dx + dz * dz;
-        if (__builtin_expect(distance < best, 1))
-            closest_index = i;
-        closest.x = distance < best ? spline->pts[i].x : closest.x;
-        closest.y = distance < best ? spline->pts[i].y : closest.y;
-        closest.z = distance < best ? spline->pts[i].z : closest.z;
-        best = distance < best ? distance : best;
-    }
-    i32 previous = closest_index == 0 ? spline->length - 2 : closest_index - 1;
-    i32 next = closest_index == spline->length - 2 ? 0 : closest_index + 1;
-    NUVEC before = spline->pts[previous];
-    NUVEC after = spline->pts[next];
-    f32 ax = after.x - position->x;
-    f32 bx = before.x - position->x;
-    f32 az = after.z - position->z;
-    f32 bz = before.z - position->z;
-    if (bx * bx + bz * bz > ax * ax + az * az) {
-        if (edge_end != NULL)
-            *edge_end = after;
-        if (edge_start != NULL)
-            *edge_start = closest;
-    } else {
-        if (edge_end != NULL)
-            *edge_end = closest;
-        if (edge_start != NULL)
-            *edge_start = before;
-    }
-    return 1;
-}
-
-void InitSplinePosition(SPLINEPOS_s *position, nugspline_s *spline, float distance, i32 looping) {
-    if (position == NULL) {
-        return;
-    }
-
-    SPLINEPOS_s *runtime = position;
-    memset(runtime, 0, sizeof(*runtime));
-    if (spline == NULL || spline->length < 2) {
-        return;
-    }
-
-    runtime->spline = spline;
-    runtime->looping = static_cast<u8>(looping);
-    const NUVEC *first = reinterpret_cast<const NUVEC *>(reinterpret_cast<const u8 *>(spline->pts));
-    const NUVEC *second = reinterpret_cast<const NUVEC *>(reinterpret_cast<const u8 *>(spline->pts) + spline->pt_size);
-    runtime->segment_length = NuVecDist(const_cast<NUVEC *>(second), const_cast<NUVEC *>(first), NULL);
-    if (distance > 0.0f) {
-        MoveSplinePosition(position, distance);
-    } else {
-        runtime->position = *first;
-        runtime->along = 0.0f;
-    }
-}
-
-void GetNearestSplinePos(NUVEC *origin, SPLINEPOS_s *result, NUGSPLINE *spline, i32 looping, i16 first_point,
-                         i16 last_point) {
-    NUVEC offset;
-    if (result == NULL)
-        return;
-    memset(result, 0, sizeof(*result));
-    if (!(spline == NULL || origin == NULL || spline->length <= 1)) {
-        result->spline = spline;
-        result->looping = (i8)looping;
-        i32 point_count = spline->length;
-        i32 logical_count = result->looping != 0 ? point_count + 1 : point_count;
-        i32 index = first_point;
-        if (index < 0)
-            index = 0;
-        else if (__builtin_expect(index >= logical_count, 0))
-            return;
-        i32 end = point_count;
-        if (last_point >= 0 && last_point < end)
-            end = last_point;
-        NUVEC *point = (NUVEC *)((u8 *)spline->pts + index * (i16)spline->pt_size);
-        f32 nearest = 1000000000.0f;
-
-        do {
-            f32 distance = NuVecDistSqr(origin, point, &offset);
-            if (distance < nearest) {
-                nearest = distance;
-                result->segment = index;
-            }
-            point = (NUVEC *)((u8 *)point + (i16)result->spline->pt_size);
-            index++;
-        } while (index < end);
-        spline = result->spline;
-        i32 stride = (i16)spline->pt_size;
-        NUVEC *current = (NUVEC *)((u8 *)spline->pts + result->segment * stride);
-        NUVEC *next = (NUVEC *)((u8 *)spline->pts + ((result->segment + 1) % spline->length) * stride);
-        result->segment_distance = 0.0f;
-        result->segment_length = NuVecDist(next, current, &offset);
-        result->position = *current;
-        result->along = (result->segment_distance / result->segment_length + result->segment) / (logical_count - 1);
-    }
-}
-
-void CalcSplinePointFromDist(flightspline_s *spline, _vuv_s *result, float distance) {
-    if (distance >= spline->length) {
-        distance = 1.0f;
-    } else {
-        for (i32 index = 0; index < spline->point_count; ++index) {
-            const f32 end = spline->cumulative_distances[index];
-            if (end > distance) {
-                const f32 start = index == 0 ? 0.0f : spline->cumulative_distances[index - 1];
-                distance = ((distance - start) / (end - start) + index) / spline->point_count;
-                break;
+    if (splineStore != NULL) {
+        NUGSPLINE *spline = splineStore;
+        for (i32 i = 0; i < numSplinesLoaded; ++spline, ++i) {
+            if (NuStrIStr(spline->name, name) != NULL) {
+                results[count++] = spline;
+                if (count >= capacity)
+                    return count;
             }
         }
     }
-    CalcSplinePoint(spline, result, distance);
-}
-
-LEVELSPLINE *LevSplList;
-static i32 levspl_i_start = -1;
-static i32 levspl_i_startcam = -1;
-
-void LevelSplines_InitForGame(LEVELSPLINE *splines) {
-    LevSplList = splines;
-    LEVELSPLINECOUNT = 0;
-
-    if (splines == NULL) {
-        return;
-    }
-
-    for (LEVELSPLINE *spline = splines; spline->name != NULL; ++spline) {
-        if (levspl_i_start == -1 && NuStrICmp(spline->name, "start") == 0) {
-            levspl_i_start = LEVELSPLINECOUNT;
-        } else if (levspl_i_startcam == -1 && NuStrICmp(spline->name, "start_cam") == 0) {
-            levspl_i_startcam = LEVELSPLINECOUNT;
-        }
-        ++LEVELSPLINECOUNT;
-    }
-}
-
-void EvaluateSplineXZIntersection(nugspline_s *first, i32 first_looping, SPLINEPOS_s *first_position,
-                                  nugspline_s *second, i32 second_looping, SPLINEPOS_s *second_position) {
-    memset(first_position, 0, sizeof(*first_position));
-    memset(second_position, 0, sizeof(*second_position));
-    first_position->spline = first;
-    first_position->looping = static_cast<i8>(first_looping);
-    second_position->spline = second;
-    second_position->looping = static_cast<i8>(second_looping);
-    if (!(second == NULL || first == NULL || first->length == 0 || second->length == 0)) {
-        const i32 second_count = second_looping != 0 ? second->length + 1 : second->length;
-        const i32 first_count = first_looping != 0 ? first->length + 1 : first->length;
-        f32 closest = 1000000000.0f;
-        f32 first_fraction, second_fraction;
-        for (i32 i = 0; i < first_count - 1; ++i) {
-            const i32 first_segment = i % first->length;
-            NUVEC *first_start = &first->pts[first_segment];
-            NUVEC *first_end = &first->pts[(i + 1) % first->length];
-            // Retail includes the wraparound segment of the second spline even
-            // without looping, and only stops this inner scan at an intersection.
-            for (i32 j = 0; j < second_count; ++j) {
-                const i32 second_segment = j % second->length;
-                const f32 distance =
-                    XZLinesClosest(first_start, first_end, &second->pts[second_segment],
-                                   &second->pts[(j + 1) % second->length], &first_fraction, &second_fraction);
-                if (distance < closest) {
-                    first_position->segment_distance = first_fraction;
-                    first_position->segment = static_cast<i16>(first_segment);
-                    second_position->segment_distance = second_fraction;
-                    second_position->segment = static_cast<i16>(second_segment);
-                    closest = distance;
-                    if (distance == 0.0f)
-                        break;
-                }
-            }
-        }
-
-        NUVEC direction;
-        first_position->segment_length = NuVecDist(&first->pts[(first_position->segment + 1) % first->length],
-                                                   &first->pts[first_position->segment], &direction);
-        first_position->segment_distance *= first_position->segment_length;
-        MoveSplinePosition(first_position, 0.00001f);
-        second_position->segment_length = NuVecDist(&second->pts[(second_position->segment + 1) % second->length],
-                                                    &second->pts[second_position->segment], &direction);
-        second_position->segment_distance *= second_position->segment_length;
-        MoveSplinePosition(second_position, 0.00001f);
-    }
-}
-
-void LevelSplines_InitForLevel(WORLDINFO_s *world) {
-    char name[64];
-    world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
-    world->portal_places = reinterpret_cast<PORTALPOS **>(world->giz_buffer.void_ptr);
-    world->giz_buffer.addr += LEVELSPLINECOUNT * sizeof(*world->portal_places);
-    memset(world->portal_places, 0, LEVELSPLINECOUNT * sizeof(*world->portal_places));
-
-    if (LevSplList == NULL) {
-        return;
-    }
-
-    for (i32 i = 0; i < LEVELSPLINECOUNT; ++i) {
-        LEVELSPLINE *entry = &LevSplList[i];
-        if (__builtin_expect((entry->area != -1 && world->level_sub_id != entry->area) ||
-            (entry->level != -1 && world->level_idx != entry->level), 0)) {
-            continue;
-        }
-
-        NUGSCN *scene = *(entry->scene != NULL ? entry->scene : &world->current_gscn);
-        if (scene != NULL) {
-            NUGSPLINE *spline = NuSplineFind(scene, const_cast<char *>(entry->name));
-            world->portal_places[i] = reinterpret_cast<PORTALPOS *>(spline);
-            if (spline != NULL) {
-                const i32 point_count = spline->length;
-                if (__builtin_expect((entry->min_points != 0 && point_count < entry->min_points) ||
-                    (entry->max_points != 0 && entry->min_points <= entry->max_points &&
-                     point_count > entry->max_points), 1)) {
-                    world->portal_places[i] = NULL;
-                }
-            }
-        }
-
-        if (scene == NULL) {
-            continue;
-        }
-
-        if (levspl_i_start >= 0 && levspl_i_start < LEVELSPLINECOUNT) {
-
-            name[0] = '\0';
-            if (Mission_Active(NULL) != NULL) {
-                NuStrCpy(name, "bounty_start");
-            } else if (world->level_sub_id != -1 && (ADataList[world->level_sub_id].flags & 0x40) != 0 &&
-                       hub_from_cutsceneplayer != 0) {
-                NuStrCpy(name, "shop_start");
-                if (CutScenePlayer_Available() != NULL &&
-                    static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available())->return_door != -1) {
-                    name[0] = '\0';
-                }
-            }
-            if (name[0] != '\0') {
-                NUGSPLINE *start = NuSplineFind(scene, name);
-                if (start != NULL && start->length > 1) {
-                    world->portal_places[levspl_i_start] = reinterpret_cast<PORTALPOS *>(start);
-                    if (levspl_i_startcam >= 0 && levspl_i_startcam < LEVELSPLINECOUNT) {
-                        world->portal_places[levspl_i_startcam] = NULL;
-                    }
-                }
+    if (scene != NULL) {
+        NUGSPLINE *spline = scene->splines;
+        for (i32 i = 0; i < scene->numsplines; ++spline, ++i) {
+            if (NuStrIStr(spline->name, name) != NULL) {
+                results[count++] = spline;
+                if (count >= capacity)
+                    return count;
             }
         }
     }
+    return count;
 }
+

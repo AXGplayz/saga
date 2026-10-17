@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "gameapi/ai/aisys/aisys.h"
 #include "legoapi/actions/combat/hits.h"
 #include "legoapi/characters/core/character.h"
@@ -25,16 +28,9 @@
 #include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nutrig.h"
 #include "legoapi/core/input/qrand.h"
-i32 Player_HasInvincibility(GameObject_s *);
-void GameAudio_PlaySfxById(i32, NUVEC *, i32, i32);
-extern "C" i32 GetSfxId(const char *);
-extern i32 testlaser_type;
-extern f32 testlaser_sizew, testlaser_sizel, testlaser_sizewab, testlaser_endw;
 #include "nu2api/nucore/nustring.h"
-#include "gameapi/ai/aisys/aisys.h"
 #include <stdio.h>
 #include <string.h>
-#include "legoapi/world/level.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "decomp.h"
@@ -48,11 +44,15 @@ extern f32 testlaser_sizew, testlaser_sizel, testlaser_sizewab, testlaser_endw;
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
+#include "legoapi/audio/radio.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/gizmo/object/gizbuildit.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/world/levels/episodeVI.h"
+extern f32 testlaser_sizew, testlaser_sizel, testlaser_sizewab, testlaser_endw;
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
 extern u8 LevFlag[16];
 struct SarlaccBattlePacket {
     f32 height;
@@ -111,14 +111,10 @@ f32 disco_base_offset = -0.12f;
 f32 sarlaccdiscotime = 40.0f;
 f32 discoheightseek = 2.0f;
 f32 discoheight = 1.27f;
-void PlayRadio(char *, char *, i32);
-i32 GizBuildIt_AtEnd(GIZBUILDIT_s *);
-void SarlaccPitB_SpecialUpdate(WORLDINFO_s *);
 GIZMO *obstMirrorBall;
 GIZMO *forceMirrorBall;
 nuhspecial_s LevSpecial[7];
 void *LevelBuildits[2];
-extern i32 obstacle_gizmotype_id, force_gizmotype_id;
 static __used__ i32 power;
 static __used__ i32 recharging;
 static __used__ i32 target_shield[2];
@@ -127,508 +123,7 @@ static __used__ i32 gizmoblowuptargetcount;
 static __used__ GIZMOBLOWUP_s *gizmoblowuptarget[4];
 static __used__ f32 rechargetimer;
 
-// Episode 6 level handlers, in the game's Episode_VI progression:
-// jabbas palace / sarlacc pit / speeder chase / endor battle / death star 2
-// battle / emperor fight, plus the senate bonus.
-
-// ===========================================================================
-// Jabba's Palace (JabbasPalace_A / B / D / E)
-// ===========================================================================
-
-void JabbasPalaceA_Init(WORLDINFO_s *world) {
-    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "grill_02", 1);
-    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "entrance11");
-    if (blowup != NULL)
-        blowup->field_0xa0 |= 2;
-    blowup = GizmoBlowUp_FindByName(world, "entrance21");
-    if (blowup != NULL)
-        blowup->field_0xa0 |= 2;
-}
-
-void JabbasPalaceB_Init(WORLDINFO_s *world) {
-    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle5");
-    LevBlowUp[0] = GizmoBlowUp_FindByName(world, "prison_stone1");
-    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "prison_blast1");
-    if (blowup != NULL)
-        blowup->field_0xa0 |= 2;
-}
-
-void JabbasPalaceE_Init(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo1");
-    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo2");
-    LevFlag[6] = 0;
-    LevFlag[7] = 0;
-}
-
-void JabbasPalaceA_Reset(WORLDINFO_s *) {
-    TerSurface[14].flags = 0xa040;
-    TerSurface[9].flags = 0x2040;
-}
-
-void JabbasPalaceB_Reset(WORLDINFO_s *) {
-    TerSurface[14].flags = 0xa040;
-    TerSurface[9].flags = 0x2040;
-}
-
-void JabbasPalaceD_Reset(WORLDINFO_s *world) {
-    TerSurface[14].flags = 0xa040;
-    TerSurface[9].flags = 0x2040;
-    if (world->current_level == JABBASPALACED_LDATA && world->push_block_count > 0) {
-        pushblock_s *push_block = world->push_blocks;
-        NUDISPLAYSPECIAL_s *display_special = push_block->special.display_special;
-        if (display_special != NULL) {
-            NUGSCN *scene = push_block->special.scene;
-            if (scene != NULL && scene->display_list != NULL)
-                scene->display_list->visibility_flags[display_special->instance_ix] |= 8;
-        }
-    }
-}
-
-void JabbasPalaceE_Reset(WORLDINFO_s *world) {
-    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "AI_rancor");
-    LevArea[0] = AISysFindArea(world->ai_sys, "Alcove_1");
-    LevArea[1] = AISysFindArea(world->ai_sys, "Alcove_2");
-    LevArea[2] = AISysFindArea(world->ai_sys, "Back_Room");
-    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
-    TerSurface[14].flags = 0xa040;
-    TerSurface[9].flags = 0x2040;
-}
-
-void JabbasPalaceE_Panel(WORLDINFO_s *) {
-    if (!netclient) {
-        if (LevGameObject[0] != NULL && LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
-            DrawBossHitPoints(LevGameObject[0]);
-        else
-            DrawBossHitPoints(NULL);
-    }
-}
-
-void JabbasPalaceA_Update(WORLDINFO_s *) {
-    NUVEC position = {-0.01503f, 0.7414f, 11.5824f};
-    if (NuSpecialExistsFn(&LevHSpecial[0]) && !NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
-        AIANTINODE *antinode = AIAntinodeCreateSingleFrame(&position, 1.0f);
-        if (antinode != NULL) {
-            antinode->type = 2;
-            antinode->base_radius = 0.82443f;
-            antinode->base_height = 1.0f;
-        }
-    }
-}
-
-void JabbasPalaceE_Update(WORLDINFO_s *world) {
-    if (!netclient) {
-        if (FreePlay)
-            KillBossCompleteLevel(id_RANCOR, 0, 0.3f);
-        else
-            KillBossNewLevel(id_RANCOR, 0, 0.3f, JABBASPALACE_OUTRO_LDATA->idx);
-    }
-    GameObject_s *rancor = LevGameObject[0];
-    if (rancor != NULL) {
-        rancor->ai_opponent_exclusion_mask = 0;
-        if (aicreature_sets_alive[0] != 0) {
-            for (i32 index = 0; index < 8; ++index) {
-                GameObject_s *player = Player[index];
-                if (player != NULL)
-                    rancor->ai_opponent_exclusion_mask |= 1ULL << player->apiobj.field_0x289;
-            }
-        } else {
-            // Retail widens a signed 32-bit area mask, including its sign bit.
-            for (i32 index = 0; index < 8; ++index) {
-                GameObject_s *player = Player[index];
-                if (player != NULL && ((LevArea[0] != NULL &&
-                                        (player->apiobj.ai_area_mask &
-                                         static_cast<i32>(1u << ((LevArea[0] - world->ai_sys->areas) & 31))) != 0) ||
-                                       (LevArea[1] != NULL &&
-                                        (player->apiobj.ai_area_mask &
-                                         static_cast<i32>(1u << ((LevArea[1] - world->ai_sys->areas) & 31))) != 0) ||
-                                       (LevArea[2] != NULL &&
-                                        (player->apiobj.ai_area_mask &
-                                         static_cast<i32>(1u << ((LevArea[2] - world->ai_sys->areas) & 31))) != 0))) {
-                    rancor->ai_opponent_exclusion_mask |= 1ULL << player->apiobj.field_0x289;
-                }
-            }
-        }
-    }
-    GIZMOBLOWUP_s *blowup = LevGizmo[0] != NULL ? static_cast<GIZMOBLOWUP_s *>(LevGizmo[0]->object) : NULL;
-    if (blowup != NULL && (blowup->status_flags & 1) != 0) {
-        if (LevFlag[6] == 0) {
-            PlaySfx("exp_minecart", &blowup->position);
-            LevFlag[6] = 1;
-        }
-    } else {
-        LevFlag[6] = 0;
-    }
-    blowup = LevGizmo[1] != NULL ? static_cast<GIZMOBLOWUP_s *>(LevGizmo[1]->object) : NULL;
-    if (blowup != NULL && (blowup->status_flags & 1) != 0) {
-        if (LevFlag[7] == 0) {
-            PlaySfx("exp_minecart", &blowup->position);
-            LevFlag[7] = 1;
-        }
-    } else {
-        LevFlag[7] = 0;
-    }
-}
-
-// ===========================================================================
 // Sarlacc Pit (SarlaccPit_A / B / C)
-// ===========================================================================
-
-void SarlaccPitA_Draw(WORLDINFO_s *) {
-    GIZAIMESSAGE_s *message = NULL;
-    if (gizaimessagesys != NULL)
-        message = CheckGizAIMessage(gizaimessagesys, "Boba_Dead", NULL);
-    if (message == NULL || message->value != 0.0f) {
-        DrawBossHitPoints(NULL);
-    } else {
-        GameObject_s *boba = FindGameObject(id_BOBAFETT, 1, 1, 1, 0);
-        if (gizaimessagesys != NULL)
-            message = CheckGizAIMessage(gizaimessagesys, "BobaFightStarted", NULL);
-        if (message != NULL && boba != NULL && message->value == 1.0f)
-            DrawBossHitPoints(boba);
-    }
-}
-
-void SarlaccPitA_Reset(WORLDINFO_s *world) {
-    LevSafePlatID[0] = -1;
-    if (NuSpecialFind(world->current_gscn, &LevHSpecial[0], "float_skiff_2", 1) == 0) {
-        return;
-    }
-    if (world->terrain == NULL) {
-        return;
-    }
-    LevSafePlatID[0] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[0]));
-}
-
-void SarlaccPitB_Init(WORLDINFO_s *) {
-    memset(&sarlaccdisco, 0, sizeof(sarlaccdisco));
-    sarlaccb_netpacket = static_cast<SarlaccBattlePacket *>(SetLevelHack(sizeof(SarlaccBattlePacket)));
-    i8 *disco_index = &sarlaccdisco.count;
-    *disco_index = 0;
-    char name[32];
-    for (;;) {
-        if (*disco_index <= 8)
-            sprintf(name, "dot_off_0%d", *disco_index + 1);
-        else
-            sprintf(name, "dot_off_%d", *disco_index + 1);
-        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.off[*disco_index], name, 1);
-
-        if (*disco_index <= 8)
-            sprintf(name, "dot_flash_0%d", *disco_index + 1);
-        else
-            sprintf(name, "dot_flash_%d", *disco_index + 1);
-        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.flash[*disco_index], name, 1);
-
-        if (*disco_index <= 8)
-            sprintf(name, "dot_select_0%d", *disco_index + 1);
-        else
-            sprintf(name, "dot_select_%d", *disco_index + 1);
-        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.select[*disco_index], name, 1);
-
-        if (*disco_index <= 8)
-            sprintf(name, "dot_on_0%d", *disco_index + 1);
-        else
-            sprintf(name, "dot_on_%d", *disco_index + 1);
-        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.on[*disco_index], name, 1);
-
-        if (*disco_index <= 8)
-            sprintf(name, "dot_finish_0%d", *disco_index + 1);
-        else
-            sprintf(name, "dot_finish_%d", *disco_index + 1);
-        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.finish[*disco_index], name, 1);
-
-        if (!NuSpecialExistsFn(&sarlaccdisco.off[*disco_index]) ||
-            !NuSpecialExistsFn(&sarlaccdisco.flash[*disco_index]) ||
-            !NuSpecialExistsFn(&sarlaccdisco.select[*disco_index]) ||
-            !NuSpecialExistsFn(&sarlaccdisco.on[*disco_index]) ||
-            !NuSpecialExistsFn(&sarlaccdisco.finish[*disco_index]))
-            break;
-
-        if (*disco_index == 0) {
-            NUVEC *position = NuSpecialGetPos(&sarlaccdisco.off[0]);
-            if (position != NULL) {
-                f32 height = position->y;
-                sarlaccdisco.initial_height = height;
-                sarlaccdisco.height = height;
-            }
-        }
-        ++*disco_index;
-        if (*disco_index > 15)
-            break;
-    }
-    sarlaccdisco.area = AISysFindArea(WORLD->ai_sys, "DISCO");
-    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[0], "force_engine_lump", 1);
-    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[1], "disco_base", 1);
-}
-
-void SarlaccPitB_Reset(WORLDINFO_s *world) {
-    memset(sarlaccdisco.panel_state, 0, sizeof(sarlaccdisco.panel_state));
-    sarlaccdisco.phase = 0;
-    sarlaccdisco.timer = 0.0f;
-    sarlaccdisco.first_panel = -1;
-    sarlaccdisco.second_panel = -1;
-
-    for (i32 index = 0; index < sarlaccdisco.count; ++index) {
-        NuSpecialSetVisibility(&sarlaccdisco.off[index], 1);
-        NuSpecialSetVisibility(&sarlaccdisco.flash[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.on[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.finish[index], 0);
-    }
-
-    sarlaccdisco.help_message = SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 0.0f, NULL);
-    sarlaccdisco.complete_message = SetGizAIMessage(gizaimessagesys, "DiscoComplete", 0.0f, NULL);
-    sarlaccdisco.state_message = SetGizAIMessage(gizaimessagesys, "DiscoState", 0.0f, NULL);
-    sarlaccdisco.off_obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "disco_off");
-    sarlaccdisco.on_obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "disco_on");
-
-    NuSpecialFind(world->current_gscn, &LevSpecial[0], "floor_disco", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[1], "light1_a", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[2], "disco_ball1", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[3], "disco_ball2", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[4], "shutter_1", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[5], "jabba_door1", 1);
-    NuSpecialFind(world->current_gscn, &LevSpecial[6], "jabba_door2", 1);
-    forceMirrorBall = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force5");
-    obstMirrorBall = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle5");
-    LevelBuildits[0] = GizBuildIt_Find(world, "buildit6");
-    LevelBuildits[1] = GizBuildIt_Find(world, "buildit4");
-    LevelLocator = AIPathFindLocator(world->ai_sys, "DiscoHelp");
-
-    if (NuSpecialExistsFn(&LevSpecial[0]))
-        NuSpecialSetVisibility(&LevSpecial[0], 0);
-    if (NuSpecialExistsFn(&LevSpecial[1]))
-        NuSpecialSetVisibility(&LevSpecial[1], 0);
-    if (NuSpecialExistsFn(&LevSpecial[2]))
-        NuSpecialSetVisibility(&LevSpecial[2], 0);
-    if (GizForce_Complete(static_cast<GIZFORCE_s *>(forceMirrorBall->object)))
-        GizObstacle_Stop(static_cast<GIZOBSTACLE_s *>(obstMirrorBall->object));
-}
-
-void SarlaccPitB_Update(WORLDINFO_s *world) {
-
-    static NUVEC lumppos;
-    static f32 enginetimer;
-    if (netclient == 0) {
-        sarlaccb_netpacket->sound_mask = 0;
-        SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 0.0f, sarlaccdisco.help_message);
-        SetGizAIMessage(gizaimessagesys, "DiscoComplete", 0.0f, sarlaccdisco.complete_message);
-        SetGizAIMessage(gizaimessagesys, "DiscoState", sarlaccdisco.phase, sarlaccdisco.state_message);
-        GIZMO *panel = GizmoFindByName(world->gizmo_sys, gizspecial_gizmotype_id, "qaz_panel2");
-        GizmoGetOutput(world->gizmo_sys, panel, 0, 0);
-        i32 ready = 0;
-        if (GizBuildIt_AtEnd(static_cast<GIZBUILDIT_s *>(LevelBuildits[0])) &&
-            GizBuildIt_AtEnd(static_cast<GIZBUILDIT_s *>(LevelBuildits[1])) &&
-            static_cast<GIZSPECIAL_s *>(panel->object)->anim_set->state == 2) {
-            if (sarlaccdisco.complete_message->value == 0.0f)
-                SetGizAIMessage(gizaimessagesys, "discoflooropen", 1.0f, NULL);
-            ready = 1;
-        }
-
-        switch (sarlaccdisco.phase) {
-            i32 candidates[16];
-            case 0:
-                sarlaccb_netpacket->disco_active = 0;
-                if (NuSpecialExistsFn(&LevSpecial[0]) && ready &&
-                    ((player != NULL && (player->apiobj.ai_area_mask &
-                                         static_cast<i32>(1u << ((sarlaccdisco.area - world->ai_sys->areas) & 31)))) ||
-                     (player2 != NULL &&
-                      (player2->apiobj.ai_area_mask &
-                       static_cast<i32>(1u << ((sarlaccdisco.area - world->ai_sys->areas) & 31)))))) {
-                    sarlaccdisco.phase = 1;
-                    sarlaccdisco.timer = 0.0f;
-                    i32 count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    if (count != 0) {
-                        sarlaccdisco.first_panel = candidates[NuRand(NULL) % count];
-                    } else {
-                        sarlaccdisco.first_panel = -1;
-                    }
-                    count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    if (count != 0) {
-                        sarlaccdisco.second_panel = candidates[NuRand(NULL) % count];
-                    } else {
-                        sarlaccdisco.second_panel = -1;
-                    }
-                    if (sarlaccdisco.first_panel != -1 && sarlaccdisco.second_panel != -1) {
-                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
-                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
-                    }
-                }
-                break;
-            case 1: {
-                sarlaccb_netpacket->disco_active = 0;
-                if (!ready) {
-                    SarlaccPitB_Reset(world);
-                    break;
-                }
-                i32 first_occupied = 0;
-                i32 controlled_panel = -1;
-                u8 previous = sarlaccdisco.panel_state[sarlaccdisco.first_panel];
-                sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
-                NUVEC *position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
-                for (i32 index = 0; index < 8; ++index) {
-                    GameObject_s *object = Player[index];
-                    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-                        object->apiobj.field_0x27d != 0) {
-                        f32 dx = position->x - object->apiobj.position.x;
-                        f32 dz = position->z - object->apiobj.position.z;
-                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
-                            sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 2;
-                            first_occupied = 1;
-                            if (object == player)
-                                controlled_panel = sarlaccdisco.first_panel;
-                            break;
-                        }
-                    }
-                }
-                if (previous != sarlaccdisco.panel_state[sarlaccdisco.first_panel] &&
-                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] == 2) {
-                    sarlaccdisco.last_selected_position =
-                        NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.first_panel]), 3);
-                    sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.first_panel;
-                }
-                i32 second_occupied = 0;
-                previous = sarlaccdisco.panel_state[sarlaccdisco.second_panel];
-                sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
-                position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.second_panel]);
-                for (i32 index = 0; index < 8; ++index) {
-                    GameObject_s *object = Player[index];
-                    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-                        object->apiobj.field_0x27d != 0) {
-                        f32 dx = position->x - object->apiobj.position.x;
-                        f32 dz = position->z - object->apiobj.position.z;
-                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
-                            sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 2;
-                            second_occupied = 1;
-                            if (object == player)
-                                controlled_panel = sarlaccdisco.second_panel;
-                            break;
-                        }
-                    }
-                }
-                if (previous != sarlaccdisco.panel_state[sarlaccdisco.second_panel] &&
-                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] == 2) {
-                    sarlaccdisco.last_selected_position =
-                        NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.second_panel]), 3);
-                    sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.second_panel;
-                }
-                if (!(first_occupied && second_occupied)) {
-                    sarlaccdisco.timer += FRAMETIME;
-                    if (sarlaccdisco.timer > 2.5f) {
-                        sarlaccdisco.timer = 0.0f;
-                        for (i32 pass = 0; pass < 2; ++pass) {
-                            i32 count = 0;
-                            for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                                if (sarlaccdisco.panel_state[index] == 3)
-                                    candidates[count++] = index;
-                            i32 selected = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                            if (selected != -1)
-                                sarlaccdisco.panel_state[selected] = 0;
-                        }
-                    }
-                    if (player2 == NULL && LevelLocator != NULL) {
-                        GameObject_s *partner = Player[0];
-                        if (partner == player)
-                            partner = Player[1];
-                        if (partner != NULL) {
-                            NUVEC *help_position = NULL;
-                            if (controlled_panel == sarlaccdisco.first_panel)
-                                help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.second_panel]);
-                            else if (controlled_panel == sarlaccdisco.second_panel)
-                                help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
-                            if (help_position != NULL) {
-                                SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 1.0f, sarlaccdisco.help_message);
-                                LevelLocator->position.x = help_position->x;
-                                LevelLocator->position.z = help_position->z;
-                            }
-                        }
-                    }
-                } else {
-                    sarlaccdisco.timer = 0.0f;
-                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
-                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
-                    i32 count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
-                        sarlaccdisco.phase = 2;
-                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                            sarlaccdisco.panel_state[index] = 4;
-                    } else {
-                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
-                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
-                    }
-                }
-                break;
-            }
-            case 2:
-                sarlaccb_netpacket->disco_active = 1;
-                sarlaccdisco.timer += FRAMETIME;
-                if (sarlaccdisco.timer > sarlaccdiscotime || !ready) {
-                    sarlaccb_netpacket->disco_active = 0;
-                    SarlaccPitB_Reset(world);
-                    return;
-                }
-                break;
-        }
-        if (sarlaccdisco.phase != 0) {
-            f32 amount = (discoheight - sarlaccdisco.height) / (discoheight - sarlaccdisco.initial_height);
-            amount = amount < 0.0f ? 0.0f : amount > 1.0f ? 1.0f : amount;
-            f32 rate = 1.0f - (NU_SIN_LUT(amount * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
-            sarlaccdisco.height = SeekValF(sarlaccdisco.height, discoheight, rate * discoheightseek);
-        }
-        sarlaccb_netpacket->off_mask = 0;
-        sarlaccb_netpacket->flash_mask = 0;
-        sarlaccb_netpacket->select_mask = 0;
-        sarlaccb_netpacket->on_mask = 0;
-        sarlaccb_netpacket->finish_mask = 0;
-        for (i32 index = 0; index < sarlaccdisco.count; ++index) {
-            switch (sarlaccdisco.panel_state[index]) {
-                case 0:
-                    sarlaccb_netpacket->off_mask |= 1 << index;
-                    break;
-                case 1:
-                    sarlaccb_netpacket->flash_mask |= 1 << index;
-                    break;
-                case 2:
-                    sarlaccb_netpacket->select_mask |= 1 << index;
-                    break;
-                case 3:
-                    sarlaccb_netpacket->on_mask |= 1 << index;
-                    break;
-                case 4:
-                    sarlaccb_netpacket->finish_mask |= 1 << index;
-                    break;
-            }
-        }
-    }
-    if (LevFlag[0] == 0 && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
-        lumppos = *NuSpecialGetDrawPos(&LevHSpecial[0]);
-        LevFlag[0] = 1;
-        enginetimer = 0.05f;
-    }
-    if (LevFlag[0] != 0) {
-        enginetimer -= FRAMETIME;
-        if (__builtin_expect(enginetimer <= 0.0f, 0))
-            enginetimer = 0.1f;
-        f32 offset = 1.0f - (NU_SIN_LUT(enginetimer * 10.0f * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
-        f32 z = lumppos.z + (offset * 0.01f - 0.005f);
-        NuSpecialGetDrawPos(&LevHSpecial[0])->z = z;
-        PlaySfx("env_curtain_lp", NuSpecialGetDrawPos(&LevHSpecial[0]));
-    }
-    SarlaccPitB_SpecialUpdate(world);
-}
 
 static inline void SarlaccDiscoShow(nuhspecial_s *special) {
     NuSpecialSetVisibility(special, 1);
@@ -639,230 +134,7 @@ static inline void SarlaccDiscoShow(nuhspecial_s *special) {
     }
 }
 
-void SarlaccPitB_SpecialUpdate(WORLDINFO_s *) {
-    for (i32 index = 0; index < sarlaccdisco.count; ++index) {
-        NuSpecialSetVisibility(&sarlaccdisco.off[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.flash[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.select[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.on[index], 0);
-        NuSpecialSetVisibility(&sarlaccdisco.finish[index], 0);
-        if (netclient)
-            sarlaccdisco.height = SeekValF(sarlaccdisco.height, sarlaccb_netpacket->height, 8.0f);
-        else
-            sarlaccb_netpacket->height = sarlaccdisco.height;
-
-        if ((sarlaccb_netpacket->off_mask & (1 << index)) != 0)
-            SarlaccDiscoShow(&sarlaccdisco.off[index]);
-        else if ((sarlaccb_netpacket->flash_mask & (1 << index)) != 0)
-            SarlaccDiscoShow(&sarlaccdisco.flash[index]);
-        else if ((sarlaccb_netpacket->select_mask & (1 << index)) != 0)
-            SarlaccDiscoShow(&sarlaccdisco.select[index]);
-        else if ((sarlaccb_netpacket->on_mask & (1 << index)) != 0)
-            SarlaccDiscoShow(&sarlaccdisco.on[index]);
-        else if ((sarlaccb_netpacket->finish_mask & (1 << index)) != 0)
-            SarlaccDiscoShow(&sarlaccdisco.finish[index]);
-        NUVEC *position = NuSpecialGetDrawPos(&LevHSpecial[1]);
-        if (position != NULL) {
-            position->y = sarlaccdisco.height + disco_base_offset;
-            NuSpecialSetDrawPos(&LevHSpecial[1], position);
-        }
-        if ((sarlaccb_netpacket->sound_mask & (1 << index)) != 0)
-            PlaySfx("Kam_DiscoFloorPanelOn", NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[index]), 3));
-    }
-    if (sarlaccb_netpacket->disco_active != 0) {
-        SetGizAIMessage(gizaimessagesys, "DiscoComplete", 1.0f, sarlaccdisco.complete_message);
-        PlayRadio("Speaker2", "Speaker21", 1);
-        PlayRadio("Speaker1", "Speaker11", 1);
-        PlayRadio("decks", "decks", 1);
-        if (obstMirrorBall != NULL)
-            GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(obstMirrorBall->object));
-        if (NuSpecialExistsFn(&LevSpecial[0]))
-            NuSpecialSetVisibility(&LevSpecial[0], 1);
-        if (NuSpecialExistsFn(&LevSpecial[1]))
-            NuSpecialSetVisibility(&LevSpecial[1], 1);
-        if (NuSpecialExistsFn(&LevSpecial[4])) {
-            nuinstanim_s *animation = NuSpecialGetInstAnim(&LevSpecial[4]);
-            if (animation != NULL)
-                animation->playing = 1;
-        }
-        if (NuSpecialExistsFn(&LevSpecial[5]) && NuSpecialExistsFn(&LevSpecial[6])) {
-            nuinstanim_s *animation = NuSpecialGetInstAnim(&LevSpecial[5]);
-            if (animation != NULL)
-                animation->playing = 1;
-            animation = NuSpecialGetInstAnim(&LevSpecial[6]);
-            if (animation != NULL)
-                animation->playing = 1;
-        }
-        if (sarlaccb_netpacket->completion_sound_played == 0) {
-            PlaySfx("Kam_DiscoFloorPanelDone", NuSpecialGetDrawPos(&sarlaccdisco.off[0]));
-            sarlaccb_netpacket->completion_sound_played = 1;
-        }
-    } else {
-        PlayRadio("Speaker2", "Speaker21", 0);
-        PlayRadio("Speaker1", "Speaker11", 0);
-        PlayRadio("decks", "decks", 0);
-        sarlaccb_netpacket->completion_sound_played = 0;
-    }
-}
-
-void SarlaccPitC_Init(WORLDINFO_s *) {
-    power = 0;
-    recharging = 0;
-    target_shield[0] = 0;
-    target_shield[1] = 0;
-}
-
-void SarlaccPitC_Update(WORLDINFO_s *world) {
-    if (LevGameObject[0] != NULL && gizmoblowuptargetcount == 4) {
-        if (LevGameObject[0]->field_0xcc0 != NULL) {
-            world->field_50d0 = 4;
-            world->blowup_target_candidates = gizmoblowuptarget;
-            if (taken_over == 0)
-                taken_over = 1;
-        } else if (taken_over != 0) {
-            taken_over = 0;
-            world->field_50d0 = 0;
-            world->blowup_target_candidates = NULL;
-        }
-
-        if (power == 0) {
-            if ((LevGameObject[0]->field_0xef8 & 8) != 0)
-                LevGameObject[0]->field_0xef8 &= ~8;
-        } else if (static_cast<i8>(LevGameObject[0]->quick_shoot_bolt_id) >= 0) {
-            --power;
-            NuSpecialSetVisibility(&LevHSpecial[power], 1);
-            NuSpecialSetVisibility(&LevHSpecial[power + 8], 0);
-            GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(LevGizmo[0]->object);
-            if (panel->state)
-                panel->state = 0;
-        }
-
-        if (recharging == 0) {
-            if (static_cast<u32>(power) <= 7 && LevGizmo[0] != NULL &&
-                GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 0, 0) != 0) {
-                recharging = 1;
-                rechargetimer = 0.0f;
-            }
-        } else {
-            rechargetimer -= FRAMETIME;
-            if (rechargetimer <= 0.0f) {
-                LevGameObject[0]->field_0xef8 |= 8;
-                NuSpecialSetVisibility(&LevHSpecial[power], 0);
-                NuSpecialSetVisibility(&LevHSpecial[power + 8], 1);
-                PlaySfx("imp_c3po_magnet_drop", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
-                ++power;
-                if (power == 8) {
-                    recharging = 0;
-                    PlaySfx("env_magnet_on", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
-                } else {
-                    rechargetimer = 0.25f;
-                }
-            }
-        }
-    }
-
-    if (target_shield[0] == 0) {
-        if (gizmoblowuptarget[0] != NULL && (gizmoblowuptarget[0]->visibility_flags & 0x40) == 0) {
-            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[16]));
-            target_shield[0] = 1;
-        } else {
-            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[16]));
-        }
-    }
-    if (target_shield[1] == 0) {
-        if (gizmoblowuptarget[1] != NULL && (gizmoblowuptarget[1]->visibility_flags & 0x40) == 0) {
-            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[17]));
-            target_shield[1] = 1;
-        } else {
-            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[17]));
-        }
-    }
-}
-
-void SarlaccPitC_Reset(WORLDINFO_s *world) {
-    char name[32];
-    taken_over = 0;
-    gizmoblowuptargetcount = 0;
-    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "cannon_1");
-
-    sprintf(name, "cover_%d", 1);
-    NuSpecialFind(world->current_gscn, &LevHSpecial[16], name, 1);
-    sprintf(name, "cover_%d1", 1);
-    GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
-    if (gizmo != NULL) {
-        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
-        blowup->field_0x9f |= 8;
-        ++gizmoblowuptargetcount;
-        UpdateMidPos(blowup);
-    }
-    sprintf(name, "cover_%d", 2);
-    NuSpecialFind(world->current_gscn, &LevHSpecial[17], name, 1);
-    sprintf(name, "cover_%d1", 2);
-    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
-    if (gizmo != NULL) {
-        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
-        blowup->field_0x9f |= 8;
-        ++gizmoblowuptargetcount;
-        UpdateMidPos(blowup);
-    }
-    sprintf(name, "spinner%d_null_1", 1);
-    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
-    if (gizmo != NULL) {
-        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
-        ++gizmoblowuptargetcount;
-        UpdateMidPos(blowup);
-    }
-    sprintf(name, "spinner%d_null_1", 2);
-    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
-    if (gizmo != NULL) {
-        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
-        ++gizmoblowuptargetcount;
-        UpdateMidPos(blowup);
-    }
-
-#define FIND_SHOT(index, format, number)                                                                               \
-    sprintf(name, format, number);                                                                                     \
-    NuSpecialFind(world->current_gscn, &LevHSpecial[index], name, 1)
-    FIND_SHOT(0, "shot_0%d", 1);
-    FIND_SHOT(1, "shot_0%d", 2);
-    FIND_SHOT(2, "shot_0%d", 3);
-    FIND_SHOT(3, "shot_0%d", 4);
-    FIND_SHOT(4, "shot_0%d", 5);
-    FIND_SHOT(5, "shot_0%d", 6);
-    FIND_SHOT(6, "shot_0%d", 7);
-    FIND_SHOT(7, "shot_0%d", 8);
-    FIND_SHOT(8, "shot_0%da", 1);
-    FIND_SHOT(9, "shot_0%da", 2);
-    FIND_SHOT(10, "shot_0%da", 3);
-    FIND_SHOT(11, "shot_0%da", 4);
-    FIND_SHOT(12, "shot_0%da", 5);
-    FIND_SHOT(13, "shot_0%da", 6);
-    FIND_SHOT(14, "shot_0%da", 7);
-    FIND_SHOT(15, "shot_0%da", 8);
-#undef FIND_SHOT
-
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, gizpanel_gizmotype_id, "panel2");
-#define RESET_SHOT(index, level)                                                                                       \
-    NuSpecialSetVisibility(&LevHSpecial[index], power <= level);                                                       \
-    NuSpecialSetVisibility(&LevHSpecial[(index) + 8], power > level)
-    RESET_SHOT(0, 0);
-    RESET_SHOT(1, 1);
-    RESET_SHOT(2, 2);
-    RESET_SHOT(3, 3);
-    RESET_SHOT(4, 4);
-    RESET_SHOT(5, 5);
-    RESET_SHOT(6, 6);
-    RESET_SHOT(7, 7);
-#undef RESET_SHOT
-}
-
-i32 SarlaccPitDiscoActive(WORLDINFO_s *world) {
-    return world->current_level == SARLACCPITB_LDATA && sarlaccb_netpacket->disco_active != 0;
-}
+// Bonus levels: Lego City, Senate, New Town
 
 // ===========================================================================
 // Bonus levels: Lego City, Senate, New Town
@@ -875,282 +147,63 @@ static u8 prevOnTownCar;
 static u8 prevOnFireTruck;
 static u8 prevOnLifeBoat;
 
-void LegoCity_Init(WORLDINFO_s *world) {
-    char name[16];
-    i32 i = 1;
-    for (;;) {
-        sprintf(name, "lamp_%d", i);
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
-        if (blowup == NULL)
-            break;
-        blowup->field_0x128 = 0.3f;
-        blowup->field_0x124 = 1;
-        ++i;
-    }
-}
-
-void LegoCity_Reset(WORLDINFO_s *world) {
-    prevOnTaunTaun = 0;
-    prevOnTractor = 0;
-    prevOnMoonCar = 0;
-    prevOnTownCar = 0;
-
-    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
-    if (pickup == NULL) {
-        return;
-    }
-    if (world->pickup_sys->pickup_count <= 0) {
-        return;
-    }
-
-    for (i32 pickup_index = 0; pickup != NULL && pickup_index < world->pickup_sys->pickup_count;
-         ++pickup_index, ++pickup) {
-        if ((pickup->runtime_flags & 8) == 0) {
-            switch (pickup->type_id) {
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                    pickup->collected = 0;
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-}
-
-void LegoCity_Update(WORLDINFO_s *world) {
-    if (__builtin_expect(world == NULL || world->pickup_sys == NULL, 0)) {
-        return;
-    }
-    const u8 previousTractor = prevOnTractor;
-    const u8 previousTaunTaun = prevOnTaunTaun;
-    const u8 previousMoonCar = prevOnMoonCar;
-    const u8 previousTownCar = prevOnTownCar;
-    u8 changedTractor = previousTractor;
-    u8 changedTaunTaun = previousTaunTaun;
-    u8 changedMoonCar = previousMoonCar;
-    u8 changedTownCar = previousTownCar;
-    u8 onTractor = 0;
-    u8 onTaunTaun = 0;
-    u8 onMoonCar = 0;
-    u8 onTownCar = 0;
-    for (i32 index = 0; index < 8; ++index) {
-        GameObject_s *object = Player[index];
-        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
-              object->field_0xcc0 != NULL &&
-              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
-            continue;
-        }
-        if (object->id == id_TRACTOR) {
-            onTractor = 0xff;
-            changedTractor = static_cast<u8>(~previousTractor);
-        } else if (object->id == id_TAUNTAUN) {
-            onTaunTaun = 0xff;
-            changedTaunTaun = static_cast<u8>(~previousTaunTaun);
-        } else if (object->id == id_MOONCAR) {
-            onMoonCar = 0xff;
-            changedMoonCar = static_cast<u8>(~previousMoonCar);
-        } else if (object->id == id_TOWNCAR) {
-            onTownCar = 0xff;
-            changedTownCar = static_cast<u8>(~previousTownCar);
-        }
-    }
-    u8 changed = changedTractor | changedTaunTaun | changedMoonCar | changedTownCar;
-    prevOnTractor = onTractor;
-    prevOnTaunTaun = onTaunTaun;
-    prevOnTownCar = onTownCar;
-    prevOnMoonCar = onMoonCar;
-    if (__builtin_expect(changed == 0, 0)) {
-        return;
-    }
-    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
-    for (i32 index = 0; pickup != NULL && index < world->pickup_sys->pickup_count; ++index, ++pickup) {
-        if ((pickup->runtime_flags & 8) == 0) {
-            switch (pickup->type_id) {
-                case 3:
-                    pickup->collected = onTractor;
-                    break;
-                case 4:
-                    pickup->collected = onTaunTaun;
-                    break;
-                case 5:
-                    pickup->collected = onMoonCar;
-                    break;
-                case 6:
-                    pickup->collected = onTownCar;
-                    break;
-            }
-        }
-    }
-}
-
-void SenateA_Init(WORLDINFO_s *world) {
-    char *names[] = {"deton_0110",
-                     "deton_0111",
-                     "deton_011",
-                     "deton_012",
-                     "deton_013",
-                     "deton_014",
-                     "deton_015",
-                     "deton_017",
-                     "deton_018",
-                     "deton_019",
-                     "console_btm19",
-                     "console_btm110",
-                     "console_btm11",
-                     "console_btm18",
-                     "console_btm13",
-                     "console_btm16",
-                     "console_btm15",
-                     "console_btm14",
-                     NULL};
-    for (i32 i = 0; names[i] != NULL; ++i) {
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
-        if (blowup != NULL)
-            blowup->draw_flags |= 2;
-    }
-}
-
-void NewTown_Init(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "dummy_exp8");
-    char buf[0x18];
-    i32 i = 1;
-    for (;;) {
-        sprintf(buf, "Pop_%d_House_61", i);
-        GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, buf);
-        if (g == NULL)
-            break;
-        g->field_0xa0 |= 2;
-        i++;
-    }
-}
-
-void NewTown_Reset(WORLDINFO_s *world) {
-    u32 seed = 17;
-    prevOnTaunTaun = 0;
-    prevOnFireTruck = 0;
-    prevOnLifeBoat = 0;
-
-    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
-    if (pickup == NULL)
-        return;
-    if (world->pickup_sys->pickup_count <= 0)
-        return;
-    auto world_pickup_sys = world->pickup_sys;
-    for (i32 i = 0; pickup != NULL && i < world_pickup_sys->pickup_count; ++i, ++pickup) {
-        if (!(pickup->runtime_flags & 8)) {
-            switch (pickup->type_id) {
-                case 2:
-                case 3:
-                case 4:
-                    pickup->collected = 0;
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (pickup->type_id == 4) {
-            f32 x = NuRandFloatSeeded(&seed);
-            f32 z = NuRandFloatSeeded(&seed);
-            pickup->position.x = x * 4.0f - 7.656 - 1.5;
-            pickup->position.z = z * 4.0f - 5.871 - 1.5;
-        }
-    }
-}
-
-void NewTown_Update(WORLDINFO_s *world) {
-    if (world == NULL || world->pickup_sys == NULL) {
-        return;
-    }
-    const u8 previousTaunTaun = prevOnTaunTaun;
-    const u8 previousFireTruck = prevOnFireTruck;
-    const u8 previousLifeBoat = prevOnLifeBoat;
-    u8 onTaunTaun = 0;
-    u8 onFireTruck = 0;
-    u8 onLifeBoat = 0;
-    for (i32 index = 0; index < 8; ++index) {
-        GameObject_s *object = Player[index];
-        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
-              object->field_0xcc0 != NULL &&
-              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
-            continue;
-        }
-        if (object->id == id_TAUNTAUN) {
-            onTaunTaun = 0xff;
-        } else if (object->id == id_FIRETRUCK) {
-            onFireTruck = 0xff;
-        } else if (object->id == id_LIFEBOAT) {
-            onLifeBoat = 0xff;
-        }
-    }
-    u8 changed = (onTaunTaun ^ previousTaunTaun) | (onFireTruck ^ previousFireTruck) | (onLifeBoat ^ previousLifeBoat);
-    prevOnFireTruck = onFireTruck;
-    prevOnTaunTaun = onTaunTaun;
-    prevOnLifeBoat = onLifeBoat;
-    if (changed == 0) {
-        return;
-    }
-    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
-    for (i32 index = 0; pickup != NULL && index < world->pickup_sys->pickup_count; ++index, ++pickup) {
-        if ((pickup->runtime_flags & 8) == 0) {
-            switch (pickup->type_id) {
-                case 2:
-                    pickup->collected = onTaunTaun;
-                    break;
-                case 3:
-                    pickup->collected = onFireTruck;
-                    break;
-                case 4:
-                    pickup->collected = onLifeBoat;
-                    break;
-            }
-        }
-    }
-}
+// Emperor fight (EmperorFight_A)
 
 // ===========================================================================
-// Endor battle (EndorBattle_A / C)
+// Emperor fight (EmperorFight_A)
 // ===========================================================================
 
-void EndorBattleA_Init(WORLDINFO_s *world) {
-    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "bbq_popnull", 1);
+struct EmperorFightAPacket {
+    i32 state;
+    u8 enabled;
+    u8 zap;
+    u8 player_floor_mask;
+    u8 reserved;
+};
+DECOMP_ASSERT(sizeof(EmperorFightAPacket) == 8, "Emperor fight packet ABI");
+EmperorFightAPacket *emperorfighta_netpacket;
+f32 eFloor_timer;
+i32 floor_route_on;
+static u64 routemask_efloor_on;
+static u64 routemask_efloor_off;
+static nuhspecial_s *hspecial_efloor;
+
+static inline u64 EmperorFloorAreaMask(WORLDINFO_s *world) {
+    i32 index = static_cast<i32>(LevArea[0] - world->ai_sys->areas);
+    return static_cast<u64>(static_cast<i64>(static_cast<i32>(1u << (index & 31))));
 }
 
-void EndorBattleC_Init(WORLDINFO_s *world) {
-    GIZFORCE_s *force = GizForce_FindByName(world->giz_force_sys, "force3");
-    if (force != NULL)
-        force->force_strength = 10.0f;
-    force = GizForce_FindByName(world->giz_force_sys, "force4");
-    if (force != NULL)
-        force->force_strength = 10.0f;
-}
+// Fire / slow-down helpers (Death Star 2 fire)
 
-void EndorBattleA_Update(WORLDINFO_s *) {
-    static f32 parttimer = 0.75f;
-    nuinstanim_s *animation = NuSpecialGetInstAnim(&LevHSpecial[0]);
-    if (animation != NULL && animation->playing && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
-        if (parttimer >= 0.75f)
-            AddPartDebris(WORLD->part_debris_sys, 7, NuSpecialGetDrawPos(&LevHSpecial[0]));
-        parttimer -= FRAMETIME;
-        if (parttimer <= 0.0f)
-            parttimer = 0.75f;
+// ===========================================================================
+// Fire / slow-down helpers (Death Star 2 fire)
+// ===========================================================================
+
+SPLINEPOS_s fireSplinePos;
+SPLINEPOS_s fireBackPos;
+f32 runningTotalPos;
+f32 fireSpeedScale;
+f32 fireDeltaPos;
+i32 fire_clip_dist = 1000;
+extern i32 objhitobj_nohurtsfx, objhitobj_noimpactsfx;
+static f32 slowDownTimer[2];
+
+void DeathStar2BattleFire_SetSlowDownMul(GameObject_s *object) {
+    if (WORLD->current_level != DEATHSTAR2BATTLEE_LDATA && WORLD->current_level != DEATHSTAR2BATTLEF_LDATA &&
+        WORLD->current_level != DEATHSTAR2BATTLEG_LDATA)
+        return;
+    if (object != NULL) {
+        i32 index = object->apiobj.field_0x27c;
+        if ((u8)index < 2) {
+            object->apiobj.velocity = v000;
+            slowDownTimer[index] = 3.0f;
+        }
     }
 }
 
-void Platform_Init(WORLDINFO_s *world) {
-    NuSpecialFind(world->current_gscn, &LevHSpecial[0], const_cast<char *>("slave1_level"), 0);
-}
-
-void Platform_Reset(WORLDINFO_s *) {
-    NuSpecialSetVisibility(&LevHSpecial[0], 0);
-}
-
-void E1CharacterBonus_Init(WORLDINFO_s *world) {
-    GIZOBSTACLE_s *obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle16");
-    if (obstacle != NULL)
-        obstacle->field_a1_0xa1 |= 1;
+void DeathStar2BattleA_AlwaysUpdate(WORLDINFO_s *) {
+    if (!FreePlay && DEATHSTAR2BATTLEMIDTRO_LDATA != NULL)
+        other_level_override = DEATHSTAR2BATTLEMIDTRO_LDATA->idx;
 }
 
 // ===========================================================================
@@ -1205,6 +258,46 @@ void DeathStar2BattleD_Init(WORLDINFO_s *world) {
 
     LevGizmo[7] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "shield_inner1");
     LevFlag[5] = 0;
+}
+
+GIZMOBLOWUP_s *DeathStar2BattleD_InZapRange(GameObject_s *object) {
+    if (object == NULL || !object->apiobj.player_controlled || object->apiobj.field_0x287 != 0)
+        return NULL;
+
+    GIZMOBLOWUP_s *nearest;
+    f32 nearest_distance = 225.0f;
+    GIZMO *first_gizmo = LevGizmo[1];
+    if (first_gizmo != NULL) {
+        nearest = static_cast<GIZMOBLOWUP_s *>(first_gizmo->object);
+        if (nearest != NULL && (nearest->status_flags & 0x800001) == 0x800000 && LevGizObst[1] != NULL &&
+            LevGizObst[1]->anim_set->state != 0) {
+            f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &nearest->mid_position, NULL);
+            if (distance >= nearest_distance)
+                nearest = NULL;
+            nearest_distance = distance < nearest_distance ? distance : nearest_distance;
+        } else
+            nearest = NULL;
+    } else
+        nearest = NULL;
+#define CHECK_ZAP_RANGE(index)                                                                                         \
+    if (LevGizmo[index] != NULL) {                                                                                     \
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[index]->object);                                 \
+        if (blowup != NULL && (blowup->status_flags & 0x800001) == 0x800000 && LevGizObst[index] != NULL &&            \
+            LevGizObst[index]->anim_set->state != 0) {                                                                 \
+            f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &blowup->mid_position, NULL);              \
+            if (distance < nearest_distance) {                                                                         \
+                nearest = blowup;                                                                                      \
+                nearest_distance = distance;                                                                           \
+            }                                                                                                          \
+        }                                                                                                              \
+    }
+    CHECK_ZAP_RANGE(2);
+    CHECK_ZAP_RANGE(3);
+    CHECK_ZAP_RANGE(4);
+    CHECK_ZAP_RANGE(5);
+    CHECK_ZAP_RANGE(6);
+#undef CHECK_ZAP_RANGE
+    return nearest;
 }
 
 void DeathStar2BattleD_Update(WORLDINFO_s *) {
@@ -1270,69 +363,185 @@ void DeathStar2BattleD_Update(WORLDINFO_s *) {
     }
 }
 
-GIZMOBLOWUP_s *DeathStar2BattleD_InZapRange(GameObject_s *object) {
-    if (object == NULL || !object->apiobj.player_controlled || object->apiobj.field_0x287 != 0)
-        return NULL;
+void DeathStar2BattleFire_Init(WORLDINFO_s *world) {
+    LEGO_SET_SLOWDOWNFN = DeathStar2BattleFire_SetSlowDownMul;
+    LevelCodeSpline[0] = NuSplineFind(world->current_gscn, const_cast<char *>("fire"));
+    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[0], const_cast<char *>("fire_cube"), 0);
+    InitSplinePosition(&fireSplinePos, LevelCodeSpline[0], 0.0f, 0);
+    InitSplinePosition(&fireBackPos, LevelCodeSpline[0], 0.0f, 0);
+    runningTotalPos = 0.0f;
+    fireSpeedScale = 1.0f;
+}
 
-    GIZMOBLOWUP_s *nearest;
-    f32 nearest_distance = 225.0f;
-    GIZMO *first_gizmo = LevGizmo[1];
-    if (first_gizmo != NULL) {
-        nearest = static_cast<GIZMOBLOWUP_s *>(first_gizmo->object);
-        if (nearest != NULL && (nearest->status_flags & 0x800001) == 0x800000 && LevGizObst[1] != NULL &&
-            LevGizObst[1]->anim_set->state != 0) {
-            f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &nearest->mid_position, NULL);
-            if (distance >= nearest_distance)
-                nearest = NULL;
-            nearest_distance = distance < nearest_distance ? distance : nearest_distance;
-        } else
-            nearest = NULL;
-    } else
-        nearest = NULL;
-#define CHECK_ZAP_RANGE(index)                                                                                         \
-    if (LevGizmo[index] != NULL) {                                                                                     \
-        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[index]->object);                                 \
-        if (blowup != NULL && (blowup->status_flags & 0x800001) == 0x800000 && LevGizObst[index] != NULL &&            \
-            LevGizObst[index]->anim_set->state != 0) {                                                                 \
-            f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &blowup->mid_position, NULL);              \
-            if (distance < nearest_distance) {                                                                         \
-                nearest = blowup;                                                                                      \
-                nearest_distance = distance;                                                                           \
-            }                                                                                                          \
-        }                                                                                                              \
+void DeathStar2BattleFire_Draw(WORLDINFO_s *world) {
+    u16 yaw = 0;
+    u16 pitch = 0;
+    NUVEC point = v000;
+    NUMTX matrix;
+    NUVEC difference;
+    NUVEC average;
+    SPLINEPOS_s position;
+    if (Paused != 0)
+        return;
+
+    position = fireSplinePos;
+    while (position.normalized_position > 0.0f) {
+        NuMtxSetIdentity(&matrix);
+        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
+        Players_AveragePos(&average, NULL);
+        difference.x = average.x - position.position.x;
+        difference.y = average.y - position.position.y;
+        difference.z = average.z - position.position.z;
+        if (NuVecMagSqr(&difference) < fire_clip_dist)
+            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 33, FRAMETIME,
+                                              pitch, yaw, NULL);
+        MoveSplinePosition(&position, -40.0f);
     }
-    CHECK_ZAP_RANGE(2);
-    CHECK_ZAP_RANGE(3);
-    CHECK_ZAP_RANGE(4);
-    CHECK_ZAP_RANGE(5);
-    CHECK_ZAP_RANGE(6);
-#undef CHECK_ZAP_RANGE
-    return nearest;
+
+    position = fireBackPos;
+    while (position.normalized_position < fireSplinePos.normalized_position) {
+        NuMtxSetIdentity(&matrix);
+        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
+        Players_AveragePos(&average, NULL);
+        difference.x = average.x - position.position.x;
+        difference.y = average.y - position.position.y;
+        difference.z = average.z - position.position.z;
+        if (NuVecMagSqr(&difference) < fire_clip_dist)
+            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 67, FRAMETIME,
+                                              pitch, yaw, NULL);
+        MoveSplinePosition(&position, 40.0f);
+    }
+
+    position = fireBackPos;
+    while (position.normalized_position > 0.0f) {
+        NuMtxSetIdentity(&matrix);
+        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
+        Players_AveragePos(&average, NULL);
+        difference.x = average.x - position.position.x;
+        difference.y = average.y - position.position.y;
+        difference.z = average.z - position.position.z;
+        if (NuVecMagSqr(&difference) < fire_clip_dist)
+            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 33, FRAMETIME,
+                                              pitch, yaw, NULL);
+        MoveSplinePosition(&position, -40.0f);
+    }
 }
 
-void DeathStar2BattleA_AlwaysUpdate(WORLDINFO_s *) {
-    if (!FreePlay && DEATHSTAR2BATTLEMIDTRO_LDATA != NULL)
-        other_level_override = DEATHSTAR2BATTLEMIDTRO_LDATA->idx;
+void DeathStar2BattleFire_UpdateSlowDownMul(f32 dt) {
+    for (i32 index = 0; index < 2; ++index)
+        if (slowDownTimer[index] > 0.0f)
+            slowDownTimer[index] -= dt;
 }
 
-// ===========================================================================
-// Emperor fight (EmperorFight_A)
-// ===========================================================================
+void DeathStar2BattleFire_Update(WORLDINFO_s *world) {
+    u16 yaw = 0;
+    u16 pitch = 0;
+    NUVEC point = v000;
+    NUMTX matrix;
+    NUVEC difference;
+    DeathStar2BattleFire_UpdateSlowDownMul(FRAMETIME);
+    if (Player[0] != NULL)
+        fireDeltaPos =
+            1.25f * static_cast<GAMECHARACTERDATA *>(Player[0]->apiobj.character_data->field11_0x24)->run_speed;
+    else
+        fireDeltaPos = 30.0f;
 
-struct EmperorFightAPacket {
-    i32 state;
-    u8 enabled;
-    u8 zap;
-    u8 player_floor_mask;
-    u8 reserved;
-};
-DECOMP_ASSERT(sizeof(EmperorFightAPacket) == 8, "Emperor fight packet ABI");
-EmperorFightAPacket *emperorfighta_netpacket;
-f32 eFloor_timer;
-i32 floor_route_on;
-static u64 routemask_efloor_on;
-static u64 routemask_efloor_off;
-static nuhspecial_s *hspecial_efloor;
+    f32 choice = NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 4.0f;
+    i32 effect;
+    if (choice < 1.0f)
+        effect = 33;
+    else if (choice < 2.0f)
+        effect = 48;
+    else if (choice < 3.0f)
+        effect = 35;
+    else
+        effect = 36;
+    f32 along = fireSplinePos.normalized_position;
+    along += NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 0.1f;
+    PointAlongSpline(LevelCodeSpline[0], along, &point, &yaw, &pitch, 0);
+    i16 y_rotation = qrand();
+    i16 z_rotation = qrand();
+    AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[effect].effect, &point, 90, FRAMETIME, z_rotation,
+                                      y_rotation, NULL);
+
+    NuMtxSetIdentity(&matrix);
+    PointAlongSpline(LevelCodeSpline[0], fireSplinePos.normalized_position, &point, &yaw, &pitch, 0);
+    NuMtxPreRotateY(&matrix, yaw);
+    NuMtxTranslate(&matrix, &fireSplinePos.position);
+    if (fireSplinePos.normalized_position < 1.0f)
+        NuSpecialSetDrawMtx(&LevHSpecial[0], &matrix);
+    else
+        NuSpecialSetVisibility(&LevHSpecial[0], 0);
+    if (fireBackPos.normalized_position <= 0.0f)
+        fireBackPos = fireSplinePos;
+
+    f32 nearest_distance = 1000000000.0f;
+    GameObject_s *nearest = NULL;
+    for (i32 index = 0; index < 8; ++index) {
+        if (Player[index] != NULL && (Player[index]->action_flags & 0x20) == 0) {
+            NuVecSub(&difference, &Player[index]->apiobj.position, &fireSplinePos.position);
+            NuVecRotateY(&difference, &difference, -static_cast<i32>(yaw));
+            if (difference.z < nearest_distance) {
+                nearest_distance = difference.z;
+                if (difference.z < 0.0f)
+                    nearest = Player[index];
+            }
+            if (difference.z < 0.0f) {
+                i32 no_hurt = objhitobj_nohurtsfx;
+                if (Player[index]->apiobj.field_0x287 != 0)
+                    fireSpeedScale = 0.2f;
+                // Retail emits at the nearest player found so far, then hits the current slot.
+                AddVariableShotDebrisEffectTimed3(world->debris_sys->entries[115].effect, &nearest->apiobj.position,
+                                                  &nearest->apiobj.velocity, 40, FRAMETIME, NULL, NULL);
+                if ((Player[index]->apiobj.field_0x1f4 & APIOBJECT_STATE_FLAG_IGNORE_DOORS) == 0) {
+                    objhitobj_nohurtsfx = 1;
+                    objhitobj_noimpactsfx = 1;
+                    ObjHitObj(NULL, Player[index], 1, 0, 0, 1);
+                    objhitobj_nohurtsfx = no_hurt;
+                }
+            }
+        }
+    }
+    if (fireSpeedScale < 1.0f && nearest == NULL)
+        fireSpeedScale += FRAMETIME / 3.0f;
+    else if (fireSpeedScale == 0.2f && nearest != NULL)
+        fireSpeedScale = 0.2f;
+    else if (nearest_distance > 10.0f)
+        fireSpeedScale = 1.75f;
+    else
+        fireSpeedScale = 1.0f;
+
+    if (WORLD->current_level == DEATHSTAR2BATTLEE_LDATA || LevelTimer.time_elapsed > 0.5f)
+        MoveSplinePosition(&fireSplinePos, fireDeltaPos * FRAMETIME * fireSpeedScale);
+    MoveSplinePosition(&fireBackPos, -(fireDeltaPos * FRAMETIME));
+    if (NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) > 0.95f) {
+        switch (static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 3.0f)) {
+            case 1:
+                PlaySfx("explode_SDest", &fireSplinePos.position);
+                break;
+            case 2:
+                PlaySfx("explode_SDG", &fireSplinePos.position);
+                break;
+            default:
+                PlaySfx("exp_asteroid", &fireSplinePos.position);
+                break;
+        }
+    }
+    PlaySfx("env_lantern_lp", &fireSplinePos.position);
+}
+
+f32 DeathStar2BattleFire_GetSlowDownMul(GameObject_s *object) {
+    if (object != NULL) {
+        i32 index = object->apiobj.field_0x27c;
+        if ((u8)index < 2) {
+            if (slowDownTimer[index] < 0.0f)
+                slowDownTimer[index] = 0.0f;
+            else
+                return (3.0f - slowDownTimer[index]) / 3.0f;
+        }
+    }
+    return 1.0f;
+}
 
 void EmperorFightA_Init(WORLDINFO_s *world) {
     emperorfighta_netpacket = static_cast<EmperorFightAPacket *>(SetLevelHack(8));
@@ -1458,7 +667,6 @@ void EmperorFightA_Init(WORLDINFO_s *world) {
     }
 }
 
-extern i32 obstacle_gizmotype_id, force_gizmotype_id;
 void EmperorFightA_Reset(WORLDINFO_s *world) {
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
     LevAIMessage[1] = CheckGizAIMessage(gizaimessagesys, "ElectricFloor", NULL);
@@ -1503,10 +711,6 @@ void EmperorFightA_Reset(WORLDINFO_s *world) {
         LevGizObst[3] = static_cast<GIZOBSTACLE_s *>(gizmo->object);
 }
 
-static inline u64 EmperorFloorAreaMask(WORLDINFO_s *world) {
-    i32 index = static_cast<i32>(LevArea[0] - world->ai_sys->areas);
-    return static_cast<u64>(static_cast<i64>(static_cast<i32>(1u << (index & 31))));
-}
 void EmperorFightA_Update(WORLDINFO_s *world) {
     if (LevGameObject[0] == NULL)
         LevGameObject[0] = FindGameObject(id_THEEMPEROR, 1, 1, 0, 0);
@@ -1840,209 +1044,1004 @@ void EmperorFightA_Panel(WORLDINFO_s *) {
 }
 
 // ===========================================================================
-// Fire / slow-down helpers (Death Star 2 fire)
+// Jabba's Palace (JabbasPalace_A / B / D / E)
 // ===========================================================================
 
-SPLINEPOS_s fireSplinePos;
-SPLINEPOS_s fireBackPos;
-f32 runningTotalPos;
-f32 fireSpeedScale;
-f32 fireDeltaPos;
-i32 fire_clip_dist = 1000;
-extern void (*LEGO_SET_SLOWDOWNFN)(GameObject_s *);
-void DeathStar2BattleFire_SetSlowDownMul(GameObject_s *object);
-void DeathStar2BattleFire_UpdateSlowDownMul(f32 dt);
-extern i32 objhitobj_nohurtsfx, objhitobj_noimpactsfx;
-extern "C" void AddVariableShotDebrisEffectTimed3(i32, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *);
+void JabbasPalaceA_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "grill_02", 1);
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "entrance11");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
+    blowup = GizmoBlowUp_FindByName(world, "entrance21");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
+}
 
-void DeathStar2BattleFire_Draw(WORLDINFO_s *world) {
-    u16 yaw = 0;
-    u16 pitch = 0;
-    NUVEC point = v000;
-    NUMTX matrix;
-    NUVEC difference;
-    NUVEC average;
-    SPLINEPOS_s position;
-    if (Paused != 0)
-        return;
+void JabbasPalaceA_Reset(WORLDINFO_s *) {
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
+}
 
-    position = fireSplinePos;
-    while (position.normalized_position > 0.0f) {
-        NuMtxSetIdentity(&matrix);
-        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
-        Players_AveragePos(&average, NULL);
-        difference.x = average.x - position.position.x;
-        difference.y = average.y - position.position.y;
-        difference.z = average.z - position.position.z;
-        if (NuVecMagSqr(&difference) < fire_clip_dist)
-            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 33, FRAMETIME,
-                                              pitch, yaw, NULL);
-        MoveSplinePosition(&position, -40.0f);
-    }
-
-    position = fireBackPos;
-    while (position.normalized_position < fireSplinePos.normalized_position) {
-        NuMtxSetIdentity(&matrix);
-        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
-        Players_AveragePos(&average, NULL);
-        difference.x = average.x - position.position.x;
-        difference.y = average.y - position.position.y;
-        difference.z = average.z - position.position.z;
-        if (NuVecMagSqr(&difference) < fire_clip_dist)
-            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 67, FRAMETIME,
-                                              pitch, yaw, NULL);
-        MoveSplinePosition(&position, 40.0f);
-    }
-
-    position = fireBackPos;
-    while (position.normalized_position > 0.0f) {
-        NuMtxSetIdentity(&matrix);
-        PointAlongSpline(LevelCodeSpline[0], position.normalized_position, &point, &yaw, &pitch, 0);
-        Players_AveragePos(&average, NULL);
-        difference.x = average.x - position.position.x;
-        difference.y = average.y - position.position.y;
-        difference.z = average.z - position.position.z;
-        if (NuVecMagSqr(&difference) < fire_clip_dist)
-            AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[121].effect, &position.position, 33, FRAMETIME,
-                                              pitch, yaw, NULL);
-        MoveSplinePosition(&position, -40.0f);
+void JabbasPalaceA_Update(WORLDINFO_s *) {
+    NUVEC position = {-0.01503f, 0.7414f, 11.5824f};
+    if (NuSpecialExistsFn(&LevHSpecial[0]) && !NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
+        AIANTINODE *antinode = AIAntinodeCreateSingleFrame(&position, 1.0f);
+        if (antinode != NULL) {
+            antinode->type = 2;
+            antinode->base_radius = 0.82443f;
+            antinode->base_height = 1.0f;
+        }
     }
 }
 
-void DeathStar2BattleFire_Init(WORLDINFO_s *world) {
-    LEGO_SET_SLOWDOWNFN = DeathStar2BattleFire_SetSlowDownMul;
-    LevelCodeSpline[0] = NuSplineFind(world->current_gscn, const_cast<char *>("fire"));
-    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[0], const_cast<char *>("fire_cube"), 0);
-    InitSplinePosition(&fireSplinePos, LevelCodeSpline[0], 0.0f, 0);
-    InitSplinePosition(&fireBackPos, LevelCodeSpline[0], 0.0f, 0);
-    runningTotalPos = 0.0f;
-    fireSpeedScale = 1.0f;
+void JabbasPalaceB_Init(WORLDINFO_s *world) {
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle5");
+    LevBlowUp[0] = GizmoBlowUp_FindByName(world, "prison_stone1");
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "prison_blast1");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
 }
 
-void DeathStar2BattleFire_Update(WORLDINFO_s *world) {
-    u16 yaw = 0;
-    u16 pitch = 0;
-    NUVEC point = v000;
-    NUMTX matrix;
-    NUVEC difference;
-    DeathStar2BattleFire_UpdateSlowDownMul(FRAMETIME);
-    if (Player[0] != NULL)
-        fireDeltaPos =
-            1.25f * static_cast<GAMECHARACTERDATA *>(Player[0]->apiobj.character_data->field11_0x24)->run_speed;
-    else
-        fireDeltaPos = 30.0f;
+void JabbasPalaceB_Reset(WORLDINFO_s *) {
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
+}
 
-    f32 choice = NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 4.0f;
-    i32 effect;
-    if (choice < 1.0f)
-        effect = 33;
-    else if (choice < 2.0f)
-        effect = 48;
-    else if (choice < 3.0f)
-        effect = 35;
-    else
-        effect = 36;
-    f32 along = fireSplinePos.normalized_position;
-    along += NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 0.1f;
-    PointAlongSpline(LevelCodeSpline[0], along, &point, &yaw, &pitch, 0);
-    i16 y_rotation = qrand();
-    i16 z_rotation = qrand();
-    AddVariableShotDebrisEffectTimed1(world->debris_sys->entries[effect].effect, &point, 90, FRAMETIME, z_rotation,
-                                      y_rotation, NULL);
+void JabbasPalaceD_Reset(WORLDINFO_s *world) {
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
+    if (world->current_level == JABBASPALACED_LDATA && world->push_block_count > 0) {
+        pushblock_s *push_block = world->push_blocks;
+        NUDISPLAYSPECIAL_s *display_special = push_block->special.display_special;
+        if (display_special != NULL) {
+            NUGSCN *scene = push_block->special.scene;
+            if (scene != NULL && scene->display_list != NULL)
+                scene->display_list->visibility_flags[display_special->instance_ix] |= 8;
+        }
+    }
+}
 
-    NuMtxSetIdentity(&matrix);
-    PointAlongSpline(LevelCodeSpline[0], fireSplinePos.normalized_position, &point, &yaw, &pitch, 0);
-    NuMtxPreRotateY(&matrix, yaw);
-    NuMtxTranslate(&matrix, &fireSplinePos.position);
-    if (fireSplinePos.normalized_position < 1.0f)
-        NuSpecialSetDrawMtx(&LevHSpecial[0], &matrix);
-    else
-        NuSpecialSetVisibility(&LevHSpecial[0], 0);
-    if (fireBackPos.normalized_position <= 0.0f)
-        fireBackPos = fireSplinePos;
+void JabbasPalaceE_Init(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo1");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo2");
+    LevFlag[6] = 0;
+    LevFlag[7] = 0;
+}
 
-    f32 nearest_distance = 1000000000.0f;
-    GameObject_s *nearest = NULL;
-    for (i32 index = 0; index < 8; ++index) {
-        if (Player[index] != NULL && (Player[index]->action_flags & 0x20) == 0) {
-            NuVecSub(&difference, &Player[index]->apiobj.position, &fireSplinePos.position);
-            NuVecRotateY(&difference, &difference, -static_cast<i32>(yaw));
-            if (difference.z < nearest_distance) {
-                nearest_distance = difference.z;
-                if (difference.z < 0.0f)
-                    nearest = Player[index];
+void JabbasPalaceE_Reset(WORLDINFO_s *world) {
+    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "AI_rancor");
+    LevArea[0] = AISysFindArea(world->ai_sys, "Alcove_1");
+    LevArea[1] = AISysFindArea(world->ai_sys, "Alcove_2");
+    LevArea[2] = AISysFindArea(world->ai_sys, "Back_Room");
+    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
+}
+
+void JabbasPalaceE_Update(WORLDINFO_s *world) {
+    if (!netclient) {
+        if (FreePlay)
+            KillBossCompleteLevel(id_RANCOR, 0, 0.3f);
+        else
+            KillBossNewLevel(id_RANCOR, 0, 0.3f, JABBASPALACE_OUTRO_LDATA->idx);
+    }
+    GameObject_s *rancor = LevGameObject[0];
+    if (rancor != NULL) {
+        rancor->ai_opponent_exclusion_mask = 0;
+        if (aicreature_sets_alive[0] != 0) {
+            for (i32 index = 0; index < 8; ++index) {
+                GameObject_s *player = Player[index];
+                if (player != NULL)
+                    rancor->ai_opponent_exclusion_mask |= 1ULL << player->apiobj.field_0x289;
             }
-            if (difference.z < 0.0f) {
-                i32 no_hurt = objhitobj_nohurtsfx;
-                if (Player[index]->apiobj.field_0x287 != 0)
-                    fireSpeedScale = 0.2f;
-                // Retail emits at the nearest player found so far, then hits the current slot.
-                AddVariableShotDebrisEffectTimed3(world->debris_sys->entries[115].effect, &nearest->apiobj.position,
-                                                  &nearest->apiobj.velocity, 40, FRAMETIME, NULL, NULL);
-                if ((Player[index]->apiobj.field_0x1f4 & APIOBJECT_STATE_FLAG_IGNORE_DOORS) == 0) {
-                    objhitobj_nohurtsfx = 1;
-                    objhitobj_noimpactsfx = 1;
-                    ObjHitObj(NULL, Player[index], 1, 0, 0, 1);
-                    objhitobj_nohurtsfx = no_hurt;
+        } else {
+            // Retail widens a signed 32-bit area mask, including its sign bit.
+            for (i32 index = 0; index < 8; ++index) {
+                GameObject_s *player = Player[index];
+                if (player != NULL && ((LevArea[0] != NULL &&
+                                        (player->apiobj.ai_area_mask &
+                                         static_cast<i32>(1u << ((LevArea[0] - world->ai_sys->areas) & 31))) != 0) ||
+                                       (LevArea[1] != NULL &&
+                                        (player->apiobj.ai_area_mask &
+                                         static_cast<i32>(1u << ((LevArea[1] - world->ai_sys->areas) & 31))) != 0) ||
+                                       (LevArea[2] != NULL &&
+                                        (player->apiobj.ai_area_mask &
+                                         static_cast<i32>(1u << ((LevArea[2] - world->ai_sys->areas) & 31))) != 0))) {
+                    rancor->ai_opponent_exclusion_mask |= 1ULL << player->apiobj.field_0x289;
                 }
             }
         }
     }
-    if (fireSpeedScale < 1.0f && nearest == NULL)
-        fireSpeedScale += FRAMETIME / 3.0f;
-    else if (fireSpeedScale == 0.2f && nearest != NULL)
-        fireSpeedScale = 0.2f;
-    else if (nearest_distance > 10.0f)
-        fireSpeedScale = 1.75f;
-    else
-        fireSpeedScale = 1.0f;
-
-    if (WORLD->current_level == DEATHSTAR2BATTLEE_LDATA || LevelTimer.time_elapsed > 0.5f)
-        MoveSplinePosition(&fireSplinePos, fireDeltaPos * FRAMETIME * fireSpeedScale);
-    MoveSplinePosition(&fireBackPos, -(fireDeltaPos * FRAMETIME));
-    if (NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) > 0.95f) {
-        switch (static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 3.0f)) {
-            case 1:
-                PlaySfx("explode_SDest", &fireSplinePos.position);
-                break;
-            case 2:
-                PlaySfx("explode_SDG", &fireSplinePos.position);
-                break;
-            default:
-                PlaySfx("exp_asteroid", &fireSplinePos.position);
-                break;
+    GIZMOBLOWUP_s *blowup = LevGizmo[0] != NULL ? static_cast<GIZMOBLOWUP_s *>(LevGizmo[0]->object) : NULL;
+    if (blowup != NULL && (blowup->status_flags & 1) != 0) {
+        if (LevFlag[6] == 0) {
+            PlaySfx("exp_minecart", &blowup->position);
+            LevFlag[6] = 1;
         }
+    } else {
+        LevFlag[6] = 0;
     }
-    PlaySfx("env_lantern_lp", &fireSplinePos.position);
+    blowup = LevGizmo[1] != NULL ? static_cast<GIZMOBLOWUP_s *>(LevGizmo[1]->object) : NULL;
+    if (blowup != NULL && (blowup->status_flags & 1) != 0) {
+        if (LevFlag[7] == 0) {
+            PlaySfx("exp_minecart", &blowup->position);
+            LevFlag[7] = 1;
+        }
+    } else {
+        LevFlag[7] = 0;
+    }
 }
 
-static f32 slowDownTimer[2];
-f32 DeathStar2BattleFire_GetSlowDownMul(GameObject_s *object) {
-    if (object != NULL) {
-        i32 index = object->apiobj.field_0x27c;
-        if ((u8)index < 2) {
-            if (slowDownTimer[index] < 0.0f)
-                slowDownTimer[index] = 0.0f;
-            else
-                return (3.0f - slowDownTimer[index]) / 3.0f;
-        }
+void JabbasPalaceE_Panel(WORLDINFO_s *) {
+    if (!netclient) {
+        if (LevGameObject[0] != NULL && LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
+            DrawBossHitPoints(LevGameObject[0]);
+        else
+            DrawBossHitPoints(NULL);
     }
-    return 1.0f;
 }
-void DeathStar2BattleFire_SetSlowDownMul(GameObject_s *object) {
-    if (WORLD->current_level != DEATHSTAR2BATTLEE_LDATA && WORLD->current_level != DEATHSTAR2BATTLEF_LDATA &&
-        WORLD->current_level != DEATHSTAR2BATTLEG_LDATA)
+
+void SarlaccPitA_Reset(WORLDINFO_s *world) {
+    LevSafePlatID[0] = -1;
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[0], "float_skiff_2", 1) == 0) {
         return;
-    if (object != NULL) {
-        i32 index = object->apiobj.field_0x27c;
-        if ((u8)index < 2) {
-            object->apiobj.velocity = v000;
-            slowDownTimer[index] = 3.0f;
+    }
+    if (world->terrain == NULL) {
+        return;
+    }
+    LevSafePlatID[0] = FindPlatInst(NuSpecialGetInstanceix(&LevHSpecial[0]));
+}
+
+// ===========================================================================
+// Sarlacc Pit (SarlaccPit_A / B / C)
+// ===========================================================================
+
+void SarlaccPitA_Draw(WORLDINFO_s *) {
+    GIZAIMESSAGE_s *message = NULL;
+    if (gizaimessagesys != NULL)
+        message = CheckGizAIMessage(gizaimessagesys, "Boba_Dead", NULL);
+    if (message == NULL || message->value != 0.0f) {
+        DrawBossHitPoints(NULL);
+    } else {
+        GameObject_s *boba = FindGameObject(id_BOBAFETT, 1, 1, 1, 0);
+        if (gizaimessagesys != NULL)
+            message = CheckGizAIMessage(gizaimessagesys, "BobaFightStarted", NULL);
+        if (message != NULL && boba != NULL && message->value == 1.0f)
+            DrawBossHitPoints(boba);
+    }
+}
+
+void SarlaccPitB_SpecialUpdate(WORLDINFO_s *) {
+    for (i32 index = 0; index < sarlaccdisco.count; ++index) {
+        NuSpecialSetVisibility(&sarlaccdisco.off[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.flash[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.select[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.on[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.finish[index], 0);
+        if (netclient)
+            sarlaccdisco.height = SeekValF(sarlaccdisco.height, sarlaccb_netpacket->height, 8.0f);
+        else
+            sarlaccb_netpacket->height = sarlaccdisco.height;
+
+        if ((sarlaccb_netpacket->off_mask & (1 << index)) != 0)
+            SarlaccDiscoShow(&sarlaccdisco.off[index]);
+        else if ((sarlaccb_netpacket->flash_mask & (1 << index)) != 0)
+            SarlaccDiscoShow(&sarlaccdisco.flash[index]);
+        else if ((sarlaccb_netpacket->select_mask & (1 << index)) != 0)
+            SarlaccDiscoShow(&sarlaccdisco.select[index]);
+        else if ((sarlaccb_netpacket->on_mask & (1 << index)) != 0)
+            SarlaccDiscoShow(&sarlaccdisco.on[index]);
+        else if ((sarlaccb_netpacket->finish_mask & (1 << index)) != 0)
+            SarlaccDiscoShow(&sarlaccdisco.finish[index]);
+        NUVEC *position = NuSpecialGetDrawPos(&LevHSpecial[1]);
+        if (position != NULL) {
+            position->y = sarlaccdisco.height + disco_base_offset;
+            NuSpecialSetDrawPos(&LevHSpecial[1], position);
+        }
+        if ((sarlaccb_netpacket->sound_mask & (1 << index)) != 0)
+            PlaySfx("Kam_DiscoFloorPanelOn", NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[index]), 3));
+    }
+    if (sarlaccb_netpacket->disco_active != 0) {
+        SetGizAIMessage(gizaimessagesys, "DiscoComplete", 1.0f, sarlaccdisco.complete_message);
+        PlayRadio("Speaker2", "Speaker21", 1);
+        PlayRadio("Speaker1", "Speaker11", 1);
+        PlayRadio("decks", "decks", 1);
+        if (obstMirrorBall != NULL)
+            GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(obstMirrorBall->object));
+        if (NuSpecialExistsFn(&LevSpecial[0]))
+            NuSpecialSetVisibility(&LevSpecial[0], 1);
+        if (NuSpecialExistsFn(&LevSpecial[1]))
+            NuSpecialSetVisibility(&LevSpecial[1], 1);
+        if (NuSpecialExistsFn(&LevSpecial[4])) {
+            nuinstanim_s *animation = NuSpecialGetInstAnim(&LevSpecial[4]);
+            if (animation != NULL)
+                animation->playing = 1;
+        }
+        if (NuSpecialExistsFn(&LevSpecial[5]) && NuSpecialExistsFn(&LevSpecial[6])) {
+            nuinstanim_s *animation = NuSpecialGetInstAnim(&LevSpecial[5]);
+            if (animation != NULL)
+                animation->playing = 1;
+            animation = NuSpecialGetInstAnim(&LevSpecial[6]);
+            if (animation != NULL)
+                animation->playing = 1;
+        }
+        if (sarlaccb_netpacket->completion_sound_played == 0) {
+            PlaySfx("Kam_DiscoFloorPanelDone", NuSpecialGetDrawPos(&sarlaccdisco.off[0]));
+            sarlaccb_netpacket->completion_sound_played = 1;
+        }
+    } else {
+        PlayRadio("Speaker2", "Speaker21", 0);
+        PlayRadio("Speaker1", "Speaker11", 0);
+        PlayRadio("decks", "decks", 0);
+        sarlaccb_netpacket->completion_sound_played = 0;
+    }
+}
+
+i32 SarlaccPitDiscoActive(WORLDINFO_s *world) {
+    return world->current_level == SARLACCPITB_LDATA && sarlaccb_netpacket->disco_active != 0;
+}
+
+void SarlaccPitB_Init(WORLDINFO_s *) {
+    memset(&sarlaccdisco, 0, sizeof(sarlaccdisco));
+    sarlaccb_netpacket = static_cast<SarlaccBattlePacket *>(SetLevelHack(sizeof(SarlaccBattlePacket)));
+    i8 *disco_index = &sarlaccdisco.count;
+    *disco_index = 0;
+    char name[32];
+    for (;;) {
+        if (*disco_index <= 8)
+            sprintf(name, "dot_off_0%d", *disco_index + 1);
+        else
+            sprintf(name, "dot_off_%d", *disco_index + 1);
+        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.off[*disco_index], name, 1);
+
+        if (*disco_index <= 8)
+            sprintf(name, "dot_flash_0%d", *disco_index + 1);
+        else
+            sprintf(name, "dot_flash_%d", *disco_index + 1);
+        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.flash[*disco_index], name, 1);
+
+        if (*disco_index <= 8)
+            sprintf(name, "dot_select_0%d", *disco_index + 1);
+        else
+            sprintf(name, "dot_select_%d", *disco_index + 1);
+        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.select[*disco_index], name, 1);
+
+        if (*disco_index <= 8)
+            sprintf(name, "dot_on_0%d", *disco_index + 1);
+        else
+            sprintf(name, "dot_on_%d", *disco_index + 1);
+        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.on[*disco_index], name, 1);
+
+        if (*disco_index <= 8)
+            sprintf(name, "dot_finish_0%d", *disco_index + 1);
+        else
+            sprintf(name, "dot_finish_%d", *disco_index + 1);
+        NuSpecialFind(WORLD->current_gscn, &sarlaccdisco.finish[*disco_index], name, 1);
+
+        if (!NuSpecialExistsFn(&sarlaccdisco.off[*disco_index]) ||
+            !NuSpecialExistsFn(&sarlaccdisco.flash[*disco_index]) ||
+            !NuSpecialExistsFn(&sarlaccdisco.select[*disco_index]) ||
+            !NuSpecialExistsFn(&sarlaccdisco.on[*disco_index]) ||
+            !NuSpecialExistsFn(&sarlaccdisco.finish[*disco_index]))
+            break;
+
+        if (*disco_index == 0) {
+            NUVEC *position = NuSpecialGetPos(&sarlaccdisco.off[0]);
+            if (position != NULL) {
+                f32 height = position->y;
+                sarlaccdisco.initial_height = height;
+                sarlaccdisco.height = height;
+            }
+        }
+        ++*disco_index;
+        if (*disco_index > 15)
+            break;
+    }
+    sarlaccdisco.area = AISysFindArea(WORLD->ai_sys, "DISCO");
+    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[0], "force_engine_lump", 1);
+    NuSpecialFind(WORLD->current_gscn, &LevHSpecial[1], "disco_base", 1);
+}
+
+void SarlaccPitB_Reset(WORLDINFO_s *world) {
+    memset(sarlaccdisco.panel_state, 0, sizeof(sarlaccdisco.panel_state));
+    sarlaccdisco.phase = 0;
+    sarlaccdisco.timer = 0.0f;
+    sarlaccdisco.first_panel = -1;
+    sarlaccdisco.second_panel = -1;
+
+    for (i32 index = 0; index < sarlaccdisco.count; ++index) {
+        NuSpecialSetVisibility(&sarlaccdisco.off[index], 1);
+        NuSpecialSetVisibility(&sarlaccdisco.flash[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.on[index], 0);
+        NuSpecialSetVisibility(&sarlaccdisco.finish[index], 0);
+    }
+
+    sarlaccdisco.help_message = SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 0.0f, NULL);
+    sarlaccdisco.complete_message = SetGizAIMessage(gizaimessagesys, "DiscoComplete", 0.0f, NULL);
+    sarlaccdisco.state_message = SetGizAIMessage(gizaimessagesys, "DiscoState", 0.0f, NULL);
+    sarlaccdisco.off_obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "disco_off");
+    sarlaccdisco.on_obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "disco_on");
+
+    NuSpecialFind(world->current_gscn, &LevSpecial[0], "floor_disco", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[1], "light1_a", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[2], "disco_ball1", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[3], "disco_ball2", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[4], "shutter_1", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[5], "jabba_door1", 1);
+    NuSpecialFind(world->current_gscn, &LevSpecial[6], "jabba_door2", 1);
+    forceMirrorBall = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force5");
+    obstMirrorBall = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle5");
+    LevelBuildits[0] = GizBuildIt_Find(world, "buildit6");
+    LevelBuildits[1] = GizBuildIt_Find(world, "buildit4");
+    LevelLocator = AIPathFindLocator(world->ai_sys, "DiscoHelp");
+
+    if (NuSpecialExistsFn(&LevSpecial[0]))
+        NuSpecialSetVisibility(&LevSpecial[0], 0);
+    if (NuSpecialExistsFn(&LevSpecial[1]))
+        NuSpecialSetVisibility(&LevSpecial[1], 0);
+    if (NuSpecialExistsFn(&LevSpecial[2]))
+        NuSpecialSetVisibility(&LevSpecial[2], 0);
+    if (GizForce_Complete(static_cast<GIZFORCE_s *>(forceMirrorBall->object)))
+        GizObstacle_Stop(static_cast<GIZOBSTACLE_s *>(obstMirrorBall->object));
+}
+
+void SarlaccPitB_Update(WORLDINFO_s *world) {
+
+    static NUVEC lumppos;
+    static f32 enginetimer;
+    if (netclient == 0) {
+        sarlaccb_netpacket->sound_mask = 0;
+        SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 0.0f, sarlaccdisco.help_message);
+        SetGizAIMessage(gizaimessagesys, "DiscoComplete", 0.0f, sarlaccdisco.complete_message);
+        SetGizAIMessage(gizaimessagesys, "DiscoState", sarlaccdisco.phase, sarlaccdisco.state_message);
+        GIZMO *panel = GizmoFindByName(world->gizmo_sys, gizspecial_gizmotype_id, "qaz_panel2");
+        GizmoGetOutput(world->gizmo_sys, panel, 0, 0);
+        i32 ready = 0;
+        if (GizBuildIt_AtEnd(static_cast<GIZBUILDIT_s *>(LevelBuildits[0])) &&
+            GizBuildIt_AtEnd(static_cast<GIZBUILDIT_s *>(LevelBuildits[1])) &&
+            static_cast<GIZSPECIAL_s *>(panel->object)->anim_set->state == 2) {
+            if (sarlaccdisco.complete_message->value == 0.0f)
+                SetGizAIMessage(gizaimessagesys, "discoflooropen", 1.0f, NULL);
+            ready = 1;
+        }
+
+        switch (sarlaccdisco.phase) {
+            i32 candidates[16];
+            case 0:
+                sarlaccb_netpacket->disco_active = 0;
+                if (NuSpecialExistsFn(&LevSpecial[0]) && ready &&
+                    ((player != NULL && (player->apiobj.ai_area_mask &
+                                         static_cast<i32>(1u << ((sarlaccdisco.area - world->ai_sys->areas) & 31)))) ||
+                     (player2 != NULL &&
+                      (player2->apiobj.ai_area_mask &
+                       static_cast<i32>(1u << ((sarlaccdisco.area - world->ai_sys->areas) & 31)))))) {
+                    sarlaccdisco.phase = 1;
+                    sarlaccdisco.timer = 0.0f;
+                    i32 count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    if (count != 0) {
+                        sarlaccdisco.first_panel = candidates[NuRand(NULL) % count];
+                    } else {
+                        sarlaccdisco.first_panel = -1;
+                    }
+                    count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    if (count != 0) {
+                        sarlaccdisco.second_panel = candidates[NuRand(NULL) % count];
+                    } else {
+                        sarlaccdisco.second_panel = -1;
+                    }
+                    if (sarlaccdisco.first_panel != -1 && sarlaccdisco.second_panel != -1) {
+                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
+                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
+                    }
+                }
+                break;
+            case 1: {
+                sarlaccb_netpacket->disco_active = 0;
+                if (!ready) {
+                    SarlaccPitB_Reset(world);
+                    break;
+                }
+                i32 first_occupied = 0;
+                i32 controlled_panel = -1;
+                u8 previous = sarlaccdisco.panel_state[sarlaccdisco.first_panel];
+                sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
+                NUVEC *position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
+                for (i32 index = 0; index < 8; ++index) {
+                    GameObject_s *object = Player[index];
+                    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                        object->apiobj.field_0x27d != 0) {
+                        f32 dx = position->x - object->apiobj.position.x;
+                        f32 dz = position->z - object->apiobj.position.z;
+                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
+                            sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 2;
+                            first_occupied = 1;
+                            if (object == player)
+                                controlled_panel = sarlaccdisco.first_panel;
+                            break;
+                        }
+                    }
+                }
+                if (previous != sarlaccdisco.panel_state[sarlaccdisco.first_panel] &&
+                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] == 2) {
+                    sarlaccdisco.last_selected_position =
+                        NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.first_panel]), 3);
+                    sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.first_panel;
+                }
+                i32 second_occupied = 0;
+                previous = sarlaccdisco.panel_state[sarlaccdisco.second_panel];
+                sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
+                position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.second_panel]);
+                for (i32 index = 0; index < 8; ++index) {
+                    GameObject_s *object = Player[index];
+                    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                        object->apiobj.field_0x27d != 0) {
+                        f32 dx = position->x - object->apiobj.position.x;
+                        f32 dz = position->z - object->apiobj.position.z;
+                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
+                            sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 2;
+                            second_occupied = 1;
+                            if (object == player)
+                                controlled_panel = sarlaccdisco.second_panel;
+                            break;
+                        }
+                    }
+                }
+                if (previous != sarlaccdisco.panel_state[sarlaccdisco.second_panel] &&
+                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] == 2) {
+                    sarlaccdisco.last_selected_position =
+                        NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.second_panel]), 3);
+                    sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.second_panel;
+                }
+                if (!(first_occupied && second_occupied)) {
+                    sarlaccdisco.timer += FRAMETIME;
+                    if (sarlaccdisco.timer > 2.5f) {
+                        sarlaccdisco.timer = 0.0f;
+                        for (i32 pass = 0; pass < 2; ++pass) {
+                            i32 count = 0;
+                            for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                                if (sarlaccdisco.panel_state[index] == 3)
+                                    candidates[count++] = index;
+                            i32 selected = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                            if (selected != -1)
+                                sarlaccdisco.panel_state[selected] = 0;
+                        }
+                    }
+                    if (player2 == NULL && LevelLocator != NULL) {
+                        GameObject_s *partner = Player[0];
+                        if (partner == player)
+                            partner = Player[1];
+                        if (partner != NULL) {
+                            NUVEC *help_position = NULL;
+                            if (controlled_panel == sarlaccdisco.first_panel)
+                                help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.second_panel]);
+                            else if (controlled_panel == sarlaccdisco.second_panel)
+                                help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
+                            if (help_position != NULL) {
+                                SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 1.0f, sarlaccdisco.help_message);
+                                LevelLocator->position.x = help_position->x;
+                                LevelLocator->position.z = help_position->z;
+                            }
+                        }
+                    }
+                } else {
+                    sarlaccdisco.timer = 0.0f;
+                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
+                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
+                    i32 count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    count = 0;
+                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
+                            candidates[count++] = index;
+                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
+                        sarlaccdisco.phase = 2;
+                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                            sarlaccdisco.panel_state[index] = 4;
+                    } else {
+                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
+                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
+                    }
+                }
+                break;
+            }
+            case 2:
+                sarlaccb_netpacket->disco_active = 1;
+                sarlaccdisco.timer += FRAMETIME;
+                if (sarlaccdisco.timer > sarlaccdiscotime || !ready) {
+                    sarlaccb_netpacket->disco_active = 0;
+                    SarlaccPitB_Reset(world);
+                    return;
+                }
+                break;
+        }
+        if (sarlaccdisco.phase != 0) {
+            f32 amount = (discoheight - sarlaccdisco.height) / (discoheight - sarlaccdisco.initial_height);
+            amount = amount < 0.0f ? 0.0f : amount > 1.0f ? 1.0f : amount;
+            f32 rate = 1.0f - (NU_SIN_LUT(amount * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
+            sarlaccdisco.height = SeekValF(sarlaccdisco.height, discoheight, rate * discoheightseek);
+        }
+        sarlaccb_netpacket->off_mask = 0;
+        sarlaccb_netpacket->flash_mask = 0;
+        sarlaccb_netpacket->select_mask = 0;
+        sarlaccb_netpacket->on_mask = 0;
+        sarlaccb_netpacket->finish_mask = 0;
+        for (i32 index = 0; index < sarlaccdisco.count; ++index) {
+            switch (sarlaccdisco.panel_state[index]) {
+                case 0:
+                    sarlaccb_netpacket->off_mask |= 1 << index;
+                    break;
+                case 1:
+                    sarlaccb_netpacket->flash_mask |= 1 << index;
+                    break;
+                case 2:
+                    sarlaccb_netpacket->select_mask |= 1 << index;
+                    break;
+                case 3:
+                    sarlaccb_netpacket->on_mask |= 1 << index;
+                    break;
+                case 4:
+                    sarlaccb_netpacket->finish_mask |= 1 << index;
+                    break;
+            }
+        }
+    }
+    if (LevFlag[0] == 0 && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
+        lumppos = *NuSpecialGetDrawPos(&LevHSpecial[0]);
+        LevFlag[0] = 1;
+        enginetimer = 0.05f;
+    }
+    if (LevFlag[0] != 0) {
+        enginetimer -= FRAMETIME;
+        if (__builtin_expect(enginetimer <= 0.0f, 0))
+            enginetimer = 0.1f;
+        f32 offset = 1.0f - (NU_SIN_LUT(enginetimer * 10.0f * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
+        f32 z = lumppos.z + (offset * 0.01f - 0.005f);
+        NuSpecialGetDrawPos(&LevHSpecial[0])->z = z;
+        PlaySfx("env_curtain_lp", NuSpecialGetDrawPos(&LevHSpecial[0]));
+    }
+    SarlaccPitB_SpecialUpdate(world);
+}
+
+void SarlaccPitC_Init(WORLDINFO_s *) {
+    power = 0;
+    recharging = 0;
+    target_shield[0] = 0;
+    target_shield[1] = 0;
+}
+
+void SarlaccPitC_Reset(WORLDINFO_s *world) {
+    char name[32];
+    taken_over = 0;
+    gizmoblowuptargetcount = 0;
+    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "cannon_1");
+
+    sprintf(name, "cover_%d", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[16], name, 1);
+    sprintf(name, "cover_%d1", 1);
+    GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
+    if (gizmo != NULL) {
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
+        blowup->field_0x9f |= 8;
+        ++gizmoblowuptargetcount;
+        UpdateMidPos(blowup);
+    }
+    sprintf(name, "cover_%d", 2);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[17], name, 1);
+    sprintf(name, "cover_%d1", 2);
+    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
+    if (gizmo != NULL) {
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
+        blowup->field_0x9f |= 8;
+        ++gizmoblowuptargetcount;
+        UpdateMidPos(blowup);
+    }
+    sprintf(name, "spinner%d_null_1", 1);
+    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
+    if (gizmo != NULL) {
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
+        ++gizmoblowuptargetcount;
+        UpdateMidPos(blowup);
+    }
+    sprintf(name, "spinner%d_null_1", 2);
+    gizmo = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, name);
+    if (gizmo != NULL) {
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+        gizmoblowuptarget[gizmoblowuptargetcount] = blowup;
+        ++gizmoblowuptargetcount;
+        UpdateMidPos(blowup);
+    }
+
+#define FIND_SHOT(index, format, number)                                                                               \
+    sprintf(name, format, number);                                                                                     \
+    NuSpecialFind(world->current_gscn, &LevHSpecial[index], name, 1)
+    FIND_SHOT(0, "shot_0%d", 1);
+    FIND_SHOT(1, "shot_0%d", 2);
+    FIND_SHOT(2, "shot_0%d", 3);
+    FIND_SHOT(3, "shot_0%d", 4);
+    FIND_SHOT(4, "shot_0%d", 5);
+    FIND_SHOT(5, "shot_0%d", 6);
+    FIND_SHOT(6, "shot_0%d", 7);
+    FIND_SHOT(7, "shot_0%d", 8);
+    FIND_SHOT(8, "shot_0%da", 1);
+    FIND_SHOT(9, "shot_0%da", 2);
+    FIND_SHOT(10, "shot_0%da", 3);
+    FIND_SHOT(11, "shot_0%da", 4);
+    FIND_SHOT(12, "shot_0%da", 5);
+    FIND_SHOT(13, "shot_0%da", 6);
+    FIND_SHOT(14, "shot_0%da", 7);
+    FIND_SHOT(15, "shot_0%da", 8);
+#undef FIND_SHOT
+
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, gizpanel_gizmotype_id, "panel2");
+#define RESET_SHOT(index, level)                                                                                       \
+    NuSpecialSetVisibility(&LevHSpecial[index], power <= level);                                                       \
+    NuSpecialSetVisibility(&LevHSpecial[(index) + 8], power > level)
+    RESET_SHOT(0, 0);
+    RESET_SHOT(1, 1);
+    RESET_SHOT(2, 2);
+    RESET_SHOT(3, 3);
+    RESET_SHOT(4, 4);
+    RESET_SHOT(5, 5);
+    RESET_SHOT(6, 6);
+    RESET_SHOT(7, 7);
+#undef RESET_SHOT
+}
+
+void SarlaccPitC_Update(WORLDINFO_s *world) {
+    if (LevGameObject[0] != NULL && gizmoblowuptargetcount == 4) {
+        if (LevGameObject[0]->field_0xcc0 != NULL) {
+            world->field_50d0 = 4;
+            world->blowup_target_candidates = gizmoblowuptarget;
+            if (taken_over == 0)
+                taken_over = 1;
+        } else if (taken_over != 0) {
+            taken_over = 0;
+            world->field_50d0 = 0;
+            world->blowup_target_candidates = NULL;
+        }
+
+        if (power == 0) {
+            if ((LevGameObject[0]->field_0xef8 & 8) != 0)
+                LevGameObject[0]->field_0xef8 &= ~8;
+        } else if (static_cast<i8>(LevGameObject[0]->quick_shoot_bolt_id) >= 0) {
+            --power;
+            NuSpecialSetVisibility(&LevHSpecial[power], 1);
+            NuSpecialSetVisibility(&LevHSpecial[power + 8], 0);
+            GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(LevGizmo[0]->object);
+            if (panel->state)
+                panel->state = 0;
+        }
+
+        if (recharging == 0) {
+            if (static_cast<u32>(power) <= 7 && LevGizmo[0] != NULL &&
+                GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 0, 0) != 0) {
+                recharging = 1;
+                rechargetimer = 0.0f;
+            }
+        } else {
+            rechargetimer -= FRAMETIME;
+            if (rechargetimer <= 0.0f) {
+                LevGameObject[0]->field_0xef8 |= 8;
+                NuSpecialSetVisibility(&LevHSpecial[power], 0);
+                NuSpecialSetVisibility(&LevHSpecial[power + 8], 1);
+                PlaySfx("imp_c3po_magnet_drop", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
+                ++power;
+                if (power == 8) {
+                    recharging = 0;
+                    PlaySfx("env_magnet_on", NuSpecialGetDrawPos(&LevHSpecial[power + 8]));
+                } else {
+                    rechargetimer = 0.25f;
+                }
+            }
+        }
+    }
+
+    if (target_shield[0] == 0) {
+        if (gizmoblowuptarget[0] != NULL && (gizmoblowuptarget[0]->visibility_flags & 0x40) == 0) {
+            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[16]));
+            target_shield[0] = 1;
+        } else {
+            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[16]));
+        }
+    }
+    if (target_shield[1] == 0) {
+        if (gizmoblowuptarget[1] != NULL && (gizmoblowuptarget[1]->visibility_flags & 0x40) == 0) {
+            PlaySfx("ffieldoff", NuSpecialGetDrawPos(&LevHSpecial[17]));
+            target_shield[1] = 1;
+        } else {
+            PlaySfx("ffield", NuSpecialGetDrawPos(&LevHSpecial[17]));
         }
     }
 }
-void DeathStar2BattleFire_UpdateSlowDownMul(f32 dt) {
-    for (i32 index = 0; index < 2; ++index)
-        if (slowDownTimer[index] > 0.0f)
-            slowDownTimer[index] -= dt;
+
+void LegoCity_Init(WORLDINFO_s *world) {
+    char name[16];
+    i32 i = 1;
+    for (;;) {
+        sprintf(name, "lamp_%d", i);
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
+        if (blowup == NULL)
+            break;
+        blowup->field_0x128 = 0.3f;
+        blowup->field_0x124 = 1;
+        ++i;
+    }
 }
+
+void LegoCity_Reset(WORLDINFO_s *world) {
+    prevOnTaunTaun = 0;
+    prevOnTractor = 0;
+    prevOnMoonCar = 0;
+    prevOnTownCar = 0;
+
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
+    if (pickup == NULL) {
+        return;
+    }
+    if (world->pickup_sys->pickup_count <= 0) {
+        return;
+    }
+
+    for (i32 pickup_index = 0; pickup != NULL && pickup_index < world->pickup_sys->pickup_count;
+         ++pickup_index, ++pickup) {
+        if ((pickup->runtime_flags & 8) == 0) {
+            switch (pickup->type_id) {
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    pickup->collected = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+void LegoCity_Update(WORLDINFO_s *world) {
+    if (__builtin_expect(world == NULL || world->pickup_sys == NULL, 0)) {
+        return;
+    }
+    const u8 previousTractor = prevOnTractor;
+    const u8 previousTaunTaun = prevOnTaunTaun;
+    const u8 previousMoonCar = prevOnMoonCar;
+    const u8 previousTownCar = prevOnTownCar;
+    u8 changedTractor = previousTractor;
+    u8 changedTaunTaun = previousTaunTaun;
+    u8 changedMoonCar = previousMoonCar;
+    u8 changedTownCar = previousTownCar;
+    u8 onTractor = 0;
+    u8 onTaunTaun = 0;
+    u8 onMoonCar = 0;
+    u8 onTownCar = 0;
+    for (i32 index = 0; index < 8; ++index) {
+        GameObject_s *object = Player[index];
+        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
+              object->field_0xcc0 != NULL &&
+              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
+            continue;
+        }
+        if (object->id == id_TRACTOR) {
+            onTractor = 0xff;
+            changedTractor = static_cast<u8>(~previousTractor);
+        } else if (object->id == id_TAUNTAUN) {
+            onTaunTaun = 0xff;
+            changedTaunTaun = static_cast<u8>(~previousTaunTaun);
+        } else if (object->id == id_MOONCAR) {
+            onMoonCar = 0xff;
+            changedMoonCar = static_cast<u8>(~previousMoonCar);
+        } else if (object->id == id_TOWNCAR) {
+            onTownCar = 0xff;
+            changedTownCar = static_cast<u8>(~previousTownCar);
+        }
+    }
+    u8 changed = changedTractor | changedTaunTaun | changedMoonCar | changedTownCar;
+    prevOnTractor = onTractor;
+    prevOnTaunTaun = onTaunTaun;
+    prevOnTownCar = onTownCar;
+    prevOnMoonCar = onMoonCar;
+    if (__builtin_expect(changed == 0, 0)) {
+        return;
+    }
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
+    for (i32 index = 0; pickup != NULL && index < world->pickup_sys->pickup_count; ++index, ++pickup) {
+        if ((pickup->runtime_flags & 8) == 0) {
+            switch (pickup->type_id) {
+                case 3:
+                    pickup->collected = onTractor;
+                    break;
+                case 4:
+                    pickup->collected = onTaunTaun;
+                    break;
+                case 5:
+                    pickup->collected = onMoonCar;
+                    break;
+                case 6:
+                    pickup->collected = onTownCar;
+                    break;
+            }
+        }
+    }
+}
+
+void SenateA_Init(WORLDINFO_s *world) {
+    char *names[] = {"deton_0110",
+                     "deton_0111",
+                     "deton_011",
+                     "deton_012",
+                     "deton_013",
+                     "deton_014",
+                     "deton_015",
+                     "deton_017",
+                     "deton_018",
+                     "deton_019",
+                     "console_btm19",
+                     "console_btm110",
+                     "console_btm11",
+                     "console_btm18",
+                     "console_btm13",
+                     "console_btm16",
+                     "console_btm15",
+                     "console_btm14",
+                     NULL};
+    for (i32 i = 0; names[i] != NULL; ++i) {
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
+        if (blowup != NULL)
+            blowup->draw_flags |= 2;
+    }
+}
+
+void NewTown_Init(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "dummy_exp8");
+    char buf[0x18];
+    i32 i = 1;
+    for (;;) {
+        sprintf(buf, "Pop_%d_House_61", i);
+        GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, buf);
+        if (g == NULL)
+            break;
+        g->field_0xa0 |= 2;
+        i++;
+    }
+}
+
+void NewTown_Reset(WORLDINFO_s *world) {
+    u32 seed = 17;
+    prevOnTaunTaun = 0;
+    prevOnFireTruck = 0;
+    prevOnLifeBoat = 0;
+
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
+    if (pickup == NULL)
+        return;
+    if (world->pickup_sys->pickup_count <= 0)
+        return;
+    auto world_pickup_sys = world->pickup_sys;
+    for (i32 i = 0; pickup != NULL && i < world_pickup_sys->pickup_count; ++i, ++pickup) {
+        if (!(pickup->runtime_flags & 8)) {
+            switch (pickup->type_id) {
+                case 2:
+                case 3:
+                case 4:
+                    pickup->collected = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (pickup->type_id == 4) {
+            f32 x = NuRandFloatSeeded(&seed);
+            f32 z = NuRandFloatSeeded(&seed);
+            pickup->position.x = x * 4.0f - 7.656 - 1.5;
+            pickup->position.z = z * 4.0f - 5.871 - 1.5;
+        }
+    }
+}
+
+void NewTown_Update(WORLDINFO_s *world) {
+    if (world == NULL || world->pickup_sys == NULL) {
+        return;
+    }
+    const u8 previousTaunTaun = prevOnTaunTaun;
+    const u8 previousFireTruck = prevOnFireTruck;
+    const u8 previousLifeBoat = prevOnLifeBoat;
+    u8 onTaunTaun = 0;
+    u8 onFireTruck = 0;
+    u8 onLifeBoat = 0;
+    for (i32 index = 0; index < 8; ++index) {
+        GameObject_s *object = Player[index];
+        if (!(object != NULL && (object->apiobj.field_0x1f8 & 0x1000) != 0 && object->apiobj.field_0x287 == 0 &&
+              object->field_0xcc0 != NULL &&
+              object->field_0xcc0->character_context == CHARACTER_CONTEXT_LINKED_OBJECT)) {
+            continue;
+        }
+        if (object->id == id_TAUNTAUN) {
+            onTaunTaun = 0xff;
+        } else if (object->id == id_FIRETRUCK) {
+            onFireTruck = 0xff;
+        } else if (object->id == id_LIFEBOAT) {
+            onLifeBoat = 0xff;
+        }
+    }
+    u8 changed = (onTaunTaun ^ previousTaunTaun) | (onFireTruck ^ previousFireTruck) | (onLifeBoat ^ previousLifeBoat);
+    prevOnFireTruck = onFireTruck;
+    prevOnTaunTaun = onTaunTaun;
+    prevOnLifeBoat = onLifeBoat;
+    if (changed == 0) {
+        return;
+    }
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
+    for (i32 index = 0; pickup != NULL && index < world->pickup_sys->pickup_count; ++index, ++pickup) {
+        if ((pickup->runtime_flags & 8) == 0) {
+            switch (pickup->type_id) {
+                case 2:
+                    pickup->collected = onTaunTaun;
+                    break;
+                case 3:
+                    pickup->collected = onFireTruck;
+                    break;
+                case 4:
+                    pickup->collected = onLifeBoat;
+                    break;
+            }
+        }
+    }
+}
+
+// ===========================================================================
+// Endor battle (EndorBattle_A / C)
+// ===========================================================================
+
+void EndorBattleA_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "bbq_popnull", 1);
+}
+
+void EndorBattleA_Update(WORLDINFO_s *) {
+    static f32 parttimer = 0.75f;
+    nuinstanim_s *animation = NuSpecialGetInstAnim(&LevHSpecial[0]);
+    if (animation != NULL && animation->playing && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
+        if (parttimer >= 0.75f)
+            AddPartDebris(WORLD->part_debris_sys, 7, NuSpecialGetDrawPos(&LevHSpecial[0]));
+        parttimer -= FRAMETIME;
+        if (parttimer <= 0.0f)
+            parttimer = 0.75f;
+    }
+}
+
+void EndorBattleC_Init(WORLDINFO_s *world) {
+    GIZFORCE_s *force = GizForce_FindByName(world->giz_force_sys, "force3");
+    if (force != NULL)
+        force->force_strength = 10.0f;
+    force = GizForce_FindByName(world->giz_force_sys, "force4");
+    if (force != NULL)
+        force->force_strength = 10.0f;
+}
+
+void Platform_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], const_cast<char *>("slave1_level"), 0);
+}
+
+void Platform_Reset(WORLDINFO_s *) {
+    NuSpecialSetVisibility(&LevHSpecial[0], 0);
+}
+
+void E1CharacterBonus_Init(WORLDINFO_s *world) {
+    GIZOBSTACLE_s *obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle16");
+    if (obstacle != NULL)
+        obstacle->field_a1_0xa1 |= 1;
+}
+

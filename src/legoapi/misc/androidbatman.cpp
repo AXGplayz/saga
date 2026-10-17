@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/misc/androidbatman.h"
 
@@ -21,7 +24,6 @@
 #include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndr.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nuandroid/nuphoneos.h"
 #include "nu2api/nucore/bgproc.h"
@@ -33,7 +35,6 @@
 #include "nu2api/nucore/nuvideo.h"
 #include "nu2api/nusound/nusound.h"
 #include "nu2api/numath/nuvec4.h"
-#include "nu2api/numath/nufloat.h"
 
 extern "C" {
     void *DVD = NULL;
@@ -162,6 +163,7 @@ void GamePad_InitButtons() {
     GAMEPAD_TOGGLERIGHT = 10;
 }
 
+extern "C" {
 extern "C" void NuIOS_FreeMemoryForSuspend(void) {
     const char *source_path = "i:/SagaTouch-Android_9176564/saga/androidbatman.cpp";
     BeginCriticalSectionGL(source_path, 270);
@@ -171,6 +173,8 @@ extern "C" void NuIOS_FreeMemoryForSuspend(void) {
     EndCriticalSectionGL(source_path, 279);
     NuThreadCriticalSectionBegin(g_performingBgProcWorkCritSec);
     NuThreadCriticalSectionBegin(g_writingSaveCriticalSection);
+}
+
 }
 
 void InitOnce(i32 argc, char **param_2) {
@@ -221,3 +225,4 @@ void InitOnce(i32 argc, char **param_2) {
     app_tbaiset = NuTimeBarCreateSet(0);
     app_tbdrawset = NuTimeBarCreateSet(0);
 }
+

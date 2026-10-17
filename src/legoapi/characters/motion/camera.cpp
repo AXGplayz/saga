@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
@@ -23,519 +26,110 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/nupad.h"
-#include "nu2api/nucore/nukeyboard.h"
-#include "nu2api/nucore/numouse.h"
-#include "nu2api/nucore/numouse.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "legoapi/characters/motion/camera_types.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/nu3d/nutexanm.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/characters/motion/camera.h"
+#include "legoapi/cutscenes/gcutscn.h"
+#include "legoapi/lib/camera.h"
+#include "legoapi/world/levels/episodeI.h"
+#include "legoapi/world/levels/hub.h"
 
-void Minicam_InitSystem(void);
-extern "C" void NuLightSpeedBlurOldCameraPos(const NUMTX *camera);
-void GameCam_ResetLookRot(GAMECAMERA_s *camera);
-extern i32 newgamecam;
-i32 GetMenuID(void);
-i32 OnOrInsidePlane(NUVEC *point, NUVEC *plane_point, NUVEC *plane_normal, NUVEC *corrected_point, f32 normal_offset,
-                    f32 *distance_out);
-void Surface_Deflect(NUVEC *normal, NUVEC *movement, NUVEC *result, i32 mode);
-void SpecialMove_Cancel(GameObject_s *object);
 void Hint_CancelCurrent(void);
-extern AREADATA_s *PODSPRINT_ADATA;
-extern AREADATA_s *BATTLEOVERCORUSCANT_ADATA;
 
-// Replaces VIEWCAM_s's five unresolved words without changing its target ABI.
-struct VIEWCAM_s {
-    i32 mode;
-    NUVEC target;
-    i16 pitch;         // 0x10
-    i16 yaw;           // 0x12
-    f32 distance;      // 0x14
-    f32 target_height; // 0x18
-    f32 zoom_scale;    // 0x1c
-    f32 field_0x20;
-    GAMEPAD_s *gamepad; // 0x24
-};
 VIEWCAM_s ViewCam = {0, {1000000000.0f, 0.0f, 0.0f}, -8192, -29500, 2.66f, 0.0f, 120.0f, 200.0f, NULL};
 // Original data symbol testmovef is float0.005 at 0x617cb0.
 f32 testmovef = 0.005f;
 
-DECOMP_ASSERT(sizeof(VIEWCAM_s) == 0x28, "ViewCam size");
-DECOMP_ASSERT(offsetof(VIEWCAM_s, pitch) == 0x10, "ViewCam pitch offset");
-DECOMP_ASSERT(offsetof(VIEWCAM_s, gamepad) == 0x24, "ViewCam gamepad offset");
-
-void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-    if (!(duration > 0.0f) || camera->mode == -1) {
-        return;
-    }
-
-    camera->blend_start_pitch = camera->desired_pitch;
-    camera->blend_start_yaw = camera->desired_yaw;
-    camera->blend_start_roll = camera->desired_roll;
-    camera->blend_mode = mode == 0 ? 1 : 2;
-    camera->previous_camera_mode = camera->previous_mode;
-    camera->reset_blend = 1;
-    camera->blend_curve = curve;
-    camera->blend_time = 0.0f;
-    camera->blend_duration = duration;
-    camera->blend_start_position = camera->desired_position;
-    camera->blend_start_target = camera->target;
-    camera->blend_end_position = camera->desired_position;
-    camera->blend_end_target = camera->target;
-}
-
-void GameCam_Reset(GAMECAMERA_s *camera) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-
-    camera->sock_position.location.sock = -1;
-    camera->sock_position.location.segment = -1;
-    camera->previous_mode = -1;
-    camera->judder_time = 0.0f;
-    ObstacleCamSpl = NULL;
-    camera->shake_amplitude = 0.0f;
-    MiniCutCam = 0;
-    camera->shake_target_amount = 0.0f;
-    camera->mode = -1;
-    camera->shake_time = 0.0f;
-    camera->shake_speed = 1.0f;
-    camera->blend_duration = 0.0f;
-    camera->blend_time = 0.0f;
-    camera->position_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
-    camera->field_0x1b8 = 0.0f;
-    camera->angle_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
-    camera->field_0x1ec = 0.0f;
-    camera->field_0x1e8 = 0.0f;
-    camera->field_0x1f4 = 0.0f;
-    camera->field_0x1f0 = 0.0f;
-    GameCam_ResetLookRot(camera);
-    Minicam_InitSystem();
-}
-
-void GameCam_Judder(GAMECAMERA_s *camera, float amount, i32 axis, nuvec_s *source) {
-    if (camera == NULL)
-        camera = GameCam;
-    const f32 absolute_amount = NuFabs(amount);
-    if (!(absolute_amount > camera->judder_time))
-        return;
-    if (source != NULL) {
-        const f32 distance = NuVecDist(&camera->pos, source, NULL);
-        const f32 maximum_distance = static_cast<f32>(static_cast<u8>(WORLD->current_level->camera_judder_distance));
-        if (maximum_distance > distance) {
-            const f32 attenuated_amount = ((maximum_distance - distance) / maximum_distance) * absolute_amount;
-            if (attenuated_amount > camera->judder_time) {
-                camera->judder_reverse = amount < 0.0f;
-                camera->judder_duration = attenuated_amount;
-                camera->judder_time = attenuated_amount;
-            }
-        }
-    } else {
-        camera->judder_duration = absolute_amount;
-        camera->judder_time = absolute_amount;
-        camera->judder_reverse = amount < 0.0f;
-    }
-    camera->judder_axis = static_cast<u8>(axis);
-}
-
-void GameCam_HitRoll() {
-    const f32 amount = qrand() <= 0x7fff ? -0.25f : 0.25f;
-    GameCam_Judder(GameCam, amount, 2, NULL);
-}
-
-void GameCam_NewShake(GAMECAMERA_s *camera, float amount, float duration, float speed) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-    camera->shake_target_amount = amount;
-    camera->shake_time = duration;
-    camera->shake_speed = speed;
-}
-
-void GameCam_HitJudder() {
-    f32 amount = VehicleArea != 0 ? -0.3f : -0.2f;
-    if (qrand() <= 0x7fff) {
-        amount = -amount;
-    }
-    GameCam_Judder(GameCam, amount, qrand() / 0x5556, NULL);
-}
-
-void GameCam_UpdateShake(GAMECAMERA_s *camera, float ambient_amount) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-
-    if (camera->shake_time > 0.0f) {
-        camera->shake_time -= FRAMETIME;
-    }
-    f32 target_amount = 0.0f;
-    if (camera->shake_time > 0.0f)
-        target_amount = camera->shake_target_amount;
-    else if (ambient_amount > 0.0f)
-        target_amount = ambient_amount;
-    camera->shake_amplitude = SeekLinearF(camera->shake_amplitude, target_amount, FRAMETIME * 2.0f);
-
-    constexpr f32 kShakeRadius = 0.1f;
-    constexpr f32 kShakeRetargetDistanceSquared = 0.025f * 0.025f;
-    if (NuVecDistSqr(&camera->shake_direction, &camera->shake_target, NULL) < kShakeRetargetDistanceSquared) {
-        camera->shake_target.x = 0.0f;
-        camera->shake_target.y = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * kShakeRadius;
-        camera->shake_target.z = 0.0f;
-        NuVecRotateZ(&camera->shake_target, &camera->shake_target, static_cast<NUANG>(qrand()));
-        camera->shake_target.x *= 4.0f / 3.0f;
-    }
-
-    SeekVec(&camera->shake_direction, &camera->shake_direction, &camera->shake_target,
-            camera->shake_time > 0.0f ? camera->shake_speed * 10.0f : 10.0f);
-    SeekVec(&camera->shake_offset, &camera->shake_offset, &camera->shake_direction,
-            camera->shake_time > 0.0f ? camera->shake_speed * 2.0f : 2.0f);
-
-    NUVEC scaled_offset;
-    NuVecScale(&scaled_offset, &camera->shake_offset, camera->shake_amplitude);
-    constexpr f32 kShakeAngleScale = 910.0f;
-    const i32 pitch = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.y / kShakeRadius));
-    NuMtxPreRotateX(&camera->render_mtx, pitch);
-    const i32 yaw = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.x / kShakeRadius));
-    NuMtxPreRotateY(&camera->render_mtx, yaw);
-}
-
-void GameCam_ResetLookRot(GAMECAMERA_s *camera) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-
-    camera->field_0x214 = 0.0f;
-    camera->field_0x218 = 0.0f;
-    camera->field_0x20c = 0.0f;
-    camera->field_0x210 = 0.0f;
-    camera->field_0x204 = 0.0f;
-    camera->field_0x208 = 0.0f;
-}
-
-void GameCam_UpdateLookRot(GAMECAMERA_s *camera) {
-    // Retail handles each player separately, with directional buttons only for
-    // the left-stick mode and seek speeds proportional to the angular ranges.
-    if (camera == NULL)
-        camera = GameCam;
-    f32 look_pitch = 1820.0f, look_yaw = 2730.0f;
-    camera->field_0x204 = 0.0f;
-    camera->field_0x208 = 0.0f;
-    f32 contributing_players = 0.0f;
-    if (MiniCutCam == 0) {
-        if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0 &&
-            Player[0]->pad_gamepad->pad != NULL) {
-            i32 look_source;
-            if (__builtin_expect(GameCam_ObjLookingWithLeftStick == NULL, 0))
-                goto player0_right_look;
-            look_source = GameCam_ObjLookingWithLeftStick(Player[0]);
-            if (look_source != 1 && look_source != 2)
-                goto player0_look_done;
-            if (look_source == 2) {
-                f32 horizontal = 0.0f, vertical = 0.0f;
-                if (Player[0]->pad_gamepad->input_mode == 1) {
-                    u32 buttons = Player[0]->pad_gamepad->buttons_held;
-                    u32 horizontal_buttons = buttons & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT);
-                    if (horizontal_buttons == GAMEPAD_DLEFT)
-                        horizontal = -look_yaw;
-                    else if (horizontal_buttons == GAMEPAD_DRIGHT)
-                        horizontal = look_yaw;
-                    u32 vertical_buttons = buttons & (GAMEPAD_DUP | GAMEPAD_DDOWN);
-                    if (vertical_buttons == GAMEPAD_DUP)
-                        vertical = -look_pitch;
-                    else if (__builtin_expect(vertical_buttons == GAMEPAD_DDOWN, 0))
-                        vertical = look_pitch;
-                } else {
-                    nupad_s *pad = Player[0]->pad_gamepad->pad;
-                    vertical = (static_cast<f32>(static_cast<u32>(pad->analog_left_y)) - 127.5f) * (1.0f / 127.5f) *
-                               look_pitch;
-                    horizontal =
-                        (static_cast<f32>(static_cast<u32>(pad->analog_left_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                }
-                camera->field_0x204 += vertical;
-                camera->field_0x208 += horizontal;
-            } else if (look_source == 1) {
-            player0_right_look:
-                nupad_s *pad = Player[0]->pad_gamepad->pad;
-                f32 horizontal = static_cast<f32>(static_cast<u32>(pad->analog_right_x));
-                f32 vertical = static_cast<f32>(static_cast<u32>(pad->analog_right_y));
-                camera->field_0x208 += (horizontal - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                camera->field_0x204 += (vertical - 127.5f) * (1.0f / 127.5f) * look_pitch;
-            }
-            contributing_players += 1.0f;
-        player0_look_done:;
-        }
-        if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0 &&
-            Player[1]->pad_gamepad->pad != NULL) {
-            i32 look_source;
-            if (GameCam_ObjLookingWithLeftStick == NULL)
-                goto player1_right_look;
-            look_source = GameCam_ObjLookingWithLeftStick(Player[1]);
-            if (look_source != 1 && look_source != 2)
-                goto player1_look_done;
-            if (look_source == 2) {
-                f32 horizontal = 0.0f, vertical = 0.0f;
-                if (Player[1]->pad_gamepad->input_mode == 1) {
-                    u32 buttons = Player[1]->pad_gamepad->buttons_held;
-                    u32 horizontal_buttons = buttons & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT);
-                    if (horizontal_buttons == GAMEPAD_DLEFT)
-                        horizontal = -look_yaw;
-                    else if (horizontal_buttons == GAMEPAD_DRIGHT)
-                        horizontal = look_yaw;
-                    u32 vertical_buttons = buttons & (GAMEPAD_DUP | GAMEPAD_DDOWN);
-                    if (vertical_buttons == GAMEPAD_DUP)
-                        vertical = -look_pitch;
-                    else if (vertical_buttons == GAMEPAD_DDOWN)
-                        vertical = look_pitch;
-                } else {
-                    nupad_s *pad = Player[1]->pad_gamepad->pad;
-                    vertical = (static_cast<f32>(static_cast<u32>(pad->analog_left_y)) - 127.5f) * (1.0f / 127.5f) *
-                               look_pitch;
-                    horizontal =
-                        (static_cast<f32>(static_cast<u32>(pad->analog_left_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                }
-                camera->field_0x204 += vertical;
-                camera->field_0x208 += horizontal;
-            } else if (look_source == 1) {
-            player1_right_look:
-                nupad_s *pad = Player[1]->pad_gamepad->pad;
-                f32 horizontal = static_cast<f32>(static_cast<u32>(pad->analog_right_x));
-                f32 vertical = static_cast<f32>(static_cast<u32>(pad->analog_right_y));
-                camera->field_0x208 += (horizontal - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                camera->field_0x204 += (vertical - 127.5f) * (1.0f / 127.5f) * look_pitch;
-            }
-            contributing_players += 1.0f;
-        player1_look_done:;
-        }
-    }
-    if (contributing_players > 1.0f) {
-        f32 inverse_count = 1.0f / contributing_players;
-        camera->field_0x204 *= inverse_count;
-        camera->field_0x208 *= inverse_count;
-    }
-    camera->field_0x20c = SeekLinearF(camera->field_0x20c, camera->field_0x204, (FRAMETIME * look_pitch) * 2.0f);
-    camera->field_0x210 = SeekLinearF(camera->field_0x210, camera->field_0x208, (FRAMETIME * look_yaw) * 2.0f);
-    camera->field_0x214 = SeekValF(camera->field_0x214, camera->field_0x20c, 3.0f);
-    camera->field_0x218 = SeekValF(camera->field_0x218, camera->field_0x210, 3.0f);
-}
-
-void GameCameraMakeMiniCut(nugspline_s *spline, f32 start, f32 end, f32 blend_in, f32 blend_out, i32 borders,
-                           i32 hold_until_players_move) {
-    if (spline == NULL)
-        return;
-    ObstacleCamSpl = spline;
-    ObstacleCamStart = start;
-    ObstacleCamEnd = end;
-    ObstacleCamTime = 0.0f;
-    ObstacleCamRotZ = 0;
-    ObstacleCamBlendInTime = blend_in;
-    ObstacleCamBlendOutTime = blend_out;
-    ObstacleCamCutTgtPtr = NULL;
-    ObstacleCamCutCamPtr = NULL;
-    ObstacleCamBorders = borders;
-    if (VehicleArea != 0)
-        hold_until_players_move = 0;
-    ObstacleCamHoldUntilPlayersMove = hold_until_players_move;
-    if (borders != 0) {
-        if (start == 0.0f && blend_in <= 0.0f)
-            CutBorderScale = 1.0f;
-    }
-    if (start <= 0.0f && blend_in <= 0.0f) {
-        GameCam->blend_time = GameCam->blend_duration;
-        GameCam->mode = -1;
-    }
-    Hint_CancelCurrent();
-    ObstacleCamAlwaysSnapAngles = 0;
-}
-
-extern nugspline_s ObstacleCamCutSpline;
-extern i32 ObstacleCamTargetGuid;
-extern NUVEC ObstacleCamCutPts[2];
-
-void GameCameraMakeMiniCut2(nuvec_s *camera, nuvec_s *target, i32 target_guid, float start, float end, float blend_in,
-                            float blend_out, i32 follow_target, i32 follow_camera, i32 borders) {
-    ObstacleCamCutSpline.length = 2;
-    ObstacleCamCutSpline.pt_size = 12;
-    ObstacleCamCutSpline.pts = ObstacleCamCutPts;
-    ObstacleCamTargetGuid = target_guid;
-    if (camera != NULL) {
-        ObstacleCamCutPts[0] = *camera;
-    }
-    if (target != NULL) {
-        ObstacleCamCutPts[1] = *target;
-    }
-    GameCameraMakeMiniCut(&ObstacleCamCutSpline, start, end, blend_in, blend_out, borders, 0);
-    if (follow_target != 0 && target != NULL) {
-        ObstacleCamCutTgtPtr = target;
-    }
-    if (follow_camera != 0 && camera != NULL) {
-        ObstacleCamCutCamPtr = camera;
-    }
-}
+void GameCam_HitRoll();
 
 void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 roll, void *focus, i32 target_guid,
                             nuvec_s *position, float start_time, float blend_in_time, float end_time,
                             float blend_out_time, float blend_time, float hold_time, float max_time, i32 borders,
-                            nugspline_s *spline, char mode, char easing) {
-    GameCam->blend_time = 0.0f;
-    if (flags & 0x200) {
-        Minicam_ResetForNewCut();
-        Minicam_AddCommand(1, blend_in_time, 0, NULL, v000);
-        MiniCam.duration = max_time;
-        if ((flags & 0x80) && focus != NULL) {
-            MiniCam.focus = static_cast<NUVEC *>(focus);
-            MiniCam.focus_offset = v000;
-            MiniCam.target = *static_cast<NUVEC *>(focus);
-            MiniCam.position = *position;
-            GameCameraMakeMiniCut2(&MiniCam.position, &MiniCam.target, target_guid, start_time, 1000000000.0f,
-                                   blend_in_time, 0.0f, 1, 1, MiniCam.reserved_384);
-        } else {
-            MiniCam.target = v000;
-            MiniCam.focus_offset = v000;
-            MiniCam.focus = &MiniCam.target;
-            MiniCam.position = *position;
-            GameCameraMakeMiniCut2(&MiniCam.position, NULL, target_guid, start_time, 1000000000.0f, blend_in_time, 0.0f,
-                                   0, 1, MiniCam.reserved_384);
-        }
-    }
+                            nugspline_s *spline, char mode, char easing);
 
-    if ((flags & 0x1c00) == 0) {
-        blend_time = 0.0f;
-        flags |= 0x800;
-    }
-    if (flags & 0x80)
-        Minicam_AddCommand(8, 0.0f, 0, focus, v000);
-    if (flags & 0x100)
-        Minicam_AddCommand(16, 0.0f, 0, NULL, *position);
-    else if (flags & 0x2000)
-        Minicam_AddCommand(17, 0.0f, 0, spline, v000);
-    else if (flags & 1)
-        Minicam_AddCommand(9, distance, 0, NULL, v000);
-    if (flags & 0x10)
-        Minicam_AddCommand(13, 0.0f, pitch, NULL, v000);
-    else if (flags & 2)
-        Minicam_AddCommand(10, 0.0f, pitch, NULL, v000);
-    if (flags & 0x20)
-        Minicam_AddCommand(14, 0.0f, yaw, NULL, v000);
-    else if (flags & 4)
-        Minicam_AddCommand(11, 0.0f, yaw, NULL, v000);
-    if (flags & 0x40)
-        Minicam_AddCommand(15, 0.0f, roll, NULL, v000);
-    if (flags & 8)
-        Minicam_AddCommand(12, 0.0f, roll, NULL, v000);
-    if (mode != -1)
-        Minicam_AddCommand(6, 0.0f, mode, NULL, v000);
-    if (easing != -1)
-        Minicam_AddCommand(7, 0.0f, easing, NULL, v000);
-
-    if ((flags & 5) == 5 && blend_in_time > 0.0f && blend_time == 0.0f)
-        blend_time = 0.01f;
-    if ((flags & 0x1800) == 0x1800) {
-        if (hold_time > blend_time) {
-            const f32 remainder = hold_time - blend_time;
-            Minicam_AddCommand(4, blend_time, 0, NULL, v000);
-            Minicam_AddCommand(5, remainder, 0, NULL, v000);
-        } else {
-            Minicam_AddCommand(4, blend_time, 0, NULL, v000);
-        }
-    } else if (flags & 0x800) {
-        Minicam_AddCommand(4, blend_time, 0, NULL, v000);
-    } else if (flags & 0x1000) {
-        Minicam_AddCommand(5, hold_time, 0, NULL, v000);
-    }
-    if (flags & 0x400) {
-        float remaining = end_time;
-        if ((flags & 0x1800) == 0x1800) {
-            if (hold_time > blend_time)
-                remaining = end_time - hold_time;
-            else
-                remaining = end_time - blend_time;
-        } else if (flags & 0x800) {
-            remaining = end_time - blend_time;
-        } else if (flags & 0x1000) {
-            remaining = end_time - hold_time;
-        }
-        Minicam_AddCommand(3, MAX(0.0f, remaining), 0, NULL, v000);
-        ObstacleCamBlendOutTime = blend_out_time;
-    }
-    if (borders != 0)
-        MiniCam.reserved_384 = 1;
-}
-
-u16 GameCam_GetAdjustedYRot(GAMECAMERA_s *camera) {
-    if (camera == NULL) {
-        camera = GameCam;
-    }
-    return static_cast<u16>(camera->input_yaw + static_cast<i32>(camera->field_0x218));
-}
-
-extern "C" {
-
-    extern NUVEC *CutoffCameraVec;
-
-    f32 CameraEmitterDistance(NUVEC *position) {
-        if (CutoffCameraVec != NULL)
-            return NuVecDist(position, CutoffCameraVec, NULL);
-        return 0.0f;
-    }
-
-} // extern "C"
-
-extern "C" i16 id_GRABCONTROL, id_GRABR2CONTROL, id_LANDSPEEDER, id_ATST, id_DEWBACK;
-extern f32 MainRenderTime, newgamecamtime, cutscenecam_focalLength, CamStopBlend, EMPERORFIGHTA_CAMDYHACK;
-extern i32 CUTCAMONLY, CUTCAM, NewMode, GUNSHIPAHACK, netcamera, complexsockposition_forcesock,
-    movegamecamera_forcesock;
+extern "C" i16 id_LANDSPEEDER;
+extern "C" f32 MainRenderTime;
+extern f32 newgamecamtime, cutscenecam_focalLength, CamStopBlend, EMPERORFIGHTA_CAMDYHACK;
+extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
 extern i32 LevFlag[4];
 extern NUMTX cutscenecammtx, CutCamMtx;
-extern u8 set_cutscenecammtx;
-extern NUGSPLINE *hub_minikitviewer_camspl;
-extern AREADATA_s *PODRACE_ADATA;
-f32 getPodRoll(i32);
-f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
-f32 PodSprint_InStartCountdown(WORLDINFO_s *);
-i32 PodRace_InStartCountdown(WORLDINFO_s *);
-extern i32 editor_active;
-extern "C" void NuSpeedBlurSetMotionFactors(f32 pan, f32 pull, f32 clamp);
-extern "C" void NuLightSpeedBlur(i32 reuse_camera, f32 scale);
-i32 Players_AveragePos(NUVEC *, SOCKPOSITION_s *);
 GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
                                     i32 (*)(GameObject_s *), bool);
-void Minicam_Update();
 void Customiser_GetActiveWeirdoIndex(i32 *, i32 *);
-i32 ObjInNarrowSock(GameObject_s *, SOCKSYS *, i32);
-void MakePlayPlanes(GAMECAMERA_s *);
-i32 GameRayCast(NUVEC *, NUVEC *, f32, i32);
 
 static NUVEC GunshipAOffset = {12.0f, 22.5f, -12.0f};
 NUVEC CustomisePos[2];
 f32 HUB_MINIKITVIEWER_CAMDY = 0.3f;
 f32 PodCamDist = 0.0f;
 NUVEC ObstacleCamCutPts[2];
-nugspline_s ObstacleCamCutSpline;
-i32 ObstacleCamTargetGuid;
 f32 EMPERORFIGHTA_CAMDYHACK = 0.35f;
 i32 movegamecamera_forcesock = -1;
 NUMTX CutCamMtx;
-// Camera-only views of the context-specific data read by PlayerCamPos.
-struct CAMERA_CONTEXT_PATH_s {
-    u8 reserved_00[0x40];
-    nugspline_s *path;
-    u8 reserved_44[8];
-    u8 flags;
-};
-struct CAMERA_CONTEXT_FOCUS_s {
-    u8 reserved_00[0x28];
-    NUVEC focus;
-};
-DECOMP_ASSERT(offsetof(CAMERA_CONTEXT_PATH_s, path) == 0x40, "Camera context path offset");
-DECOMP_ASSERT(offsetof(CAMERA_CONTEXT_PATH_s, flags) == 0x4c, "Camera context flags offset");
-NUVEC *Technos_TgtPos(TECHNO_s *);
 i32 Grapple_LookAtPos(GameObject_s *, NUVEC *);
-void CentreTwoPlayerCamera(NUVEC *, NUVEC *, NUVEC *, NUVEC *);
+
+void MoveGameCamera(GAMECAMERA_s *camera);
+
+void SetDepthOfField();
+
+void SetCameraMatrices();
+
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
 static void PlayerCamPos(GameObject_s *object, NUVEC *position, NUVEC *reference) {
     CHARACTERDATA *character = object->apiobj.character_data;
@@ -627,6 +221,33 @@ static void PlayerCamPos(GameObject_s *object, NUVEC *position, NUVEC *reference
     }
     if (target != NULL)
         CentreTwoPlayerCamera(position, position, target, reference);
+}
+
+void ViewCamSetActive(i32 mode, GAMEPAD_s *gamepad) {
+    if (player != NULL) {
+        ViewCam.mode = mode;
+        if (mode != 0) {
+            ViewCam.gamepad = gamepad;
+            ViewCam.target = player->apiobj.collision_position;
+        } else {
+            ViewCam.gamepad = NULL;
+        }
+    }
+}
+
+i32 ViewCamGetMode() {
+    return ViewCam.mode;
+}
+
+GAMEPAD_s *ViewCamGetGamePad() {
+    return ViewCam.gamepad;
+}
+
+NUVEC *ViewCamGetTgt() {
+    return &ViewCam.target;
+}
+
+void ViewCamDraw() {
 }
 
 // Function prefix and mode selection. MainRenderTime guard precedes cutscenes.
@@ -1682,390 +1303,13 @@ mode_selected:
     }
 }
 
-void ViewCamDraw() {
-}
-
-void KeepOnScreen(GameObject_s *object) {
-    const f32 previous_keep_time = object->field_0xda8;
-    object->field_0xda8 = 0.0f;
-
-    if (newgamecam != 0 || (object->field_0xf03 & 0x10) != 0)
-        return;
-    i32 controlled = 0;
-    // The original checks all eight player slots in straight-line code.
-#define KEEPONSCREEN_CHECK_CONTROLLER(index)                                                                      \
-    if (Player[index] != NULL && Player[index]->character_context == 0x51 && Player[index]->field_0x788 != NULL && \
-        static_cast<TECHNO *>(Player[index]->field_0x788)->controlled_object == object)                           \
-        controlled = 1;
-    KEEPONSCREEN_CHECK_CONTROLLER(0)
-    KEEPONSCREEN_CHECK_CONTROLLER(1)
-    KEEPONSCREEN_CHECK_CONTROLLER(2)
-    KEEPONSCREEN_CHECK_CONTROLLER(3)
-    KEEPONSCREEN_CHECK_CONTROLLER(4)
-    KEEPONSCREEN_CHECK_CONTROLLER(5)
-    KEEPONSCREEN_CHECK_CONTROLLER(6)
-    KEEPONSCREEN_CHECK_CONTROLLER(7)
-#undef KEEPONSCREEN_CHECK_CONTROLLER
-    if (__builtin_expect(static_cast<i8>(object->apiobj.flags_low) >= 0, 0)) {
-        if (controlled == 0)
-            return;
-    }
-    if (object->apiobj.field_0x287 != 0) {
-        return;
-    }
-    if (object->character_context == 0x2b || (object->field_0xefe & 4) == 0 || object->character_context == 0x47 ||
-        object->character_context == 0x0f || object->character_context == 0x1f || object->character_context == 0x46 ||
-        object->character_context == 0x51 || MiniCutCam != 0 || GetMenuID() != -1) {
-        return;
-    }
-
-    if (WORLD->current_level == BONUS_GUNSHIPA_LDATA && GameCam->mode == 0x0b) {
-        const f32 push_speed = object->apiobj.character_data->game_character->run_speed * 5.0f;
-        f32 count = 0.0f;
-        NUVEC response;
-        NUVEC normal;
-#define KEEPONSCREEN_GUNSHIP_PLANE(plane_index, rotation)                                                         \
-    if (__builtin_expect(OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[plane_index].point,       \
-                                         &PlayPlane[plane_index].normal, NULL, 0.0f, NULL) != 0,                  \
-                         1)) {                                                                                    \
-        NuVecRotateY(&normal, &GunshipANorm, rotation);                                                           \
-        Surface_Deflect(&normal, &object->apiobj.velocity, &response, 0);                                         \
-        response.x += normal.x * push_speed;                                                                      \
-        response.z += normal.z * push_speed;                                                                      \
-        count += 1.0f;                                                                                            \
-    }
-        KEEPONSCREEN_GUNSHIP_PLANE(3, 0x6000)
-        KEEPONSCREEN_GUNSHIP_PLANE(2, 0xa000)
-        KEEPONSCREEN_GUNSHIP_PLANE(1, 0x2000)
-        KEEPONSCREEN_GUNSHIP_PLANE(4, 0xe000)
-#undef KEEPONSCREEN_GUNSHIP_PLANE
-        if (__builtin_expect(count > 0.0f, 1)) {
-            const f32 inverse_count = 1.0f / count;
-            // The original retains the last response, then divides by the
-            // number of intersected planes; it does not accumulate responses.
-            object->apiobj.movement_direction.x = response.x * inverse_count;
-            object->apiobj.movement_direction.z = response.z * inverse_count;
-        }
-        return;
-    }
-
-    if (__builtin_expect(VehicleArea == 0, 0)) {
-        GameObject_s *other_player = object == Player[0] ? Player[1] : object == Player[1] ? Player[0] : NULL;
-        if (other_player != NULL &&
-            (static_cast<i8>(other_player->apiobj.flags_low) >= 0 || other_player->character_context == 0x2b))
-            return;
-    }
-    const i32 two_players = Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0 &&
-                            Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0;
-    GAMECHARACTERDATA *character = object->apiobj.character_data->game_character;
-    const f32 push_distance = VehicleArea != 0 ? character->walk_speed : character->run_speed;
-    NUVEC constrained_movement = object->apiobj.velocity;
-    i32 constrained = 0;
-
-    // Near plane has no object-size inset in the original.
-    if (__builtin_expect(OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[0].point, &PlayPlane[0].normal, NULL, 0.0f,
-                        NULL) != 0, 1)) {
-        Surface_Deflect(&PlayPlane[0].normal, &constrained_movement, &constrained_movement, 0);
-        constrained_movement.x += PlayPlane[0].normal.x * push_distance;
-        constrained_movement.z += PlayPlane[0].normal.z * push_distance;
-        constrained = 1;
-    }
-
-    // Test the right plane first, then the left plane.  Each response is
-    // calculated from the unmodified velocity, exactly as in the target.
-    if (OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[2].point, &PlayPlane[2].normal, NULL,
-                        -object->apiobj.field_0x1dc, NULL) != 0) {
-        Surface_Deflect(&PlayPlane[2].normal, &object->apiobj.velocity, &constrained_movement, 0);
-        constrained_movement.x += PlayPlane[2].normal.x * push_distance;
-        constrained_movement.z += PlayPlane[2].normal.z * push_distance;
-        constrained = 1;
-    } else if (OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[1].point, &PlayPlane[1].normal, NULL,
-                               -object->apiobj.field_0x1dc, NULL) != 0) {
-        Surface_Deflect(&PlayPlane[1].normal, &object->apiobj.velocity, &constrained_movement, 0);
-        constrained_movement.x += PlayPlane[1].normal.x * push_distance;
-        constrained_movement.z += PlayPlane[1].normal.z * push_distance;
-        constrained = 1;
-    }
-
-    if (__builtin_expect((VehicleArea != 0 && (WORLD->area == NULL || WORLD->area != PODSPRINT_ADATA)) || KEEPONSCREEN_SIDESONLY == 0 ||
-        (two_players && abs(RotDiff(0, GameCam->pitch)) > 0x2000), 0)) {
-        PLAYPLANE_s *depth_plane = NULL;
-        if (OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[4].point, &PlayPlane[4].normal, NULL,
-                            -object->apiobj.field_0x1e0, NULL) != 0) {
-            // Crossing the lower screen plane pushes toward the depth plane
-            // selected by the camera pitch.
-            depth_plane = !(GameCam->dir.y <= 0.0f) ? &PlayPlane[5] : &PlayPlane[0];
-        } else if (OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[3].point, &PlayPlane[3].normal, NULL,
-                                   -object->apiobj.field_0x1e0, NULL) != 0) {
-            // The upper screen plane uses the opposite depth response.  This
-            // distinction is important: using the same plane for both sides
-            // can cancel movement in the wrong world-space direction.
-            depth_plane = !(GameCam->dir.y <= 0.0f) ? &PlayPlane[0] : &PlayPlane[5];
-        }
-
-        if (depth_plane != NULL) {
-            Surface_Deflect(&depth_plane->normal, &object->apiobj.velocity, &constrained_movement, 0);
-            constrained_movement.x += depth_plane->normal.x * push_distance;
-            constrained_movement.z += depth_plane->normal.z * push_distance;
-            constrained = 1;
-        }
-    }
-
-    if (__builtin_expect(!!(constrained), 0)) {
-        object->apiobj.movement_direction.x = constrained_movement.x;
-        object->apiobj.movement_direction.z = constrained_movement.z;
-        object->field_0xda8 = previous_keep_time + FRAMETIME;
-        SpecialMove_Cancel(object);
-    } else {
-        object->field_0xda8 = 0.0f;
-    }
-}
-
-NUVEC *ViewCamGetTgt() {
-    return &ViewCam.target;
-}
-
-i32 ViewCamGetMode() {
-    return ViewCam.mode;
-}
-
-void SetDepthOfField() {
-}
-
-void SpeedBlur_Apply(WORLDINFO_s *world) {
-    if (editor_active != 0 || CUTSTOPGAME != 0 || MiniCutCam != 0) {
-        return;
-    }
-    LEVELDATA *level = world->current_level;
-    if (level == PODRACEA_LDATA || level == PODRACEB_LDATA || level == PODRACEC_LDATA) {
-        if (PodRace_InStartCountdown(WORLD) != 0) {
-            return;
-        }
-    } else {
-        if (level != PODSPRINTA_LDATA) {
-            return;
-        }
-        f32 countdown = PodSprint_InStartCountdown(WORLD);
-        if (!(countdown <= 0.0f)) {
-            return;
-        }
-    }
-    NuSpeedBlurSetMotionFactors(0.01f, -0.024f, 0.02f);
-    NuLightSpeedBlur(Paused, 0.5f);
-}
-
-void SpeedBlur_Update() {
-    static NUMTX cameraMtxs[2];
-    static i32 lastCameraMtx = -1;
-    if (lastCameraMtx < 0) {
-        cameraMtxs[1] = GameCam->render_mtx;
-        cameraMtxs[0] = GameCam->render_mtx;
-        lastCameraMtx = 0;
-    }
-    NuLightSpeedBlurOldCameraPos(&cameraMtxs[lastCameraMtx]);
-    lastCameraMtx = 1 - lastCameraMtx;
-    cameraMtxs[lastCameraMtx] = GameCam->render_mtx;
-}
-
-void ViewCamSetActive(i32 mode, GAMEPAD_s *gamepad) {
-    if (player != NULL) {
-        ViewCam.mode = mode;
-        if (mode != 0) {
-            ViewCam.gamepad = gamepad;
-            ViewCam.target = player->apiobj.collision_position;
-        } else {
-            ViewCam.gamepad = NULL;
-        }
-    }
-}
-
-void KeepPointOnScreen(NUVEC *position, NUVEC *velocity) {
-    if (position->x < -0.85f) {
-        position->x = -0.85f;
-        if (velocity != NULL)
-            velocity->x = 0.0f;
-    } else if (position->x > 0.85f) {
-        position->x = 0.85f;
-        if (velocity != NULL)
-            velocity->x = 0.0f;
-    }
-    if (position->y < -0.85f) {
-        position->y = -0.85f;
-        if (velocity != NULL)
-            velocity->y = 0.0f;
-    } else if (position->y > 0.85f) {
-        position->y = 0.85f;
-        if (velocity != NULL)
-            velocity->y = 0.0f;
-    }
-}
-
-void SetCameraMatrices() {
-    NuRndrLightingStateCurrent.field_0x60 = 1;
-    NuRndrLightingStateCurrent.field_0x74 = 0;
-    NuRndrSetSpecularLightPS(NULL, NULL);
-
-    NUMTX effect_matrix;
-    NUVEC scale = {1.0f, 1.0f, 1.0f};
-    NuMtxInvR(&effect_matrix, &global_camera.mtx);
-    NuMtxScale(&effect_matrix, &scale);
-    effect_matrix.m30 = 1.0f;
-    effect_matrix.m31 = 1.0f;
-    effect_matrix.m33 = 1.0f;
-    effect_matrix.m32 = 0.0f;
-    effect_matrix.m23 = 0.0f;
-    effect_matrix.m13 = 0.0f;
-    effect_matrix.m03 = 0.0f;
-    NuRndrSetFxMtx(&effect_matrix);
-}
-
-GAMEPAD_s *ViewCamGetGamePad() {
-    return ViewCam.gamepad;
-}
-
-void CentreTwoPlayerCamera(nuvec_s *center, nuvec_s *player_a, nuvec_s *player_b, nuvec_s *reference) {
-    const f32 distance_a = NuVecDist(reference, player_a, NULL);
-    const f32 distance_b = NuVecDist(reference, player_b, NULL);
-    const f32 blend = distance_a / (distance_a + distance_b);
-    center->x = player_a->x + (player_b->x - player_a->x) * blend;
-    center->y = player_a->y + (player_b->y - player_a->y) * blend;
-    center->z = player_a->z + (player_b->z - player_a->z) * blend;
-}
-
-// Original: 784 bytes.
-void KeepVehicleOnScreen(GameObject_s *object, i32 sides, i32 top, i32 bottom) {
-    object->field_0xf03 |= 0x10;
-    if (GamePlayTimer.time_elapsed < 1.0f)
-        return;
-    f32 margin = WORLD->area == BATTLEOVERCORUSCANT_ADATA ? 0.5f : 1.0f;
-    f32 distance;
-    if (sides != 0) {
-        OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[1].point, &PlayPlane[1].normal, NULL, 0.0f,
-                        &distance);
-        if (distance < margin) {
-            f32 correction = -((distance - margin) / margin);
-            f32 speed = object->apiobj.character_data->game_character->run_speed;
-            object->target_velocity.x += (speed + speed) * (correction + correction);
-        } else {
-            OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[2].point, &PlayPlane[2].normal, NULL, 0.0f,
-                            &distance);
-            if (distance < margin) {
-                f32 correction = -((distance - margin) / margin);
-                f32 speed = -object->apiobj.character_data->game_character->run_speed;
-                object->target_velocity.x += (speed + speed) * (correction + correction);
-            }
-        }
-    }
-    if (top != 0) {
-        OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[3].point, &PlayPlane[3].normal, NULL, 0.0f,
-                        &distance);
-    } else {
-        distance = 1000000000.0f;
-    }
-    if (distance != 1000000000.0f && distance < margin) {
-        f32 correction = -((distance - margin) / margin);
-        f32 speed = -object->apiobj.character_data->game_character->run_speed;
-        object->target_velocity.y += (speed + speed) * (correction + correction);
-        return;
-    }
-    if (bottom != 0) {
-        OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[4].point, &PlayPlane[4].normal, NULL, 0.0f,
-                        &distance);
-        if (distance < margin) {
-            f32 correction = -((distance - margin) / margin);
-            f32 speed = object->apiobj.character_data->game_character->run_speed;
-            object->target_velocity.y += (speed + speed) * (correction + correction);
-        }
-    }
-}
-
-void do_Pad_flymode_camera(edcam_s *camera, float delta_time, nupad_s *pad) {
-    constexpr f32 kNominalFrameTime = 1.0f / 60.0f;
-    constexpr f32 kPitchSpeedScale = 32.0f;
-    constexpr f32 kYawSpeedScale = 64.0f;
-    constexpr f32 kPositionSpeedScale = 0.01f;
-    constexpr i32 kPadDeadZone = 32;
-    constexpr i32 kPitchLimit = 0x4000;
-
-    const f32 frame_scale = delta_time / kNominalFrameTime;
-    const f32 move_speed = camera->auto_move_dist_scale == 0.0f
-                               ? 1.0f
-                               : camera->auto_move_base + NuFabs(camera->distance) * camera->auto_move_dist_scale;
-    const f32 zoom_speed = camera->auto_zoom_dist_scale == 0.0f
-                               ? 1.0f
-                               : camera->auto_zoom_base + NuFabs(camera->distance) * camera->auto_zoom_dist_scale;
-
-    NUVEC opposite_offset;
-    opposite_offset.z = 0.0f;
-    opposite_offset.y = 0.0f;
-    opposite_offset.x = 0.0f;
-    NUMTX rotation = numtx_identity;
-    NuMtxRotateX(&rotation, camera->pitch);
-    NuMtxRotateY(&rotation, camera->yaw);
-
-    opposite_offset.z = -camera->distance;
-    NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-    NUVEC old_opposite;
-    NuVecAdd(&old_opposite, &camera->position, &opposite_offset);
-
-    const i32 pad_yaw = NuPs2ApplyDeadZone(pad->analog_right_x, kPadDeadZone);
-    const i32 yaw_speed = camera->pad_yaw_speed;
-    const i32 pad_pitch = NuPs2ApplyDeadZone(pad->analog_right_y, kPadDeadZone);
-    i32 pitch_delta = static_cast<i32>(static_cast<f32>(pad_pitch) * static_cast<f32>(camera->pad_pitch_speed) *
-                                       delta_time * kPitchSpeedScale);
-    if ((camera->freedoms & EDCAM_FREEDOM_INVERT_PAD_PITCH) != 0) {
-        pitch_delta = -pitch_delta;
-    }
-    if ((camera->freedoms & EDCAM_FREEDOM_PITCH) != 0) {
-        camera->pitch += pitch_delta;
-        camera->pitch = MIN(kPitchLimit, camera->pitch);
-        camera->pitch = MAX(-kPitchLimit, camera->pitch);
-    }
-    if ((camera->freedoms & EDCAM_FREEDOM_YAW) != 0) {
-        camera->yaw +=
-            static_cast<i32>(static_cast<f32>(pad_yaw) * static_cast<f32>(yaw_speed) * delta_time * kYawSpeedScale);
-    }
-
-    rotation = numtx_identity;
-    NuMtxRotateX(&rotation, camera->pitch);
-    NuMtxRotateY(&rotation, camera->yaw);
-    opposite_offset.z = -camera->distance;
-    opposite_offset.y = 0.0f;
-    opposite_offset.x = 0.0f;
-    NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-    NUVEC new_opposite;
-    NuVecAdd(&new_opposite, &camera->position, &opposite_offset);
-    NuVecAdd(&camera->position, &camera->position, &new_opposite);
-    NuVecSub(&camera->position, &camera->position, &old_opposite);
-
-    NUVEC movement = {0.0f, 0.0f, 0.0f};
-    const i32 pad_move_x = NuPs2ApplyDeadZone(pad->analog_left_x, kPadDeadZone);
-    movement.x -= static_cast<f32>(pad_move_x) * delta_time * camera->distance * kPositionSpeedScale;
-    const i32 pad_move_z = NuPs2ApplyDeadZone(pad->analog_left_y, kPadDeadZone);
-    movement.z += static_cast<f32>(pad_move_z) * delta_time * camera->distance * kPositionSpeedScale;
-
-    movement.y += static_cast<f32>(pad->analog_l1) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
-    movement.y -= static_cast<f32>(pad->analog_l2) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
-
-    if (camera->allow_distance) {
-        camera->distance += static_cast<f32>(pad->analog_r1) * camera->distance_speed * zoom_speed * frame_scale;
-        camera->distance -= static_cast<f32>(pad->analog_r2) * camera->distance_speed * zoom_speed * frame_scale;
-        camera->distance = MIN(-camera->minimum_distance, camera->distance);
-    }
-
-    NuVecMtxRotate(&movement, &movement, &rotation);
-    if ((camera->freedoms & EDCAM_FREEDOM_POSITION_X) != 0) {
-        camera->position.x += movement.x;
-    }
-    if ((camera->freedoms & EDCAM_FREEDOM_POSITION_Y) != 0) {
-        camera->position.y += movement.y;
-    }
-    if ((camera->freedoms & EDCAM_FREEDOM_POSITION_Z) != 0) {
-        camera->position.z += movement.z;
-    }
-}
-
 void InitCameraTargetMaterial() {
+}
+
+void DrawCameraTarget(nuvec_s *) {
+}
+
+void DrawCameraTarget2(nuvec_s *) {
 }
 
 i32 GoingForwardsAlongNarrowSock(GameObject_s *object) {
@@ -2080,227 +1324,3 @@ i32 GoingForwardsAlongNarrowSock(GameObject_s *object) {
     return forwards;
 }
 
-void GetTopBot(GameObject_s *object) {
-    CHARACTERDATA *character = object->apiobj.character_data;
-    const f32 bottom = character->field15_0x34;
-    const f32 top = character->field16_0x38;
-    object->field_0xffc = bottom;
-    object->field_0x1000 = top;
-
-    if (object->field_0x1008 == 0.0f) {
-        object->collision_y_scale = 0.0f;
-    } else {
-        object->collision_y_scale = (top - bottom) / (object->field_0x1008 * 2.0f);
-    }
-}
-
-extern "C" {
-
-    i32 near_clip_at_cursor;
-
-    void cbNearClipAtCursor(eduimenu_s *, eduiitem_s *item, u32) {
-        near_clip_at_cursor = reinterpret_cast<const u8 *>(item)[0x11] & 1;
-    }
-
-    void do_Pad_Standard_camera(edcam_s *camera, f32 delta_time, nupad_s *pad) {
-        NUVEC movement = {0.0f, 0.0f, 0.0f};
-        if (!pad->is_valid)
-            return;
-
-        const f32 frame_scale = delta_time / (1.0f / 60.0f);
-        const f32 move_speed = camera->auto_move_dist_scale == 0.0f
-                                   ? 1.0f
-                                   : NuFabs(camera->distance) * camera->auto_move_dist_scale + camera->auto_move_base;
-        const f32 zoom_speed = camera->auto_zoom_dist_scale == 0.0f
-                                   ? 1.0f
-                                   : NuFabs(camera->distance) * camera->auto_zoom_dist_scale + camera->auto_zoom_base;
-
-        const u8 pad_yaw_axis = pad->analog_right_x;
-        const u8 pad_pitch_axis = pad->analog_right_y;
-        if (camera->freedoms & EDCAM_FREEDOM_DISTANCE) {
-            f32 zoom_in = static_cast<f32>(pad->analog_r1) * camera->distance_speed * zoom_speed;
-            if (zoom_in > 1.0f)
-                zoom_in = 1.0f;
-            camera->distance += zoom_in * frame_scale;
-            f32 zoom_out = static_cast<f32>(pad->analog_r2) * camera->distance_speed * zoom_speed;
-            if (zoom_out > 1.0f)
-                zoom_out = 1.0f;
-            camera->distance -= zoom_out * frame_scale;
-            camera->distance = MIN(-camera->minimum_distance, camera->distance);
-        }
-        if (camera->freedoms & EDCAM_FREEDOM_PITCH) {
-            const i32 pitch_input = NuPs2ApplyDeadZone(pad_pitch_axis, 32);
-            camera->pitch -=
-                static_cast<i32>(static_cast<f32>(pitch_input * camera->pad_pitch_speed) * delta_time * 64.0f);
-            camera->pitch = MIN(0x4000, camera->pitch);
-            camera->pitch = MAX(-0x4000, camera->pitch);
-        }
-        if (camera->freedoms & EDCAM_FREEDOM_YAW) {
-            const i32 yaw_input = NuPs2ApplyDeadZone(pad_yaw_axis, 32);
-            camera->yaw -= static_cast<i32>(static_cast<f32>(yaw_input * camera->pad_yaw_speed) * delta_time * 64.0f);
-        }
-
-        if (camera->freedoms & EDCAM_FREEDOM_POSITION_Y) {
-            movement.y += static_cast<f32>(pad->analog_l1) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
-            movement.y -= static_cast<f32>(pad->analog_l2) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
-        }
-        if (camera->freedoms & EDCAM_FREEDOM_POSITION_Z) {
-            movement.z = -static_cast<f32>(NuPs2ApplyDeadZone(pad->analog_left_y, 32)) * camera->position_speed.y *
-                         move_speed * frame_scale;
-        }
-        if (camera->freedoms & EDCAM_FREEDOM_POSITION_X) {
-            movement.x = static_cast<f32>(NuPs2ApplyDeadZone(pad->analog_left_x, 32)) * camera->position_speed.y *
-                         move_speed * frame_scale;
-        }
-        NuVecRotateY(&movement, &movement, camera->yaw);
-        NuVecAdd(&camera->position, &camera->position, &movement);
-
-        NUVEC snap_delta;
-        NuVecSub(&snap_delta, &camera->position, &camera->snap_origin);
-        snap_delta.x /= camera->snap_step.x;
-        snap_delta.y /= camera->snap_step.y;
-        snap_delta.z /= camera->snap_step.z;
-        camera->snapped_position.x = NuFloor(snap_delta.x) * camera->snap_step.x + camera->snap_origin.x;
-        camera->snapped_position.y = NuFloor(snap_delta.y) * camera->snap_step.y + camera->snap_origin.y;
-        camera->snapped_position.z = NuFloor(snap_delta.z) * camera->snap_step.z + camera->snap_origin.z;
-    }
-
-    void do_maya_mouse_camera(edcam_s *camera) {
-        static i16 TargetAng;
-        static i16 MouseOldAng;
-
-        f32 zoom_scale = camera->auto_zoom_dist_scale == 0.0f
-                             ? 1.0f
-                             : NuFabs(camera->distance) * camera->auto_zoom_dist_scale + camera->auto_zoom_base;
-        NUVEC movement = {0.0f, 0.0f, 0.0f};
-        if (NuKeyboard(0x38) != 0) {
-
-            const f32 mouse_x = NuMouseReadXVel() * camera->mouse_pitch_speed;
-            const f32 mouse_y = NuMouseReadYVel() * camera->mouse_yaw_speed;
-            const f32 mouse_z = NuMouseReadZVel() * camera->mouse_move_speed;
-            const u32 buttons = NuMouseReadButtons();
-
-            if (buttons == 2 || buttons == 5) {
-                if (camera->freedoms & EDCAM_FREEDOM_DISTANCE) {
-                    if (mouse_y != 0.0f || mouse_x != 0.0f)
-                        TargetAng = static_cast<i16>(NuAtan2D(-mouse_x, -mouse_y));
-                    u16 angle = static_cast<u16>(TargetAng);
-                    i32 difference = static_cast<u16>(angle - MouseOldAng);
-                    if (difference > 0x7fff)
-                        difference -= 0x10000;
-                    if (abs(difference) > 20000)
-                        angle = static_cast<u16>(TargetAng);
-                    else
-                        angle = static_cast<u16>(MouseOldAng + difference / 4);
-                    MouseOldAng = angle;
-
-                    f32 sine = NU_SIN_LUT(static_cast<u16>(angle) + 0x2000);
-                    if (NuFabs(sine) > 0.1f) {
-                        if (sine > 0.0f)
-                            sine -= 0.1f;
-                        else
-                            sine += 0.1f;
-                        f32 distance = NuFsqrt(mouse_x * mouse_x + mouse_y * mouse_y) * sine *
-                                           (zoom_scale * camera->distance_speed) * camera->mouse_move_speed +
-                                       camera->distance;
-                        const f32 minimum = -camera->minimum_distance;
-                        camera->distance = MIN(minimum, distance);
-                    }
-                }
-            } else if (buttons == 3 || buttons == 4) {
-                movement.x += mouse_x * 0.0078125f;
-                movement.y -= mouse_y * 0.0078125f;
-            } else if (buttons == 1) {
-                if (camera->freedoms & EDCAM_FREEDOM_PITCH) {
-                    camera->pitch -= static_cast<i32>(mouse_y * 16.0f);
-                    if (camera->pitch > 0x4000)
-                        camera->pitch = 0x4000;
-                    if (camera->pitch < -0x4000)
-                        camera->pitch = -0x4000;
-                }
-                if (camera->freedoms & EDCAM_FREEDOM_YAW)
-                    camera->yaw -= static_cast<i32>(mouse_x * 16.0f);
-            }
-
-            const f32 distance = camera->distance - zoom_scale * camera->distance_speed * mouse_z;
-            const f32 minimum = -camera->minimum_distance;
-            camera->distance = MIN(minimum, distance);
-
-            NUMTX rotation = numtx_identity;
-            NuMtxRotateX(&rotation, camera->pitch);
-            NuMtxRotateY(&rotation, camera->yaw);
-            NuVecMtxRotate(&movement, &movement, &rotation);
-            if (camera->freedoms & EDCAM_FREEDOM_POSITION_X)
-                camera->position.x += movement.x;
-            if (camera->freedoms & EDCAM_FREEDOM_POSITION_Y)
-                camera->position.y += movement.y;
-            if (camera->freedoms & EDCAM_FREEDOM_POSITION_Z)
-                camera->position.z += movement.z;
-        }
-    }
-
-    void do_mouse_flymode_camera(edcam_s *camera, f32 delta_time) {
-        f32 zoom_scale = camera->auto_zoom_dist_scale == 0.0f
-                             ? 1.0f
-                             : NuFabs(camera->distance) * camera->auto_zoom_dist_scale + camera->auto_zoom_base;
-
-        f32 mouse_y = NuMouseReadYRel();
-        f32 mouse_x = NuMouseReadXRel();
-        f32 mouse_z = NuMouseReadZRel();
-        u32 buttons = NuMouseReadButtons();
-        if (camera->allow_distance) {
-            f32 distance = camera->distance - mouse_z * camera->distance_speed * zoom_scale;
-            camera->distance = MIN(-camera->minimum_distance, distance);
-        }
-
-        NUVEC opposite_offset;
-        opposite_offset.z = 0.0f;
-        opposite_offset.y = 0.0f;
-        opposite_offset.x = 0.0f;
-        NUMTX rotation = numtx_identity;
-        NuMtxRotateX(&rotation, camera->pitch);
-        NuMtxRotateY(&rotation, camera->yaw);
-        opposite_offset.z = -camera->distance;
-        NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-        NUVEC opposite_positions[2];
-        NUVEC &old_opposite = opposite_positions[0];
-        NuVecAdd(&old_opposite, &camera->position, &opposite_offset);
-
-        i32 pitch;
-        if (!camera->allow_pitch)
-            pitch = camera->pitch;
-        else
-            pitch = static_cast<i32>(mouse_y * 16.0f) + camera->pitch;
-        pitch = MIN(0x4000, pitch);
-        pitch = MAX(pitch, -0x4000);
-        camera->pitch = pitch;
-        if (camera->allow_yaw)
-            camera->yaw += static_cast<i32>(mouse_x * 16.0f);
-
-        rotation = numtx_identity;
-        NuMtxRotateX(&rotation, camera->pitch);
-        NuMtxRotateY(&rotation, camera->yaw);
-        opposite_offset.z = -camera->distance;
-        opposite_offset.y = 0.0f;
-        opposite_offset.x = 0.0f;
-        NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-        NUVEC &new_opposite = opposite_positions[1];
-        NuVecAdd(&new_opposite, &camera->position, &opposite_offset);
-        NuVecAdd(&camera->position, &camera->position, &new_opposite);
-        NuVecSub(&camera->position, &camera->position, &old_opposite);
-
-        NUVEC movement = {0.0f, 0.0f, 0.0f};
-        if (buttons == 2)
-            movement.z = delta_time * camera->distance;
-        else if (buttons == 1)
-            movement.z = -delta_time * camera->distance;
-        NuVecMtxRotate(&movement, &movement, &rotation);
-        if (camera->allow_position_x)
-            camera->position.x += movement.x;
-        if (camera->allow_position_y)
-            camera->position.y += movement.y;
-        if (camera->allow_position_z)
-            camera->position.z += movement.z;
-    }
-
-} // extern "C"

@@ -24,53 +24,13 @@
 #include "nu2api/nucore/nustring.h"
 #include <math.h>
 #include <string.h>
+#include "legoapi/items/collect/detonator.h"
+#include "legoapi/items/objects/game_obj.h"
 
 extern BATARANG_s Batarang[8];
-extern "C" i16 id_ROBIN;
 extern i16 id_CATWOMAN;
 
-void NewRumble(nupad_s *, f32, i32);
-void NewBuzzFrames(nupad_s *, i32, i32);
-void GameCam_HitJudder();
-i32 StunGameObject(GameObject_s *, GameObject_s *, f32, i32);
-void Detonator_Detonate(DETONATOR_s *);
 i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *, i32, i32, i32, GameObject_s *, i32);
-i32 TerrainPlatId();
-f32 SeekValF(f32, f32, f32);
-
-i32 Batarang_SeekToTarget(BATARANG_s *);
-i32 Batarang_StartTargetting(GameObject_s *);
-i32 Batarang_GetObjectFromCharID(i32);
-static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 automatic);
-
-u16 GetShootDirection_Batman(GameObject_s *object, nuvec_s *direction) {
-    NUVEC temporary;
-    if (direction == NULL) {
-        direction = &temporary;
-    }
-    u16 angle;
-    if (object->field_0x1086 == 4) {
-        NUMTX matrix = object->apiobj.field_0xb8;
-        NuMtxPreRotateY(&matrix, 0x8000);
-        NuVecMtxRotate(direction, &v001, &matrix);
-        angle = object->apiobj.facing_angle;
-    } else {
-        if ((object->apiobj.character_data->model_flags & 0x2000) == 0 &&
-            (object->apiobj.character_data->game_character->flags_090 & 0x80) == 0) {
-            angle = object->apiobj.movement_facing_angle;
-        } else {
-            angle = object->apiobj.facing_angle;
-            if (object->character_context == 0x2a &&
-                0.25f <= 1.0f - object->context_animation_timer / object->airborne_action_duration) {
-                angle -= 0x8000;
-            }
-        }
-        direction->x = NU_SIN_LUT(angle);
-        direction->y = 0.0f;
-        direction->z = NU_COS_LUT(angle);
-    }
-    return angle;
-}
 
 static unsigned int Batarang_GetTargetPos(BATARANG_s *batarang, int index, nuvec_s *position) {
     if (batarang->field_0x7d != 0 && batarang->active != 0 && batarang->active == index) {

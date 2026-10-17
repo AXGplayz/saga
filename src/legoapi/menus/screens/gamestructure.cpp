@@ -8,7 +8,6 @@
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/motion.h"
-#include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/apiobject.h"
@@ -42,27 +41,21 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "legoapi/actions/character/legoapi_tag.h"
+#include "legoapi/lib/text.h"
+#include "nu2api/nucore/nu2api_nucore_misc.h"
 
 struct GameObject_s;
 struct LEVEL_PROGRESS_s;
 struct WORLDINFO_s;
-i32 NuIOS_GetPurchaseResult();
-int NuIOS_PurchaseInAppProduct(char *);
-i32 NuIOS_IsProductPurchased(char *);
 struct NuIOS_InAppProduct;
-i32 NuIOS_GetInAppProductByID(char *, NuIOS_InAppProduct *);
-void NuIOS_RestoreInAppPurchases();
 i32 NuIOS_AreInAppPurchasesAvailable();
 i32 NuIOS_CanMakeInAppPurchases();
 extern "C" void NuIOS_RecordFlurryEvent(char *);
-extern "C" void BackupMenu();
-extern i32 CutInstEndCount;
 i32 LEGOMENU_PAUSESYNC = -1;
 i32 LEGOMENU_STORE_PURCHASE = 0x17;
 extern NuVec2 StoreTouchLastPos __asm__("_ZN28MechInputTouchMenuController12LastTouchPosE");
 void GameCam_HitRoll();
-void GameDrawMenuEntry(MENU_s *, char *);
-void DrawCharIcon(i32, f32, f32, f32, f32, i32, f32, f32, i32, nuhspecial_s *);
 void DrawRectRGBA(f32, f32, f32, f32, u32, numtl_s *, i32, f32);
 extern i16 tCONTINUE;
 extern i16 tACCEPT;
@@ -85,12 +78,10 @@ struct STORE_PRODUCT_s {
 };
 DECOMP_ASSERT(sizeof(STORE_PRODUCT_s) == 0x304, "STORE_PRODUCT_s size");
 static STOREIAP_s StoreIAP[3];
-extern i32 menu_i_pack;
+extern "C" i32 menu_i_pack;
 i32 menu_i_bundle = -1;
 static char *menu_storepurchase_iap_name;
-i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode);
 extern f32 MENUENTRYEXWIDTH;
-
 static void StoreUnlockArcade();
 static void StoreUnlockBonus();
 static void StoreUnlockBounty();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "decomp.h"
+
 #include "nu2api/nucore/common.h"
 
 struct GameObject_s;
@@ -40,3 +42,15 @@ i32 ObjOpponentStillThere(GameObject_s *object, GameObject_s *opponent, f32 gap)
 i32 ObjIsTargetSpeeder(GameObject_s *object);
 void InitBikeParts();
 void KillParts_SpeederBike(ADDPART_s *params, i32 animation, i32 variant, GameObject_s *object);
+
+// Declared here for the other units that use them.
+struct GIZMOBLOWUP_s;
+struct nuvec_s;
+extern i32 CanPunchGirls;
+extern i32 test_ai_combo;
+extern u8 troopercannons_beenReset;
+f32 SpeederChaseATATInOutMul(nuvec_s *, nuvec_s *);
+f32 getPodRoll(i32 index);
+i32 SpeederBlowupHack(GIZMOBLOWUP_s *blowup, i32);
+
+DECOMP_ASSERT(sizeof(SPEEDERCHASEVALUES) == 0x1c, "Speeder chase tuning stride");

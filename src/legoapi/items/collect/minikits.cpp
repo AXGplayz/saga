@@ -1,32 +1,26 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/items/collect/minikits.h"
 #include "globals.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/audio/sfx.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/world_shared.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
-#include "legoapi/menus/core/gamehint.h"
 #include "legoapi/menus/core/text.h"
-#include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/screens/store.h"
-#include "legoapi/menus/screens/gamestatus_lsw.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/core/input/gamepads.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/misc/utilities.h"
 #include "legoapi/render/core/render.h"
-#include "legoapi/render/fx.h"
-#include "legoapi/render/fx/parts.h"
-#include "legoapi/render/light/lighting.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
@@ -36,22 +30,163 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "nu2api/nu3d/nucamera.h"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
 
 HUBMINIKITPIECES_s **Char_MiniKit;
 static VARIPTR minikits_savecharacterbufferptr;
-extern VARIPTR characterbuffer_ptr;
-extern VARIPTR characterbuffer_end;
+extern "C" VARIPTR characterbuffer_ptr;
+extern "C" VARIPTR characterbuffer_end;
+
+char *LEGOASCII_BIGARROW = NULL;
+
+extern i32 LEGOOBJ_MINIKIT, LEGOOBJ_CHARKIT;
+void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
+
+struct GAMEMESSAGE_s;
+struct nuhspecial_s;
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+f32 KITPOSX = -0.725f;
+f32 KITPOSY = -0.7f;
+f32 KITPOS2X = -1.275f;
+f32 KITPOS2Y = -1.3f;
+f32 PANEL_MINIKITSCALE = 0.25f;
+f32 PANEL_MINIKITY = 0.03f;
+f32 PANEL_MINIKITCOUNTSCALE = 0.5f;
+f32 PANEL_MINIKITCOUNTY = -0.1f;
+// DrawPanel HUD globals referenced by the cantina-bar-patrons WIP. Initial
+// red-brick positions come from the Game init values in legogame/game.cpp.
+i32 LEGOOBJ_CHARKIT = -1;
+i32 LEGOOBJ_MINIKIT = -1;
 
 void MiniKits_Init(variptr_u *buffer, variptr_u *) {
     const usize aligned = (buffer->addr + 3) & ~static_cast<usize>(3);
     buffer->addr = aligned;
     Char_MiniKit = reinterpret_cast<HUBMINIKITPIECES_s **>(aligned);
     buffer->addr = aligned + static_cast<usize>(CHARCOUNT) * sizeof(*Char_MiniKit);
+}
+
+void MiniKit_Load(MINIKIT *minikit, i32 id, VARIPTR *buf, VARIPTR *buf_end, void *param) {
+    (void)param;
+    minikit->gscn = NULL;
+    minikit->field_0x4 = NULL;
+    minikit->field_0x8 = 0;
+    minikit->field_0x9 = -1;
+    minikit->id = static_cast<i16>(id);
+    if (id == -1)
+        return;
+    char path[256];
+    NuStrCpy(path, const_cast<char *>("chars\\minikits\\"));
+    NuStrCat(path, CDataList[id].file);
+    NuStrCat(path, const_cast<char *>("\\"));
+    NuStrCat(path, CDataList[id].file);
+    NuStrCat(path, const_cast<char *>(".gsc"));
+    buf->addr = ALIGN(buf->addr, 4);
+    minikit->gscn = NuGScnRead(buf, *buf_end, path);
+}
+
+void MiniKit_InitPieces(MINIKIT *minikit, i32 count, VARIPTR *buf, VARIPTR *buf_end) {
+    (void)buf_end;
+    if (minikit->gscn == NULL) {
+        minikit->field_0x9 = -1;
+        return;
+    }
+
+    static const char *const direction_names[] = {"NegX", "PosX", "NegY", "PosY", "NegZ", "PosZ"};
+    i32 direction_counts[6] = {};
+    char name[76];
+
+    buf->addr = ALIGN(buf->addr, 4);
+    minikit->field_0x8 = 0;
+    minikit->field_0x4 = reinterpret_cast<void *>(buf->addr);
+
+    for (i32 index = 0; index < count; ++index) {
+        for (u8 direction = 0; direction < 6; ++direction) {
+            sprintf(name, "%s_%s_%i", CDataList[minikit->id].file, direction_names[direction], index);
+            HUBMINIKITPIECE_s *piece = &reinterpret_cast<HUBMINIKITPIECE_s *>(minikit->field_0x4)[minikit->field_0x8];
+            if (NuSpecialFind(minikit->gscn, &piece->special, name, 1) == 0) {
+                continue;
+            }
+            piece = &reinterpret_cast<HUBMINIKITPIECE_s *>(minikit->field_0x4)[minikit->field_0x8];
+            piece->matrix = *NuSpecialGetInstanceMtx(&piece->special);
+            reinterpret_cast<HUBMINIKITPIECE_s *>(minikit->field_0x4)[minikit->field_0x8].direction = direction;
+            reinterpret_cast<HUBMINIKITPIECE_s *>(minikit->field_0x4)[minikit->field_0x8].direction_index =
+                direction_counts[direction]++;
+            ++minikit->field_0x8;
+        }
+    }
+
+    sprintf(name, "%s_shadow", CDataList[minikit->id].file);
+    NuSpecialFind(minikit->gscn, reinterpret_cast<nuhspecial_s *>(reinterpret_cast<u8 *>(minikit) + 0xc), name, 1);
+
+    if (minikit->field_0x8 == 0) {
+        minikit->field_0x4 = NULL;
+        return;
+    }
+    buf->addr += static_cast<usize>(minikit->field_0x8) * sizeof(HUBMINIKITPIECE_s);
+}
+
+void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflection_plane, float reflection_height) {
+    NUMTX_ALIGNED16 draw_matrix;
+    if (Char_MiniKit == NULL)
+        return;
+    HUBMINIKITPIECES_s *kit = Char_MiniKit[id];
+    if (kit != NULL && kit->piece_count != 0) {
+        bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
+        for (i32 i = 0; i < kit->piece_count; ++i) {
+            HUBMINIKITPIECE_s *piece = &kit->pieces[i];
+            if (NuSpecialExistsFn(&piece->special) == 0)
+                continue;
+            piece = &kit->pieces[i];
+            draw_matrix = piece->matrix;
+            NuMtxMul(&draw_matrix, &draw_matrix, matrix);
+            piece = &kit->pieces[i];
+            NuSpecialDrawAt(&piece->special, &draw_matrix);
+            if (reflection) {
+                NUMTX reflected;
+                if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) !=
+                    0) {
+                    NuRndrStartReflectionRender(0);
+                    piece = &kit->pieces[i];
+                    NuSpecialDrawAt(&piece->special, &reflected);
+                    NuRndrEndReflectionRender();
+                }
+            }
+        }
+    }
 }
 
 void CharacterMiniKits_Load(COLLECTION_s *collection, WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end) {
@@ -102,543 +237,6 @@ void CharacterMiniKits_Load(COLLECTION_s *collection, WORLDINFO *world, VARIPTR 
     }
 }
 
-extern f32 KITPOSX, PANEL_MINIKITY, PANEL_MINIKITSCALE;
-void MiniKit_GameMsg_Update(GAMEMESSAGE_s *message);
-void MiniKit_GameMsg_End(GAMEMESSAGE_s *message);
-void Hint_SetHintFromId(i32, i32, i32);
-
-void CollectMinikit(nuvec_s *position, char *name, i32) {
-    if (WORLD->lev_objs[0xce].active != 0) {
-        NUVEC target_position = {KITPOSX, KITPOSY + PANEL_MINIKITY, 1.0f};
-        const i32 area_id = WORLD->level_sub_id;
-        ADDGAMEMSG message = AddGameMsg_Default;
-        message.position = position;
-        message.target_position = &target_position;
-        message.scale = AreaPickupScale;
-        message.target_scale = PANEL_MINIKITSCALE;
-        message.flags = 0x2112d;
-        message.duration = 1.0f;
-        message.icon = 0xce;
-        message.special = &WORLD->lev_objs[0xce].special;
-        message.tick_fn = MiniKit_GameMsg_Update;
-        message.end_fn = MiniKit_GameMsg_End;
-        message.field_0x4d = 1;
-        AddGameMsg(&message);
-        DrawMiniKitTime = 2.0f;
-
-        if (area_id != -1 && Game.area_save[area_id].minikit_count < 10) {
-            if (NuStrLen(name) <= 8) {
-                NuStrCpy(NewMiniPiece[AreaGlobals.values.field_0x10].name, name);
-            } else {
-                NewMiniPiece[AreaGlobals.values.field_0x10].name[0] = '\0';
-            }
-            NewMiniPiece[AreaGlobals.values.field_0x10].level = WORLD->level_idx;
-            ++AreaGlobals.values.field_0x10;
-            ++AreaGlobals.values.field_0x0c;
-            if (GAMEDEMO != 0) {
-                if (AreaGlobals.values.field_0x0c == 1) {
-                    Hint_SetHintFromId(0x26d, 0, 0);
-                } else if (AreaGlobals.values.field_0x0c == 10) {
-                    Hint_SetHintFromId(0x26e, 0, 0);
-                }
-            }
-        }
-        AddGameDebris(WORLD->debris_sys, 0x13, position);
-        GameAudio_PlaySfxById(GetSfxId(const_cast<char *>("MK-Pickup")), position, 3, 0);
-    }
-}
-
-i32 AllMiniKitsDone(AREASAVE_s *save) {
-    if (save == NULL) {
-        return 1;
-    }
-
-    for (i32 i = 0; i < AREACOUNT; ++i, ++save) {
-        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save->minikit_complete == SAVE_INCOMPLETE) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-char *LEGOASCII_BIGARROW = NULL;
-i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
-void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflection_plane, float reflection_height) {
-    NUMTX_ALIGNED16 draw_matrix;
-    if (Char_MiniKit == NULL)
-        return;
-    HUBMINIKITPIECES_s *kit = Char_MiniKit[id];
-    if (kit != NULL && kit->piece_count != 0) {
-        bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
-        for (i32 i = 0; i < kit->piece_count; ++i) {
-            HUBMINIKITPIECE_s *piece = &kit->pieces[i];
-            if (NuSpecialExistsFn(&piece->special) == 0)
-                continue;
-            piece = &kit->pieces[i];
-            draw_matrix = piece->matrix;
-            NuMtxMul(&draw_matrix, &draw_matrix, matrix);
-            piece = &kit->pieces[i];
-            NuSpecialDrawAt(&piece->special, &draw_matrix);
-            if (reflection) {
-                NUMTX reflected;
-                if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) !=
-                    0) {
-                    NuRndrStartReflectionRender(0);
-                    piece = &kit->pieces[i];
-                    NuSpecialDrawAt(&piece->special, &reflected);
-                    NuRndrEndReflectionRender();
-                }
-            }
-        }
-    }
-}
-
-extern i32 currentminikit, newminikitcount;
-f32 slideseek;
-f32 pop_timer;
-f32 jibberlen = 0.1f;
-f32 slidetime = 0.25f;
-void NextStatusStage(STATUSPACKET_s *);
-void SetDrawGoldBrick(STATUSPACKET_s *, i32);
-void IncreaseScore(u32 *, u64, i32);
-void NewStatusRumbleBuzz(i32, f32, f32, i32);
-extern "C" void PlaySfx(char *, nuvec_s *);
-void AddStatusMiniKitParts();
-void DrawStatusMiniKit(f32, f32, f32, f32, f32, i32, STATUSPACKET_s *, f32);
-void DrawMiniKitCount(f32, f32, i32, i32);
-f32 getFinishedStatusAlpha(STATUSPACKET_s *);
-extern f32 STATUS_TITLE_Y;
-extern i16 tMINIKIT;
-
-void MiniKit_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
-
-    if (current == 0) {
-        if (stage->field_0x12 == 0)
-            return;
-        const f32 alpha = getFinishedStatusAlpha(packet);
-        const i32 opacity = static_cast<i32>(alpha * 128.0f);
-        i32 angle = 0x2000;
-        if (!(GameTimer.time_elapsed_mod_seconds > 0.25f)) {
-            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-        }
-        if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
-            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, static_cast<u8>(opacity));
-        } else if (alpha > 0.0f) {
-            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
-                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
-                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
-        }
-        if (packet->minikit_max == Game.area_save[packet->area->index].field_0x5[0]) {
-            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, static_cast<u8>(opacity));
-        } else {
-            char text[60];
-            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, static_cast<u8>(opacity));
-        }
-    } else {
-        f32 title_alpha = 1.0f;
-        switch (stage->field_0x14) {
-            case 0:
-                title_alpha = 0.0f;
-                break;
-            case 1: {
-                title_alpha = stage->field_0x18;
-                i32 angle = 0x6000;
-                if (title_alpha < 1.0f)
-                    angle = (static_cast<i32>(title_alpha * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-                const f32 blend = 1.0f - (NuTrigTable[angle] + 1.0f) * 0.5f;
-                if (title_alpha <= stage->field_0x1c)
-                    DrawStatusMiniKit(0.0f, blend * -1.4f + 1.4f, 1.1f, 0.333f, 0.0f, currentminikit, packet, 0.0f);
-                else
-                    DrawStatusMiniKit(0.0f, 0.0f, 1.1f, 0.333f, 0.0f, currentminikit, packet, 0.0f);
-                const i32 count = packet->new_minikits < 1 ? Game.area_save[packet->area->index].field_0x5[0]
-                                  : currentminikit < 0     ? 0
-                                                           : currentminikit;
-                DrawMiniKitCount(blend, 1.0f, count, packet->minikit_max);
-                break;
-            }
-            case 2: {
-                const f32 duration = stage->field_0x1c - 0.25f;
-                f32 size;
-                if (__builtin_expect(stage->field_0x18 < duration, 0)) {
-                    i32 angle = 0;
-                    if (duration != 0.0f && stage->field_0x18 != 0.0f)
-                        angle =
-                            (static_cast<i32>((stage->field_0x18 / duration) * 16384.0f + 49152.0f + 16384.0f) >> 1) &
-                            0x7fff;
-                    size = NuTrigTable[angle] * 0.333f;
-                } else
-                    size = 0.333f;
-                DrawStatusMiniKit(0.0f, 0.0f, 1.1f, 0.333f, size, currentminikit + 1, packet, 0.0f);
-                const i32 count = packet->new_minikits < 1 ? Game.area_save[packet->area->index].field_0x5[0]
-                                  : currentminikit < 0     ? 0
-                                                           : currentminikit;
-                DrawMiniKitCount(1.0f, 1.0f, count, packet->minikit_max);
-                break;
-            }
-            case 3: {
-                f32 blend = 0.0f;
-                if (stage->field_0x1c - jibberlen < stage->field_0x18)
-                    blend = (stage->field_0x18 - (stage->field_0x1c - jibberlen)) / jibberlen;
-                DrawStatusMiniKit(0.0f, 0.0f, 1.1f, 0.333f, 0.333f, currentminikit + 1, packet, blend);
-                i32 count =
-                    packet->new_minikits < 1 ? Game.area_save[packet->area->index].field_0x5[0] : currentminikit;
-                if (blend >= 0.5f)
-                    ++count;
-                if (count < 0)
-                    count = 0;
-                const f32 size =
-                    (1.0f - fabsf(NuTrigTable[(static_cast<i32>(blend * 32768.0f + 16384.0f) >> 1) & 0x7fff])) * 0.25f +
-                    1.0f;
-                DrawMiniKitCount(1.0f, size, count, packet->minikit_max);
-                break;
-            }
-            case 4: {
-                title_alpha = 1.0f - stage->field_0x18;
-                f32 progress = 0.0f;
-                if (stage->field_0x1c != 0.0f && stage->field_0x18 != 0.0f)
-                    progress = stage->field_0x18 / stage->field_0x1c;
-                const f32 blend =
-                    1.0f -
-                    (NuTrigTable[(static_cast<i32>(progress * 32768.0f + 16384.0f) >> 1) & 0x7fff] + 1.0f) * 0.5f;
-                DrawStatusMiniKit(blend * -0.6f + 0.0f, blend * -0.5f + 0.0f, 1.1f, blend * -0.183f + 0.333f, 1.0f,
-                                  Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
-                const f32 off = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
-                DrawMiniKitCount(
-                    1.0f - (NuTrigTable[(static_cast<i32>(off * 32768.0f + 16384.0f) >> 1) & 0x7fff] + 1.0f) * 0.5f,
-                    1.0f, Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-                break;
-            }
-            case 6: {
-                title_alpha = 1.0f - stage->field_0x18;
-                i32 angle = 0x2000;
-                if (stage->field_0x18 < 1.0f)
-                    angle = (static_cast<i32>(title_alpha * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-                if (__builtin_expect(stage->field_0x18 < stage->field_0x1c, 1)) {
-                    DrawMiniKitCount(1.0f - (NuTrigTable[angle] + 1.0f) * 0.5f, 1.0f,
-                                     Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-                    DrawStatusMiniKit(0.0f, 0.0f, 1.1f, 0.333f, 1.0f, Game.area_save[packet->area->index].field_0x5[0],
-                                      packet, 0.0f);
-                }
-                break;
-            }
-            default:
-                break;
-        }
-        title_alpha = title_alpha < 0.0f ? 0.0f : title_alpha > 1.0f ? 1.0f : title_alpha;
-        Text3DEx(TTab[tMINIKIT], 0.0f, STATUS_TITLE_Y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 255, 255,
-                 static_cast<u8>(static_cast<i32>(title_alpha * 128.0f)));
-    }
-}
-
-void MiniKit_LSW_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
-    currentminikit += newminikitcount;
-    if ((packet->field_0xb0 & 0x10) != 0 && (stage->field_0x14 != 6 || stage->field_0x18 < stage->field_0x1c))
-        IncreaseScore(packet->score, 50000, 0);
-    NextStatusStage(packet);
-}
-
-void CollectAllMiniKits(AREASAVE_s *save) {
-    if (save == NULL)
-        return;
-    for (i32 i = 0; i < AREACOUNT; ++i) {
-        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save[i].complete != SAVE_INCOMPLETE) {
-            save[i].minikit_count = 10;
-            save[i].minikit_complete = SAVE_COMPLETE;
-        }
-    }
-}
-
-i32 UpdateNewMiniKits(STATUSPACKET_s *, STATUS_STAGE_s *stage) {
-    if (stage->field_0x18 > stage->field_0x1c) {
-        stage->field_0x18 = 0.0f;
-        ++currentminikit;
-        pop_timer = 0.5f;
-        slideseek = 1.0f;
-        return 1;
-    }
-    if ((stage->field_0x1c - jibberlen) - slidetime < stage->field_0x18 &&
-        stage->field_0x18 <= stage->field_0x1c - jibberlen) {
-        slideseek = ((stage->field_0x1c - stage->field_0x18) - jibberlen) / slidetime;
-    }
-    return 0;
-}
-
-void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    switch (stage->field_0x14) {
-        case 0:
-            newminikitcount = packet->new_minikits;
-            currentminikit = Game.area_save[packet->area->index].field_0x5[0];
-            if (newminikitcount > 0)
-                currentminikit -= newminikitcount;
-            stage->field_0x18 = 0.0f;
-            stage->field_0x1c = 1.0f;
-            stage->field_0x14 = 1;
-            break;
-        case 1:
-            stage->field_0x18 += elapsed;
-            if (stage->field_0x18 >= stage->field_0x1c) {
-                stage->field_0x18 = 0.0f;
-                if (newminikitcount == 0) {
-                    PlaySfx(const_cast<char *>("TrueJedi_NOT"), NULL);
-                    stage->field_0x1c = 1.0f;
-                    stage->field_0x14 = 4;
-                } else {
-                    stage->field_0x14 = 2;
-                    stage->field_0x1c = 0.5f;
-                    slideseek = 1.0f;
-                }
-            }
-            break;
-        case 2:
-            stage->field_0x18 += elapsed;
-            if (stage->field_0x18 >= stage->field_0x1c) {
-                stage->field_0x18 = 0.0f;
-                stage->field_0x1c = 0.4f;
-                stage->field_0x14 = 3;
-                PlaySfx(const_cast<char *>("Jp_Ana_Jump"), NULL);
-            }
-            break;
-        case 3:
-            if (newminikitcount < 1) {
-                stage->field_0x18 = 0.0f;
-                stage->field_0x1c = 3.0f;
-                stage->field_0x14 = 4;
-            } else {
-                const f32 previous = stage->field_0x18;
-                stage->field_0x18 += elapsed;
-                if (previous < stage->field_0x1c - jibberlen && stage->field_0x18 >= stage->field_0x1c - jibberlen) {
-                    NewStatusRumbleBuzz(-1, 0.0f, 0.1f, 0);
-                    PlaySfx(const_cast<char *>("MK-Panel"), NULL);
-                }
-                if (UpdateNewMiniKits(packet, stage) == 1) {
-                    stage->field_0x18 = 0.0f;
-                    if (currentminikit < packet->minikit_count) {
-                        stage->field_0x1c = 0.5f;
-                        stage->field_0x14 = 2;
-                        return;
-                    }
-                    stage->field_0x1c = 1.0f;
-                    stage->field_0x14 = 4;
-                } else if (stage->field_0x14 != 4)
-                    return;
-            }
-            if ((packet->field_0xb0 & 0x10) == 0)
-                PlaySfx(const_cast<char *>("TrueJedi_NOT"), NULL);
-            else {
-                stage->field_0x14 = 6;
-                stage->field_0x1c = 1.0f;
-            }
-            break;
-        case 4:
-            stage->field_0x18 += elapsed;
-            if (stage->field_0x18 >= stage->field_0x1c)
-                NextStatusStage(packet);
-            break;
-        case 6: {
-            SetDrawGoldBrick(packet, packet->current_gold_brick);
-            const f32 previous = stage->field_0x18;
-            stage->field_0x18 += elapsed;
-            if (!(stage->field_0x18 < stage->field_0x1c)) {
-                if (previous < stage->field_0x1c) {
-                    AddStatusMiniKitParts();
-                    NewStatusRumbleBuzz(-1, 1.0f, 0.1f, 0);
-                    PlaySfx(const_cast<char *>("Explode1"), NULL);
-                } else if (FindGameMsgsWithID(1, 0, -1, NULL) == 0) {
-                    PlaySfx(const_cast<char *>("Shop_BuyCheat"), NULL);
-                    NextStatusStage(packet);
-                }
-            } else {
-                if (static_cast<u32>(GameTimer.update_count) % 6 < 3 && (GameTimer.update_count - 1U) % 6 > 2)
-                    NewStatusRumbleBuzz(-1, 0.0f, 0.0f, 2);
-            }
-            break;
-        }
-    }
-}
-
-extern i32 LEGOOBJ_MINIKIT, LEGOOBJ_CHARKIT;
-void EndChallenge(i32, i32);
-void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
-void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
-void MiniKit_GameMsg_End(GAMEMESSAGE_s *message) {
-    MiniKitScale = 2.0f;
-    if (WorldInfo_CurrentlyActive()->area != NULL && static_cast<i16>(message->icon) != -1) {
-        if (static_cast<i16>(message->icon) == LEGOOBJ_MINIKIT) {
-            ++AreaGlobals.values.field_0x14;
-            if (AreaGlobals.values.field_0x14 > AreaGlobals.values.field_0x0c)
-                AreaGlobals.values.field_0x14 = AreaGlobals.values.field_0x0c;
-        } else if (static_cast<i16>(message->icon) == LEGOOBJ_CHARKIT &&
-                   AreaGlobals.values.field_0x20 < AreaGlobals.values.field_0x1c) {
-            ++AreaGlobals.values.field_0x20;
-            if (AreaGlobals.values.field_0x20 == AreaGlobals.values.field_0x1c && AreaGlobals.values.field_0x1c > 9)
-                EndChallenge(2, 1);
-        }
-    }
-    GameAudio_PlaySfx(0x26, NULL, 0, 0);
-    NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
-    GameCam_Judder(GameCam, -0.2f, 0, NULL);
-}
-
-void ResetMinikitCounter() {
-    minikitCounter_C = 0;
-    minikitCounter_A = 0;
-}
-
-extern i16 id_SLAVE1, tALLMINIKITSBUILT;
-extern i32 STATUS_R, STATUS_G, STATUS_B;
-
-void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
-
-    if (current != 0) {
-        if (stage->field_0x14 < 1)
-            return;
-        const f32 time = stage->field_0x18;
-        f32 title_alpha;
-        f32 icon_alpha = 0.0f;
-        f32 y = 0.225f;
-        if (time < 0.5f)
-            title_alpha = time + time;
-        else if (time < 3.5f)
-            title_alpha = 1.0f;
-        else if (time < 4.0f) {
-            icon_alpha = (time - 3.5f) + (time - 3.5f);
-            y = (1.0f - NuTrigTable[(static_cast<i32>(icon_alpha * 16384.0f) >> 1) & 0x7fff]) * -0.5f + 0.225f;
-            title_alpha = 1.0f - icon_alpha;
-        } else if (time < 6.0f) {
-            title_alpha = 0.0f;
-            icon_alpha = 1.0f;
-            y = (1.0f - NuTrigTable[0x2000]) * -0.5f + 0.225f;
-        } else if (time < 6.5f) {
-            title_alpha = 0.0f;
-            icon_alpha = 1.0f - ((time - 6.0f) + (time - 6.0f));
-            if (icon_alpha <= 0.0f)
-                return;
-        } else
-            title_alpha = 0.0f;
-        if (icon_alpha > 0.0f) {
-            DrawCharIcon(id_SLAVE1, 0.0f, y, 0.0f, 0.4f, 0xa7, icon_alpha, icon_alpha, 1, NULL);
-            SmartTextEx(TTab[CDataList[id_SLAVE1].name_id], 0.0f, -0.1f, 1.0f, 0.6f, 0.6f, 0.6f, 0, STATUS_R, STATUS_G,
-                        STATUS_B, 1.7f, 1, NULL, 0, static_cast<i32>(icon_alpha * 128.0f));
-        }
-        if (title_alpha > 0.0f) {
-            Text3DEx(TTab[tALLMINIKITSBUILT], 0.0f, 0.225f, 1.0f, 0.7f, 0.7f, 0.7f, 0, STATUS_R, STATUS_G, STATUS_B,
-                     static_cast<u8>(static_cast<i32>(title_alpha * 128.0f)));
-        }
-        return;
-    }
-    if (stage->field_0x12 != 0) {
-        const f32 alpha = getFinishedStatusAlpha(packet);
-        const u8 opacity = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
-        i32 angle = 0x2000;
-        if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
-            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-        if (Game.area_save[packet->area->index].field_0x5[0] != 0) {
-            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
-                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
-                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
-        } else {
-            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, opacity);
-        }
-        if (Game.area_save[packet->area->index].field_0x5[0] != packet->minikit_max) {
-            char text[60];
-            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, opacity);
-        } else {
-            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, opacity);
-        }
-    }
-}
-
-void AllMiniKits_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *packet) {
-    NextStatusStage(packet);
-}
-
-rtldata_s KitPartRTL;
-extern NUCOLOUR3 panelcol[3], panelamb;
-extern NUVEC paneldir[3];
-
-void AllMiniKits_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    switch (stage->field_0x14) {
-        case 0:
-            stage->field_0x18 = 0.0f;
-            stage->field_0x1c = 6.5f;
-            stage->field_0x14 = 1;
-            break;
-        case 1: {
-            const f32 previous = stage->field_0x18;
-            stage->field_0x18 += elapsed;
-            if (stage->field_0x18 >= stage->field_0x1c)
-                NextStatusStage(packet);
-            else if (previous < 0.5f && stage->field_0x18 >= 0.5f) {
-                PlaySfx(const_cast<char *>("StatusAward"), NULL);
-                NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
-            } else if (previous < 4.0f && stage->field_0x18 >= 4.0f)
-                PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
-            break;
-        }
-    }
-}
-
-void AddStatusMiniKitParts() {
-    NUVEC target_position = {0.0f, STATSPOSY, 1.0f};
-    for (i32 i = 0; i < 3; ++i) {
-        KitPartRTL.intensity[i] = panelcol[i];
-        KitPartRTL.direction[i] = paneldir[i];
-    }
-    KitPartRTL.ambient.x = panelamb.r;
-    KitPartRTL.ambient.y = panelamb.g;
-    KitPartRTL.ambient.z = panelamb.b;
-
-    f32 delay = 0.0f;
-    for (i32 i = 0; i < 10; ++i) {
-        if (KitPart[i].enabled == 0) {
-            continue;
-        }
-        NUVEC velocity = {0.0f, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.25f + 0.25f, 0.0f};
-        NuVecRotateZ(&velocity, &velocity, qrand());
-        ADDPART_s part = Default_ADDPART;
-        part.matrix = &KitPart[i].matrix;
-        part.velocity = &velocity;
-        part.flags = 0x480;
-        part.gravity = 0.0f;
-        part.special = KitPart[i].special;
-        part.lighting = reinterpret_cast<PARTLIGHTSOURCE_s *>(&KitPartRTL);
-        part.time_step = FRAMETIME;
-        AddPart(&part);
-
-        for (i32 coin = 0; coin < 5; ++coin) {
-            NUVEC position = {0.0f, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.1f, 1.0f};
-            NuVecRotateZ(&position, &position, qrand());
-            ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
-            message.position = &position;
-            message.target_scale = 0.75f;
-            message.player_index = qrand() / 0x8000;
-            target_position.x = cointotal_x[message.player_index];
-            message.target_position = &target_position;
-            message.target_scale = COINTOTAL_COINSIZE;
-            message.icon = static_cast<i16>(GizmoPickupType[2].first_model_id);
-            message.special = &WORLD->lev_objs[message.icon].special;
-            message.flags = 0x112d;
-            message.duration = COINMSGTIME;
-            message.score = GizmoPickupType[2].score;
-            message.end_fn = EndScoreMessage;
-            message.field_0x20 = delay;
-            message.update_fn = GameMsg_DrawAdjustNewPos_CoinToTotal;
-            message.field_0x4e = 1;
-            AddGameMsg(&message);
-            if (delay == 0.0f) {
-                NewStatusRumbleBuzz(-1, 0.0f, 0.0f, 1);
-                AddGameDebris(WORLD->debris_sys, 0x38, &position);
-            }
-            delay += 0.1f;
-        }
-    }
-    SetPanelLights(1.0f);
-}
-
 void CharacterMiniKits_Dump(WORLDINFO_s *world) {
     if (world->minikit.gscn != NULL) {
         NuGScnRemove(world->minikit.gscn);
@@ -673,80 +271,74 @@ void CharacterMiniKits_Dump(WORLDINFO_s *world) {
     }
 }
 
+void CollectAllMiniKits(AREASAVE_s *save) {
+    if (save == NULL)
+        return;
+    for (i32 i = 0; i < AREACOUNT; ++i) {
+        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save[i].complete != SAVE_INCOMPLETE) {
+            save[i].minikit_count = 10;
+            save[i].minikit_complete = SAVE_COMPLETE;
+        }
+    }
+}
+
+i32 AllMiniKitsDone(AREASAVE_s *save) {
+    if (save == NULL) {
+        return 1;
+    }
+
+    for (i32 i = 0; i < AREACOUNT; ++i, ++save) {
+        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save->minikit_complete == SAVE_INCOMPLETE) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void DrawMiniKitCount(float position, float scale, i32 count, i32 maximum) {
+    const i32 model = ChallengeMode != 0 ? LEGOOBJ_CHARKIT : LEGOOBJ_MINIKIT;
+    if (model == -1 || position <= 0.0f)
+        return;
+    const f32 blend = NuTrigTable[(static_cast<i32>(position * 16384.0f) >> 1) & 0x7fff];
+    const f32 x = (KITPOSX - KITPOS2X) * blend + KITPOS2X;
+    const f32 y = (KITPOSY - KITPOS2Y) * blend + KITPOS2Y;
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    if (world->lev_objs[model].active != 0) {
+        const u16 rotation =
+            static_cast<u16>(static_cast<i32>(NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f));
+        const i16 tilt = static_cast<i16>(1820.0f * NuTrigTable[rotation & 0x7fff]);
+        const f32 size = scale * PANEL_MINIKITSCALE;
+        DrawPanel3DObjectNoAlpha(x, PANEL_MINIKITY + y, 1.0f, size, size, size, tilt, rotation, 0,
+                                 &world->lev_objs[model].special, 2);
+    }
+    char text[32];
+    sprintf(text, "%i/%i", count, maximum);
+    const f32 size = scale * PANEL_MINIKITCOUNTSCALE;
+    Text3D(text, x, y + PANEL_MINIKITCOUNTY, 1.0f, size, size, size, 0, 255, 0, 127);
+}
+
 void MiniKit_GameMsg_Update(GAMEMESSAGE_s *message) {
     i32 angle = static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f);
     message->rotation_y = static_cast<u16>(angle);
     message->field_0xe0 = static_cast<u16>(NuTrigTable[angle & 0x7fff] * 1820.0f);
 }
 
-void SetEffectVisibility(char *, i32);
-
-void EffectOffProgress_Reset(LEVEL_PROGRESS_s *progress) {
-    if (progress == NULL)
-        return;
-    for (i32 i = 0; i < 12; ++i) {
-        if (progress->disabled_effect_names[i][0] != '\0')
-            SetEffectVisibility(progress->disabled_effect_names[i], 0);
-    }
-}
-
-static inline void IncrementMinikitCounterFor(WORLDINFO_s *world, NUVEC *average, i32 gizmo_index, u8 *counter,
-                                              f32 camera_distance, u16 camera_pitch, u16 camera_yaw) {
-    GIZMO *gizmo = LevGizmo[gizmo_index];
-    if (gizmo == NULL || gizmo->object == NULL) {
-        return;
-    }
-    GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
-    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) != 0 ||
-        *counter >= 10) {
-        return;
-    }
-    ++*counter;
-    if (*counter == 10) {
-        NUVEC camera = {0.0f, 0.0f, camera_distance};
-        NuVecRotateX(&camera, &camera, camera_pitch);
-        NuVecRotateY(&camera, &camera, camera_yaw);
-        NuVecAdd(&camera, &camera, &pickup->position);
-        GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
-        GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
-    }
-    // The reference's completion branch passes an uninitialized temporary.
-    // Keep the message at the same valid averaged position as earlier counts.
-    AddGameMsgCount(average, *counter, 10, 200, 100, 30, 0.75f);
-}
-
-void IncrementMinikitCounter(GameObject_s *) {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    NUVEC average;
-    Players_AveragePos(&average, NULL);
-    if (world->current_level == HOTHBATTLEA_LDATA) {
-        IncrementMinikitCounterFor(world, &average, 0, &minikitCounter_A, 10.0f, 0xf1c8, 0xe000);
-    } else if (world->current_level == HOTHBATTLEC_LDATA) {
-        IncrementMinikitCounterFor(world, &average, 1, &minikitCounter_C, 25.0f, 0xeaab, 0x78e4);
-    }
-}
-
-i32 EffectOffProgress_Update(LEVEL_PROGRESS_s *progress, char *name, i32 visible) {
-    if (name == NULL || progress == NULL || NuStrLen(name) > 15)
-        return 0;
-    for (i32 i = 0; i < 12; ++i) {
-        if (NuStrICmp(progress->disabled_effect_names[i], name) != 0) {
-            continue;
+void MiniKit_GameMsg_End(GAMEMESSAGE_s *message) {
+    MiniKitScale = 2.0f;
+    if (WorldInfo_CurrentlyActive()->area != NULL && static_cast<i16>(message->icon) != -1) {
+        if (static_cast<i16>(message->icon) == LEGOOBJ_MINIKIT) {
+            ++AreaGlobals.values.field_0x14;
+            if (AreaGlobals.values.field_0x14 > AreaGlobals.values.field_0x0c)
+                AreaGlobals.values.field_0x14 = AreaGlobals.values.field_0x0c;
+        } else if (static_cast<i16>(message->icon) == LEGOOBJ_CHARKIT &&
+                   AreaGlobals.values.field_0x20 < AreaGlobals.values.field_0x1c) {
+            ++AreaGlobals.values.field_0x20;
+            if (AreaGlobals.values.field_0x20 == AreaGlobals.values.field_0x1c && AreaGlobals.values.field_0x1c > 9)
+                EndChallenge(2, 1);
         }
-        if (visible != 0) {
-            progress->disabled_effect_names[i][0] = '\0';
-            return 2;
-        }
-        return 3;
     }
-    if (visible != 0)
-        return 0;
-    for (i32 i = 0; i < 12; ++i) {
-        if (progress->disabled_effect_names[i][0] != '\0') {
-            continue;
-        }
-        NuStrCpy(progress->disabled_effect_names[i], name);
-        break;
-    }
-    return 1;
+    GameAudio_PlaySfx(0x26, NULL, 0, 0);
+    NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
+    GameCam_Judder(GameCam, -0.2f, 0, NULL);
 }
+

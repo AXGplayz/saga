@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/audio/sfx.h"
@@ -6,18 +9,16 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/nucore/nustring.h"
 
 #include <string.h>
+#include "legoapi/gizmo/object/gizmoblowups.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
 
 struct RadioEntry {
     union {
@@ -32,8 +33,6 @@ struct RadioEntry {
 DECOMP_ASSERT(sizeof(RadioEntry) == 0x14, "RadioEntry size");
 
 static RadioEntry radios[8];
-
-void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *blowup);
 
 void ResetRadios() {
     memset(radios, 0, sizeof(radios));
@@ -156,3 +155,4 @@ void PlayRadio(char *special_name, char *blowup_name, i32 play) {
         memset(radio, 0, sizeof(*radio));
     }
 }
+

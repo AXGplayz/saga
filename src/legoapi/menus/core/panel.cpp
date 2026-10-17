@@ -1,13 +1,11 @@
 #include "decomp.h"
 #include "globals.h"
 #include "batman.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/customiser.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/core/gamehint.h"
@@ -15,7 +13,6 @@
 #include "legoapi/menus/screens/arcade.h"
 #include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/props/doors/door.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/misc.h"
 #include "gameapi/gui/apimenu.h"
 #include "legoapi/render/core/render.h"
@@ -25,7 +22,6 @@
 #include "legoapi/render/fx/edsplines.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/world/levels/levels.h"
-#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
@@ -47,25 +43,16 @@ struct nunativegscene_s;
 struct SHOPINPUT;
 
 void TimingBars(void);
-void Arcade_ResetPanel(void);
 
 static f32 redbrickslidetime;
 f32 TimerAlpha = 0.0f;
 f32 TimerScale = 1.0f;
 
 namespace {
-    enum PANEL_BLOCKING_MENU {
-        PANEL_MENU_EPISODE_I = 20,
-        PANEL_MENU_EPISODE_II = 21,
-        PANEL_MENU_EPISODE_III = 22,
-        PANEL_MENU_EPISODE_IV = 23,
-        PANEL_MENU_SAVE = 25,
-        PANEL_MENU_LOAD = 26,
-    };
+#include "legoapi/menus/core/panel_types.h"
 
 } // namespace
 
-enum COIN_TOTAL_SOURCE { COIN_TOTAL_SAVED_GAME, COIN_TOTAL_SUPER_STORY, COIN_TOTAL_BONUS };
 static f32 DrawCoinTotalY = 2000000.0f;
 static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
     if (FadeSys.fade != 0.0f || (WORLD->current_level->flags & LEVEL_GAMEPLAY) == 0) {
@@ -1388,12 +1375,3 @@ void PanelRender(WORLDINFO_s *) {
     }
 }
 
-i32 CoinsGoToMainTotal() {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    if ((HUB_ADATA != NULL && HUB_ADATA == world->area) || SuperStory != 0 ||
-        (world->area != NULL && (world->area->flags & (AREAFLAG_SUPER_BONUS_AREA & ~AREAFLAG_BONUS_AREA)) != 0) ||
-        (world->current_level != NULL && (world->current_level->flags & LEVEL_STATUS) != 0)) {
-        return 1;
-    }
-    return 0;
-}

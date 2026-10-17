@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/gizmos/transport/tubes.h"
 
 #include "decomp.h"
@@ -14,6 +17,16 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/legoapi_types.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "nu2api/numath/nuvec.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/core/players.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/menus/core/hint.h"
 
 static const i32 TUBE_AUDIO_EVENT = 0x2e;
 static const u32 CHARACTER_MODEL_FLAG_TUBE_USER = 0x10;
@@ -28,6 +41,10 @@ struct TUBEPROGRESS {
 };
 
 static void Tubes_Update(void *world_ptr, void *progress_ptr, float frame_time);
+
+#include "legoapi/menus/core/gamehint_types.h"
+
+// Each control mode retains its own requested and interpolated hint row.
 
 static void *Tubes_ReserveBufferSpace(void *world_ptr) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
@@ -421,3 +438,59 @@ i32 ObjInTube(GameObject_s *object) {
     }
     return 0;
 }
+
+void MechHintUIButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder &) {
+    MechHintUIButton &button = static_cast<MechHintUIButton &>(element);
+    hintsys.active_hint = button.active_hint;
+    if (button.active_hint != NULL) {
+        if (button.active_hint->on_display != NULL)
+            button.active_hint->on_display(button.active_hint);
+        if (button.active_hint != NULL) {
+            const f32 blend = AlphaBlendTime;
+            button.pending_hint = NULL;
+            button.slide_from = *button.slide_target;
+            button.slide_to = -1.5f;
+            button.slide_elapsed = 0.0f;
+            button.slide_delay = 0.0f;
+            button.active_hint = NULL;
+            button.slide_duration = blend;
+            button.alpha_from = *button.alpha_target;
+            button.pulse_active = 0;
+            button.alpha_to = 0.0f;
+            button.alpha_elapsed = 0.0f;
+            button.alpha_delay = 0.0f;
+            button.alpha_duration = blend;
+        }
+    }
+    const f32 x = button.slide;
+    const f32 y = button.position.y;
+    hintIconPos.from = VuVec(x, y, 1.0f, 1.0f);
+    hintIconPos.to = VuVec(-ICONX, -0.7f, 1.0f, 1.0f);
+    hintIconPos.duration = 0.5f;
+    hintIconPos.delay = 0.0f;
+    hintIconPos.elapsed = 0.0f;
+    hintIconPos.target->z = 1.0f;
+    hintIconPos.target->w = 1.0f;
+    hintIconPos.target->x = x;
+    hintIconPos.target->y = y;
+    const f32 scale = button.scale;
+    hintIconScale.from = scale;
+    hintIconScale.to = 0.5f;
+    hintIconScale.elapsed = 0.0f;
+    hintIconScale.duration = 0.5f;
+    hintIconScale.delay = 0.0f;
+    *hintIconScale.target = scale;
+    hintYPop.value = 0.0f;
+    hintYPop.from = 0.0f;
+    hintYPop.to = 32768.0f;
+    hintYPop.elapsed = 0.0f;
+    hintYPop.duration = 0.4f;
+    hintYPop.delay = 0.0f;
+    *hintYPop.target = 0.0f;
+    *button.slide_target = button.slide_to;
+    button.slide = -1.5f;
+    button.slide_to = -1.5f;
+    button.slide_elapsed = button.slide_duration;
+    GameAudio_PlaySfx(0x30, NULL, 0, 0);
+}
+

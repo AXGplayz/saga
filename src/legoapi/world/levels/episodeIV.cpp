@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include <string.h>
 #include <stdio.h>
 
@@ -28,26 +31,83 @@
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/core/charconfig.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/world/world.h"
+#include <new>
+#include "legoapi/props/doors/door.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nufile/nufpar.h"
+#include "nu2api/nufile/nufile.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edui.h"
+#include "gameapi/edtools/edcam.h"
+#include "gameapi/edtools/edstubs.h"
+#include "nu2api/numusic/sfx.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nurndr.h"
+#include <math.h>
+#include <stddef.h>
+#include "gamelib/util/gamelib_util_types.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "legoapi/render/fx/edsplines.h"
+#include <float.h>
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <stdlib.h>
+#include "gameframework/saveload.h"
+#include <cstdio>
+#include "nu2api/nu3d/nuspline.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuang.h"
+#include "legoapi/gizmos/object/newblowup.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/lib/camera.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
 extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
 extern "C" AIPATHNODE_s *AIPathFindNode(AISYS_s *, AIPATH_s *, char *);
 extern "C" void AIPathNodeUpdatePos(AISYS_s *, AIPATH_s *, AIPATHNODE_s *);
-extern "C" i32 GetSfxId(const char *);
-extern "C" void PlaySfxByIdAndSetVolume(i32, NUVEC *, f32);
 void TrenchMove(GameObject_s *) asm("_ZL10TrenchMoveP12GameObject_s") __attribute__((visibility("hidden")));
 void TrenchKilledCallback(GameObject_s *) asm("_ZL20TrenchKilledCallbackP12GameObject_s")
     __attribute__((visibility("hidden")));
-i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *);
-i32 ObjInNarrowSock(GameObject_s *, SOCKSYS *, i32);
-NUGSPLINE *edSpline_SplineFind(NUGSCN *, char *);
 extern "C" {
     extern i16 id_STORMTROOPER;
-    extern i16 id_BEACHTROOPER;
     extern i16 id_IMPERIALSHUTTLEPILOT;
 }
 
@@ -58,7 +118,8 @@ struct BLOCKADERUNNERD_LEVFLAG_s {
 };
 
 static_assert(sizeof(BLOCKADERUNNERD_LEVFLAG_s) == 0x10, "LevFlag size");
-extern BLOCKADERUNNERD_LEVFLAG_s LevFlag;
+extern i32 LevFlag[4];
+#define LEV_FLAG_BR (*reinterpret_cast<BLOCKADERUNNERD_LEVFLAG_s *>(LevFlag))
 i32 test_tb = 1;
 void *deathstarescapeb_netpacket;
 u8 tatooineA_nodesNeedUpdating = 1;
@@ -66,66 +127,481 @@ u8 mosEisleyB_nodesNeedUpdating = 1;
 f32 trench_spawn_height = 40.0f;
 f32 trench_spawn_distance = 20.0f;
 
-// Episode 4 level handlers, in the game's Episode_IV progression:
-// blockade runner / tatooine / mos eisley / death star rescue / escape /
-// battle.
+// Death Star escape (DeathStarEscape_A / B / C / D)
 
-// ===========================================================================
-// Blockade runner (BlockadeRunner_B / BlockadeRunner_C / BlockadeRunner_D)
-// ===========================================================================
+__attribute__((force_align_arg_pointer)) void DeathStarEscapeB_Update(WORLDINFO_s *world);
 
-void BlockadeRunnerB_Init(WORLDINFO_s *world) {
-    LevBlowUp[0] = GizmoBlowUp_FindByName(world, "thermo_041");
-    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "arm_pop_1_2", 1);
-    NuSpecialFind(world->current_gscn, &LevHSpecial[1], "arm_pop_2_2", 1);
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+struct BOLT_s;
+struct debinftype;
 
-    if (NuSpecialExistsFn(&LevHSpecial[0])) {
-        char *names[5] = {"arm_1_null1", "arm_1_null2", "arm_1_null3", "arm_1_null4", "arm_2_null1"};
-        for (i32 i = 0; i < 5; ++i) {
-            GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
-            if (blowup != NULL && blowup->type != NULL) {
-                blowup->field_0x124 = 1;
-                blowup->override_special = &LevHSpecial[0];
-                blowup->draw_flags |= 0xc00000;
-                GizBlowup_InitSingleTerrain(blowup);
-            }
-        }
+f32 trench_max_height_move = 5.0f;
+f32 trench_roll_f = 5000.0f;
+f32 trench_seek_z = 0.5f;
+f32 trench_seek_y = 0.5f;
+f32 trench_seek_x = 4.0f;
+f32 LOOPTIME = 1.5f;
+
+__used__ void TrenchMove(GameObject_s *object);
+
+__used__ void TrenchKilledCallback(GameObject_s *object);
+
+extern "C" {
+    void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
+}
+
+extern speedup_s DogFightSpeedList[9];
+
+extern "C" {
+    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
+}
+
+extern "C" {
+void Debris(i32 update_panel_time);
+} // extern "C"
+
+extern "C" {
+extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
+} // extern "C"
+
+struct rtlset;
+
+struct spacelevel_s;
+struct quickboltinfo;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern EdInputContext * Input;
+extern f32 Scale;
+extern EdEnumControl::Item OpenClosedItems[3];
+extern EdEnumControl::Item OnOffItems[3];
+extern EdEnumControl::Item YesNoItems[3];
+extern i32 AxisColour[8];
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+extern f32 MouseScale;
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern f32 HUB_EPISODETITLEY;
+extern i16 tSELECT, tSELECTED, tSELECTING;
+
+extern void (*drawslotinfofn)(f32, f32, i32, i32);
+extern void (*drawslotsfn)(MENU *, f32);
+
+void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+struct ani3_animheader_s;
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
-    if (NuSpecialExistsFn(&LevHSpecial[1])) {
-        char *names[5] = {"arm_1_null5", "arm_1_null6", "arm_1_null7", "arm_1_null8", "arm_2_null2"};
-        for (i32 i = 0; i < 5; ++i) {
-            GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
-            if (blowup != NULL && blowup->type != NULL) {
-                blowup->field_0x124 = 1;
-                blowup->override_special = &LevHSpecial[1];
-                blowup->draw_flags |= 0xc00000;
-                GizBlowup_InitSingleTerrain(blowup);
-            }
-        }
+
+    // ---------------------------------------------------------------------------
+    // Culling / visibility / portals / occlusion
+    // ---------------------------------------------------------------------------
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+struct nuframebuffer_s;
+struct nushaderobject_s;
+union variptr_u;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern i16 id_STORMTROOPER;
+
+extern "C" i16 id_LANDSPEEDER;
+extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
+GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
+                                    i32 (*)(GameObject_s *), bool);
+
+extern void (*FS_Callback)(char *, char *);
+
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
+
+extern "C" {
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
 
-    GIZBUILDIT_s *buildit = GizBuildIt_Find(world, "buildit5");
-    if (buildit != NULL)
-        buildit->radius_scale = 2.0f;
-    buildit = GizBuildIt_Find(world, "buildit6");
-    if (buildit != NULL)
-        buildit->radius_scale = 2.0f;
-    buildit = GizBuildIt_Find(world, "buildit7");
-    if (buildit != NULL)
-        buildit->radius_scale = 2.0f;
-}
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
 
-void BlockadeRunnerC_Init(WORLDINFO_s *world) {
-    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle8");
-}
+struct GIZSPINNER_s;
 
-void BlockadeRunnerB_Update(WORLDINFO_s *) {
-    if (LevBlowUp[0] != NULL && InStory())
-        LevBlowUp[0]->state_flags &= ~0x80;
-}
+namespace {
+
+} // namespace
 
 static i32 PartKill_DrawCreature(PART_s *) {
     return false;
+}
+
+__used__ void TrenchKilledCallback(GameObject_s *object) {
+    for (i32 i = 0; i < 3; ++i) {
+        if (trenchrun.objects[i] == object) {
+            trenchrun.objects[i] = NULL;
+            break;
+        }
+    }
 }
 
 static void PartKill_EjectedCreature(PART_s *part, i32) {
@@ -138,6 +614,86 @@ static void PartKill_EjectedCreature(PART_s *part, i32) {
             LevGamePart[i] = NULL;
         }
     }
+}
+
+__used__ void TrenchMove(GameObject_s *object) {
+    APIOBJECT_s &api = object->apiobj;
+    api.field_0x214 = api.field_0x218;
+    api.start_position = api.position;
+    api.initial_position = api.collision_position;
+    api.field_0x27e = api.field_0x27d;
+    object->pad_gamepad->previous_input_angle = object->pad_gamepad->input_angle;
+    object->pad_gamepad->previous_input_magnitude = object->pad_gamepad->input_magnitude;
+    object->previous_movement_angle = api.field_0x276;
+    object->field_0xefd &= ~0x40;
+    object->field_0x1086 = 0;
+    if (api.model_draw_result != 0)
+        object->field_0xf1c = 0.0f;
+    else
+        object->field_0xf1c += FRAMETIME;
+    if (object->character_context == 0x2b)
+        object->turn_braking += FRAMETIME;
+
+    if (object->character_context != 0x2a) {
+        if ((api.movement_facing_angle > 0x8000) != (player->apiobj.movement_facing_angle > 0x8000) ||
+            (player->character_context == 0x2a &&
+             (api.movement_facing_angle <= 0x8000) != (player->apiobj.movement_facing_angle > 0x8000) &&
+             player->context_animation_timer < 0.5f * TURNTIME)) {
+            StartTurn(object);
+        } else if (object->character_context != 0x36 && player->character_context == 0x36 &&
+                   player->context_animation_timer < 0.75f * LOOPTIME) {
+            object->character_context = 0x36;
+            object->context_animation = 1;
+            object->airborne_action_duration = LOOPTIME;
+            object->context_animation_timer = LOOPTIME;
+        }
+    }
+
+    f32 target_x;
+    if (object->character_context == 0x2a) {
+        const f32 phase = object->context_animation_timer / TURNTIME;
+        if (api.movement_facing_angle > 0x8000)
+            target_x = phase * 10.0f + (1.0f - phase) * -10.0f + trenchrun.position.x;
+        else
+            target_x = phase * -10.0f + (1.0f - phase) * 10.0f + trenchrun.position.x;
+    } else if (api.movement_facing_angle > 0x8000) {
+        target_x = trenchrun.position.x + 10.0f;
+    } else {
+        target_x = trenchrun.position.x - 10.0f;
+    }
+    api.position.x = SeekValF(api.position.x, target_x, trench_seek_x);
+    f32 target_y = trenchrun.position.y + object->movement_spline_offset.y + VehicleTurnOrLoopOffset(object);
+    if (target_y - api.position.y > trench_max_height_move)
+        target_y = api.position.y + trench_max_height_move;
+    api.position.y = SeekValF(api.position.y, target_y, trench_seek_y);
+    api.position.z = SeekValF(api.position.z, trenchrun.position.z + object->movement_spline_offset.z, trench_seek_z);
+    NuVecSub(&api.velocity, &api.position, &api.start_position);
+    NuVecScale(&api.velocity, &api.velocity, 1.0f / FRAMETIME);
+
+    if ((api.character_data->game_character->flags_090 & 1) != 0) {
+        i32 roll = 0;
+        if (object->character_context != 0x36 && object->character_context != 0x2a &&
+            object->character_context != 0x3a) {
+            roll = static_cast<i32>(api.velocity.z * trench_roll_f);
+        }
+        if (static_cast<i16>(player->apiobj.movement_facing_angle) >= 0)
+            roll = -roll;
+        i32 target_roll;
+        if (roll < -0x10000) {
+            target_roll = -0x2000;
+        } else if (roll > 0x10000) {
+            target_roll = 0x2000;
+        } else {
+            target_roll = roll / 4;
+            if (target_roll < -0x2000)
+                target_roll = -0x2000;
+            else if (target_roll > 0x2000)
+                target_roll = 0x2000;
+        }
+        object->movement_lean_angle = SeekRot(object->movement_lean_angle, target_roll, 8.0f);
+    }
+    APIObjectVelocities(object);
+    GameObjectOrigin(object);
 }
 
 static void BlockadeRunnerD_EjectCreature(i32 eject_index) {
@@ -182,56 +738,6 @@ static void BlockadeRunnerD_EjectCreature(i32 eject_index) {
     }
 }
 
-void BlockadeRunnerD_Update(WORLDINFO_s *world) {
-    if (netclient != 0)
-        return;
-
-    for (i32 i = 0; i < 8; i++) {
-        GameObject_s *game_object = LevGameObject[i];
-        if (game_object == nullptr)
-            continue;
-        PART_s *part = LevGamePart[i];
-        if (part == nullptr)
-            continue;
-
-        if ((part->active & 1) == 1) {
-            game_object->field_0x1086 = 5;
-            game_object->vehicle_orientation = part->transform;
-            game_object->saved_position = game_object->apiobj.position = part->position;
-        }
-
-        if ((part->active & 1) == 0 || part->field_1c0 != &PartKill_EjectedCreature) {
-            KillGameObject(game_object, 4, 0);
-            LevGameObject[i] = nullptr;
-        }
-    }
-
-    if (GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 1, 1) != 0) {
-        if (LevFlag.obstacle15_active == 0) {
-            LevFlag.obstacle15_active = 1;
-            BlockadeRunnerD_EjectCreature(0);
-        }
-    } else {
-        LevFlag.obstacle15_active = 0;
-    }
-
-    if (GizmoGetOutput(world->gizmo_sys, LevGizmo[1], 1, 1) != 0) {
-        if (LevFlag.obstacle14_active == 0) {
-            LevFlag.obstacle14_active = 1;
-            BlockadeRunnerD_EjectCreature(1);
-        }
-    } else {
-        LevFlag.obstacle14_active = 0;
-    }
-}
-
-void BlockadeRunnerD_Reset(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle15");
-    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle14");
-    LevFlag.obstacle15_active = 0;
-    LevFlag.obstacle14_active = 0;
-}
-
 // ===========================================================================
 // Tatooine (Tatooine_A / B / C / D)
 // ===========================================================================
@@ -267,50 +773,6 @@ void TatooineA_Init(WORLDINFO_s *world) {
     if (force != NULL)
         force->field_0xaa |= 0x80;
     tatooineA_nodesNeedUpdating = 1;
-}
-
-void TatooineB_Init(WORLDINFO_s *world) {
-    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "blowup_barrel14");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel13");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel15");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel16");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel17");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel18");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel19");
-    if (blowup != NULL)
-        blowup->draw_flags |= 0x10000;
-}
-
-void TatooineC_Init(WORLDINFO_s *world) {
-    GIZMOBLOWUP_s *b = GizmoBlowUp_FindByName(world, "boxblowup_3");
-    if (b != NULL)
-        b->field_0xa0 |= 0x10000;
-}
-
-void TatooineD_Init(WORLDINFO_s *world) {
-    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "final_bpush", 1);
-    LevAIPathNode[0] = AIPathFindNode(world->ai_sys, NULL, "box1_c");
-
-    i32 direction;
-    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, NULL, "box1_c", "box1_a", &direction);
-    if (direction)
-        LevPathCnxDir |= 1;
-
-    LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, NULL, "box1_c", "box1_b", &direction);
-    if (direction)
-        LevPathCnxDir |= 2;
 }
 
 void TatooineA_Update(WORLDINFO_s *world) {
@@ -375,27 +837,34 @@ void TatooineA_Update(WORLDINFO_s *world) {
     }
 }
 
-void TatooineD_Update(WORLDINFO_s *world) {
-    AIPATHNODE_s *node = static_cast<AIPATHNODE_s *>(LevAIPathNode[0]);
-    if (node != NULL && NuSpecialExistsFn(&LevHSpecial[0])) {
-        NUVEC *position = NuSpecialGetDrawPos(&LevHSpecial[0]);
-        if (position != NULL) {
-            node->position.x = position->x - 0.75f;
-            node->position.z = position->z;
-            if (world->ai_sys->path_sys != NULL && world->ai_sys->path_sys->active_path != NULL)
-                AIPathNodeUpdatePos(world->ai_sys, world->ai_sys->path_sys->active_path, node);
-        }
-    }
+void TatooineB_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "blowup_barrel14");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel13");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel15");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel16");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel17");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel18");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+    blowup = GizmoBlowUp_FindByName(world, "blowup_barrel19");
+    if (blowup != NULL)
+        blowup->draw_flags |= 0x10000;
+}
 
-    AIPATHCNX_s *first = static_cast<AIPATHCNX_s *>(LevPathCnx[0]);
-    AIPATHCNX_s *second = static_cast<AIPATHCNX_s *>(LevPathCnx[1]);
-    if (first != NULL && second != NULL) {
-        i32 direction = LevPathCnxDir;
-        if (second->traversal_flags[(direction >> 1) & 1] & 0x08000000)
-            first->traversal_flags[direction & 1] |= 0x80000000;
-        else
-            first->traversal_flags[direction & 1] &= ~0x80000000;
-    }
+void TatooineC_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *b = GizmoBlowUp_FindByName(world, "boxblowup_3");
+    if (b != NULL)
+        b->field_0xa0 |= 0x10000;
 }
 
 // ===========================================================================
@@ -525,56 +994,6 @@ void MosEisleyB_Init(WORLDINFO_s *world) {
     }
 }
 
-void MosEisleyD_Init(WORLDINFO_s *world) {
-    char name[32];
-    char *special_names[6] = {"big_gate_1a", "big_gate_1b", "big_gate_2a", "big_gate_2b", "big_gate_3a", "big_gate_3b"};
-    for (i32 i = 1; i <= 6; ++i) {
-        sprintf(name, "NULL_door_pop%d", i);
-        NuSpecialFind(world->current_gscn, &LevHSpecial[i - 1], special_names[i - 1], 1);
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
-        if (blowup != NULL) {
-            blowup->field_0x128 = 0.7f;
-            blowup->field_0x124 = 1;
-            blowup->override_special = &LevHSpecial[i - 1];
-            blowup->draw_flags |= 0xc00000;
-            GizBlowup_InitSingleTerrain(blowup);
-        }
-    }
-
-    for (i32 i = 1; i <= 8; ++i) {
-        sprintf(name, "big_bin_lid%d", i);
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
-        if (blowup != NULL) {
-            blowup->field_0x124 = 1;
-            blowup->draw_flags |= 0x10000;
-        }
-    }
-    for (i32 i = 1; i <= 8; ++i) {
-        sprintf(name, "big_bin_lid_gr%d", i);
-        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
-        if (blowup != NULL) {
-            blowup->field_0x124 = 1;
-            blowup->draw_flags |= 0x10000;
-        }
-    }
-
-    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "evap_041");
-    if (blowup != NULL)
-        blowup->field_0x124 = 1;
-    blowup = GizmoBlowUp_FindByName(world, "evap_031");
-    if (blowup != NULL) {
-        blowup->field_0x128 = 0.5f;
-        blowup->field_0x124 = 1;
-    }
-}
-
-void MosEisleyE_Init(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force1");
-    GIZFORCE_s *force = world->giz_force_sys->forces;
-    for (i32 i = 0; i < world->giz_force_sys->count; i++, force++)
-        force->state_flags |= 0x40;
-}
-
 void MosEisleyB_Update(WORLDINFO_s *world) {
     GIZFORCE_s **forces = LevGizForce;
     GIZFORCE_s *first = forces[0];
@@ -675,24 +1094,239 @@ void MosEisleyB_Update(WORLDINFO_s *world) {
     }
 }
 
-void MosEisleyE_Update(WORLDINFO_s *) {
-    if ((texanimbits & 2) == 0 && LevGizmo[0] != NULL && LevGizmo[0]->object != NULL &&
-        GizForce_Complete(static_cast<GIZFORCE_s *>(LevGizmo[0]->object)))
-        texanimbits |= 2;
+i32 MosEisleyC_PastBarrier(GameObject_s *object) {
+    if (WORLD->current_level == MOSEISLEYC_LDATA)
+        return object->apiobj.position.z > 5.85f;
+    return 0;
 }
 
-void MosEisleyE_Reset(WORLDINFO_s *) {
-    texanimbits &= ~2;
+void MosEisleyD_Init(WORLDINFO_s *world) {
+    char name[32];
+    char *special_names[6] = {"big_gate_1a", "big_gate_1b", "big_gate_2a", "big_gate_2b", "big_gate_3a", "big_gate_3b"};
+    for (i32 i = 1; i <= 6; ++i) {
+        sprintf(name, "NULL_door_pop%d", i);
+        NuSpecialFind(world->current_gscn, &LevHSpecial[i - 1], special_names[i - 1], 1);
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
+        if (blowup != NULL) {
+            blowup->field_0x128 = 0.7f;
+            blowup->field_0x124 = 1;
+            blowup->override_special = &LevHSpecial[i - 1];
+            blowup->draw_flags |= 0xc00000;
+            GizBlowup_InitSingleTerrain(blowup);
+        }
+    }
+
+    for (i32 i = 1; i <= 8; ++i) {
+        sprintf(name, "big_bin_lid%d", i);
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
+        if (blowup != NULL) {
+            blowup->field_0x124 = 1;
+            blowup->draw_flags |= 0x10000;
+        }
+    }
+    for (i32 i = 1; i <= 8; ++i) {
+        sprintf(name, "big_bin_lid_gr%d", i);
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
+        if (blowup != NULL) {
+            blowup->field_0x124 = 1;
+            blowup->draw_flags |= 0x10000;
+        }
+    }
+
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "evap_041");
+    if (blowup != NULL)
+        blowup->field_0x124 = 1;
+    blowup = GizmoBlowUp_FindByName(world, "evap_031");
+    if (blowup != NULL) {
+        blowup->field_0x128 = 0.5f;
+        blowup->field_0x124 = 1;
+    }
 }
 
 void MosEisleyD_AlwaysUpdate(WORLDINFO_s *world) {
     LevelStreaming_DoorOverride(world, MOSEISLEYE_LDATA, 7.5f, NULL);
 }
 
-i32 MosEisleyC_PastBarrier(GameObject_s *object) {
-    if (WORLD->current_level == MOSEISLEYC_LDATA)
-        return object->apiobj.position.z > 5.85f;
-    return 0;
+void MosEisleyE_Init(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force1");
+    GIZFORCE_s *force = world->giz_force_sys->forces;
+    for (i32 i = 0; i < world->giz_force_sys->count; i++, force++)
+        force->state_flags |= 0x40;
+}
+
+void MosEisleyE_Reset(WORLDINFO_s *) {
+    texanimbits &= ~2;
+}
+
+void MosEisleyE_Update(WORLDINFO_s *) {
+    if ((texanimbits & 2) == 0 && LevGizmo[0] != NULL && LevGizmo[0]->object != NULL &&
+        GizForce_Complete(static_cast<GIZFORCE_s *>(LevGizmo[0]->object)))
+        texanimbits |= 2;
+}
+
+void TatooineD_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "final_bpush", 1);
+    LevAIPathNode[0] = AIPathFindNode(world->ai_sys, NULL, "box1_c");
+
+    i32 direction;
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, NULL, "box1_c", "box1_a", &direction);
+    if (direction)
+        LevPathCnxDir |= 1;
+
+    LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, NULL, "box1_c", "box1_b", &direction);
+    if (direction)
+        LevPathCnxDir |= 2;
+}
+
+void TatooineD_Update(WORLDINFO_s *world) {
+    AIPATHNODE_s *node = static_cast<AIPATHNODE_s *>(LevAIPathNode[0]);
+    if (node != NULL && NuSpecialExistsFn(&LevHSpecial[0])) {
+        NUVEC *position = NuSpecialGetDrawPos(&LevHSpecial[0]);
+        if (position != NULL) {
+            node->position.x = position->x - 0.75f;
+            node->position.z = position->z;
+            if (world->ai_sys->path_sys != NULL && world->ai_sys->path_sys->active_path != NULL)
+                AIPathNodeUpdatePos(world->ai_sys, world->ai_sys->path_sys->active_path, node);
+        }
+    }
+
+    AIPATHCNX_s *first = static_cast<AIPATHCNX_s *>(LevPathCnx[0]);
+    AIPATHCNX_s *second = static_cast<AIPATHCNX_s *>(LevPathCnx[1]);
+    if (first != NULL && second != NULL) {
+        i32 direction = LevPathCnxDir;
+        if (second->traversal_flags[(direction >> 1) & 1] & 0x08000000)
+            first->traversal_flags[direction & 1] |= 0x80000000;
+        else
+            first->traversal_flags[direction & 1] &= ~0x80000000;
+    }
+}
+
+// ===========================================================================
+// A New Hope (ANewHope_A)
+// ===========================================================================
+
+void ANewHopeA_Init(WORLDINFO_s *world) {
+    GIZOBSTACLE_s *g;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle6")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle7")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle8")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle9")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle10")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle11")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle12")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle13")) != NULL)
+        g->field_a1_0xa1 |= 1;
+}
+
+// ===========================================================================
+// Blockade runner (BlockadeRunner_B / BlockadeRunner_C / BlockadeRunner_D)
+// ===========================================================================
+
+void BlockadeRunnerB_Init(WORLDINFO_s *world) {
+    LevBlowUp[0] = GizmoBlowUp_FindByName(world, "thermo_041");
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "arm_pop_1_2", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[1], "arm_pop_2_2", 1);
+
+    if (NuSpecialExistsFn(&LevHSpecial[0])) {
+        char *names[5] = {"arm_1_null1", "arm_1_null2", "arm_1_null3", "arm_1_null4", "arm_2_null1"};
+        for (i32 i = 0; i < 5; ++i) {
+            GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
+            if (blowup != NULL && blowup->type != NULL) {
+                blowup->field_0x124 = 1;
+                blowup->override_special = &LevHSpecial[0];
+                blowup->draw_flags |= 0xc00000;
+                GizBlowup_InitSingleTerrain(blowup);
+            }
+        }
+    }
+    if (NuSpecialExistsFn(&LevHSpecial[1])) {
+        char *names[5] = {"arm_1_null5", "arm_1_null6", "arm_1_null7", "arm_1_null8", "arm_2_null2"};
+        for (i32 i = 0; i < 5; ++i) {
+            GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
+            if (blowup != NULL && blowup->type != NULL) {
+                blowup->field_0x124 = 1;
+                blowup->override_special = &LevHSpecial[1];
+                blowup->draw_flags |= 0xc00000;
+                GizBlowup_InitSingleTerrain(blowup);
+            }
+        }
+    }
+
+    GIZBUILDIT_s *buildit = GizBuildIt_Find(world, "buildit5");
+    if (buildit != NULL)
+        buildit->radius_scale = 2.0f;
+    buildit = GizBuildIt_Find(world, "buildit6");
+    if (buildit != NULL)
+        buildit->radius_scale = 2.0f;
+    buildit = GizBuildIt_Find(world, "buildit7");
+    if (buildit != NULL)
+        buildit->radius_scale = 2.0f;
+}
+
+void BlockadeRunnerB_Update(WORLDINFO_s *) {
+    if (LevBlowUp[0] != NULL && InStory())
+        LevBlowUp[0]->state_flags &= ~0x80;
+}
+
+void BlockadeRunnerC_Init(WORLDINFO_s *world) {
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle8");
+}
+
+void BlockadeRunnerD_Reset(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle15");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle14");
+    LEV_FLAG_BR.obstacle15_active = 0;
+    LEV_FLAG_BR.obstacle14_active = 0;
+}
+
+void BlockadeRunnerD_Update(WORLDINFO_s *world) {
+    if (netclient != 0)
+        return;
+
+    for (i32 i = 0; i < 8; i++) {
+        GameObject_s *game_object = LevGameObject[i];
+        if (game_object == nullptr)
+            continue;
+        PART_s *part = LevGamePart[i];
+        if (part == nullptr)
+            continue;
+
+        if ((part->active & 1) == 1) {
+            game_object->field_0x1086 = 5;
+            game_object->vehicle_orientation = part->transform;
+            game_object->saved_position = game_object->apiobj.position = part->position;
+        }
+
+        if ((part->active & 1) == 0 || part->field_1c0 != &PartKill_EjectedCreature) {
+            KillGameObject(game_object, 4, 0);
+            LevGameObject[i] = nullptr;
+        }
+    }
+
+    if (GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 1, 1) != 0) {
+        if (LEV_FLAG_BR.obstacle15_active == 0) {
+            LEV_FLAG_BR.obstacle15_active = 1;
+            BlockadeRunnerD_EjectCreature(0);
+        }
+    } else {
+        LEV_FLAG_BR.obstacle15_active = 0;
+    }
+
+    if (GizmoGetOutput(world->gizmo_sys, LevGizmo[1], 1, 1) != 0) {
+        if (LEV_FLAG_BR.obstacle14_active == 0) {
+            LEV_FLAG_BR.obstacle14_active = 1;
+            BlockadeRunnerD_EjectCreature(1);
+        }
+    } else {
+        LEV_FLAG_BR.obstacle14_active = 0;
+    }
 }
 
 // ===========================================================================
@@ -707,7 +1341,7 @@ void DeathStarRescueB_Init(WORLDINFO_s *world) {
     NuSpecialFind(world->current_gscn, &LevHSpecial[4], "reactor_5", 1);
     NuSpecialFind(world->current_gscn, &LevHSpecial[5], "reactor_6", 1);
 
-    volatile u8 *flags = reinterpret_cast<volatile u8 *>(&LevFlag);
+    volatile u8 *flags = reinterpret_cast<volatile u8 *>(LevFlag);
     flags[5] = 0;
     flags[4] = 0;
     flags[3] = 0;
@@ -743,28 +1377,8 @@ void DeathStarRescueB_Init(WORLDINFO_s *world) {
         blowup->draw_flags |= 0x10000;
 }
 
-void DeathStarRescueC_Init(WORLDINFO_s *world) {
-#define SETUP_RESCUE_PANEL(name)                                                                                       \
-    do {                                                                                                               \
-        GIZMOBLOWUP_s *panel = GizmoBlowUp_FindByName(world, name);                                                    \
-        if (panel != NULL) {                                                                                           \
-            panel->field_0x128 = 0.3f;                                                                                 \
-            panel->field_0x124 = 1;                                                                                    \
-        }                                                                                                              \
-    } while (0)
-    SETUP_RESCUE_PANEL("panel_11");
-    SETUP_RESCUE_PANEL("panel_21");
-    SETUP_RESCUE_PANEL("panel_31");
-    SETUP_RESCUE_PANEL("panel_41");
-    SETUP_RESCUE_PANEL("panel_51");
-    SETUP_RESCUE_PANEL("panel_61");
-    SETUP_RESCUE_PANEL("panel_71");
-    SETUP_RESCUE_PANEL("panel_81");
-#undef SETUP_RESCUE_PANEL
-}
-
 void DeathStarRescueB_Update(WORLDINFO_s *world) {
-    u8 *flags = reinterpret_cast<u8 *>(&LevFlag);
+    u8 *flags = reinterpret_cast<u8 *>(LevFlag);
 #define UPDATE_RESCUE_REACTOR(index)                                                                                   \
     do {                                                                                                               \
         if (flags[index] == 0) {                                                                                       \
@@ -794,51 +1408,28 @@ void DeathStarRescueB_AlwaysUpdate(WORLDINFO_s *world) {
     LevelStreaming_DoorOverride(world, DEATHSTARRESCUED_LDATA, 8.5f, NULL);
 }
 
-void DeathStarRescueC_AlwaysUpdate(WORLDINFO_s *world) {
-    LevelStreaming_DoorOverride(world, DEATHSTARRESCUEE_LDATA, 8.5f, NULL);
+void DeathStarRescueC_Init(WORLDINFO_s *world) {
+#define SETUP_RESCUE_PANEL(name)                                                                                       \
+    do {                                                                                                               \
+        GIZMOBLOWUP_s *panel = GizmoBlowUp_FindByName(world, name);                                                    \
+        if (panel != NULL) {                                                                                           \
+            panel->field_0x128 = 0.3f;                                                                                 \
+            panel->field_0x124 = 1;                                                                                    \
+        }                                                                                                              \
+    } while (0)
+    SETUP_RESCUE_PANEL("panel_11");
+    SETUP_RESCUE_PANEL("panel_21");
+    SETUP_RESCUE_PANEL("panel_31");
+    SETUP_RESCUE_PANEL("panel_41");
+    SETUP_RESCUE_PANEL("panel_51");
+    SETUP_RESCUE_PANEL("panel_61");
+    SETUP_RESCUE_PANEL("panel_71");
+    SETUP_RESCUE_PANEL("panel_81");
+#undef SETUP_RESCUE_PANEL
 }
 
-// ===========================================================================
-// Death Star escape (DeathStarEscape_A / B / C / D)
-// ===========================================================================
-
-i32 DeathStarShieldDown() {
-    if (LevGizmo[0] == NULL)
-        LevGizmo[0] = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, "bigbang1");
-    if (LevGizmo[0] == NULL || LevGizmo[0]->object == NULL)
-        return 0;
-
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[0]->object);
-    if (blowup->output_flags & 1)
-        return 1;
-    if (__builtin_expect(static_cast<i8>(blowup->state_flags) < 0, 1)) {
-        GameObject_s **players = Player;
-        GameObject_s *player = players[0];
-        if (player != NULL) {
-            if (WORLD->current_level != DEATHSTARBATTLED_LDATA ||
-                !ObjInNarrowSock(player, WORLD->sock_sys, WORLD->level_idx)) {
-                TORPEDOPACKET_s *packet = player->torpedo;
-                if (packet != NULL) {
-                    if (packet->count != 0 || (packet->field_0x1 & 2) != 0)
-                        return 1;
-                }
-            }
-        }
-
-        player = players[1];
-        if (player != NULL) {
-            if (WORLD->current_level != DEATHSTARBATTLED_LDATA ||
-                !ObjInNarrowSock(player, WORLD->sock_sys, WORLD->level_idx)) {
-                TORPEDOPACKET_s *packet = player->torpedo;
-                if (packet != NULL) {
-                    if (packet->count != 0)
-                        return 1;
-                    return (packet->field_0x1 >> 1) & 1;
-                }
-            }
-        }
-    }
-    return 0;
+void DeathStarRescueC_AlwaysUpdate(WORLDINFO_s *world) {
+    LevelStreaming_DoorOverride(world, DEATHSTARRESCUEE_LDATA, 8.5f, NULL);
 }
 
 void DeathStarEscapeA_Init(WORLDINFO_s *world) {
@@ -884,39 +1475,6 @@ void DeathStarEscapeB_Init(WORLDINFO_s *world) {
     }
 }
 
-void DeathStarEscapeB_Draw(WORLDINFO_s *) {
-    NUMTX_ALIGNED16 matrix;
-    if (LevGameObject[0] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
-        matrix = LevGameObject[0]->joint_matrices[1];
-        NuSpecialDrawAt(&LevHSpecial[2], &matrix);
-    }
-    if (LevGameObject[1] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
-        matrix = LevGameObject[1]->joint_matrices[1];
-        NuSpecialDrawAt(&LevHSpecial[2], &matrix);
-    }
-}
-
-void DeathStarEscapeC_Init(WORLDINFO_s *world) {
-    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "blowup_door_31");
-    if (blowup != NULL)
-        blowup->field_0x124 = 1;
-    blowup = GizmoBlowUp_FindByName(world, "cup_built1");
-    if (blowup != NULL)
-        blowup->draw_flags |= 2;
-    NuSpecialFind(world->current_gscn, &LevHSpecial[2], "door_push", 1);
-    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "droid_rescue_a",
-                                      "droid_rescue_b", &LevPathCnxDir);
-}
-
-void DeathStarEscapeA_Update(WORLDINFO_s *) {
-    if (GameCam->sock_position.location.sock == 2) {
-        NUVEC position = {0.0f, -5.5f, 0.0f};
-        position.x = QRAND_FLOAT() * 2.0f + 36.5f;
-        position.z = QRAND_FLOAT() * 2.0f + 8.5f;
-        LevChatterSfx("Dianoga_Groan", &position);
-    }
-}
-
 __attribute__((force_align_arg_pointer)) void DeathStarEscapeB_Update(WORLDINFO_s *world) {
     nuanimdata_s *volatile data1 = NULL;
     nuanimdata_s *volatile data0 = NULL;
@@ -945,6 +1503,54 @@ __attribute__((force_align_arg_pointer)) void DeathStarEscapeB_Update(WORLDINFO_
     }
 }
 
+void DeathStarEscapeB_AlwaysUpdate(WORLDINFO_s *) {
+    NUVEC position;
+    SOCKPOSITION socket_position;
+    if (Players_AveragePos(&position, &socket_position) && socket_position.location.sock != -1) {
+        if (DEATHSTARESCAPEA_LDATA != NULL && socket_position.location.sock < 6)
+            other_level_override = DEATHSTARESCAPEA_LDATA->idx;
+        else if (DEATHSTARESCAPEC_LDATA != NULL && socket_position.location.sock > 6)
+            other_level_override = DEATHSTARESCAPEC_LDATA->idx;
+    }
+}
+
+void DeathStarEscapeB_Draw(WORLDINFO_s *) {
+    NUMTX_ALIGNED16 matrix;
+    if (LevGameObject[0] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
+        matrix = LevGameObject[0]->joint_matrices[1];
+        NuSpecialDrawAt(&LevHSpecial[2], &matrix);
+    }
+    if (LevGameObject[1] != NULL && *static_cast<u8 *>(deathstarescapeb_netpacket) == 0) {
+        matrix = LevGameObject[1]->joint_matrices[1];
+        NuSpecialDrawAt(&LevHSpecial[2], &matrix);
+    }
+}
+
+void DeathStarEscapeA_Update(WORLDINFO_s *) {
+    if (GameCam->sock_position.location.sock == 2) {
+        NUVEC position = {0.0f, -5.5f, 0.0f};
+        position.x = QRAND_FLOAT() * 2.0f + 36.5f;
+        position.z = QRAND_FLOAT() * 2.0f + 8.5f;
+        LevChatterSfx("Dianoga_Groan", &position);
+    }
+}
+
+void DeathStarEscapeC_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "blowup_door_31");
+    if (blowup != NULL)
+        blowup->field_0x124 = 1;
+    blowup = GizmoBlowUp_FindByName(world, "cup_built1");
+    if (blowup != NULL)
+        blowup->draw_flags |= 2;
+    NuSpecialFind(world->current_gscn, &LevHSpecial[2], "door_push", 1);
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "droid_rescue_a",
+                                      "droid_rescue_b", &LevPathCnxDir);
+}
+
+void DeathStarEscapeC_Reset(WORLDINFO_s *) {
+    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "RescuedDroids", NULL);
+}
+
 void DeathStarEscapeC_Update(WORLDINFO_s *) {
     if (LevPathCnx[0] != NULL) {
         NUVEC *position;
@@ -970,21 +1576,6 @@ void DeathStarEscapeD_Update(WORLDINFO_s *) {
     LevChatterSfx("Dianoga_Groan", &position);
 }
 
-void DeathStarEscapeC_Reset(WORLDINFO_s *) {
-    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "RescuedDroids", NULL);
-}
-
-void DeathStarEscapeB_AlwaysUpdate(WORLDINFO_s *) {
-    NUVEC position;
-    SOCKPOSITION socket_position;
-    if (Players_AveragePos(&position, &socket_position) && socket_position.location.sock != -1) {
-        if (DEATHSTARESCAPEA_LDATA != NULL && socket_position.location.sock < 6)
-            other_level_override = DEATHSTARESCAPEA_LDATA->idx;
-        else if (DEATHSTARESCAPEC_LDATA != NULL && socket_position.location.sock > 6)
-            other_level_override = DEATHSTARESCAPEC_LDATA->idx;
-    }
-}
-
 // ===========================================================================
 // Death Star battle (DeathStarBattle_C / D)
 // ===========================================================================
@@ -994,7 +1585,47 @@ void DeathStarBattleC_AlwaysUpdate(WORLDINFO_s *) {
         other_level_override = DEATHSTARBATTLEMIDTRO_LDATA->idx;
 }
 
-void DeathStarBattleDDraw(WORLDINFO_s *) {
+// ===========================================================================
+// Death Star escape (DeathStarEscape_A / B / C / D)
+// ===========================================================================
+
+i32 DeathStarShieldDown() {
+    if (LevGizmo[0] == NULL)
+        LevGizmo[0] = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, "bigbang1");
+    if (LevGizmo[0] == NULL || LevGizmo[0]->object == NULL)
+        return 0;
+
+    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[0]->object);
+    if (blowup->output_flags & 1)
+        return 1;
+    if (__builtin_expect(static_cast<i8>(blowup->state_flags) < 0, 1)) {
+        GameObject_s **players = Player;
+        GameObject_s *player = players[0];
+        if (player != NULL) {
+            if (WORLD->current_level != DEATHSTARBATTLED_LDATA ||
+                !ObjInNarrowSock(player, WORLD->sock_sys, WORLD->level_idx)) {
+                TORPEDOPACKET_s *packet = player->torpedo;
+                if (packet != NULL) {
+                    if (packet->count != 0 || (packet->field_0x1 & 2) != 0)
+                        return 1;
+                }
+            }
+        }
+
+        player = players[1];
+        if (player != NULL) {
+            if (WORLD->current_level != DEATHSTARBATTLED_LDATA ||
+                !ObjInNarrowSock(player, WORLD->sock_sys, WORLD->level_idx)) {
+                TORPEDOPACKET_s *packet = player->torpedo;
+                if (packet != NULL) {
+                    if (packet->count != 0)
+                        return 1;
+                    return (packet->field_0x1 >> 1) & 1;
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 void DeathStarBattleDInit(WORLDINFO_s *) {
@@ -1069,7 +1700,7 @@ void DeathStarBattleDUpdate(WORLDINFO_s *world) {
         }
     }
 
-    volatile u8 *flags = reinterpret_cast<volatile u8 *>(&LevFlag);
+    volatile u8 *flags = reinterpret_cast<volatile u8 *>(LevFlag);
     if (flags[4] != 0)
         return;
     if (NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
@@ -1079,3 +1710,7 @@ void DeathStarBattleDUpdate(WORLDINFO_s *world) {
         flags[4] = 1;
     }
 }
+
+void DeathStarBattleDDraw(WORLDINFO_s *) {
+}
+

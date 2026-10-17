@@ -1,15 +1,9 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/items/base/collection.h"
 #include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/gizmos/traps/gizturrets.h"
-#include "legoapi/characters/motion.h"
 #include "legoapi/characters/core/players.h"
-
-u32 GizmoBlowups_TotalScore(void *world);
-extern i32 DoubleScore;
 
 #include "decomp.h"
 #include "globals.h"
@@ -20,25 +14,108 @@ extern i32 DoubleScore;
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/menus/screens/gamestructure.h"
-#include "legoapi/menus/screens/gamemenuall.h"
-#include "gameapi/gui/apimenu.h"
 #include "legoapi/menus/core/gamehint.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
 #include <string.h>
 #include <stdlib.h>
-#include "legoapi/characters/motion.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/props/system/socksys.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nusound/nusound.h"
+#include "nu2api/nufile/nufile.h"
+#include <stdio.h>
+#include "legoapi/gizmo/base/gizactions.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameframework/saveload.h"
+#include "legoapi/render/core/render.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/nucore/nupad.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include <new>
+#include "legoapi/gizmos/trigger/ai.h"
+#include <stdint.h>
+#include "nu2api/nucore/nulist.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include <float.h>
+#include "editor/edpath.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "batman.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/nucore/common.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "legoapi/misc/androidbatman.h"
+#include <limits.h>
+#include "legoapi/render/fx/particles.h"
+#include <cfloat>
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 struct GIZMOPICKUP_s;
 struct PART_s;
-struct starfighter_s;
 
 struct APICHARACTERMODELLIST_s;
 
@@ -47,6 +124,688 @@ COLLECTID *TempCollectID = NULL;
 static i32 CollectCount;
 static COLLECTID *CollectList;
 i32 COLLECTION_COMPLETIONCOUNT = 0;
+
+f32 COLLECTION_DX = 0.15f;
+f32 COLLECTION_DY = -0.2f;
+f32 COLLECTION_ICONSIZE = 0.16f;
+i32 LEGOOBJ_ICON_FRAME_NEUTRAL = -1;
+i32 LEGOOBJ_ICON_FRAME_BLUE = -1;
+i32 LEGOOBJ_ICON_FRAME_GREEN = -1;
+nuhspecial_s *collection_draw_hspecial;
+i32 (*collection_draw_IsValidFn)(COLLECTION_s *, i32);
+void (*Collection_GetSelectingPlayerIDsFn)(i16 *);
+
+static inline u32 Collection_NeighbourFlags(i32 col, i32 row, i32 sx, i32 sy) {
+    if (sx == -1 || sy == -1)
+        return 0;
+    if ((col == sx && (row == sy - 1 || row == sy + 1)) || (row == sy && (col == sx - 1 || col == sx + 1)))
+        return 1;
+    if ((col == sx - 1 || col == sx + 1) && (row == sy - 1 || row == sy + 1))
+        return 2;
+    if ((col == sx && (row == sy - 2 || row == sy + 2)) || (row == sy && (col == sx - 2 || col == sx + 2)))
+        return 4;
+    return 0;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct nuhspecial_s;
+
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+struct BOLT_s;
+
+struct EDCREATURE_s;
+
+typedef isize __attribute__((may_alias)) NuGCutWord;
+
+struct instNUGCUTSCENE_s;
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct nupad_s;
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+struct AISYS_s;
+struct nufpar_s;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+namespace {
+
+} // namespace
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static __attribute__((noinline, noclone)) i32 Bolt_HitPlat(BOLT_s *bolt, u8 *hit_flags)
+    __asm__("_ZL12Bolt_HitPlatP6BOLT_sPhP11WORLDINFO_s.isra.38");
+
+// The original caller appears to treat this u16-returning function as i32;
+// correcting this declaration lowers its match.
+
+namespace {
+
+} // namespace
+
+namespace {
+
+} // namespace
+
+// Game-specific pre-load limits. These must be applied before WorldInfo
+// reserves each level's fixed-size gameplay systems.
 
 i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
     i32 i;
@@ -70,25 +829,6 @@ i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
     }
 
     return -1;
-}
-
-i32 Collection_Got(i32 id) {
-    if (InCollectList_Index(id, NULL, 0) == -1) {
-        return 0;
-    }
-
-    i32 area = AreaFromMiniKitID(id);
-    if (area != -1) {
-        if (Game_AreaSave == NULL) {
-            return 0;
-        }
-        return Game_AreaSave[area].minikit_complete >= SAVE_COMPLETE ? 2 : 0;
-    }
-
-    if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & SAVE_CHARACTER_AVAILABLE) == 0) {
-        return 0;
-    }
-    return 1;
 }
 
 void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) {
@@ -174,28 +914,151 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
         bufferStart->void_ptr = collect;
 }
 
-f32 COLLECTION_DX = 0.15f;
-f32 COLLECTION_DY = -0.2f;
-f32 COLLECTION_ICONSIZE = 0.16f;
-i32 LEGOOBJ_ICON_FRAME_NEUTRAL = -1;
-i32 LEGOOBJ_ICON_FRAME_BLUE = -1;
-i32 LEGOOBJ_ICON_FRAME_GREEN = -1;
-nuhspecial_s *collection_draw_hspecial;
-i32 (*collection_draw_IsValidFn)(COLLECTION_s *, i32);
-void (*Collection_GetSelectingPlayerIDsFn)(i16 *);
-void DrawCharIcon(i32, f32, f32, f32, f32, i32, f32, f32, i32, nuhspecial_s *);
-extern FadeSystem FadeSys;
+void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
+    collection->list = CollectList;
+    collection->count_x = (u16)param4;
+    collection->count_y = (u16)CollectCount;
+    collection->field_c = file;
+    collection->field_8 = idlist;
+    collection->field_10 = param5;
+}
 
-static inline u32 Collection_NeighbourFlags(i32 col, i32 row, i32 sx, i32 sy) {
-    if (sx == -1 || sy == -1)
+void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection, u32 required_model_flags,
+                             u32 excluded_model_flags, u32 required_game_flags, i32 require_buyable, i32 columns,
+                             VARIPTR *buffer, VARIPTR *, i32 use_all_characters, f32 scale) {
+    collection->count_x = static_cast<u16>(columns);
+    collection->field_c = name;
+    collection->field_8 = id_list;
+    collection->list = reinterpret_cast<COLLECTID *>(ALIGN(buffer->addr, 4));
+    collection->field_10 = scale;
+    collection->count_y = 0;
+
+    if (use_all_characters == 0) {
+        if (CollectCount > 0) {
+            COLLECTID *const end = CollectList + CollectCount;
+            for (COLLECTID *current = CollectList; current != end; ++current) {
+                COLLECTID &source = *current;
+                const i32 id = source.id;
+                if (id < 0) {
+                    continue;
+                }
+                if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
+                    continue;
+                }
+                if (require_buyable != 0 && source.can_buy == 0) {
+                    continue;
+                }
+                if (required_game_flags != 0 &&
+                    (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
+                    continue;
+                }
+                if (!(required_model_flags != 0 &&
+                      (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
+                    collection->list[collection->count_y] = source;
+                    ++collection->count_y;
+                }
+            }
+        }
+    } else {
+        for (i32 id = 0; id < CHARCOUNT; ++id) {
+            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
+                continue;
+            }
+            if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
+                continue;
+            }
+            if (!(required_model_flags != 0 &&
+                  (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
+                COLLECTID &entry = collection->list[collection->count_y];
+                memset(&entry, 0, sizeof(entry));
+                collection->list[collection->count_y].id = static_cast<i16>(id);
+                ++collection->count_y;
+            }
+        }
+    }
+
+    buffer->void_ptr = collection->list + collection->count_y;
+}
+
+void Collection_GetPos(COLLECTION_s *collection, i32 id, float *x, float *y) {
+    COLLECTID *list = collection->list;
+
+    for (i32 i = 0; i < collection->count_y; i++) {
+        if (list[i].id == id) {
+            float *f = (float *)&list[i].cheat_code[8];
+            *x = f[0];
+            *y = f[1];
+            return;
+        }
+    }
+}
+
+COLLECTID *CollectIDUnlocked(i32 id) {
+    i32 index = InCollectList_Index(id, CollectList, CollectCount);
+    if (index == -1) {
+        return NULL;
+    }
+    if (Game_CharacterSave == NULL || (Game_CharacterSave[id] & SAVE_CHARACTER_UNLOCKED) == 0) {
+        COLLECTID *entry = &CollectList[index];
+        switch (entry->type) {
+            case 0:
+                break;
+            case 2:
+                if (static_cast<i8>(entry->field2_0x3) == -1 ||
+                    Game_AreaSave[static_cast<i8>(entry->field2_0x3)].area_complete == 0) {
+                    return NULL;
+                }
+                break;
+            case 3:
+                if (Episodes_Completed() != EPISODECOUNT) {
+                    return NULL;
+                }
+                break;
+            case 4:
+                if (AllMiniKitsDone(Game_AreaSave) == 0) {
+                    return NULL;
+                }
+                break;
+            case 6:
+                if (Game_CompletionSave == NULL ||
+                    reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave)->gold_bricks < entry->field6_0xa) {
+                    return NULL;
+                }
+                break;
+            case 7:
+                if (Game_100PercentComplete() == 0) {
+                    return NULL;
+                }
+                break;
+            case 8:
+                if (!Store_IsPackUnlocked(static_cast<i8>(entry->field2_0x3))) {
+                    return NULL;
+                }
+                break;
+            default:
+                return NULL;
+        }
+    }
+    return &CollectList[index];
+}
+
+i32 Collection_Got(i32 id) {
+    if (InCollectList_Index(id, NULL, 0) == -1) {
         return 0;
-    if ((col == sx && (row == sy - 1 || row == sy + 1)) || (row == sy && (col == sx - 1 || col == sx + 1)))
-        return 1;
-    if ((col == sx - 1 || col == sx + 1) && (row == sy - 1 || row == sy + 1))
-        return 2;
-    if ((col == sx && (row == sy - 2 || row == sy + 2)) || (row == sy && (col == sx - 2 || col == sx + 2)))
-        return 4;
-    return 0;
+    }
+
+    i32 area = AreaFromMiniKitID(id);
+    if (area != -1) {
+        if (Game_AreaSave == NULL) {
+            return 0;
+        }
+        return Game_AreaSave[area].minikit_complete >= SAVE_COMPLETE ? 2 : 0;
+    }
+
+    if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & SAVE_CHARACTER_AVAILABLE) == 0) {
+        return 0;
+    }
+    return 1;
 }
 
 void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, APICHARACTERMODELLIST_s *models,
@@ -299,15 +1162,40 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
     }
 }
 
-void Collection_GetPos(COLLECTION_s *collection, i32 id, float *x, float *y) {
-    COLLECTID *list = collection->list;
+i32 Collection_GotAnyOfType(i32 type, u32 flags) {
+    if (CollectList == NULL || CollectCount <= 0)
+        return 0;
+    for (i32 i = 0; i < CollectCount; ++i) {
+        i32 id = CollectList[i].id;
+        if ((type == -1 || (signed char)GCDataList[id].field275_0x116 == type) &&
+            (flags == 0 || (CDataList[id].model_flags & flags) == flags) && Collection_Got(id))
+            return 1;
+    }
+    return 0;
+}
 
-    for (i32 i = 0; i < collection->count_y; i++) {
-        if (list[i].id == id) {
-            float *f = (float *)&list[i].cheat_code[8];
-            *x = f[0];
-            *y = f[1];
-            return;
+i32 AddToCollection(i32 id) {
+    if (id > 0 && id < CHARCOUNT && InCollectList_Index(id, NULL, 0) != -1 && Collection_Got(id) == 0) {
+        if (Game_CharacterSave != NULL)
+            Game_CharacterSave[id] |= SAVE_CHARACTER_AVAILABLE | SAVE_CHARACTER_UNLOCKED;
+        return 1;
+    }
+    return 0;
+}
+
+void CollectAllCharacters(i32 only_story) {
+    if (CollectCount <= 0)
+        return;
+
+    if (only_story == 0) {
+        for (i32 i = 0; i < CollectCount; ++i) {
+            if (CollectList[i].type != 8)
+                AddToCollection(CollectList[i].id);
+        }
+    } else {
+        for (i32 i = 0; i < CollectCount; ++i) {
+            if (CollectList[i].type == 1)
+                AddToCollection(CollectList[i].id);
         }
     }
 }
@@ -347,441 +1235,12 @@ i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 requ
     return result_count;
 }
 
-void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
-    collection->list = CollectList;
-    collection->count_x = (u16)param4;
-    collection->count_y = (u16)CollectCount;
-    collection->field_c = file;
-    collection->field_8 = idlist;
-    collection->field_10 = param5;
+i32 GameAudio_GetPlrSfxBits(void *object_ptr) {
+    APIOBJECT *object = static_cast<APIOBJECT *>(object_ptr);
+    i32 sfx_bits = 0;
+    if (object != NULL && static_cast<i8>(object->flags_low) < 0) {
+        sfx_bits = 1 << object->field_0x27c;
+    }
+    return sfx_bits;
 }
 
-void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection, u32 required_model_flags,
-                             u32 excluded_model_flags, u32 required_game_flags, i32 require_buyable, i32 columns,
-                             VARIPTR *buffer, VARIPTR *, i32 use_all_characters, f32 scale) {
-    collection->count_x = static_cast<u16>(columns);
-    collection->field_c = name;
-    collection->field_8 = id_list;
-    collection->list = reinterpret_cast<COLLECTID *>(ALIGN(buffer->addr, 4));
-    collection->field_10 = scale;
-    collection->count_y = 0;
-
-    if (use_all_characters == 0) {
-        if (CollectCount > 0) {
-            COLLECTID *const end = CollectList + CollectCount;
-            for (COLLECTID *current = CollectList; current != end; ++current) {
-                COLLECTID &source = *current;
-                const i32 id = source.id;
-                if (id < 0) {
-                    continue;
-                }
-                if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
-                    continue;
-                }
-                if (require_buyable != 0 && source.can_buy == 0) {
-                    continue;
-                }
-                if (required_game_flags != 0 &&
-                    (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
-                    continue;
-                }
-                if (!(required_model_flags != 0 &&
-                      (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
-                    collection->list[collection->count_y] = source;
-                    ++collection->count_y;
-                }
-            }
-        }
-    } else {
-        for (i32 id = 0; id < CHARCOUNT; ++id) {
-            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
-                continue;
-            }
-            if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
-                continue;
-            }
-            if (!(required_model_flags != 0 &&
-                  (CDataList[id].model_flags & required_model_flags) != required_model_flags)) {
-                COLLECTID &entry = collection->list[collection->count_y];
-                memset(&entry, 0, sizeof(entry));
-                collection->list[collection->count_y].id = static_cast<i16>(id);
-                ++collection->count_y;
-            }
-        }
-    }
-
-    buffer->void_ptr = collection->list + collection->count_y;
-}
-
-COLLECTID *CollectIDUnlocked(i32 id) {
-    i32 index = InCollectList_Index(id, CollectList, CollectCount);
-    if (index == -1) {
-        return NULL;
-    }
-    if (Game_CharacterSave == NULL || (Game_CharacterSave[id] & SAVE_CHARACTER_UNLOCKED) == 0) {
-        COLLECTID *entry = &CollectList[index];
-        switch (entry->type) {
-            case 0:
-                break;
-            case 2:
-                if (static_cast<i8>(entry->field2_0x3) == -1 ||
-                    Game_AreaSave[static_cast<i8>(entry->field2_0x3)].area_complete == 0) {
-                    return NULL;
-                }
-                break;
-            case 3:
-                if (Episodes_Completed() != EPISODECOUNT) {
-                    return NULL;
-                }
-                break;
-            case 4:
-                if (AllMiniKitsDone(Game_AreaSave) == 0) {
-                    return NULL;
-                }
-                break;
-            case 6:
-                if (Game_CompletionSave == NULL ||
-                    reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave)->gold_bricks < entry->field6_0xa) {
-                    return NULL;
-                }
-                break;
-            case 7:
-                if (Game_100PercentComplete() == 0) {
-                    return NULL;
-                }
-                break;
-            case 8:
-                if (!Store_IsPackUnlocked(static_cast<i8>(entry->field2_0x3))) {
-                    return NULL;
-                }
-                break;
-            default:
-                return NULL;
-        }
-    }
-    return &CollectList[index];
-}
-
-i32 Collection_GotAnyOfType(i32 type, u32 flags) {
-    if (CollectList == NULL || CollectCount <= 0)
-        return 0;
-    for (i32 i = 0; i < CollectCount; ++i) {
-        i32 id = CollectList[i].id;
-        if ((type == -1 || (signed char)GCDataList[id].field275_0x116 == type) &&
-            (flags == 0 || (CDataList[id].model_flags & flags) == flags) && Collection_Got(id))
-            return 1;
-    }
-    return 0;
-}
-
-i32 AddToCollection(i32 id);
-void CollectAllCharacters(i32 only_story) {
-    if (CollectCount <= 0)
-        return;
-
-    if (only_story == 0) {
-        for (i32 i = 0; i < CollectCount; ++i) {
-            if (CollectList[i].type != 8)
-                AddToCollection(CollectList[i].id);
-        }
-    } else {
-        for (i32 i = 0; i < CollectCount; ++i) {
-            if (CollectList[i].type == 1)
-                AddToCollection(CollectList[i].id);
-        }
-    }
-}
-
-extern i32 freeplaymode;
-extern i32 freeplay_selected[2];
-static __used__ void Collection_GetSelectingPlayerIDs(i16 *ids) {
-    if (WORLD->area != NULL && WORLD->area == HUB_ADATA && GetMenuID() == 17 && static_cast<u32>(freeplaymode) <= 3) {
-        i32 offset = 0;
-        if (MenuPacket.active_player[0] != 0 && freeplay_selected[0] <= 2) {
-            ids[0] = MenuPacket.player_model[0];
-            offset = 2;
-        }
-        if (MenuPacket.active_player[1] == 0)
-            return;
-        if (freeplay_selected[1] > 2)
-            return;
-        *reinterpret_cast<i16 *>(reinterpret_cast<u8 *>(ids) + offset) = MenuPacket.player_model[1];
-    }
-}
-
-void ReleaseEat(GameObject_s *object) {
-    u8 flags = object->field_0xe24;
-    GameObject_s *eaten = static_cast<GameObject_s *>(object->field_0x780);
-    if (eaten != NULL && (flags & 1) != 0) {
-        KillGameObject(eaten, 2, 0);
-        flags = object->field_0xe24;
-        object->field_0x780 = NULL;
-    }
-    if (static_cast<u8>(object->field_0x7a5 - 0x38) <= 1) {
-        object->field_0x780 = NULL;
-        object->field_0x7a5 = 0xff;
-    }
-    object->field_0xe24 = flags & ~1;
-}
-
-i32 AddToCollection(i32 id) {
-    if (id > 0 && id < CHARCOUNT && InCollectList_Index(id, NULL, 0) != -1 && Collection_Got(id) == 0) {
-        if (Game_CharacterSave != NULL)
-            Game_CharacterSave[id] |= SAVE_CHARACTER_AVAILABLE | SAVE_CHARACTER_UNLOCKED;
-        return 1;
-    }
-    return 0;
-}
-
-void ResetCoinPacket(COINPACKET_s *packet) {
-    if (packet != NULL) {
-        packet->scale = 1.0f;
-        packet->double_score_timer = 0.0f;
-        packet->active = 1;
-    }
-}
-
-void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index) {
-    if (packet == NULL) {
-        return;
-    }
-    if (active == 0) {
-        packet->active = 1;
-        packet->scale = 1.0f;
-        packet->double_score_timer = 0.0f;
-        if (BonusArea != 0) {
-            if (packet->coins < 10) {
-                packet->coins = 0;
-                return;
-            }
-            u32 decrement = static_cast<u32>(static_cast<i32>(20000.0f * FRAMETIME));
-            decrement = (decrement / 10) * 10;
-            if (decrement < 10) {
-                decrement = 10;
-            } else if (packet->coins < decrement) {
-                packet->coins = 0;
-                return;
-            }
-            packet->coins -= decrement;
-        }
-        return;
-    }
-
-    packet->scale = SeekLinearF(packet->scale, 1.0f, 3.0f * FRAMETIME);
-    if (((DoubleScore >> player_index) & 1) != 0) {
-        if (packet->double_score_timer > 0.0f) {
-            packet->double_score_timer -= FRAMETIME;
-            if (packet->double_score_timer <= 0.0f) {
-                packet->active = 1;
-            }
-        }
-    } else {
-        packet->double_score_timer = 0.0f;
-        packet->active = 1;
-    }
-}
-
-u32 GizmoBlowups_TotalScore(void *);
-u32 GizForce_TotalScore(void *);
-u32 GizObstacles_TotalScore(void *);
-u32 GizTurrets_TotalScore(void *);
-u32 GameAI_TotalScore();
-
-u32 TotalLevelCoinTally(WORLDINFO_s *world, u32 *pickups, u32 *blowups, u32 *buildits, u32 *forces, u32 *obstacles,
-                        u32 *turrets, u32 *characters) {
-    u32 value = GizmoPickups_TotalScore(world);
-    u32 total = value;
-    if (pickups != NULL)
-        *pickups = value;
-    value = GizmoBlowups_TotalScore(world);
-    total += value;
-    if (blowups != NULL)
-        *blowups = value;
-    value = GizBuildIts_TotalScore(world);
-    total += value;
-    if (buildits != NULL)
-        *buildits = value;
-    value = GizForce_TotalScore(world);
-    total += value;
-    if (forces != NULL)
-        *forces = value;
-    value = GizObstacles_TotalScore(world);
-    total += value;
-    if (obstacles != NULL)
-        *obstacles = value;
-    value = GizTurrets_TotalScore(world);
-    total += value;
-    if (turrets != NULL)
-        *turrets = value;
-    value = 0;
-    if (world->area != NULL && (world->area->flags & 0x100) != 0)
-        value = GameAI_TotalScore();
-    total += value;
-    if (characters != NULL)
-        *characters = value;
-    return total;
-}
-
-COLLECTION_s *GetFreePlayCollection(i32 area) {
-    const u16 area_flags = ADataList[area].flags;
-    if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
-        return &CharacterCollection;
-    }
-    if ((area_flags & AREAFLAG_BONUS_AREA) != 0) {
-        return &MiniKitCollection;
-    }
-    return &VehicleCollection;
-}
-
-static i32 CompletionPointInfo_ReCalculate[7];
-extern i32 POINTS_PER_HINT;
-extern i32 SHOPHINTCOUNT;
-extern i16 HintTab[24];
-
-void ReCalculateCompletionPoints() {
-    Game.gold_bricks = 0;
-    Game.completion = 0;
-    memset(CompletionPointInfo_ReCalculate, 0, sizeof(CompletionPointInfo_ReCalculate));
-
-    for (i32 index = 0; index < MasterCollection.count_y; ++index) {
-        COLLECTID *entry = &MasterCollection.list[index];
-        if (entry->field5_0x9 == 0) {
-            continue;
-        }
-        CompletionPointInfo_ReCalculate[2] += POINTS_PER_CHARACTER;
-        if (Collection_Got(entry->id) != 0) {
-            AddToCompletionPoints(POINTS_PER_CHARACTER);
-        }
-    }
-
-    AREADATA *area = ADataList;
-    AREASAVE_s *save = Game.area_save;
-    for (i32 index = 0; index < AREACOUNT; ++index, ++area, ++save) {
-        if (area == HUB_ADATA ||
-            (area->flags & (AREAFLAG_ENDING_AREA | AREAFLAG_TEST_AREA | AREAFLAG_NO_COMPLETION_POINTS)) != 0) {
-            continue;
-        }
-
-        if ((area->flags & 0x100) != 0) {
-            CompletionPointInfo_ReCalculate[1] += POINTS_PER_SUPERBONUSCOMPLETE;
-            if (save->area_complete != 0) {
-                AddToCompletionPoints(POINTS_PER_SUPERBONUSCOMPLETE);
-                if (GOLDBRICKFORSUPERBONUS != 0) {
-                    AddToGoldBricks();
-                }
-            }
-            continue;
-        }
-
-        if ((area->flags & AREAFLAG_BONUS_AREA) != 0) {
-            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TIMETRIAL;
-            if (save->area_complete != 0 ||
-                save->challenge_trial_time < static_cast<f32>(static_cast<i32>(area->challenge_trial_time))) {
-                AddToCompletionPoints(POINTS_PER_TIMETRIAL);
-                AddToGoldBricks();
-            }
-            continue;
-        }
-
-        CompletionPointInfo_ReCalculate[1] += POINTS_PER_STORY;
-        if (save->area_complete != 0) {
-            AddToCompletionPoints(POINTS_PER_STORY);
-            if ((area->flags & AREAFLAG_NO_GOLDBRICK) == 0) {
-                AddToGoldBricks();
-            }
-        }
-
-        if ((area->flags & AREAFLAG_MINIKIT) == 0) {
-            if ((area->flags & AREAFLAG_TRUE_JEDI) != 0 &&
-                (save->true_hero_complete[0] != 0 || save->true_hero_complete[1] != 0)) {
-                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
-                AddToGoldBricks();
-            }
-            continue;
-        }
-
-        CompletionPointInfo_ReCalculate[1] += POINTS_PER_MINIKIT;
-        if (save->minikit_complete != 0) {
-            AddToCompletionPoints(POINTS_PER_MINIKIT);
-            AddToGoldBricks();
-        }
-
-        if (BOTHTRUEJEDIGOLDBRICKS != 0) {
-            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
-            if (save->true_hero_complete[0] != 0) {
-                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
-                AddToGoldBricks();
-            }
-            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
-            if (save->true_hero_complete[1] != 0) {
-                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
-                AddToGoldBricks();
-            }
-        } else {
-            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
-            if (save->true_hero_complete[0] != 0 || save->true_hero_complete[1] != 0) {
-                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
-                AddToGoldBricks();
-            }
-        }
-
-        CompletionPointInfo_ReCalculate[1] += POINTS_PER_REDBRICK;
-        if (save->red_brick_collected != 0) {
-            AddToCompletionPoints(POINTS_PER_REDBRICK);
-        }
-
-        CompletionPointInfo_ReCalculate[1] += POINTS_PER_CHALLENGE;
-        if (save->reserved_0x7 != 0) {
-            AddToCompletionPoints(POINTS_PER_CHALLENGE);
-            if (GOLDBRICKFORCHALLENGE != 0) {
-                AddToGoldBricks();
-            }
-        }
-    }
-
-    if (MissionSys != NULL && MissionSys->count != 0) {
-        for (i32 index = 0; index < MissionSys->count; ++index) {
-            CompletionPointInfo_ReCalculate[3] += POINTS_PER_MISSION;
-            if (Game.mission_save.completed[index] != 0) {
-                AddToCompletionPoints(POINTS_PER_MISSION);
-                AddToGoldBricks();
-            }
-        }
-    }
-
-    for (i32 index = 0; index < EPISODECOUNT; ++index) {
-        CompletionPointInfo_ReCalculate[0] += POINTS_PER_SUPERSTORY;
-        if ((Game.episode_save[index].flags & SAVE_SUPERSTORY_COMPLETE) != 0) {
-            AddToCompletionPoints(POINTS_PER_SUPERSTORY);
-            if (GOLDBRICKFORSUPERSTORY != 0) {
-                AddToGoldBricks();
-            }
-        }
-    }
-
-    for (i32 index = 0; index < 44; ++index) {
-        CompletionPointInfo_ReCalculate[4] += POINTS_PER_CHEAT;
-        if ((Game.extra_purchased_bits[index >> 5] & (1U << (index & 31))) != 0) {
-            AddToCompletionPoints(POINTS_PER_CHEAT);
-        }
-    }
-
-    for (i32 index = 0; index < SHOPHINTCOUNT; ++index) {
-        HINT_s *hint = Hint_FindHint(HintTab[index]);
-        if (hint == NULL || hint->shop_price == 0) {
-            continue;
-        }
-        CompletionPointInfo_ReCalculate[5] += POINTS_PER_HINT;
-        if ((Game.shop_hint_purchased_bits[index >> 5] & (1U << (index & 31))) != 0) {
-            AddToCompletionPoints(POINTS_PER_HINT);
-        }
-    }
-
-    for (i32 index = 0; index < SHOPGOLDBRICKS; ++index) {
-        CompletionPointInfo_ReCalculate[6] += POINTS_PER_GOLDBRICK;
-        if ((Game.shop_gold_brick_purchased_bits & (1U << (index & 31))) != 0) {
-            AddToCompletionPoints(POINTS_PER_GOLDBRICK);
-            AddToGoldBricks();
-        }
-    }
-}

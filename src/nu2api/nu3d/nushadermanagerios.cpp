@@ -1,15 +1,16 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "nu2api/nucore/nuvuvec.hpp"
-#include "nu2api/nucore/nuapi.h"
 #include "nu2api/nu3d/android/nutex_android.h"
 #include "nu2api/nu3d/ShaderManagerOpenGL.h"
 #include "gamelib/util/gamelib_util_types.h"
-#include "nushader_plain.h"
+#include "nu2api/nu3d/nushader_plain.h"
 #include "nu2api/nu3d/nu2api_nu3d_types.h"
-#include "nushader.h"
-#include "nushader_internal.h"
+#include "nu2api/nu3d/nushader.h"
+#include "nu2api/nu3d/nushader_internal.h"
 #include "nu2api/nu3d/nutex.h"
-#include "nu2api/nu3d/android/nurndr_android.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 
 #include <GLES2/gl2.h>
@@ -20,6 +21,8 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nu3d_includes.h"
+#include "nu2api/nucore/nucore_includes.h"
 
 // iOS/GLES shader manager (retail nushadermanagerios.cpp): material
 // adaptation for the mobile uber-shader, redirect-table lookups and program
@@ -27,10 +30,6 @@
 
 using nu2api::HashRedirect;
 using nu2api::LoadedUniqueShaderRecord;
-
-extern i32 file_criticalsection;
-extern i32 RemoveNormalMaps;
-extern i32 RemoveDirectionalMaps;
 
 // Redirect / preloaded tables (nudlist_tables_gen.inc, built into
 // nushadermanager_gen.cpp).
@@ -161,6 +160,18 @@ bool LookupHash(u32 key, u32 *value, HashRedirect *redirects, u32 count) {
             return true;
         }
     }
+}
+
+extern HashRedirect g_shaderProgramRedirects[417];
+
+ShaderObjectKey NuIOS_GetShaderProgramKey(ShaderObjectKey const &key) {
+    ShaderObjectKey result;
+    u32 redirected_key __attribute__((aligned(16)));
+    if (LookupHash(key.key, &redirected_key, g_shaderProgramRedirects, 417))
+        result.key = redirected_key;
+    else
+        result.key = key.key;
+    return result;
 }
 
 ShaderManagerOpenGL::ShaderManagerOpenGL(VirtualStackAllocator &) {
@@ -318,7 +329,6 @@ void ShaderManagerOpenGL::setElementfv(SHADERSEMANTIC_enum semantic, i32, float 
 }
 
 void ShaderManagerOpenGL::setElementsfv(SHADERSEMANTIC_enum semantic, i32, i32, float const *values) {
-    // The original Android implementation ignores the element range.
     nu2api::ShaderUniformRecord &uniform = nu2api::g_shaderUniforms[semantic];
     const i32 count = static_cast<i32>(uniform.data.metadata[0]);
     if (count <= 4) {
@@ -327,10 +337,10 @@ void ShaderManagerOpenGL::setElementsfv(SHADERSEMANTIC_enum semantic, i32, i32, 
 }
 
 void ShaderManagerOpenGL::setElementsfv_transpose(SHADERSEMANTIC_enum semantic, i32, i32, float const *values) {
-    // The original Android implementation ignores the element range.
     nu2api::ShaderUniformRecord &uniform = nu2api::g_shaderUniforms[semantic];
     const i32 count = static_cast<i32>(uniform.data.metadata[0]);
     if (count <= 4) {
         std::memcpy(uniform.data.values, values, static_cast<size_t>(count) << 4);
     }
 }
+

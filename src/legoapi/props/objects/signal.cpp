@@ -19,15 +19,12 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nuvec.h"
 
 #include <string.h>
 
-extern "C" void NuTexAnimSetSignals(u32 signals);
-extern "C" void NewTerrPlatformsOff(void);
 void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
 static void Signal_SetVisibility(SIGNAL *signal, i32 visible);
@@ -478,6 +475,4 @@ void Signal_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     }
 }
 
-void SetTexAnimSignals() {
-    NuTexAnimSetSignals(texanimbits);
-}
+void SetTexAnimSignals();

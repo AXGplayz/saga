@@ -1,44 +1,24 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/menus/core/panel.h"
-#include "legoapi/ai/core/legoai.h"
 #include "legoapi/items/objects/objectsall.h"
-#include "legoapi/items/collect/torpedo.h"
-#include "legoapi/actions/movement/carrying.h"
-#include "legoapi/actions/combat/hits.h"
-#include "legoapi/actions/character/streaks.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/render/core/render.h"
-#include "legoapi/render/core/rtl.h"
 #include "legoapi/audio/audio.h"
-#include "legoapi/gizmos/transport/grapples.h"
 #include "legoapi/gizmos/transport/gizportal.h"
-#include "legoapi/gizmos/door/zipups.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/menus/screens/arcade.h"
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
-#include "gameapi/edtools/edfile.h"
 #include "gameapi/edtools/edui.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
 #include "legoapi/world/mission.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/render/fx.h"
-#include "legoapi/render/core/terrain.h"
-#include "legoapi/render/light/lighting.h"
-#include "legoapi/render/light/shadow.h"
-#include "legoapi/render/fx/parts.h"
 #include "legoapi/render/fx/spline_position.h"
-#include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nuvec.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/world/level.h"
-#include "legoapi/world/mission.h"
-#include "legoapi/props/objects/techno.h"
 #include "legoapi/world/world.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/gameanim.h"
@@ -47,100 +27,50 @@
 #include "legoapi/characters/core/charconfig.h"
 #include "legoapi/menus/core/gamehint.h"
 #include "legoapi/menus/core/gamemessages.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/trigger/gizspecial.h"
 #include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/gizmos/door/spinner.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/menus/screens/shop.h"
 #include "legoapi/menus/screens/store.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/props/system/socksys.h"
-#include "legoapi/world/area.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
-#include "legoapi/core/input/timing.h"
-#include "legoapi/gizmos/transport/grapples.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nurndr.h"
-#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nu3d/nuportal.h"
-#include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "legoapi/audio/sfx.h"
-#include "nu2api/nuandroid/ios_graphics.h"
-#include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nulgtlaser.h"
-#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/nuhgobj.h"
 #include <stdio.h>
 #include <string.h>
+#include "legoapi/actions/character/legoapi_tag.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/actions/character/tagging.h"
+#include "legoapi/actions/movement/climbing.h"
+#include "legoapi/actions/movement/pushing.h"
+#include "legoapi/ai/game/creature.h"
+#include "legoapi/characters/motion/move.h"
+#include "nu2api/nucore/nu2api_nucore_misc.h"
 
 // Character takeover and tag swapping (original legoapi_tag.cpp translation unit).
 
-void GetTakeOverPos(GameObject_s *, NUVEC *);
 void RegisterTakeOverObject(GameObject_s *object);
-void TakeOverGameObject2(GameObject_s *, GameObject_s *, i32);
-void TakeOver2GetIn(GameObject_s *, GameObject_s *);
-void Move_BEAST(GameObject_s *);
-void Hint_SetComplete(i32);
-void PlayLandSfx(GameObject_s *, i32, i32);
-void NewBuzz(nupad_s *, f32, i32);
-i32 RotDiff(u16, u16);
-f32 SpeederChaseATATInOutMul(NUVEC *, NUVEC *);
 i32 players_cannot_exit_speeder;
-extern i16 id_ATAT, id_SPEEDERBIKE;
-extern "C" i16 id_GRABCONTROL, id_GRABR2CONTROL;
-
-void AICreatureResumeScript(GameObject_s *);
-f32 SpeederChaseATATInOutMul(NUVEC *, NUVEC *);
 
 static NUVEC SpeederChaseATATExitLandPos = {-159.0f, 6.869999885559082f, -17.600000381469727f};
 
-
-
-extern i16 id_ATAT;
-extern i16 id_ATST;
-extern i16 id_ATST_LOWRES;
-extern u8 PlayerRGB[2][3];
-extern i16 id_BUGGY, id_GYROCOPTER, id_BANTHA, id_BOMARRMONK, id_DEWBACK;
-extern i16 id_LANDSPEEDER, id_FLASHSPEEDER, id_TAUNTAUN, id_SPEEDERBIKE;
-extern i16 id_HEAVYREPEATINGCANNON, id_BIGGUN, id_TROOPERCANNON, id_STAP2, id_CLONEWALKER;
-f32 SpeederChaseATATInOutMul(NUVEC *, NUVEC *);
-void PlayJumpSfx(GameObject_s *, i32);
-void ReleaseForce(GameObject_s *, i32);
-void ReleasePush(GameObject_s *);
-void Player_ResetContexts(PLAYERPACKET_s *);
-void SetWeaponIn(GameObject_s *);
-void GameCam_Blend(GAMECAMERA_s *, f32, f32, i32);
-void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
-void NewBuzz(nupad_s *, f32, i32);
-void Hint_SetComplete(i32);
-
-
-void ResetForceGlow(PLAYERPACKET_s *);
-extern i32 CUTSKIPLOCK;
-void GizForce_ResetLOS(GameObject_s *);
-void AICreatureResumeScript(GameObject_s *);
-
+extern i16 id_BUGGY, id_GYROCOPTER, id_BOMARRMONK;
+extern i16 id_LANDSPEEDER;
+extern i16 id_HEAVYREPEATINGCANNON, id_TROOPERCANNON;
 extern GameObject_s *player_tag_to;
 extern GameObject_s *player_tag_from;
-extern f32 player_tag_timer;
-extern i32 do_player_tag;
 static i32 Tag_Mode = 2;
 void (*Tag_DrawIconFn)(GameObject_s *);
-
-
-extern i16 id_LUKESKYWALKERDAGOBAH;
-i32 TakeOverYodaSeekDistanceHack(GameObject_s *, GameObject_s *, NUVEC *);
 
 struct TAGSCRIPTSTATE {
     AISCRIPTPROCESS processor;
@@ -153,27 +83,60 @@ DECOMP_ASSERT(offsetof(GameObject_s, takeover_target) == 0xeb0, "AI takeover tar
 DECOMP_ASSERT(offsetof(GameObject_s, field_0xeb4) == 0xeb4, "Object callback ABI");
 DECOMP_ASSERT(offsetof(GameObject_s, current_hp) == 0x108b, "Tag signed health ABI");
 
-
-
-
-extern i32 VehicleArea;
-extern i32 menu_i_pack;
-extern char *ASCII_DOWN;
-void CollideGameObjects(WORLDINFO_s *world);
-i32 GetMenuID();
+extern "C" i32 menu_i_pack;
 void Hint_CancelCurrent();
 i32 InCollectList_Index(i32, COLLECTID *, i32);
 i32 NuIOS_AreInAppPurchasesAvailable();
 i32 NuIOS_CanMakeInAppPurchases();
 struct NuIOS_InAppProduct;
-i32 NuIOS_GetInAppProductByID(char *, NuIOS_InAppProduct *);
 extern i16 tBUNDLESAVINGSAVAILABLE;
 extern f32 text3d_height;
 void GameCam_HitRoll();
-void GameCam_Reset(GAMECAMERA_s *);
-void RememberPlayerIDs(i32, i32, i32);
-void Tag_NewTransfer(GameObject_s *, GameObject_s *);
 
+// GCC otherwise rewrites this once-called helper; the original has a separate local body.
+static __attribute__((noinline)) GameObject_s *Tag_FindGameObject_TRANSFER(GameObject_s *object) {
+    f32 nearest_distance = object->character_context == 0x17 ? 1.44f : 0.48999998f;
+    const i32 count = Tag_Mode == 3 ? HIGHGAMEOBJECT : 8;
+    GameObject_s *nearest = NULL;
+    for (i32 index = 0; index < count; ++index) {
+        GameObject_s *candidate = Tag_Mode == 3 ? &Obj[index] : Player[index];
+        if (candidate == NULL || (candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 || candidate == object ||
+            candidate->apiobj.field_0x287 != 0 || (candidate->tag_context_flags & 2) != 0) {
+            continue;
+        }
+        const i8 context = candidate->character_context;
+        if (context == 0x17 || context == 0x3d || (CInfo[context].flags & 0x8000) != 0 ||
+            ((candidate->field_0xf00 & 2) != 0 && object->id != id_LUKESKYWALKERDAGOBAH)) {
+            continue;
+        }
+        NUVEC direction;
+        const f32 distance = NuVecDistSqr(&object->apiobj.position, &candidate->apiobj.position, &direction);
+        if (distance < nearest_distance) {
+            NuVecRotateY(&direction, &direction, -static_cast<u32>(object->apiobj.field_0x276));
+            if (direction.z < 0.0f) {
+                nearest_distance = distance;
+                nearest = candidate;
+            }
+        }
+    }
+    return nearest;
+}
+
+static i32 Tag_FindNextPlayer(GameObject_s *object) {
+    i16 index = object->apiobj.field_0x289;
+    for (i32 remaining = HIGHGAMEOBJECT - 1; remaining > 0; --remaining) {
+        if (++index == HIGHGAMEOBJECT)
+            index = 0;
+        GameObject_s *candidate = &Obj[index];
+        if (candidate == object || candidate == NULL || (candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
+            candidate->apiobj.field_0x287 != 0 || candidate->apiobj.field_0x27c == -1 ||
+            (candidate->tag_flags & 2) != 0 || (candidate->field_0xf00 & 2) != 0 ||
+            (CInfo[candidate->character_context].flags & 0x800) != 0)
+            continue;
+        return candidate->apiobj.field_0x27c;
+    }
+    return -1;
+}
 
 static void DrawPackButton(GAMEMESSAGE_s *message, nuvec_s *position, float scale) {
     struct InAppProductData {
@@ -293,35 +256,6 @@ static void TakeOver_SetAction(GameObject_s *rider, GameObject_s *vehicle) {
 
 void Tag_SetMode(i32 mode) {
     Tag_Mode = mode;
-}
-
-// GCC otherwise rewrites this once-called helper; the original has a separate local body.
-static __attribute__((noinline)) GameObject_s *Tag_FindGameObject_TRANSFER(GameObject_s *object) {
-    f32 nearest_distance = object->character_context == 0x17 ? 1.44f : 0.48999998f;
-    const i32 count = Tag_Mode == 3 ? HIGHGAMEOBJECT : 8;
-    GameObject_s *nearest = NULL;
-    for (i32 index = 0; index < count; ++index) {
-        GameObject_s *candidate = Tag_Mode == 3 ? &Obj[index] : Player[index];
-        if (candidate == NULL || (candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 || candidate == object ||
-            candidate->apiobj.field_0x287 != 0 || (candidate->tag_context_flags & 2) != 0) {
-            continue;
-        }
-        const i8 context = candidate->character_context;
-        if (context == 0x17 || context == 0x3d || (CInfo[context].flags & 0x8000) != 0 ||
-            ((candidate->field_0xf00 & 2) != 0 && object->id != id_LUKESKYWALKERDAGOBAH)) {
-            continue;
-        }
-        NUVEC direction;
-        const f32 distance = NuVecDistSqr(&object->apiobj.position, &candidate->apiobj.position, &direction);
-        if (distance < nearest_distance) {
-            NuVecRotateY(&direction, &direction, -static_cast<u32>(object->apiobj.field_0x276));
-            if (direction.z < 0.0f) {
-                nearest_distance = distance;
-                nearest = candidate;
-            }
-        }
-    }
-    return nearest;
 }
 
 i32 TagCode(GameObject_s *source, GameObject_s *destination, i32 takeover, i32 blend_camera, i32) {
@@ -695,22 +629,6 @@ void TakeOver2GetIn(GameObject_s *rider, GameObject_s *vehicle) {
     PlayJumpSfx(rider, 0);
 }
 
-static i32 Tag_FindNextPlayer(GameObject_s *object) {
-    i16 index = object->apiobj.field_0x289;
-    for (i32 remaining = HIGHGAMEOBJECT - 1; remaining > 0; --remaining) {
-        if (++index == HIGHGAMEOBJECT)
-            index = 0;
-        GameObject_s *candidate = &Obj[index];
-        if (candidate == object || candidate == NULL || (candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
-            candidate->apiobj.field_0x287 != 0 || candidate->apiobj.field_0x27c == -1 ||
-            (candidate->tag_flags & 2) != 0 || (candidate->field_0xf00 & 2) != 0 ||
-            (CInfo[candidate->character_context].flags & 0x800) != 0)
-            continue;
-        return candidate->apiobj.field_0x27c;
-    }
-    return -1;
-}
-
 void Tag_Check(GameObject_s *object) {
     NUVEC difference;
     DECOMP_ASSERT(offsetof(GameObject_s, tag_player_index) == 0x7b4, "Tag player index ABI");
@@ -1039,3 +957,4 @@ __attribute__((force_align_arg_pointer)) void TakeOverCode(GameObject_s *object,
         }
     }
 }
+

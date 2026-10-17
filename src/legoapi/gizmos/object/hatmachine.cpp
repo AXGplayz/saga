@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/gizmos/object/hatmachine.h"
 
 #include "decomp.h"
@@ -9,7 +12,6 @@
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/animlist.h"
 #include "legoapi/characters/motion/gameanim.h"
-#include "legoapi/characters/motion.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/gizmo/base/HatMachineObjectInterface.h"
@@ -20,7 +22,6 @@
 #include "legoapi/render/light/shadow.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
-#include "legoapi/menus/core/gamehint.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nurndr.h"
@@ -33,16 +34,13 @@
 #include "nu2api/numath/nuvec.h"
 
 #include <string.h>
+#include "legoapi/actions/movement/climbing.h"
+#include "legoapi/ai/core/gameai.h"
+#include "legoapi/items/objects/game_obj.h"
 
 static const NUVEC HatMachine_HatOffset = {0.0f, 0.3f, 0.0f};
 
-extern u8 show_hatmachine_hint;
-extern i32 editor_active;
-extern "C" i16 id_PRINCESSLEIABOUSHH;
-void LoseHelmet(GameObject_s *, i32, i32);
-void FastWeaponIn(GameObject_s *, i32);
-void AlertSurroundingCreatures(GameObject_s *, NUVEC *);
-void MakeBaddiesForgetAboutParty(i32);
+extern "C" i32 editor_active;
 
 enum HATMACHINE_ANIMATION_STATE {
     HATMACHINE_ANIMATION_IDLE = 0,
@@ -61,8 +59,6 @@ struct HATMACHINEPROGRESS {
 };
 
 i32 hatmachine_gizmotype_id = -1;
-
-static void HatMachine_Reset(HATMACHINE_s *machine);
 
 static i32 HatMachine_GetMaxGizmos(void *world_ptr) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
@@ -862,3 +858,4 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
     }
     object->field_0x788 = NULL;
 }
+

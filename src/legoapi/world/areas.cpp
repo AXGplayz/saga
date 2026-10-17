@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "batman.h"
 #include <stdlib.h>
@@ -11,12 +14,8 @@
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/gizmo/base/gizmessage.h"
 #include "legoapi/gizmo/base/gizmo.h"
-#include "legoapi/gizmo/object/takeoverobjects.h"
 #include "legoapi/items/base/apiobject.h"
-#include "legoapi/items/base/collection.h"
-#include "legoapi/items/collect/minikits.h"
 #include "legoapi/items/collect/torpedo.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/render/fx/particles.h"
 #include "legoapi/world/level.h"
@@ -24,7 +23,6 @@
 #include "legoapi/world/areas.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/mission.h"
-#include "legogame/game.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/screens/gamestatus_lsw.h"
@@ -33,8 +31,44 @@
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numusic/numusic.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edui.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nufile/nufile.h"
+#include <new>
+#include <float.h>
+#include <stdio.h>
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/render/core/render.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nusound/nusound.h"
+#include "legoapi/world/world.h"
 
 i32 openlevels = 0;
+
+#if defined(__i386__) && defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+#if defined(__i386__) && defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
+struct APICHARACTERMODELLIST_s;
+
+AREADATA *ADataList = NULL;
+
+i32 AREA_DEFAULTBONUSTIMETRIALTIME = 300;
+i32 AREA_DEFAULTCHALLENGETIME = 600;
+
+struct bgprocinfo_s;
 
 static void AddToModelList(APICHARACTERMODELLIST_s *list, i32 *count, i32 capacity, i32 character_id, i32 load_model,
                            EXTRAMODEL *extra_models) {
@@ -60,53 +94,6 @@ static void AddToModelList(APICHARACTERMODELLIST_s *list, i32 *count, i32 capaci
             }
         }
     }
-}
-
-void Areas_OpenAll(i32 mode) {
-    i32 area_index;
-
-    if (mode != 0 && !Store_IsPackUnlocked(STORE_PACK_CHALLENGE)) {
-        return;
-    }
-
-    for (area_index = 0; area_index < AREACOUNT; area_index++) {
-        if ((ADataList[area_index].flags & AREAFLAG_MINIKIT) != 0) {
-            if ((ADataList[area_index].episode_index == AREA_EPISODE_II &&
-                 !Store_IsPackUnlocked(STORE_PACK_EPISODE_II)) ||
-                (ADataList[area_index].episode_index == AREA_EPISODE_III &&
-                 !Store_IsPackUnlocked(STORE_PACK_EPISODE_III)) ||
-                (ADataList[area_index].episode_index == AREA_EPISODE_IV &&
-                 !Store_IsPackUnlocked(STORE_PACK_EPISODE_IV)) ||
-                (ADataList[area_index].episode_index == AREA_EPISODE_V &&
-                 !Store_IsPackUnlocked(STORE_PACK_EPISODE_V)) ||
-                (ADataList[area_index].episode_index == AREA_EPISODE_VI &&
-                 !Store_IsPackUnlocked(STORE_PACK_EPISODE_VI))) {
-                continue;
-            }
-        } else if ((ADataList[area_index].flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_SUPER_BONUS_AREA)) ==
-                       AREAFLAG_BONUS_AREA &&
-                   ADataList[area_index].episode_index != AREA_EPISODE_NONE &&
-                   !Store_IsPackUnlocked(STORE_PACK_ARCADE)) {
-            continue;
-        }
-
-        if (mode != 0) {
-            Game.area_save[area_index].reserved_0x7 = 1;
-        } else {
-            Game.area_save[area_index].complete = 1;
-            Game.area_save[area_index].area_complete = 1;
-            if (ADataList[area_index].challenge_trial_time != 0) {
-                Game.area_save[area_index].challenge_trial_time =
-                    static_cast<f32>(static_cast<u32>(ADataList[area_index].challenge_trial_time)) - 0.5f;
-            }
-        }
-    }
-
-    Game.field_0x2[1] = 1;
-    if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
-        Hub_LockUnlockDoors(WORLD);
-    }
-    ReCalculateCompletionPoints();
 }
 
 AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest) {
@@ -908,30 +895,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     }
 }
 
-void ClearUpAreaData() {
-    i32 object_index;
-
-    if (HIGHGAMEOBJECT > 0) {
-        for (object_index = 0; object_index < HIGHGAMEOBJECT; object_index++) {
-            GameObject_s *obj = &Obj[object_index];
-            if ((obj->apiobj.field_0x1f8 & 1) != 0) {
-                FreeTorpedoPacket((TORPEDOPACKET_s **)&obj->torpedo);
-                RemoveGameObject(&Obj[object_index], 1);
-            }
-        }
-    }
-    if (Area != -1 && Area == last_area) {
-        return;
-    }
-    if (Customiser_AccessoriesLoaded == 2) {
-        Customiser_RestoreModelTextureIDs(CharacterCustomiser);
-    } else if (Customiser_AccessoriesLoaded == 1) {
-        Customiser_DumpAccessories(CharacterCustomiser);
-    }
-    Customiser_AccessoriesLoaded = 0;
-    APIDumpCharacterModels(0);
-    IconScenes_Dump();
-    CharScenes_AreaDump();
+void DumpAreaData(i32 mode, i32) {
     if (big_icon_scene != NULL) {
         NuGScnRemove(big_icon_scene);
     }
@@ -944,25 +908,28 @@ void ClearUpAreaData() {
         NuGScnRemove(vehicle_scene);
     }
     vehicle_scene = NULL;
+    if (Customiser_AccessoriesLoaded == 2) {
+        Customiser_RestoreModelTextureIDs(Game_Customiser);
+    } else if (Customiser_AccessoriesLoaded == 1) {
+        Customiser_DumpAccessories(Game_Customiser);
+    }
+    Customiser_AccessoriesLoaded = 0;
+    IconScenes_Dump();
+    CharScenes_AreaDump();
+    APIDumpCharacterModels(mode);
     Particles_DumpAreaPage();
 }
 
-void ClearAreaProgress(i32 a, i32 b) {
-    for (i32 i = 0; i < 12; i++) {
-        ClearLevelProgress(i, NULL);
-    }
-    areaSuitBits = Game.initial_store_pack_flags;
-    if (b == 0 || a == -1) {
-        return;
-    }
-    AreaGlobals.values.field_0x14 = 0;
-    Game.area_save[a] = BackupGame.area_save[a];
+i32 AreaFromMiniKitID(i32 minikitId) {
+    i32 i;
 
-    AREADATA *area = &ADataList[a];
-    for (i32 i = 0; i < area->level_count; i++) {
-        i32 level_index = area->levels[i];
-        Game.level_records[level_index] = BackupGame.level_records[level_index];
+    for (i = 0; i < AREACOUNT; i++) {
+        if (ADataList[i].minikit_id == minikitId) {
+            return i;
+        }
     }
+
+    return -1;
 }
 
 void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
@@ -977,69 +944,16 @@ void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
     }
 }
 
-void NewArea() {
-    i32 i;
-    u8 area_ep;
-
-    LSW1 = 0;
-    LSW2 = 0;
-    if (WORLD != NULL && WORLD->area != NULL) {
-        i8 episode = static_cast<i8>(WORLD->area->episode_index);
-        if (episode >= 0) {
-            if (episode <= 2) {
-                LSW1 = 1;
-            } else {
-                LSW2 = 1;
-            }
+i32 Area_CharIDInCurrentList(i32 character_id) {
+    i32 result = -1;
+    if (CurrentCList != NULL) {
+        for (i32 index = 0; CurrentStoryCList[index].model_id != -1 && index != 64; ++index) {
+            if (CurrentStoryCList[index].model_id != character_id)
+                continue;
+            result = index;
+            break;
         }
     }
-    HIGHJUMPHEIGHT = (LSW1 != 0 || Arcade != 0) ? 1.14f : 0.75f;
-    ClearAreaProgress(Area, 0);
-    if (WORLD->level_progress != NULL && (WORLD->level_progress->flags & 1) == 0) {
-        WORLD->level_progress->flags |= 1;
-        WORLD->level_progress->data = WORLD->progress_data;
-    }
-    SuperCounters_Reset(Area);
-    AreaGlobals.values.field_0x10 = 0;
-    if (Area == -1) {
-        area_ep = 0;
-    } else {
-        area_ep = Game.area_save[Area].minikit_count;
-    }
-    AreaGlobals.values.field_0x0c = area_ep;
-    AreaGlobals.values.field_0x14 = area_ep;
-    Door_UseCutCam = 0;
-    AreaGlobals.values.field_0x00 = 0;
-    AreaGlobals.values.field_0x1c = 0;
-    AreaGlobals.values.field_0x08 = 0;
-    AreaGlobals.values.field_0x18 = 0;
-    AreaGlobals.values.arcade_player_kills[0] = 0;
-    AreaGlobals.values.arcade_player_kills[1] = 0;
-    AreaGlobals.values.arcade_ai_kills[0] = 0;
-    AreaGlobals.values.arcade_ai_kills[1] = 0;
-    BuildUpTotal = 0;
-    BuildUpDone = 0;
-    if (WORLD->area == HOTHBATTLE_ADATA) {
-        ResetMinikitCounter();
-    }
-    for (i = 0; i < 8; i++) {
-        PlayerProgress[i].hitpoints = DEFAULT_PLAYERHITPOINTS;
-        if (Player[i] != NULL) {
-            Player[i]->current_hp = Player[i]->hitpoints;
-        }
-    }
-    ResetTimer(&AreaTimer, 0.0f);
-    memcpy(&BackupGame, &Game, sizeof(GAMESAVE_s));
-    NewAreaMusicChanges();
-    VehicleAreaRememberSpeed = 0.0f;
-    ClearTakeOverObjectSys();
-    BonusScore[0] = OldBonusScore[0];
-    BonusScore[1] = OldBonusScore[1];
-    BonusCoinTotal = 0;
-    Door_Last = NULL;
-    Door_Reset();
-    LevelChange = 1;
-    BombGenerator_PlayerBomb[0] = 0;
-    BombGenerator_PlayerBomb[1] = 0;
-    Lap = 1;
+    return result;
 }
+

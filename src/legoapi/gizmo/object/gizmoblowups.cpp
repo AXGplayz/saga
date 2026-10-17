@@ -30,7 +30,6 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nurndrstat.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/nucore/nuanim3.h"
@@ -38,10 +37,13 @@
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
-#include "nu2api/numath/nurand.h"
 #include "legoapi/core/input/qrand.h"
 
 #include <string.h>
+#include "legoapi/gizmo/object/gizmoblowups_types.h"
+#include "legoapi/items/collect/bolts.h"
+#include "legoapi/items/fx/explosions.h"
+#include "legoapi/render/fx/edsplines.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -58,54 +60,17 @@ f32 GizmoBlowUpOpponent_Range2;
 i32 GizmoBlowUpOpponent_Behind;
 i32 (*GizmoBlowUp_NoTargetFn)(WORLDINFO_s *, GameObject_s *) = NULL;
 
-void GizBlowup_DeleteTerrain();
-void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *blowup);
-void GizmoBlowUp_AddEffects(NUVEC *position, GIZMOBLOWUP_s *blowup, i32 count, i32 flags, GameObject_s *object);
-void GameAntinode_UnregisterAntiNode(GAMEANTINODESYS_s *system, GAMEANTINODE_s *node);
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special);
-i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup);
-void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup);
-
-void GizmoBlowupGenDecalMatrix(GIZMOBLOWUP_s *, NUMTX *, i32);
-void GizmoBlowupGenShadowMatrix(GIZMOBLOWUP_s *, NUMTX *);
-
 i32 MAXBLOWUPRANDSPANG = 60;
-extern NUVEC v010;
 extern ADDPART_s Default_ADDPART;
 extern "C" PART_s *AddPart(ADDPART_s *);
 i32 PartDraw_Flickerer(PART_s *);
 void PartStop_Flickerer(PART_s *);
-void GameCam_NewShake(GAMECAMERA_s *, f32, f32, f32);
-void NewRumbleAllPlayers(f32, f32, i32, i32);
-void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
 i32 ReleaseHearts();
-EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
 
 void Bolt_AddDeflectedBolt(BOLT_s *, nuvec_s *, nuvec_s *, unsigned char *);
 void Bolt_End(BOLT_s *, i32);
-void Bolt_PlayHitSfx(BOLT_s *);
 
-i16 GetGenericGoon(i32);
-static i32 Blowup_GetMaxGizmos(void *world_ptr);
-static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *);
-void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float);
-void GizmoBlowupLateUpdate(void *world_ptr, void *, float);
-void GizmoBlowupBurstDraw(void *world_ptr, void *, float);
-static char *Blowup_GetGizmoName(GIZMO *gizmo);
-static i32 Blowup_GetOutput(GIZMO *gizmo, i32 output_index, i32);
-static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index);
-static i32 Blowup_GetNumOutputs(GIZMO *gizmo);
-static void Blowup_Activate(GIZMO *gizmo, i32 enabled);
-static void Blowup_SetVisibility(GIZMO *gizmo, i32 visible);
-i32 Blowup_GetVisibility(GIZMO *gizmo);
-static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo);
-static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end);
-static void Blowup_ClearProgress(void *, void *progress_ptr);
-static void Blowup_StoreProgress(void *world_ptr, void *, void *progress_ptr);
 static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr);
-void *gizmoblowup_reservebuffers(void *world_ptr);
-i32 gizmoblowup_Load(void *world_ptr, void *);
-
 static i32 gizmoblowupnametable_numids;
 static char gizmoblowupnametable[32][32];
 
@@ -124,70 +89,12 @@ extern "C" {
 
 // Definitions from the original gizmoblowups translation unit.
 
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special);
-void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data);
-
-enum GIZMOBLOWUP_OUTPUT_FLAGS : u8 {
-    GIZMOBLOWUP_OUTPUT_BLOWN_UP = 1 << 0,
-    GIZMOBLOWUP_OUTPUT_PUNCHED = 1 << 1,
-};
-
-enum GIZMOBLOWUP_VISIBILITY_FLAGS : u8 {
-    GIZMOBLOWUP_VISIBLE = 1 << 6,
-    GIZMOBLOWUP_DRAWN = 1 << 7,
-};
-
-enum GIZMOBLOWUP_STATE_FLAGS : u8 {
-    GIZMOBLOWUP_STATE_ACTIVE = 1 << 0,
-    GIZMOBLOWUP_STATE_DELAY_ACTIVE = 1 << 1,
-    GIZMOBLOWUP_STATE_REPEAT_ANIMATION = 1 << 3,
-    GIZMOBLOWUP_STATE_ANIMATION_PLAYING = 1 << 4,
-    GIZMOBLOWUP_STATE_REPEATING = 1 << 6,
-    GIZMOBLOWUP_STATE_ACTIVATED = 1 << 7,
-};
-
-enum GIZMOBLOWUPTYPE_RUNTIME_FLAGS : u8 {
-    GIZMOBLOWUPTYPE_ANIMATION_UPDATED = 1 << 0,
-};
-
-enum GIZMOBLOWUPTYPE_ANIMATION_FLAGS : u8 {
-    GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM = 1 << 5,
-};
-
-enum GIZMOBLOWUP_DRAW_FLAGS : u32 {
-    GIZMOBLOWUP_DRAW_CUSTOM_TRANSFORM = 0x00000010,
-    GIZMOBLOWUP_DRAW_HIDE_DECAL = 0x00000400,
-    GIZMOBLOWUP_DRAW_RESET_SHADOW_MAP = 0x00020000,
-    GIZMOBLOWUP_DRAW_PROJECT_ONLY = 0x00800000,
-    GIZMOBLOWUP_DRAW_REFLECTION = 0x40000000,
-};
-
-enum GIZMOBLOWUP_DRAW_STATUS_FLAGS : u32 {
-    GIZMOBLOWUP_DRAW_STATUS_TRANSFORM_READY = 0x00808000,
-};
-
 static char *Blowup_OutputName[] = {"Blownup", "Punched", "Plugging"};
 
 i32 blowup_gizmotype_id = -1;
 
-struct BLOWUPPROGRESS_s {
-    u32 blown_up[16];
-    u32 activated[16];
-    u32 visible[16];
-    u32 secondary_output[16];
-};
-DECOMP_ASSERT(sizeof(BLOWUPPROGRESS_s) == 0x100, "BLOWUPPROGRESS_s ABI");
-
-void GizBlowup_DeleteTerrain();
-void GizBlowup_InitTerrain();
-void GizBlowup_DeleteSingleTerrain(GIZMOBLOWUP_s *blowup);
-i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup);
-extern AREADATA_s *PODSPRINT_ADATA;
-
 extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
 extern f32 TargetDist_Near2, TargetDist_Mid2;
-extern i32 ShadowMode;
-DECOMP_ASSERT(offsetof(WORLDINFO_s, blowup_target_candidates) == 0x50d4, "Blowup target candidate-list ABI");
 
 static i32 Blowup_GetMaxGizmos(void *world_ptr) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
@@ -1149,14 +1056,6 @@ i32 GizBlowup_InitSingleTerrain(GIZMOBLOWUP_s *blowup) {
             return -1;
     }
     PlatInstRotate(blowup->field_0x10c, 1);
-    return 1;
-}
-
-i32 SetGizmoBlowUpTarget(GameObject_s *object, GIZMOBLOWUP_s *blowup) {
-    object->attack_target_position = blowup->mid_position;
-    object->attack_target_velocity = v000;
-    object->attack_blowup_target = VehicleArea != 0 ? NULL : blowup;
-    object->field_0xe21 |= 8;
     return 1;
 }
 

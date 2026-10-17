@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
@@ -10,131 +13,235 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/numath/numtx.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
+#include "legoapi/world/level.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/numusic/sfx.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include <string.h>
+#include <stdio.h>
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameframework/saveload.h"
+#include "legoapi/world/mission.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nufile/nufile.h"
+#include "legoapi/items/fx/explosions.h"
+#include "legoapi/props/objects/zipup.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
 
-i32 LineIntersectSphere(NUVEC *, NUVEC *, NUVEC *, f32, f32 *);
-bool LineIntersectCircle(NUVEC *, NUVEC *, NUVEC *, f32);
-void Game_KillPart(PART_s *part, i32 reason);
-extern "C" void NewPartRotation(PART_s *part);
-extern f32 guided_life;
-extern f32 guided_start_time;
-extern i32 guided_rotate_speed;
-extern f32 guided_speed;
+struct spacelevel_s;
 
-BOLT_s *FindIncomingBolt(GameObject_s *object, i32 exclude_players, i32 mark_direct_hit) {
-    BOLT_s *nearest = NULL;
-    f32 radius = object->apiobj.field_0x1e0 > object->apiobj.field_0x1dc ? object->apiobj.field_0x1e0
-                                                                         : object->apiobj.field_0x1dc;
-    const f32 radius_squared = radius * radius;
-    f32 nearest_distance = 1.0e8f;
-    BOLT_s *bolts = Bolt;
-    for (BOLT_s *bolt = bolts; bolt != bolts + 32; ++bolt) {
-        if (bolt->active == 0)
-            continue;
-        if (exclude_players != 0 && bolt->owner != NULL && (bolt->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            bolt->owner->apiobj.field_0x287 == 0 && bolt->owner->apiobj.field_0x27c != -1)
-            continue;
-        f32 time = TouchHacks::TouchControlsActive ? 1.5f : 0.5f;
-        f32 travel_squared = time * bolt->speed;
-        travel_squared *= travel_squared;
-        f32 distance = NuVecDistSqr(&bolt->position, &object->apiobj.collision_position, NULL);
-        if (distance < travel_squared &&
-            LineIntersectSphere(&bolt->position, &bolt->field_0xac, &object->apiobj.collision_position, radius_squared,
-                                NULL) &&
-            distance < nearest_distance) {
-            nearest = bolt;
-            nearest_distance = distance;
+static void UpdateBolt_Geonosian(BOLT_s *);
+static void EndBolt_EwokTorpedo(BOLT_s *);
+
+#include "legoapi/items/collect/bolttypes_lsw.inc"
+
+extern "C" void PlaySfx(char *, NUVEC *);
+
+__attribute__((force_align_arg_pointer)) void Bolt_AddDeflectedBolt(BOLT_s *bolt, nuvec_s *direction, nuvec_s *normal,
+                                                                    unsigned char *processed);
+
+static __attribute__((noinline, noclone)) i32 Bolt_HitPlat(BOLT_s *bolt, u8 *hit_flags)
+    __asm__("_ZL12Bolt_HitPlatP6BOLT_sPhP11WORLDINFO_s.isra.38");
+
+static __used__ void UpdateBolt_Geonosian(BOLT_s *bolt);
+static __used__ void EndBolt_EwokTorpedo(BOLT_s *bolt);
+extern void (*FS_Callback)(char *, char *);
+
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+static __used__ void EndBolt_EwokTorpedo(BOLT_s *bolt) {
+    Detonate(&bolt->position, 0);
+}
+
+static __used__ void UpdateBolt_Geonosian(BOLT_s *bolt) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    i32 effect = world->debris_sys->entries[85].effect;
+    if (effect != -1)
+        AddVariableShotDebrisEffectTimed1(effect, &bolt->position, 60, FRAMETIME, 0, 0, NULL);
+}
+
+i32 BoltType_FindIDByCreature(GameObject_s *object, i32 fallback) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    if (object == NULL)
+        return fallback;
+    i32 id = object->id;
+    if (id == id_MILLENNIUMFALCON) {
+        if (world->area != VEHICLES_ADATA && object->bolt_fire_phase != 0)
+            return 9;
+        return 7 + (world->current_level == ASTEROIDCHASED_LDATA);
+    }
+    if (id == id_NABOOSTARFIGHTER || id == id_NABOOSTARFIGHTERLIME)
+        return 34;
+    if (id == id_ANAKINSSPEEDER || id == id_ANAKINSSPEEDER_GREEN || id == id_ZAMSSPEEDER)
+        return 11;
+    if (id == id_FLASHSPEEDER)
+        return 20;
+    if (id == id_XWING || id == id_SLAVE1)
+        return 6;
+    if (id == id_SPEEDERBIKE || id == id_SPEEDERBIKESNOW)
+        return 10;
+    if (id == id_PROBEDROID || id == id_SNOWSPEEDER)
+        return 11;
+    if (id == id_TIEFIGHTER || id == id_TIEINTERCEPTOR || id == id_TIEFIGHTERDARTH || id == id_TIEBOMBER ||
+        id == id_IMPERIALSHUTTLE) {
+        if (world == NULL)
+            return 12;
+        if (world->current_level == DEATHSTARBATTLED_LDATA)
+            return 13;
+        return 12 + 2 * (world->current_level == DOGFIGHTA_LDATA);
+    }
+    if (id == id_MINITIEFIGHTER || id == id_MINITIEINTERCEPTOR || id == id_MINITIEADVANCED || id == id_MINITIEBOMBER ||
+        id == id_MINIIMPERIALSHUTTLE || id == id_MINISITHINFILTRATOR || id == id_MINISOLARSAILOR || id == id_MINIATAT ||
+        id == id_MINISTARDESTROYER)
+        return 23;
+    if (id == id_MINIMILLENNIUMFALCON)
+        return object->bolt_fire_phase == 0 ? 21 : 22;
+    if (id == id_JEDISTARFIGHTERYELLOWEP3 || id == id_JEDISTARFIGHTERREDEP3) {
+        if (WORLD->area != NULL && WORLD->area == DOGFIGHT_ADATA)
+            return WORLD->lev_objs[0x12d].active == 0 ? 33 : 32;
+        return 33;
+    }
+    if (id == id_CATAPULT)
+        return 29;
+    if (object->apiobj.character_data->move_fn == Move_CANNON)
+        return 20;
+    if (GCDataList[id].uses_weapon_action == 8 || GCDataList[id].weapon_model == 22)
+        return 2;
+    if (id == id_BIGGUN)
+        return 20;
+    if (id == id_BOBAFETT || id == id_4LOM)
+        return 26;
+    if (id == id_TRAININGREMOTE)
+        return 3;
+    if (id == id_ATAT)
+        return 24;
+    if (id == id_ATST || id == id_CLONEWALKER)
+        return 4;
+    if (id == id_ATST_LOWRES)
+        return 25;
+    if (id == id_DROIDEKA || id == id_MINIDROIDEKA)
+        return 17;
+    if (id == id_STAP || id == id_STAP2)
+        return 0;
+    if (id == id_EWOK)
+        return Cheat_IsOn(0x29) != 0 ? 30 : 27;
+    if (id == id_WICKET)
+        return Cheat_IsOn(0x29) != 0 ? 31 : 28;
+    if (id == id_REPUBLICGUNSHIP || id == id_REPUBLICGUNSHIP_GREEN) {
+        if (WORLD->current_level == BONUS_GUNSHIPA_LDATA)
+            return 35;
+        if (WORLD->current_level == BONUS_GUNSHIPB_LDATA)
+            return 36;
+        return fallback;
+    }
+    if (id == id_NEW_REPUBLIC_GUNSHIP || id == id_NEW_REPUBLIC_GUNSHIP_GREEN) {
+        if (WORLD->current_level == GUNSHIPA_LDATA)
+            return 37;
+        if (WORLD->current_level == GUNSHIPB_LDATA)
+            return 38;
+        return fallback;
+    }
+    if (id == id_SENTRYDROID || id == id_KAMINOANDROID)
+        return 0;
+    return fallback;
+}
+
+void Bolt_Debris_LSW(BOLT_s *bolt, nuvec_s *points, i32 point, nuvec_s *, i32 no_explosion) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    i32 effect;
+    if (world->current_level == DOGFIGHTA_LDATA) {
+        if (bolt->field_0x104 != -1)
+            points = &bolt->dogfight_hit_position;
+        effect = 0x2e;
+    } else {
+        effect = bolt->hit_debris;
+    }
+    if (((bolt->flags & 0x40000200) == 0 && point == -1) || point == 0) {
+        AddGameDebris(world->debris_sys, effect, &points[0]);
+        if (!(bolt->flags & 0x10000000) && Player_HasDoubleBoltDamage_FromBolt(bolt))
+            AddGameDebris(world->debris_sys, effect, &points[0]);
+    }
+    if (point == 1 || point == -1) {
+        AddGameDebris(world->debris_sys, effect, &points[1]);
+        if (!(bolt->flags & 0x10000000) && Player_HasDoubleBoltDamage_FromBolt(bolt))
+            AddGameDebris(world->debris_sys, effect, &points[1]);
+    }
+    if (((bolt->flags & 0x40000200) == 0 && point == -1) || point == 2) {
+        AddGameDebris(world->debris_sys, effect, &points[2]);
+        if (!(bolt->flags & 0x10000000) && Player_HasDoubleBoltDamage_FromBolt(bolt))
+            AddGameDebris(world->debris_sys, effect, &points[2]);
+    }
+    if (bolt->hit_part_debris != -1)
+        AddPartDebris(world->part_debris_sys, bolt->hit_part_debris, &bolt->position);
+    if (bolt->type_id == 0x1d) {
+        AddGameDebris(world->debris_sys, 0x7f, &bolt->position);
+        AddPartDebris(world->part_debris_sys, 6, &bolt->position);
+        GameCam_NewShake(GameCam, 0.75f, 0.75f, 1.0f);
+        NewRumbleAllPlayers(0.5f, 0.0f, 0, 0);
+    }
+    if (no_explosion == 0 && bolt->owner != NULL && bolt->owner->apiobj.player_controlled && Cheat_IsOn(0x12) &&
+        (world->area == NULL || !(world->area->flags & 1))) {
+        AddGameDebris(WORLD->debris_sys, 0x49, &bolt->position);
+        NewRumble(bolt->owner->pad_gamepad->pad, 0.3f, 0);
+        PlaySfx("exp_thermalDet", points);
+        GameCam_HitJudder();
+        EXPLOSION *explosion = AddExplosion(&bolt->position, 0.5f * AreaPickupScale, 0.25f, NULL, -1, 0xa067);
+        if (explosion != NULL && Arcade != 0 && bolt->owner != NULL &&
+            (bolt->owner == Player[0] || bolt->owner == Player[1]) &&
+            (bolt->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+            static_cast<u8>(bolt->owner->apiobj.field_0x27c) <= 1) {
+            explosion->object = bolt->owner;
+            explosion->field_0x24 |= 0x10000;
         }
     }
-    if (nearest != NULL && mark_direct_hit != 0) {
-        radius = object->apiobj.field_0x1dc * 0.75f;
-        if (LineIntersectCircle(&nearest->position, &nearest->field_0xac, &object->apiobj.collision_position,
-                                radius * radius))
-            object->field_0xe21 |= 0x20;
-    }
-    return nearest;
 }
 
-void GuidedMissile_Kill(PART_s *part, i32 reason) {
-    AddGameDebris(WORLD->debris_sys, 0x7d, &part->position);
-    AddGameDebris(WORLD->debris_sys, 0x21, &part->position);
-    GameCam_Judder(GameCam, 0.2f, 0, NULL);
-    Game_KillPart(part, reason);
-    NewRumbleAllPlayers(0.7f, 0.1f, 0, 0);
-}
-
-void GuidedMissile_Move(PART_s *part, float time) {
-    GameObject_s *recipient = part->recipient;
-    if (part->scale_time > guided_life) {
-        part->field_124[3] = static_cast<i32>(SeekValF(static_cast<f32>(part->field_124[3]), 0.0f, 2.0f));
-    } else if (recipient != NULL && part->scale_time > guided_start_time) {
-        NUVEC direction;
-        NuVecSub(&direction, &recipient->apiobj.collision_position, &part->position);
-        i32 yaw = NuAtan2D(direction.x, direction.z);
-        NuVecRotateY(&direction, &direction, -yaw);
-        direction.y = recipient->apiobj.collision_position.y + 0.5f - part->position.y;
-        i32 pitch = -NuAtan2D(direction.y, direction.z);
-        part->rotation_x = SeekRot(part->rotation_x, static_cast<u16>(pitch), 1.0f);
-        part->rotation_y = SeekRot(part->rotation_y, static_cast<u16>(yaw), 3.0f);
-        part->field_124[3] = guided_rotate_speed;
-    } else {
-        part->field_124[3] = guided_rotate_speed;
+i32 Bolt_HitPart_LSW(BOLT_s *, PART_s *part) {
+    switch (part->force_player_mask) {
+        case 1:
+            if (part->scale_time < 2.0f)
+                return 1;
+            break;
+        case 2:
+            if (part->scale_time < 1.0f)
+                return 1;
+            break;
     }
-
-    part->field_13c += static_cast<i32>(static_cast<f32>(part->field_124[3]) * FRAMETIME);
-
-    part->velocity.x = 0.0f;
-    part->velocity.y = 0.0f;
-    part->velocity.z = guided_speed;
-    NuVecRotateX(&part->velocity, &part->velocity, part->rotation_x);
-    NuVecRotateY(&part->velocity, &part->velocity, part->rotation_y);
-
-    NUVEC position;
-    position.x = part->position.x + part->velocity.x * time;
-    position.y = part->position.y + part->velocity.y * time + part->gravity * time;
-    position.z = part->position.z + part->velocity.z * time;
-
-    NuMtxSetRotationX(&part->transform, NuAngAdd(part->rotation_x, 0x4000));
-    NuMtxRotateY(&part->transform, part->rotation_y);
-    NuMtxPreRotateY(&part->transform, part->field_13c);
-    NuMtxTranslate(&part->transform, &position);
-
-    if (part->scale_time < 0.2f) {
-        NUVEC scale = {part->scale_time / 0.2f, part->scale_time / 0.2f, part->scale_time / 0.2f};
-        NuMtxPreScale(&part->transform, &scale);
-    }
-    if (static_cast<i8>(part->active) < 0) {
-        i32 count = ParticlesPerFrame(1.0f, FRAMETIME);
-        NUVEC momentum = {-part->velocity.x, -part->velocity.y, -part->velocity.z};
-        AddGameDebrisMom(WORLD->debris_sys, 0xb, &position, count, &momentum);
-    }
-}
-
-void GuidedMissile_Deflect(PART_s *part) {
-    part->flags &= ~0x4000;
-    part->flags |= 0x80;
-    NewPartRotation(part);
-}
-
-extern "C" i16 id_SPEEDERBIKE;
-i32 InitBolt_AddMomentumType_LSW(BOLT_s *bolt, GameObject_s *object, NUVEC *momentum) {
-    if (object == NULL)
-        return 0;
-    if (LSW1 != 0 && momentum != NULL) {
-        f32 scale = WORLD->current_level == BONUS_GUNSHIPB_LDATA ? 0.25f : 0.5f;
-        NuVecScale(momentum, &object->target_velocity, scale);
-        bolt->speed += NuVecMag(momentum);
-        return 0;
-    }
-    if (WORLD->current_level == SPEEDERCHASEA_LDATA && object->id == id_SPEEDERBIKE)
-        return 1;
-    if (WORLD->current_level == DEATHSTARBATTLED_LDATA)
-        return 1;
     return 0;
 }
+
+i32 Bolt_AlternateFire_LSW(GameObject_s *object, i32 index) {
+    i16 id = object->id;
+    if (id == id_XWING || id == id_MINIXWING || id == id_MINITIEINTERCEPTOR || id == id_MINIATAT ||
+        id == id_MINIROYALSTARSHIP || id == id_MINIIMPERIALSHUTTLE) {
+        if (object->bolt_fire_phase == 0) {
+            if (index == 0 || index == 2)
+                return 0;
+        } else if (object->bolt_fire_phase == 1) {
+            if (index == 1 || index == 3)
+                return 0;
+        }
+    } else if (id == id_MILLENNIUMFALCON || id == id_MINIMILLENNIUMFALCON || id == id_ATST ||
+               id == id_JEDISTARFIGHTERREDEP3 || id == id_JEDISTARFIGHTERYELLOWEP3) {
+        if (object->bolt_fire_phase != index)
+            return 0;
+    }
+    return 1;
+}
+
+void InitMemCard() {
+}
+

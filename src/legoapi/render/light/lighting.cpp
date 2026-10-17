@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
@@ -19,11 +22,48 @@
 #include "nu2api/nu3d/nutex.h"
 
 #include <stdio.h>
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
+#include "gameapi/edtools/edui.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nupad.h"
+#include <math.h>
+#include <float.h>
+#include <string.h>
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "legoapi/items/base/apiobject.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nu3d/nugscn.h"
+#include <new>
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuang.h"
+#include <stdlib.h>
+#include "legoapi/characters/core/players.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "legoapi/render/light/shadow.h"
+#include "nu2api/nucore/android/stubs_android.h"
 
 extern "C" {
     NULIGHTINGSTATE NuRndrLightingStateCurrent = {};
@@ -34,16 +74,21 @@ NUCOLOUR3 panelamb = {1.0f, 1.0f, 1.0f};
 NUVEC paneldir[3] = {{-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}};
 NUCOLOUR3 panelcol[3] = {{1.0f, 0.5f, 0.5f}, {0.5f, 1.0f, 0.5f}, {0.5f, 0.5f, 1.0f}};
 
-extern "C" {
-    void NuLightSpotFadeSet(u32);
-}
-
 static constexpr u32 kNeutralSpotLightFade = 0x80808080u;
 
 i32 Lighting_HighlightFlash;
 i32 (*Lighting_BlueFlickerFn)(GameObject_s *);
 i32 Lighting_FlashRedOnLastHeart;
 extern f32 GhostLightMul;
+
+#if defined(__i386__) && defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+#if defined(__i386__) && defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
+struct rtlidata_s;
 
 void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC *direction1, NUCOLOUR3 *colour2,
                NUVEC *direction2, NUVEC *ambient) {
@@ -55,22 +100,6 @@ void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC 
     NuRndrLightingStateCurrent.intensity[2] = *colour2;
     NuRndrSetDirectionalLightsPS(direction0, colour0, direction1, colour1, direction2, colour2);
 
-    NUCOLOUR3 *ambient_colour = reinterpret_cast<NUCOLOUR3 *>(ambient);
-    NuRndrLightingStateCurrent.ambient = *ambient_colour;
-    NuRndrSetAmbientLightPS(ambient_colour);
-}
-
-static inline __attribute__((always_inline)) void SetPanelLightsInline(NUCOLOUR3 *colour0, NUVEC *direction0,
-                                                                       NUCOLOUR3 *colour1, NUVEC *direction1,
-                                                                       NUCOLOUR3 *colour2, NUVEC *direction2,
-                                                                       NUVEC *ambient) {
-    NuRndrLightingStateCurrent.direction[0] = *direction0;
-    NuRndrLightingStateCurrent.direction[1] = *direction1;
-    NuRndrLightingStateCurrent.direction[2] = *direction2;
-    NuRndrLightingStateCurrent.intensity[0] = *colour0;
-    NuRndrLightingStateCurrent.intensity[1] = *colour1;
-    NuRndrLightingStateCurrent.intensity[2] = *colour2;
-    NuRndrSetDirectionalLightsPS(direction0, colour0, direction1, colour1, direction2, colour2);
     NUCOLOUR3 *ambient_colour = reinterpret_cast<NUCOLOUR3 *>(ambient);
     NuRndrLightingStateCurrent.ambient = *ambient_colour;
     NuRndrSetAmbientLightPS(ambient_colour);
@@ -163,6 +192,21 @@ void ResetLights(nuvec_s *position, rtldata_s *data, void *set) {
     }
 }
 
+extern "C" {
+    char *rtlGetEnvPath(void) {
+        return const_cast<char *>("_new");
+    }
+
+    char *rtlGetEnvSceneName(void) {
+        return WORLD->config_file;
+    }
+
+    rtlset *rtlGetEnvSet(void) {
+        return WORLD->rtl_set;
+    }
+
+}
+
 void SetZeroLights() {
     const NUCOLOUR3 black = {0.0f, 0.0f, 0.0f};
 
@@ -177,6 +221,51 @@ void SetZeroLights() {
     NUCOLOUR3 *ambient = reinterpret_cast<NUCOLOUR3 *>(&nuvec_zero);
     NuRndrLightingStateCurrent.ambient = *ambient;
     NuRndrSetAmbientLightPS(ambient);
+}
+
+void FindAndSetLights(nuvec_s *position, float scale, void *set) {
+    rtldata_s lights;
+    rtlResetEx(&lights, 1);
+    rtlDynamicMasterEnable(0);
+    rtlApplySetScale(set, &lights, position, NULL, -1, scale);
+    rtlDynamicMasterEnable(1);
+    rtlSetLights(&lights);
+}
+
+void LoadLights(WORLDINFO_s *world, char *path) {
+    char filename[268];
+    sprintf(filename, "%s.rtl", path);
+    world->rtl_set = rtlLoadSet(filename, &world->giz_buffer, world->unknown_0108.addr);
+    sprintf(filename, "%s.bur", path);
+    world->burnset = edrtlBurnoutLoad(filename, &world->giz_buffer, world->unknown_0108.addr);
+}
+
+void InitGameObjectLights(void) {
+    GameObject_s *object = Obj;
+    for (i32 i = 0; i < 64; ++i)
+        object[i].dynamic_light_id = -1;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
+        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001)
+            continue;
+        object->dynamic_light_id = rtlDynamicAlloc();
+        if (object->dynamic_light_id == -1)
+            continue;
+        rtlDynamicSetType(object->dynamic_light_id, 2);
+        rtlDynamicEnable(object->dynamic_light_id, 0);
+    }
+}
+
+void FreeGameObjectLights() {
+    i32 i = 0;
+    GameObject_s *object = Obj;
+    for (; i < HIGHGAMEOBJECT; ++i, ++object) {
+        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001)
+            continue;
+        if (object->dynamic_light_id == -1)
+            continue;
+        rtlDynamicFree(object->dynamic_light_id);
+        object->dynamic_light_id = -1;
+    }
 }
 
 void LightGameObject(GameObject_s *object, void *set) {
@@ -260,17 +349,15 @@ void LightGameObject(GameObject_s *object, void *set) {
     object->field_0xefc &= 0x7f;
 }
 
-void FindAndSetLights(nuvec_s *position, float scale, void *set) {
-    rtldata_s lights;
-    rtlResetEx(&lights, 1);
-    rtlDynamicMasterEnable(0);
-    rtlApplySetScale(set, &lights, position, NULL, -1, scale);
-    rtlDynamicMasterEnable(1);
-    rtlSetLights(&lights);
-}
-
-void SetSpotLightMode() {
-    NuLightSpotFadeSet(kNeutralSpotLightFade);
+void LightEverythingInEditor(void *light_set) {
+    rtlProcessLights(light_set, FRAMETIME);
+    GameObject_s *object = Obj;
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
+        if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+            object->field_0xefc |= 0x80;
+            LightGameObject(object, light_set);
+        }
+    }
 }
 
 __attribute__((force_align_arg_pointer)) void SetCreatureLights(APIOBJECT_s *object) {
@@ -392,38 +479,34 @@ __attribute__((force_align_arg_pointer)) void SetCreatureLights(APIOBJECT_s *obj
     }
 }
 
-void FreeGameObjectLights() {
-    i32 i = 0;
-    GameObject_s *object = Obj;
-    for (; i < HIGHGAMEOBJECT; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001)
-            continue;
-        if (object->dynamic_light_id == -1)
-            continue;
-        rtlDynamicFree(object->dynamic_light_id);
-        object->dynamic_light_id = -1;
-    }
+void SetDepthOfField() {
 }
 
-void LoadLights(WORLDINFO_s *world, char *path) {
-    char filename[268];
-    sprintf(filename, "%s.rtl", path);
-    world->rtl_set = rtlLoadSet(filename, &world->giz_buffer, world->unknown_0108.addr);
-    sprintf(filename, "%s.bur", path);
-    world->burnset = edrtlBurnoutLoad(filename, &world->giz_buffer, world->unknown_0108.addr);
+void InitShadowLights() {
 }
 
-void InitGameObjectLights(void) {
-    GameObject_s *object = Obj;
-    for (i32 i = 0; i < 64; ++i)
-        object[i].dynamic_light_id = -1;
-    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001)
-            continue;
-        object->dynamic_light_id = rtlDynamicAlloc();
-        if (object->dynamic_light_id == -1)
-            continue;
-        rtlDynamicSetType(object->dynamic_light_id, 2);
-        rtlDynamicEnable(object->dynamic_light_id, 0);
-    }
+void SetShadowLight() {
+    STUBBED();
 }
+
+void RenderShadowLights(i32) {
+}
+
+void EnableShadowMapRendering(i32) {
+}
+
+void ResetShadowMapRendering() {
+}
+
+void SetSpotLightMode() {
+    NuLightSpotFadeSet(kNeutralSpotLightFade);
+}
+
+void ResetShadowMapRenderingFn() {
+    ResetShadowMapRendering();
+}
+
+void EnableShadowMapRenderingFn() {
+    EnableShadowMapRendering(0);
+}
+

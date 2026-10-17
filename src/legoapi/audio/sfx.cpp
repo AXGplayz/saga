@@ -1,19 +1,18 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/world/world_shared.h"
 #include "legoapi/audio/audio.h"
 #include "legoapi/audio/sfx.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/characters/core/charconfig.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/props/system/socksys.h"
-#include "legoapi/render/light/surfaces.h"
-#include "nu2api/numath/nurand.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/numusic/numusic.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
 #include "nu2api/nufile/nufile.h"
@@ -22,114 +21,1264 @@
 #include <stdio.h>
 #include <string.h>
 
-enum RepeatSfxState : u8 {
-    REPEAT_SFX_INACTIVE = 0,
-    REPEAT_SFX_INITIAL_DELAY = 1,
-    REPEAT_SFX_PLAY = 2,
-    REPEAT_SFX_INTERVAL = 3,
-};
-
-struct RepeatSfx {
-    i16 sfx_id;
-    RepeatSfxState state;
-    i8 plays_remaining;
-    f32 timer;
-    f32 interval;
-    nuvec_s *position;
-};
-
-DECOMP_ASSERT(sizeof(RepeatSfx) == 0x10, "RepeatSfx size");
-
-static i32 repsfxcount;
-static RepeatSfx repsfxtab[32];
-static i32 ticktock;
-static f32 MusicVolume = 1.0f;
-static f32 CutVolume = 0.8f;
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
+#include "globals.h"
+#include "legoapi/world/world.h"
+#include "legoapi/legoapi_types.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edui.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/nucore/nupad.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include <new>
+#include <stdlib.h>
+#include "legoapi/gizmos/trigger/ai.h"
+#include <stdint.h>
+#include "nu2api/nucore/nulist.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include <float.h>
+#include "editor/edpath.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/nucore/common.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "legoapi/misc/androidbatman.h"
+#include <limits.h>
+#include "legoapi/render/fx/particles.h"
+#include <cfloat>
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/audio/specialsfx.h"
+#include "legoapi/items/fx/pulses.h"
 
 extern "C" {
-    u16 GlobalSfxBits[100];
-    u16 SfxBits[100];
     SoundTable CurrentSFXTAB;
-    void (*ExtraDieSfxFn)(GameObject_s *);
-    void (*ExtraHurtSfxFn)(GameObject_s *);
     i32 CruiserD_LiftChase;
 }
 
-void PlayAMusic(i32 stream, i32 track, i32 volume, i32 one_shot);
-
-extern "C" void NuGCutSetCutAudioStream(i32 stream);
-
-extern "C" void PlaySfxById(i32 sfx_id, nuvec_s *position);
-void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 flags, i32 volume);
-void SetSfxBit_OnEx(i32);
-void SetSfxBit_OffEx(i32);
-void SetSfxBitTab_OnEx(SoundTable *, i32);
-void SetSfxBitTab_OffEx(SoundTable *, i32);
-i32 SfxBitEx(i32);
-i32 SfxBitTabEx(const SoundTable *, i32);
-void AddLevelSfxFromName(char *sfx_name, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count);
-void AddLevelSfxGizmoSys(GIZMOSYS_s *gizmo_sys, void *world_info, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count);
-void SetSpecialSfxBits(i32 *sfx_ids, i32 *sfx_count, WORLDINFO_s *world);
-int SpecialSfxLoad(char *path, WORLDINFO_s *world);
-void SetupBlowupSfx(WORLDINFO_s *world, specialsfx_s *special_sfx);
-void Pulses_AddSfx(PULSESYS_s *system, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count);
-void Move_BEAST(GameObject_s *object);
-void PlayFootStepSfx(GameObject_s *object);
-i32 qrand(void);
-void GameCam_NewShake(GAMECAMERA_s *camera, f32 amount, f32 duration, f32 speed);
-void GameCam_Judder(GAMECAMERA_s *camera, f32 amount, i32 axis, nuvec_s *source);
-void NewRumbleAllPlayers(f32 intensity, f32 duration, i32 flags, i32 player_index);
-i32 Players_AveragePos(nuvec_s *position, SOCKPOSITION_s *socket_position);
-i32 Hub_Outside(void);
-i32 KaminoInside(void);
-i32 KaminoDiscoOn(void);
-i32 DeathStarShieldDown(void);
-i32 SarlaccPitDiscoActive(WORLDINFO_s *world);
-
-extern AREADATA *BONUS_GUNSHIP_ADATA;
-extern AREADATA *DAGOBAH_ADATA;
-extern AREADATA *GUNSHIP_ADATA;
-extern AREADATA *HOTHESCAPE_ADATA;
-extern AREADATA *JABBASPALACE_ADATA;
-extern AREADATA *NEWTOWN_ADATA;
-extern AREADATA *PODRACE_ADATA;
-extern AREADATA *PODSPRINT_ADATA;
-extern AREADATA *SPEEDERCHASE_ADATA;
-extern i16 id_CHEWBACCA;
-extern i16 id_EWOK;
-extern i16 id_GAMORREANGUARD;
-extern i16 id_WICKET;
-extern f32 chattersfxwait;
-extern i32 DoubleScore;
-
-static GAMEAUDIO GameAudio_Default;
-static GAMEAUDIO *GameAudio = &GameAudio_Default;
-extern "C" void MenuRegisterSoundFX(i32, i32, i32, i32);
-i32 GameAudio_GetSfxId(i32);
+extern "C" i16 id_GAMORREANGUARD;
 
 extern "C" {
-    void SetSfxBit_On(i32 sound);
     void SetSoundBitsById(const i32 *sound_ids, void (*set_bit)(i32));
-    void SfxBitsStore(SoundTable *table);
-    void MusicPreSeek(i32 track);
-    void NuSound3FlushLoops(void);
-    i32 NuSound3SetReverb(i32 mode);
 }
 
-extern "C" void ResetSounds(void) {
-    memcpy(SfxBits, GlobalSfxBits, sizeof(SfxBits));
-}
+extern "C" {
+    f32 sfx_wait;
+} // extern "C"
 
-extern "C" void PrepareSounds(const u16 *sounds) {
-    for (i32 i = 0; i < 100; ++i) {
-        SfxBits[i] |= sounds[i];
+void AddFootSteps(GameObject_s *object) {
+    ANIMPACKET_s &packet = object->apiobj.anim_packet;
+    if (packet.blending != 0 || packet.animation_index == -1)
+        return;
+    CHARACTERMODEL_s *model = object->apiobj.character_model;
+    const i32 animation = packet.animation_index;
+    if (model->model_data_b[animation] == NULL)
+        return;
+    CHARACTERANIM_s *config = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
+    if ((config->flags & CHARACTER_ANIMATION_FLAG_FOOTSTEPS) == 0 || packet.previous_time == packet.current_time)
+        return;
+    const i32 advancing = (packet.flags & ANIMPACKET_FLAG_LOOPED) != 0 ? packet.previous_time > packet.current_time
+                                                                       : packet.current_time > packet.previous_time;
+    bool crossed = false;
+    if ((config->flags & 0x10000) == 0) {
+        if (!(packet.previous_time > packet.current_time)) {
+            if (!advancing)
+                return;
+            for (i32 i = 2; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
+                    crossed = true;
+            }
+        } else {
+            if (!advancing)
+                return;
+            for (i32 i = 2; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
+                    crossed = true;
+            }
+        }
+    } else {
+        if (!advancing)
+            return;
+        if (!(packet.previous_time > packet.current_time)) {
+            for (i32 i = 0; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
+                    crossed = true;
+            }
+        } else {
+            for (i32 i = 0; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
+                    crossed = true;
+            }
+        }
     }
+    if (crossed)
+        PlayFootStepSfx(object);
 }
 
-extern "C" void MaskSounds(const u16 *mask) {
-    for (i32 i = 0; i < 100; ++i) {
-        SfxBits[i] &= mask[i];
+static i32 GameAudio_CheckReverb_LSW();
+static inline i32 GameAudio_OverrideFootStep_LSW(GameObject_s *object, i32 alternate);
+
+GAMEAUDIO GameAudio_LSW = {
+    GameAudio_OverrideFootStep_LSW,
+    GameAudio_CheckReverb_LSW,
+    {
+        "Jp_Ami_Jump",
+        NULL,
+        "Jp_OQ_Jump",
+        "Jp_OQ_DJump",
+        "JumpLunge",
+        "JumpSlam",
+        "Jp_OQ_BackF",
+        "FS_JLandS",
+        "FS_JLandM",
+        "FS_DLandS",
+        "FS_DLandM",
+        "JediLunge",
+        "JediSlam",
+        "Grv_GrievAngryJump",
+        NULL,
+        "FS_JWalkS",
+        "FS_JWalkM",
+        "FS_DWalkS",
+        "FS_DWalkM",
+        "FS_WaterWade",
+        "Leia_grunt",
+        "Rebel_grunt",
+        "Leia_Hurt",
+        "Luke_Hurt",
+        "Explode1",
+        "exp_thermalDet",
+        "DroidDie01",
+        "Leia_Death",
+        "Luke_Death",
+        "CountdownTimerTick",
+        "CountdownTimerTock",
+        "SwChar",
+        NULL,
+        "SwChar",
+        "SwChar",
+        "ToggleChar",
+        "ToggleChar",
+        "MK-Loop",
+        "MK-Panel",
+        "PickupHeart",
+        "BlastHit",
+        "BlastRic",
+        "SabDefBlas",
+        "StatusAward",
+        "TrueJedi_100pc",
+        "WipeScreen",
+        "NegC_MagnetCoil",
+        "MenuMove",
+        "MenuSelect",
+        "MenuBack",
+        "MenuNoEntry",
+        "Explode1",
+        "imp_punch",
+        "ui_DoubleScoreText",
+        "MenuSelect",
+        "MenuBack",
+        "fly_paddle_rotate_lp",
+        "fly_paddle_stuck",
+        "MK-Pickup",
+        "LegoForm",
+        "LegoSingle",
+        "SaberOff",
+        "SaberOn",
+        "SaberSaber01",
+        "SaberMove01",
+        "SaberSmack01",
+        "BlasterHolster",
+        "BlasterDraw",
+        NULL,
+        NULL,
+        "FS_WaterOut",
+        "Block_Shove",
+        "Block_Push_Lp",
+        "Blaster",
+        "wpn_punch",
+        "Honk",
+        "WhipSwish",
+        "WhipHit",
+        "WhipNowt",
+        "FallApart01",
+        "PowerUp_On",
+        "PowerUp_Loop",
+        "PowerUp_Off",
+        "env_padLight_on",
+        "Shop_BuyCheat",
+    },
+    {},
+};
+
+extern "C" i16 id_GAMORREANGUARD;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+struct CUTSCENEPLAYERCLIP;
+
+extern "C" i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
+
+GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
+                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
+                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
+                                    bool first_match);
+
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern "C" i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
+
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+struct BOLT_s;
+struct debinftype;
+
+extern "C" {
+    extern i16 id_GAMORREANGUARD;
+}
+
+struct numtx_s;
+struct APICHARACTERMODELLIST_s;
+struct EXTRAMODEL;
+
+struct EDCREATURE_s;
+struct APIOBJECT_s;
+
+extern "C" {
+extern i16 id_GAMORREANGUARD;
+
+}
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+struct instNUGCUTCHAR_s;
+struct NUGCUTCHAR_s;
+struct NUGCUTRIGID_s;
+struct instNUGCUTRIGID_s;
+
+extern void (*CutScene_OverrideConfigFileNameFn)(char *, i32, i32);
+
+typedef isize __attribute__((may_alias)) NuGCutWord;
+
+struct instNUGCUTSCENE_s;
+struct NUGCUTLOCATORSYS_s;
+struct instNUGCUTLOCATOR_s;
+struct NUGCUTLOCATOR_s;
+
+struct AIROW_s;
+struct nuqthdr_s;
+struct nunativegscene_s;
+struct SHOPINPUT;
+
+extern i16 id_GAMORREANGUARD;
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
+extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
+
+struct minitrooperteam_s;
+
+extern "C" void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from, char *to, i32 *direction);
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+extern "C" {
+extern void (*checkantinodefns[3])(APIOBJECT *, AIANTINODE *, NUVEC *, f32);
+    extern void (*checkantinodefns[3])(APIOBJECT_s *, AIANTINODE_s *, NUVEC *, f32);
+}
+
+extern "C" {
+void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
+} // extern "C"
+
+struct nupad_s;
+
+struct EDAISHAREDPATHNODE_s;
+struct AIPATH_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+struct AIPATHSYS_s;
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+struct GIZSPINNER_s;
+
+namespace {
+
+} // namespace
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
+
+struct AIPACKET_s;
+struct AISYS_s;
+struct AIGROUP_s;
+struct nufpar_s;
+
+extern "C" {
+    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
+}
+
+extern "C" {
+extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
+} // extern "C"
+
+extern "C" {
+void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
+
+}
+
+extern "C" {
+    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
+}
+
+extern "C" {
+extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
+} // extern "C"
+
+struct rtlset;
+
+struct spacelevel_s;
+struct quickboltinfo;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern EdInputContext * Input;
+extern f32 Scale;
+extern EdEnumControl::Item OpenClosedItems[3];
+extern EdEnumControl::Item OnOffItems[3];
+extern EdEnumControl::Item YesNoItems[3];
+extern i32 AxisColour[8];
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+extern f32 MouseScale;
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern f32 HUB_EPISODETITLEY;
+extern i16 tSELECT, tSELECTED, tSELECTING;
+
+extern void (*drawslotinfofn)(f32, f32, i32, i32);
+extern void (*drawslotsfn)(MENU *, f32);
+
+void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+struct ani3_animheader_s;
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
     }
+
+    // ---------------------------------------------------------------------------
+    // Culling / visibility / portals / occlusion
+    // ---------------------------------------------------------------------------
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nuframebuffer_s;
+struct nushaderobject_s;
+union variptr_u;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern i16 id_GAMORREANGUARD;
+
+extern "C" i16 id_LANDSPEEDER;
+extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
+GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
+                                    i32 (*)(GameObject_s *), bool);
+
+extern void (*FS_Callback)(char *, char *);
+
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+extern "C" {
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+namespace {
+
+} // namespace
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+}
+
+void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
+                          void (*drawSaveIcon)(void), void *extradata, i32 extradataSize);
+
+extern "C" {
+void TextRegisterButtonMapFn(void (*fn)(char *, char *));
+void TextRegisterPulseTimerFn(f32 (*fn)(f32));
+}
+
+extern "C" {
+    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
+}
+
+extern "C" {
+extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
+} // extern "C"
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+extern "C" {
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+extern "C" {
+void TextRegisterButtonMapFn(void (*fn)(char *, char *));
+
+void TextRegisterPulseTimerFn(f32 (*fn)(f32));
+
+}
+
+extern i16 tCHALLENGECOMPLETE, tMINIKIT;
+
+extern char codechars[37];
+extern char usercode[6];
+extern i16 tSELECT, tBACK, tBUY, tPLAY, tSELECTING;
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+extern "C" {
+    extern i16 id_LANDSPEEDER;
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+extern "C" {
+extern void *(*DefragCreateInstFn)(void *, NUGCUTSCENE_s *, VARIPTR *);
+
+}
+
+typedef void (*SoundBitCallback)(i32 sound_id);
+
+extern "C" {
+void SetSoundBitsById(const i32 *sound_ids, SoundBitCallback set_bit);
+
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+extern i16 id_GAMORREANGUARD, id_PRINCESSLEIASLAVE, id_LAMASU, id_TAUNWE;
+
+i32 GizmoFileReadGameAnimSet(GAMEANIMSET_s *set, void *world_ptr,
+                             void (*read_object_data)(GAMEANIMOBJ_s *, unsigned char), unsigned char version,
+                             char *prefix, char *suffix);
+
+extern "C" {
+extern void (*checkantinodefns[3])(APIOBJECT *, AIANTINODE *, NUVEC *, f32);
+    extern void (*checkantinodefns[3])(APIOBJECT_s *, AIANTINODE_s *, NUVEC *, f32);
+}
+
+extern "C" {
+void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
+
+#include "legoapi/ai/core/ai_sys_stubs_types.h"
+} // extern "C"
+
+// Callback storage is declared in reverse linked-BSS order because the
+// original GCC 4.7 -O3 object emits these definitions in reverse source order.
+extern "C" {
+void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
+} // extern "C"
+
+extern "C" {
+void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
+
+}
+
+__attribute__((force_align_arg_pointer)) void Bolt_AddDeflectedBolt(BOLT_s *bolt, nuvec_s *direction, nuvec_s *normal,
+                                                                    unsigned char *processed);
+
+static __attribute__((noinline, noclone)) i32 Bolt_HitPlat(BOLT_s *bolt, u8 *hit_flags)
+    __asm__("_ZL12Bolt_HitPlatP6BOLT_sPhP11WORLDINFO_s.isra.38");
+
+namespace {
+
+} // namespace
+
+namespace {
+
+} // namespace
+
+// Game-specific pre-load limits. These must be applied before WorldInfo
+// reserves each level's fixed-size gameplay systems.
+
+static i32 GameAudio_CheckReverb_LSW() {
+    LEVELDATA *level = WorldInfo_CurrentlyActive()->current_level;
+    if (level == HOTHBATTLEB_LDATA || level == DAGOBAHD_LDATA) {
+        return 1;
+    }
+    if (level == ASTEROIDCHASEB_LDATA && GameCam->sock_position.location.sock == 4) {
+        return 1;
+    }
+    return 0;
+}
+
+static inline i32 GameAudio_OverrideFootStep_LSW(GameObject_s *object, i32 alternate) {
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    AREADATA *area = world->area;
+
+    if ((area == HOTHESCAPE_ADATA || world->current_level == JABBASPALACEE_LDATA) && alternate == 0) {
+        return GetSfxId("fs_ice");
+    }
+
+    if (area == DAGOBAH_ADATA && alternate == 0) {
+        if (world->current_level != DAGOBAHA_LDATA || object->apiobj.field_0x281 != 0x14) {
+            if (world->current_level != DAGOBAHD_LDATA) {
+                if (world->current_level != DAGOBAHE_LDATA ||
+                    (GameCam->sock_position.location.sock != 4 && GameCam->sock_position.location.sock != 1)) {
+                    return GetSfxId("fs_swamp");
+                }
+            }
+        }
+    }
+
+    if (world->current_level == JABBASPALACEA_LDATA &&
+        (object->apiobj.field_0x281 == 9 || object->apiobj.field_0x281 == 0x18)) {
+        return GetSfxId("fs_ice");
+    }
+
+    if ((area == DEATHSTARRESCUE_ADATA || area == DEATHSTARESCAPE_ADATA || WORLD->area == JABBASPALACE_ADATA) &&
+        object->apiobj.field_0x281 == 0x14) {
+        return GetSfxId("FS_JWalkM");
+    }
+
+    return -1;
 }
 
 void SetLevelSfxBits(WORLDINFO *world) {
@@ -706,1282 +1855,4 @@ void SetLevelSfxBits(WORLDINFO *world) {
 #undef ADD_GAME_SFX
 #undef ADD_SFX
 }
-void ResetLevSfx(WORLDINFO *world) {
-    for (i32 i = 0; i < 0x40; i++) {
-        world->level_sfx[i].id = -1;
-    }
-    world->level_sfx_count = 0;
-}
 
-bool InitSpecialSfx(WORLDINFO *world) {
-    bool result = false;
-    if (world != NULL) {
-        world->special_sfx_count = 0;
-        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
-        world->special_sfx = reinterpret_cast<specialsfx_s *>(world->giz_buffer.void_ptr);
-        world->giz_buffer.addr += 0xf00;
-        memset(world->special_sfx, 0, 0xf00);
-
-        world->special_sfx_event_count = 0;
-        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 0x10);
-        world->special_sfx_events = reinterpret_cast<SPECIALSFXEVENT_s *>(world->giz_buffer.void_ptr);
-        world->giz_buffer.addr += 0xc00;
-        memset(world->special_sfx_events, 0, 0xc00);
-        result = true;
-    }
-    return result;
-}
-void LoadSpecialSfxFile(WORLDINFO *world) {
-    char path[268];
-    sprintf(path, "%s.sfx", world->config_file);
-    if (NuFileExists(path) != 0 && SpecialSfxLoad(path, world) != 0) {
-        i32 count = world->special_sfx_count;
-        specialsfx_s *entry = world->special_sfx;
-        if (count > 0) {
-            i32 i = 0;
-            do {
-                const i32 flags = entry->flags & 0xf;
-                if (flags == 1) {
-                    SetupBlowupSfx(world, entry);
-                }
-                ++i;
-                count = world->special_sfx_count;
-                ++entry;
-            } while (i < count);
-        }
-    }
-}
-
-extern "C" {
-
-    f32 sfx_wait;
-
-    i32 GetSfxIdN(char *name, i32 length) {
-        for (i32 index = 0; index < 1600; ++index) {
-            if (NuStrNICmp(name, g_soundInfo[index].sfx_name, length) == 0) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    char *GetSfxName(i32 sfx_id) {
-        return sfx_id < 0 ? NULL : const_cast<char *>(g_soundInfo[sfx_id].sfx_name);
-    }
-
-    i32 IsSfxLooping(i32 sfx_id) {
-        return sfx_id == -1 ? -1 : g_soundInfo[sfx_id].loop;
-    }
-
-    void PauseGameAudio(i32) {
-        if (NOSOUND == 0) {
-            NuSound3StopSFX();
-            NuSound3SetSFXPitch(0);
-        }
-    }
-
-    void PauseGameMusic(void) {
-        if (NOMUSIC == 0 && NOSOUND == 0 && NUSOUND_STREAM_3 != -1 && static_cast<u16>(Music.state - 11) > 2) {
-            NuSound3CancelCheckStereo();
-            NuSound3PauseStereoStream(Music.primary_stream);
-            if (static_cast<u16>(Music.state - 5) < 6) {
-                NuSound3PauseStereoStream(1 - Music.primary_stream);
-            }
-        }
-        Music.restore_requested = false;
-    }
-
-    void PauseGameSfx(void) {
-        NuSound3StopSFX();
-        NuSound3FlushLoops();
-        NuSound3SetSFXPitch(0);
-    }
-
-    void PlayAltGameMusic(i32 track) {
-        Music.update_delay = 1;
-        if (Music.requested_track == track && !Music.pause_requested) {
-            i32 stream = 1 - Music.primary_stream;
-            NuSound3ResumeStereoStream(stream);
-            NuSound3SetStereoStreamVolume(stream, static_cast<i32>(g_music[track].index * MusicVolume));
-            Music.resume_track = -1;
-        } else {
-            PlayAMusic(1 - Music.primary_stream, track, static_cast<i32>(g_music[track].index * MusicVolume), 0);
-        }
-    }
-
-    i32 PlayCutMusic(i32 track, i32 state, void *context) {
-        if (NOSOUND != 0 || NOMUSIC != 0 || track < 0 || track >= SFX_MUSIC_COUNT) {
-            return 0;
-        }
-
-        Music.queued_track = static_cast<i16>(track);
-        Music.transition_frames = 0;
-
-        Music.stream_status_delay[1 - Music.primary_stream] = 6;
-        NuSound3CancelCheckStereo();
-        NuSound3PauseStereoStream(Music.primary_stream);
-
-        NuSound3SetStereoStreamVolume(Music.primary_stream,
-                                      static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume));
-
-        i32 started = 0;
-        if (Music.requested_track != track || Music.pause_requested ||
-            NuSound3GetStereoStreamStatus(1 - Music.primary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-            PlayAMusic(1 - Music.primary_stream, track,
-                       static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume), 0);
-            started = 1;
-        } else {
-            NuSound3ResumeStereoStream(1 - Music.primary_stream);
-            NuSound3SetStereoStreamVolume(1 - Music.primary_stream,
-                                          static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume));
-        }
-
-        NuGCutSetCutAudioStream(1 - Music.primary_stream);
-        Music.requested_track = -1;
-        Music.pause_requested = false;
-        Music.transition = 1.0f;
-        switch (state) {
-            case MUSIC_PLAYBACK_DUAL_STREAM_PENDING:
-                Music.state = MUSIC_PLAYBACK_DUAL_STREAM_PENDING;
-                break;
-            case 12:
-                Music.state = static_cast<MusicPlaybackState>(12);
-                break;
-            default:
-                Music.state = static_cast<u16>(Music.state) < 1 ? static_cast<MusicPlaybackState>(12)
-                                                                : MUSIC_PLAYBACK_DUAL_STREAM;
-                break;
-        }
-        Music.track_data = context;
-        return started;
-    }
-
-    void PlayMusic(i32 track, i32 mode) {
-        if (NOSOUND != 0 || NOMUSIC != 0) {
-            return;
-        }
-
-        if (track < 0 || track >= SFX_MUSIC_COUNT) {
-            Music.primary_stream = 1 - Music.primary_stream;
-            Music.restore_requested = false;
-            Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 7);
-            Music.queued_track = Music.current_track;
-            Music.current_track = static_cast<i16>(track);
-            Music.transition = 0.0f;
-            return;
-        }
-
-        Music.transition_frames = 0;
-        Music.queued_track = Music.current_track;
-        Music.current_track = static_cast<i16>(track);
-
-        i32 requested;
-        i32 stream;
-        i16 primary_stream;
-        if (Music.state == MUSIC_PLAYBACK_STOPPED) {
-            requested = Music.requested_track;
-            primary_stream = Music.primary_stream;
-            stream = primary_stream;
-            Music.stream_status_delay[stream] = 0;
-            if (requested == track)
-                goto flip_primary_stream;
-            goto start_primary_music;
-        } else if (mode != 1 && NUSOUND_STREAM_3 != -1) {
-            requested = Music.requested_track;
-            Music.primary_stream = 1 - Music.primary_stream;
-            stream = Music.primary_stream;
-            Music.stream_status_delay[stream] = 0;
-            if (requested == track && !Music.pause_requested) {
-                Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 7);
-                NuSound3ResumeStereoStream(stream);
-                NuSound3SetStereoStreamVolume(Music.primary_stream, 0);
-            } else {
-                Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 8);
-                PlayAMusic(stream, track, 0, 0);
-            }
-            Music.transition = 0.0f;
-            goto clear_music_flags;
-        } else {
-            requested = Music.requested_track;
-            primary_stream = Music.primary_stream;
-            stream = primary_stream;
-            Music.stream_status_delay[stream] = 0;
-            if (requested != track || Music.state == MUSIC_PLAYBACK_DUAL_STREAM)
-                goto start_primary_music;
-        }
-
-    flip_primary_stream:
-        Music.primary_stream = 1 - primary_stream;
-        stream = Music.primary_stream;
-    start_primary_music:
-        NuSound3StopStereoStream(1 - stream);
-        if (Music.requested_track == track && !Music.pause_requested &&
-            NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED) {
-            NuSound3ResumeStereoStream(Music.primary_stream);
-            NuSound3SetStereoStreamVolume(Music.primary_stream, static_cast<i32>(g_music[track].index * MusicVolume));
-        } else {
-            PlayAMusic(Music.primary_stream, track, static_cast<i32>(g_music[track].index * MusicVolume), 0);
-        }
-        Music.transition = 1.0f;
-        Music.state = MUSIC_PLAYBACK_ACTIVE;
-    clear_music_flags:
-        Music.requested_track = -1;
-        Music.pause_requested = false;
-        Music.restore_requested = false;
-    }
-
-    void PlaySfx(char *name, struct nuvec_s *position) {
-        i32 sfx_id = GetSfxId(name);
-        if (sfx_id != -1) {
-            PlaySfxById(sfx_id, position);
-        }
-    }
-
-    void PlaySfxAndSetPitch(char *name, nuvec_s *position, f32 pitch) {
-        i32 sfx_id = GetSfxId(name);
-        if (sfx_id != -1) {
-            PlaySfxByIdEx(sfx_id, position, 1.0f, pitch);
-        }
-    }
-
-    void PlaySfxAndSetVolume(char *name, nuvec_s *position, f32 volume) {
-        i32 id = GetSfxId(name);
-        if (id != -1) {
-            PlaySfxByIdEx(id, position, volume, 1.0f);
-        }
-    }
-
-    void PlaySfxAndSetVolumeAndPitch(char *name, nuvec_s *position, f32 volume, f32 pitch) {
-        i32 sfx_id = GetSfxId(name);
-        if (sfx_id != -1) {
-            PlaySfxByIdEx(sfx_id, position, volume, pitch);
-        }
-    }
-
-    void PlaySfxById(i32 sfx_id, nuvec_s *position) {
-        PlaySfxByIdEx(sfx_id, position, 1.0f, 1.0f);
-    }
-
-    void PlaySfxByIdAndSetPitch(i32 sfx_id, nuvec_s *position, f32 pitch) {
-        PlaySfxByIdEx(sfx_id, position, 1.0f, pitch);
-    }
-
-    void PlaySfxByIdAndSetVolume(i32 sfx_id, nuvec_s *position, f32 volume) {
-        PlaySfxByIdEx(sfx_id, position, volume, 1.0f);
-    }
-
-    void PlaySfxByIdAndSetVolumeAndPitch(i32 sfx_id, nuvec_s *position, f32 volume, f32 pitch) {
-        PlaySfxByIdEx(sfx_id, position, volume, pitch);
-    }
-
-    i32 PlayingCutMusic(void) {
-        const i32 stream = 1 - Music.primary_stream;
-        u8 &delay = Music.stream_status_delay[stream];
-        if (delay != 0) {
-            --delay;
-            return 0;
-        }
-        if (NOSOUND != 0 || NOMUSIC != 0) {
-            return 0;
-        }
-        return NuSound3GetStereoStreamStatus(stream) != NUSOUND_STEREO_STREAM_FINISHED;
-    }
-
-    void ClearLinkedCutSceneMusic(void *context) {
-        if (context == NULL || Music.track_data == context) {
-            Music.track_data = NULL;
-        }
-    }
-
-    void PrepareAllSounds(void) {
-        for (i32 i = 0; i < 100; ++i) {
-            SfxBits[i] = 0xffff;
-        }
-    }
-
-    void RegisterSounds(SoundTable *table) {
-        const char **names = table->names;
-        memset(table->bits, 0, sizeof(table->bits));
-        if (names == NULL) {
-            return;
-        }
-        for (const char **name = names; *name != NULL; ++name) {
-            i32 id = GetSfxId(*name);
-            table->bits[id >> 4] |= static_cast<u16>(1 << (id & 0xf));
-        }
-    }
-
-    void ResetPreSeek(void) {
-        if (Music.state == MUSIC_PLAYBACK_DUAL_STREAM) {
-            Music.current_track = -1;
-        } else {
-            Music.queued_track = -1;
-            Music.requested_track = -1;
-            Music.pause_requested = false;
-        }
-        Music.seek_offset = 0.0f;
-    }
-
-    void RestoreGameMusic(void) {
-        if ((NOMUSIC == 0 || NOSOUND == 0) && NUSOUND_STREAM_3 != -1) {
-            if (Music.transition_frames < 25) {
-                Music.restore_requested = true;
-                return;
-            }
-            if (static_cast<u16>(Music.state - 11) > 2) {
-                NuSound3ResumeStereoStream(Music.primary_stream);
-                if (static_cast<u16>(Music.state - 5) < 6) {
-                    NuSound3ResumeStereoStream(1 - Music.primary_stream);
-                }
-            }
-        }
-    }
-
-    void ResumeGameAudio(void) {
-        // Platform placeholder in the Android build.
-    }
-
-    void SOUND_SFXRequest_Table(void) {
-        // Platform placeholder in the Android build.
-    }
-
-    void SetAudioFadeLevel(f32 level) {
-        AUDIOFADELEVEL = level;
-    }
-
-    void SetCutVolume(f32 volume) {
-        CutVolume = volume;
-    }
-
-    void SetLinkedCutSceneMusic(void *context, i32 state) {
-        Music.track_data = context;
-        if (static_cast<u16>(Music.state - MUSIC_PLAYBACK_DUAL_STREAM) <= 2) {
-            Music.state = state == MUSIC_PLAYBACK_DUAL_STREAM_PENDING ? MUSIC_PLAYBACK_DUAL_STREAM_PENDING
-                                                                      : MUSIC_PLAYBACK_DUAL_STREAM;
-        }
-    }
-
-    void SetMusicVolume(f32 volume) {
-        if (NOSOUND != 0 || NOMUSIC != 0) {
-            return;
-        }
-        MusicVolume = volume;
-        if (Music.state == MUSIC_PLAYBACK_ACTIVE) {
-            NuSound3SetStereoStreamVolume(
-                Music.primary_stream, static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) * volume));
-        }
-    }
-
-    void SetPreSeekStartPoint(f32 start_point) {
-        Music.seek_offset = start_point;
-    }
-
-    void SetSfxBitTab_Off(SoundTable *table, i32 sound) {
-        if (sound >= 0) {
-            SetSfxBitTab_OffEx(table, g_soundInfo[sound].index);
-        }
-    }
-
-    void SetSfxBitTab_On(SoundTable *table, i32 sound) {
-        if (sound >= 0) {
-            SetSfxBitTab_OnEx(table, g_soundInfo[sound].index);
-        }
-    }
-
-    void SetSfxBit_Off(i32 sound) {
-        if (sound >= 0) {
-            SetSfxBit_OffEx(g_soundInfo[sound].index);
-        }
-    }
-
-    void SetSfxBit_On(i32 sound) {
-        if (sound >= 0)
-            SetSfxBit_OnEx(g_soundInfo[sound].index);
-    }
-
-    i32 SfxBit(i32 sound) {
-        if (sound < 0) {
-            return 0;
-        }
-        return SfxBitEx(g_soundInfo[sound].index);
-    }
-
-    void SfxBitMaskTable(u16 *bits, const u16 *mask) {
-        for (i32 i = 0; i < 100; i++) {
-            bits[i] &= mask[i];
-        }
-    }
-
-    i32 SfxBitTab(const SoundTable *table, i32 sound) {
-        if (sound < 0) {
-            return 0;
-        }
-        return SfxBitTabEx(table, g_soundInfo[sound].index);
-    }
-
-    void SfxBitsRestore(SoundTable *table) {
-        memmove(SfxBits, table->bits, sizeof(SfxBits));
-    }
-
-    void SfxBitsSetAll(u16 *bits) {
-        memset(bits, 0xff, sizeof(SfxBits));
-    }
-
-    void SfxBitsStore(SoundTable *table) {
-        memmove(table->bits, SfxBits, sizeof(SfxBits));
-    }
-
-    void StopAltGameMusic(void) {
-        NuSound3CancelCheckStereo();
-        NuSound3PauseStereoStream(1 - Music.primary_stream);
-        Music.update_delay = 0;
-        Music.queued_track = -1;
-        Music.requested_track = -1;
-        if (Music.resume_track >= 0) {
-            MusicPreSeek(Music.resume_track);
-        }
-    }
-
-    void SwapMusic(i32 mode) {
-        if (NOSOUND != 0 || NOMUSIC != 0) {
-            return;
-        }
-
-        i16 previous_track = Music.current_track;
-        i16 queued_track = Music.queued_track;
-        Music.primary_stream = 1 - Music.primary_stream;
-        Music.current_track = queued_track;
-        Music.queued_track = previous_track;
-        NuSound3ResumeStereoStream(Music.primary_stream);
-
-        if (mode == 1) {
-            NuSound3SetStereoStreamVolume(Music.primary_stream,
-                                          static_cast<i32>(g_music[queued_track].index * MusicVolume));
-            NuSound3PauseStereoStream(1 - Music.primary_stream);
-            NuSound3SetStereoStreamVolume(1 - Music.primary_stream, 0);
-            Music.state = MUSIC_PLAYBACK_ACTIVE;
-            Music.transition = 1.0f;
-        } else {
-            f32 transition = 0.0f;
-            if (static_cast<u16>(Music.state - 5) < 2) {
-                transition = 1.0f - Music.transition;
-            }
-            Music.transition = transition;
-            NuSound3SetStereoStreamVolume(Music.primary_stream,
-                                          static_cast<i32>(g_music[queued_track].index * transition));
-            Music.state = static_cast<MusicPlaybackState>((mode == 3) + 5);
-        }
-    }
-
-} // extern "C"
-
-void PlayDieSfx(GameObject_s *object) {
-    CHARACTERDATA *character = object->apiobj.character_data;
-    GAMECHARACTERDATA_s *config = character->game_character;
-    i32 sfx;
-    {
-        const i16 configured_sfx = config->sfx_die;
-        if (configured_sfx != -1) {
-            sfx = configured_sfx;
-            goto play;
-        }
-    }
-    {
-        sfx = -1;
-        if ((config->flags_090 & 0x800) != 0) {
-            sfx = GameAudio->sfx_ids[0x18];
-        } else {
-            const u32 flags = character->model_flags;
-            if ((flags & 0x2000) != 0) {
-                sfx = GameAudio->sfx_ids[0x18];
-            } else if ((flags & 0x04000000) != 0) {
-                sfx = GameAudio->sfx_ids[0x19];
-            } else if ((flags & 0x10) != 0) {
-                sfx = GameAudio->sfx_ids[0x1a];
-            } else if ((flags & 0x40000000) == 0) {
-                if ((object->field_0xf01 & 8) != 0) {
-                    sfx = GameAudio->sfx_ids[0x1b];
-                } else {
-                    sfx = GameAudio->sfx_ids[0x1c];
-                }
-            }
-        }
-        if (sfx == -1) {
-            goto extra;
-        }
-    }
-play:
-    GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
-extra:
-    auto extra_sfx = ExtraDieSfxFn;
-    if (extra_sfx != NULL) {
-        extra_sfx(object);
-    }
-}
-
-void PlayHurtSfx(GameObject_s *object) {
-    CHARACTERDATA *character = object->apiobj.character_data;
-    i32 sfx;
-    {
-        const i16 configured_sfx = character->game_character->sfx_hurt;
-        if (configured_sfx != -1) {
-            sfx = configured_sfx;
-            goto selected;
-        }
-    }
-    if ((character->model_flags & 0x44002010) != 0) {
-        goto extra;
-    }
-    if ((object->field_0xf01 & 8) != 0) {
-        sfx = GameAudio->sfx_ids[0x16];
-    } else {
-        sfx = GameAudio->sfx_ids[0x17];
-    }
-selected:
-    if (sfx == -1) {
-        goto extra;
-    }
-    GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
-extra:
-    auto extra_sfx = ExtraHurtSfxFn;
-    if (extra_sfx != NULL) {
-        extra_sfx(object);
-    }
-}
-
-void PlayJumpSfx(GameObject_s *object, i32 type) {
-    i32 sfx;
-    const u32 flags = object->apiobj.character_data->model_flags;
-    if ((flags & 0x40) != 0) {
-        sfx = GameAudio->sfx_ids[1];
-    } else if ((flags & 8) != 0) {
-        switch (type) {
-            case 0:
-                sfx = GameAudio->sfx_ids[2];
-                break;
-            case 1:
-                sfx = GameAudio->sfx_ids[3];
-                break;
-            case 2:
-                sfx = GameAudio->sfx_ids[6];
-                break;
-            case 3:
-                sfx = GameAudio->sfx_ids[4];
-                break;
-            case 4:
-                sfx = GameAudio->sfx_ids[5];
-                break;
-            default:
-                return;
-        }
-    } else {
-        sfx = GameAudio->sfx_ids[0];
-    }
-    if (sfx != -1) {
-        if (!object->apiobj.player_controlled && (object->field_0xefb & 8) == 0) {
-            PlaySfxByIdAndSetVolume(sfx, &object->apiobj.lower_position, 0.5f);
-        } else {
-            GameAudio_PlaySfxById(sfx, &object->apiobj.lower_position, 0, 1);
-        }
-    }
-}
-
-void PlayLandSfx(GameObject_s *object, i32 type, i32) {
-    i32 sfx;
-    if (type == 1) {
-        if ((object->apiobj.character_data->model_flags & 8) == 0) {
-            return;
-        }
-        sfx = GameAudio->sfx_ids[0xb];
-    } else if (type == 2) {
-        sfx = GameAudio->sfx_ids[0xc];
-    } else if (type == 3) {
-        sfx = GameAudio->sfx_ids[0xd];
-    } else if (type == 4) {
-        sfx = GameAudio->sfx_ids[0xe];
-    } else {
-        if (object->apiobj.is_underwater != 0 || object->apiobj.intersects_water != 0) {
-            return;
-        }
-        const i32 alternate = WorldInfo_CurrentlyActive()->current_level->flags & 0x1000;
-        if ((object->apiobj.character_data->model_flags & 0x10) == 0) {
-            if (type != 0) {
-                return;
-            }
-            if (alternate != 0) {
-                sfx = GameAudio->sfx_ids[8];
-            } else {
-                sfx = GameAudio->sfx_ids[7];
-            }
-        } else {
-            if (alternate != 0) {
-                sfx = GameAudio->sfx_ids[10];
-            } else {
-                sfx = GameAudio->sfx_ids[9];
-            }
-        }
-    }
-    if (sfx != -1) {
-        if (static_cast<i8>(object->apiobj.flags_low) < 0 || (object->field_0xefb & 8) != 0) {
-            GameAudio_PlaySfxById(sfx, &object->apiobj.lower_position, 0, 1);
-        } else {
-            PlaySfxByIdAndSetVolume(sfx, &object->apiobj.lower_position, 0.5f);
-        }
-    }
-}
-
-i32 SfxBitTabEx(SoundTable const *table, i32 sound) {
-    if (static_cast<u32>(sound) >= 1600) {
-        return -1;
-    }
-    const u16 mask = static_cast<u16>(1u << (sound & 15));
-    return (table->bits[sound >> 4] & mask) != 0;
-}
-
-void TickTockSfx() {
-    if (ticktock != 0) {
-        GameAudio_PlaySfx(0x1d, NULL, 0, 0);
-        ticktock = 0;
-    } else {
-        GameAudio_PlaySfx(0x1e, NULL, 0, 0);
-        ticktock = 1;
-    }
-}
-
-void AddFootSteps(GameObject_s *object) {
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if (packet.blending != 0 || packet.animation_index == -1)
-        return;
-    CHARACTERMODEL_s *model = object->apiobj.character_model;
-    const i32 animation = packet.animation_index;
-    if (model->model_data_b[animation] == NULL)
-        return;
-    CHARACTERANIM_s *config = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-    if ((config->flags & CHARACTER_ANIMATION_FLAG_FOOTSTEPS) == 0 || packet.previous_time == packet.current_time)
-        return;
-    const i32 advancing = (packet.flags & ANIMPACKET_FLAG_LOOPED) != 0 ? packet.previous_time > packet.current_time
-                                                                       : packet.current_time > packet.previous_time;
-    bool crossed = false;
-    if ((config->flags & 0x10000) == 0) {
-        if (!(packet.previous_time > packet.current_time)) {
-            if (!advancing)
-                return;
-            for (i32 i = 2; i < 4; ++i) {
-                const f32 frame = config->event_frames[i];
-                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
-                    crossed = true;
-            }
-        } else {
-            if (!advancing)
-                return;
-            for (i32 i = 2; i < 4; ++i) {
-                const f32 frame = config->event_frames[i];
-                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
-                    crossed = true;
-            }
-        }
-    } else {
-        if (!advancing)
-            return;
-        if (!(packet.previous_time > packet.current_time)) {
-            for (i32 i = 0; i < 4; ++i) {
-                const f32 frame = config->event_frames[i];
-                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
-                    crossed = true;
-            }
-        } else {
-            for (i32 i = 0; i < 4; ++i) {
-                const f32 frame = config->event_frames[i];
-                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
-                    crossed = true;
-            }
-        }
-    }
-    if (crossed)
-        PlayFootStepSfx(object);
-}
-
-void PlayGruntSfx(GameObject_s *object) {
-    CHARACTERDATA *character = object->apiobj.character_data;
-    const i16 configured_sfx = character->game_character->sfx_grunt;
-    i32 sfx = configured_sfx;
-    if (configured_sfx == -1) {
-        if ((character->model_flags & 0x44002010) != 0) {
-            return;
-        }
-        if ((object->field_0xf01 & 8) != 0) {
-            sfx = GameAudio->sfx_ids[0x14];
-        } else {
-            sfx = GameAudio->sfx_ids[0x15];
-        }
-    }
-    if (sfx != -1) {
-        GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
-    }
-}
-
-void PlaySabreSfx(char *name, GameObject_s *object, nuvec_s *position, i32) {
-    const u8 player = static_cast<u8>(object->apiobj.field_0x27c);
-    if (player == 0xff && WORLD->rooms_visible_ptr[object->room_id] == 0) {
-        return;
-    }
-    u32 player_bits = 0;
-    if (object->apiobj.player_controlled) {
-        player_bits = 1u << (player & 0x1f);
-    }
-    if (name == NULL) {
-        const i16 sfx = object->apiobj.character_data->game_character->sfx_sabre;
-        if (sfx == -1) {
-            GameAudio_PlaySfx(0x40, &object->apiobj.collision_position, 0, 1);
-        } else {
-            GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, player_bits, 1);
-        }
-    } else {
-        const i32 named_sfx = GetSfxId(name);
-        if (position == NULL) {
-            position = &object->apiobj.collision_position;
-        }
-        GameAudio_PlaySfxById(named_sfx, position, 0, 1);
-    }
-}
-
-void LevChatterSfx(char *name, nuvec_s *position) {
-    if (chattersfxwait <= 0.0f && qrand() < 0x400) {
-        PlaySfx(name, position);
-        const i32 random = qrand();
-        chattersfxwait = static_cast<f32>(random) * (1.0f / 65535.0f) * 2.0f + 3.0f;
-    }
-}
-
-void PlayRepeatSfx(char *name, i32 sfx_id, f32 initial_delay, char play_count, f32 interval, nuvec_s *position) {
-    if (play_count == 1 && initial_delay == 0.0f) {
-        if (sfx_id == -1) {
-            PlaySfx(name, position);
-        } else {
-            GameAudio_PlaySfxById(sfx_id, position, 0, 0);
-        }
-        return;
-    }
-
-    const i32 sound_slot = repsfxcount;
-    repsfxtab[sound_slot].state = REPEAT_SFX_PLAY;
-    if (initial_delay > 0.0f) {
-        repsfxtab[sound_slot].state = REPEAT_SFX_INITIAL_DELAY;
-    }
-
-    if (sfx_id == -1)
-        sfx_id = GetSfxId(name);
-
-    repsfxtab[sound_slot].sfx_id = static_cast<i16>(sfx_id);
-    RepeatSfx &repeat = repsfxtab[repsfxcount];
-    repsfxcount = (repsfxcount + 1) & 31;
-    repeat.timer = initial_delay;
-    repeat.plays_remaining = play_count;
-    repeat.interval = interval;
-    repeat.position = position;
-}
-
-void ResetRepeatSfx() {
-    repsfxcount = 0;
-    memset(repsfxtab, 0, sizeof(repsfxtab));
-    repsfxtab[0].sfx_id = -1;
-}
-
-void SetSfxBit_OnEx(i32 sound) {
-    if (static_cast<u32>(sound) < 1600) {
-        SfxBits[sound >> 4] |= 1 << (sound & 15);
-    }
-}
-
-void UpdateLevelSfx(WORLDINFO_s *world, i32 paused) {
-    SfxBitsRestore(&CurrentSFXTAB);
-
-    if (paused != 0) {
-        goto disable_reverb_and_return;
-    }
-    if (GameAudio->check_reverb_fn != NULL && GameAudio->check_reverb_fn() != 0) {
-        goto enable_reverb;
-    }
-    NuSound3SetReverb(0);
-
-update_ambient:
-    if (CUTSTOPGAME == 0 && world->current_level->unknown_0a2 != -1) {
-        GameAudio_PlaySfxById(world->current_level->unknown_0a2, NULL, 0, 0);
-    }
-    return;
-
-disable_reverb_and_return:
-    NuSound3SetReverb(0);
-    return;
-
-enable_reverb:
-    NuSound3SetReverb(1);
-    goto update_ambient;
-}
-
-void PlayFootStepSfx(GameObject_s *object) {
-    i32 on_platform = 1;
-    if (object->field_0x1078 == -1 && object->apiobj.supporting_platform_id == -1) {
-        const i8 surface = static_cast<i8>(object->apiobj.field_0x281);
-        if (surface == -1 || (TerSurface[surface].flags & 2) == 0) {
-            on_platform = 0;
-        }
-    }
-
-    i32 sfx = object->apiobj.character_data->game_character->sfx_footstep;
-    if (sfx == -1) {
-        if (GameAudio->override_footstep_fn != NULL) {
-            sfx = GameAudio->override_footstep_fn(object, on_platform);
-        }
-        if (sfx == -1) {
-            if (object->apiobj.is_underwater == 0 && object->apiobj.intersects_water == 0) {
-                const i32 alternate = WorldInfo_CurrentlyActive()->current_level->flags & 0x1000;
-                if ((object->apiobj.character_data->model_flags & 0x10) != 0) {
-                    if (alternate != 0) {
-                        sfx = GameAudio->sfx_ids[0x12];
-                    } else {
-                        sfx = GameAudio->sfx_ids[0x11];
-                    }
-                } else {
-                    if (alternate != 0) {
-                        sfx = GameAudio->sfx_ids[0x10];
-                    } else {
-                        sfx = GameAudio->sfx_ids[0xf];
-                    }
-                }
-            } else {
-                sfx = GameAudio->sfx_ids[0x13];
-            }
-        }
-    }
-
-    if (sfx != -1) {
-        if (object->apiobj.player_controlled || (object->field_0xefb & 8) != 0) {
-            GameAudio_PlaySfxById(sfx, &object->apiobj.lower_position, 0, 0);
-        } else {
-            PlaySfxByIdAndSetVolume(sfx, &object->apiobj.lower_position, 0.5f);
-        }
-    }
-
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if (packet.blending != 0 || packet.animation_index == -1)
-        return;
-    CHARACTERANIM_s *config =
-        static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[packet.animation_index]);
-    if (config == NULL)
-        return;
-    if ((config->flags & 0x20000) != 0) {
-        GameCam_Judder(GameCam, -0.25f, 0, &object->apiobj.collision_position);
-        NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
-    } else if ((config->flags & 0x40000) != 0 && VehicleArea == 0) {
-        GameCam_NewShake(GameCam, 0.5f, 0.5f, 1.0f);
-        NewRumbleAllPlayers(0.5f, 0.0f, 0, 0);
-    }
-}
-
-void SetSfxBit_OffEx(i32 sound) {
-    if (static_cast<u32>(sound) < 1600) {
-        SfxBits[sound >> 4] &= ~(1 << (sound & 15));
-    }
-}
-
-void UpdateRepeatSfx() {
-    for (RepeatSfx &repeat : repsfxtab) {
-        switch (repeat.state) {
-            case REPEAT_SFX_INITIAL_DELAY:
-                if (repeat.timer > 0.0f) {
-                    repeat.timer -= FRAMETIME;
-                } else {
-                    repeat.state = REPEAT_SFX_PLAY;
-                }
-                break;
-
-            case REPEAT_SFX_PLAY:
-                GameAudio_PlaySfxById(repeat.sfx_id, repeat.position, 0, 0);
-                --repeat.plays_remaining;
-                if (repeat.plays_remaining > 0) {
-                    repeat.timer = repeat.interval;
-                    repeat.state = REPEAT_SFX_INTERVAL;
-                } else {
-                    memset(&repeat, 0, sizeof(repeat));
-                }
-                break;
-
-            case REPEAT_SFX_INTERVAL:
-                if (repeat.timer > 0.0f) {
-                    repeat.timer -= FRAMETIME;
-                } else {
-                    repeat.state = REPEAT_SFX_PLAY;
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
-void AddLevelSfxFromId(i32 sfx_id, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx) {
-    if (sfx_count == NULL || sfx_ids == NULL || *sfx_count >= max_sfx || sfx_id == -1) {
-        return;
-    }
-    for (i32 index = 0; index < *sfx_count; ++index) {
-        if (sfx_ids[index] == sfx_id) {
-            return;
-        }
-    }
-    sfx_ids[*sfx_count] = sfx_id;
-    ++*sfx_count;
-}
-
-void SetSfxBitTab_OnEx(SoundTable *table, i32 sound) {
-    if (static_cast<u32>(sound) < 1600) {
-        table->bits[sound >> 4] |= 1 << (sound & 15);
-    }
-}
-
-void SetSfxBitTab_OffEx(SoundTable *table, i32 sound) {
-    if (static_cast<u32>(sound) < 1600) {
-        table->bits[sound >> 4] &= ~(1 << (sound & 15));
-    }
-}
-
-void SfxCheckMusicOnOff(OPTIONSSAVE_s *) {
-    // Platform placeholder in the Android build.
-}
-
-void AddLevelSfxFromName(char *sfx_name, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count) {
-    if (sfx_count == NULL || sfx_ids == NULL || *sfx_count >= max_sfx_count) {
-        return;
-    }
-
-    i32 sfx_id = GetSfxId(sfx_name);
-    if (sfx_id == -1) {
-        return;
-    }
-
-    for (i32 i = 0; i < *sfx_count; i++) {
-        if (sfx_ids[i] == sfx_id) {
-            return;
-        }
-    }
-
-    sfx_ids[*sfx_count] = sfx_id;
-    ++*sfx_count;
-}
-
-void AddLevelSfxGizmoSys(GIZMOSYS_s *gizmo_sys, void *world_info, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count) {
-    if (gizmotypes == NULL || gizmo_sys == NULL) {
-        return;
-    }
-
-    GIZMOSET *set = gizmo_sys->sets;
-    GIZMOTYPE *type = gizmotypes->types;
-    i32 i = 0;
-    while (i < gizmotypes->count) {
-        if (type->fns.add_level_sfx_fn != NULL) {
-            type->fns.add_level_sfx_fn(world_info, set->unknown, sfx_ids, sfx_count, max_sfx_count);
-        }
-        ++i;
-        ++set;
-        ++type;
-    }
-}
-
-void BlockSfx(GameObject_s *object) {
-    GameObject_s *target = object->force_target;
-    if (target != NULL) {
-        const u32 context_flags = CInfo[target->character_context].flags;
-        if ((context_flags & 0x4000000) != 0 || ((context_flags & 0x8000000) != 0 && (target->jump_flags & 2) != 0)) {
-            const i32 sfx_bits = GameAudio_GetPlrSfxBits(target);
-            GameAudio_PlaySfx(0x3f, &object->apiobj.collision_position, sfx_bits, 0);
-        }
-    }
-}
-
-i32 SfxBitEx(i32 sound) {
-    if (static_cast<u32>(sound) >= 1600) {
-        return -1;
-    }
-    const u16 mask = static_cast<u16>(1u << (sound & 15));
-    return (SfxBits[sound >> 4] & mask) != 0;
-}
-
-void AddLevSfx(WORLDINFO_s *world, nuvec_s *position, char *name, i32 sfx) {
-    if (sfx == -1 && name != NULL) {
-        sfx = GetSfxId(name);
-    }
-    if (sfx == -1) {
-        return;
-    }
-
-    const i32 count = world->level_sfx_count;
-    i32 index;
-    LEVELSFXENTRY_s *entry = world->level_sfx;
-    for (index = 0; index < count; ++index, ++entry) {
-        if (entry->id == sfx)
-            break;
-    }
-    if (index == count) {
-        if (index >= 64) {
-            return;
-        }
-        if (position != NULL) {
-            world->level_sfx[index].position = *position;
-        } else {
-            world->level_sfx[index].position = nuvec_zero;
-        }
-        world->level_sfx[index].id = static_cast<i16>(sfx);
-        world->level_sfx[index].references = 1;
-        world->level_sfx_count = index + 1;
-    } else if (world->level_sfx[index].references != -1) {
-        ++world->level_sfx[index].references;
-    }
-}
-
-i32 GameAudio_GetPlrSfxBits(void *object_ptr) {
-    APIOBJECT *object = static_cast<APIOBJECT *>(object_ptr);
-    i32 sfx_bits = 0;
-    if (object != NULL && static_cast<i8>(object->flags_low) < 0) {
-        sfx_bits = 1 << object->field_0x27c;
-    }
-    return sfx_bits;
-}
-
-void GameAudio_Reset() {
-    memset(&GameAudio_Default, 0, sizeof(GameAudio_Default));
-    GameAudio = &GameAudio_Default;
-    memset(GameAudio_Default.sfx_names, 0, sizeof(GameAudio_Default.sfx_names));
-    for (i32 i = 0; i < 0x55; ++i) {
-        GameAudio_Default.sfx_ids[i] = -1;
-    }
-}
-
-void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32) {
-    if (flags == 0) {
-        PlaySfxById(sfx_id, position);
-        return;
-    }
-    if ((flags & ~2) == 1) {
-        nusound_special_positions[1] = *position;
-        PlaySfxById(sfx_id, &nusound_special_positions[1]);
-    }
-    flags -= 2;
-    if (static_cast<u32>(flags) <= 1) {
-        nusound_special_positions[2] = *position;
-        PlaySfxById(sfx_id, &nusound_special_positions[2]);
-    }
-}
-
-void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 flags, i32 volume) {
-    if ((u32)sfx < 0x55) {
-        GameAudio_PlaySfxById(GameAudio->sfx_ids[sfx], position, flags, volume);
-    }
-}
-
-void GameAudio_Init(GAMEAUDIO *audio) {
-    GameAudio = audio;
-    for (i32 i = 0; i < 0x55; ++i) {
-        GAMEAUDIO *current_audio = GameAudio;
-        current_audio->sfx_ids[i] = static_cast<i16>(GetSfxId(current_audio->sfx_names[i]));
-    }
-
-    MenuRegisterSoundFX(GameAudio_GetSfxId(0x2f), GameAudio_GetSfxId(0x30), GameAudio_GetSfxId(0x31),
-                        GameAudio_GetSfxId(0x32));
-}
-
-i32 GameAudio_GetSfxId(i32 sfx) {
-    if (static_cast<u32>(sfx) <= 0x54) {
-        return GameAudio->sfx_ids[sfx];
-    }
-    return -1;
-}
-
-void GameAudio_PlaySfxAndSetVolume(i32 sfx, nuvec_s *position, f32 volume) {
-    if (static_cast<u32>(sfx) < 0x55) {
-        PlaySfxByIdAndSetVolume(GameAudio->sfx_ids[sfx], position, volume);
-    }
-}
-
-extern "C" void MusicSeekOffset(i32 track, f32 seek_offset) {
-    struct VolumeSnapshot {
-        i32 index;
-        f32 volume;
-    };
-    if (seek_offset < 0.0f) {
-        seek_offset = Music.seek_offset;
-    }
-    if (track < 0 || track >= SFX_MUSIC_COUNT) {
-        return;
-    }
-
-    if (static_cast<u16>(Music.state - MUSIC_PLAYBACK_DUAL_STREAM) < 3) {
-        if (Music.current_track == track && !Music.pause_requested) {
-            return;
-        }
-        const i16 primary_stream = Music.primary_stream;
-        const i32 stream = primary_stream;
-        Music.current_track = static_cast<i16>(track);
-        Music.queued_track = static_cast<i16>(track);
-        Music.requested_track = -1;
-        Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
-        Music.stream_status_delay[stream] = 0;
-        if (Music.transition_frames < 64) {
-            Music.pause_requested = true;
-        } else {
-            Music.pause_requested = false;
-            const VolumeSnapshot volume_snapshot = {g_music[track].index, MusicVolume};
-            if (NOSOUND == 0 && NOMUSIC == 0) {
-                NuSound3StopStereoStream(stream);
-                NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track,
-                                    NUSOUNDPLAYTOK_VOL,
-                                    static_cast<i32>(static_cast<f32>(volume_snapshot.index) * volume_snapshot.volume),
-                                    NUSOUNDPLAYTOK_STARTOFFSET, static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT,
-                                    NUSOUNDPLAYTOK_END);
-                Music.secondary_stream = primary_stream;
-            }
-            Music.transition_frames = 0;
-            Music.seek_offset = 0.0f;
-        }
-        return;
-    }
-
-    const i16 primary_stream = Music.primary_stream;
-    const i32 stream = primary_stream;
-    Music.pause_requested = false;
-    Music.stream_status_delay[stream] = 0;
-    Music.current_track = static_cast<i16>(track);
-    Music.queued_track = static_cast<i16>(track);
-    Music.requested_track = static_cast<i16>(track);
-    Music.state = MUSIC_PLAYBACK_ACTIVE;
-    Music.transition_frames = 0;
-    const VolumeSnapshot volume_snapshot = {g_music[track].index, MusicVolume};
-    if (NOSOUND == 0 && NOMUSIC == 0) {
-        NuSound3StopStereoStream(stream);
-        NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track, NUSOUNDPLAYTOK_VOL,
-                            static_cast<i32>(static_cast<f32>(volume_snapshot.index) * volume_snapshot.volume),
-                            NUSOUNDPLAYTOK_STARTOFFSET, static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT,
-                            NUSOUNDPLAYTOK_END);
-        Music.transition_frames = 0;
-        Music.secondary_stream = primary_stream;
-    }
-}
-
-struct SoundTrackData {
-    u8 reserved_00[0x88];
-    u8 flags_88;
-};
-
-static inline bool UpdateSecondaryMusicStream() {
-    if (NuSound3GetStereoStreamStatus(Music.secondary_stream) == NUSOUND_STEREO_STREAM_FINISHED)
-        return false;
-    if (Music.transition_frames <= 0x7f)
-        ++Music.transition_frames;
-    if (Music.transition_frames > 0x40 && Music.pause_requested)
-        MusicPreSeek(Music.requested_track);
-    return true;
-}
-
-extern "C" void SoundUpdate(float frame_time) {
-    if (Music.update_delay != 0 || frame_time == 0.0f) {
-        return;
-    }
-
-    // Playback states 4 through 13 form the active update range.
-    switch (static_cast<u16>(Music.state - MUSIC_PLAYBACK_ACTIVE)) {
-        case 4:
-        case 6:
-            if (NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED)
-                Music.state = static_cast<MusicPlaybackState>(7);
-            return;
-        case 1:
-        case 2:
-        case 3:
-        case 5: {
-            if (Music.state == 9 || Music.state == 6) {
-                Music.transition = (frame_time + frame_time) + Music.transition;
-            } else {
-                Music.transition = frame_time * 0.2f + Music.transition;
-            }
-            if (Music.transition >= 1.0f) {
-                Music.transition = 1.0f;
-                if (static_cast<u16>(Music.state - 5) <= 1) {
-                    NuSound3PauseStereoStream(1 - Music.primary_stream);
-                } else {
-                    NuSound3StopStereoStream(1 - Music.primary_stream);
-                }
-                Music.state = MUSIC_PLAYBACK_ACTIVE;
-                Music.transition_frames = 0;
-            }
-
-            if (Music.current_track != -1) {
-                NuSound3SetStereoStreamVolume(Music.primary_stream,
-                                              static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) *
-                                                               Music.transition * MusicVolume));
-            }
-            if (Music.queued_track != -1) {
-                NuSound3SetStereoStreamVolume(
-                    1 - Music.primary_stream,
-                    static_cast<i32>((1.0f - Music.transition) * static_cast<f32>(g_music[Music.queued_track].index) *
-                                     MusicVolume));
-            }
-            return;
-        }
-        case 0: {
-            if (!UpdateSecondaryMusicStream())
-                return;
-            if (Music.transition_frames <= 0x18) {
-                return;
-            }
-            if (Music.restore_requested) {
-                RestoreGameMusic();
-                Music.restore_requested = false;
-            }
-            return;
-        }
-        case 7:
-        case 8:
-        case 9: {
-            SoundTrackData *track_data = static_cast<SoundTrackData *>(Music.track_data);
-            if (track_data != NULL && (track_data->flags_88 & 2) != 0) {
-                Music.resume_frames = 0;
-            } else {
-                if (NuSound3GetStereoStreamStatus(1 - Music.primary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-                    Music.resume_frames = 0;
-                } else {
-                    if (Music.resume_frames <= 0x3f) {
-                        ++Music.resume_frames;
-                        if (Music.resume_frames <= 8) {
-                            goto update_secondary_stream;
-                        }
-                    }
-                    if (Music.current_track != -1 && Music.state != MUSIC_PLAYBACK_DUAL_STREAM_PENDING &&
-                        NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED &&
-                        !Music.pause_requested) {
-                        if (Music.state == 12) {
-                            Music.state = MUSIC_PLAYBACK_STOPPED;
-                            NuSound3StopStereoStream(1 - Music.primary_stream);
-                            NuSound3StopStereoStream(Music.primary_stream);
-                        } else {
-                            Music.state = MUSIC_PLAYBACK_ACTIVE;
-                            NuSound3StopStereoStream(1 - Music.primary_stream);
-                            NuSound3ResumeStereoStream(Music.primary_stream);
-                        }
-                        Music.transition = 1.0f;
-                        NuSound3SetStereoStreamVolume(
-                            Music.primary_stream,
-                            static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) * MusicVolume));
-                        Music.transition_frames = 0;
-                        Music.requested_track = -1;
-                    }
-                }
-            }
-
-        update_secondary_stream:
-            UpdateSecondaryMusicStream();
-            return;
-        }
-        default:
-            return;
-    }
-}

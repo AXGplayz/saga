@@ -1,7 +1,6 @@
 #include "decomp.h"
 #include "nu2api/nufile/nufile.h"
 
-// The original unit constructs its six homogeneous vectors.
 #include "nu2api/nucore/nuvuvec.hpp"
 
 // The Android retail memory-card entry points are intentional no-ops. Their
@@ -65,7 +64,3 @@ extern "C" i32 NuMcGetSlotMax(void) {
     return 0;
 }
 
-i32 NuMcFileOpenSize(NUFILE file) {
-    file -= 0x1000;
-    return NuMcOpenSize(file);
-}

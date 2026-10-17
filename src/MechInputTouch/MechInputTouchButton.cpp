@@ -4,14 +4,12 @@
 #include "MechInputTouch_types.h"
 #include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nu3d_includes.h"
 
-extern u32 colourPurple;
 u32 colourWhite = 0xffffffff;
 u32 colourBlack = 0xff000000;
 u32 colourRed = 0xff0000ff;
 struct numtl_s *g_nuMtlHandleNull;
-
-extern "C" void NuRndrRect(f32, f32, f32, f32, f32, f32, f32, f32, f32, i32, struct numtl_s *);
 
 void MechInputTouchButton::ClearTouchLocked(bool force) {
     if (!force) {
@@ -211,17 +209,6 @@ void MechInputTouchButtonFaker::Update(NuInputTouchData const *data) {
     if (touch_locked_by != 0xff && !found_locked_touch) {
         ClearTouchLocked(false);
     }
-}
-
-MechInputTouchMainDummyStick::MechInputTouchMainDummyStick(MechInputTouchMainController &main_controller,
-                                                           NuTouchInputElement::TYPE type)
-    : NuTouchInputElement(type, colourPurple, 0), controller(&main_controller) {
-}
-
-MechInputTouchMainDummyButton::MechInputTouchMainDummyButton(MechInputTouchMainController &main_controller, u32 id,
-                                                             MechInputTouchMainController::eButtonTypes type)
-    : NuTouchInputElement(TYPE_BUTTON, colourPurple, id, 0.0f, 0.0f, 0.0f, 0.0f), controller(&main_controller),
-      button_type(static_cast<u32>(type)) {
 }
 
 MechInputTouchButtonControlled::MechInputTouchButtonControlled(MechInputTouchMainController &, i32 index)

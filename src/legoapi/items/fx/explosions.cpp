@@ -1,9 +1,11 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/actions/combat/hits.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/screens/arcade.h"
 #include "legoapi/world/world.h"
 #include "nu2api/numath/nutrig.h"
@@ -12,14 +14,64 @@
 #include "nu2api/nu3d/nutex.h"
 
 #include <string.h>
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/render/fx.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <stdio.h>
+#include <math.h>
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/nu3d/nutexanm.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/items/collect/bolts.h"
+#include "legoapi/items/fx/explosions.h"
+#include "legoapi/items/objects/game_obj.h"
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
+i32 SphereSphereOverlapScaleY(NUVEC *, f32, f32, NUVEC *, f32, f32);
+void GameCam_HitJudder();
+GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *, NUVEC *, i32, f32, NUVEC *, NUVEC *, BOLT_s *, u32, u8 *);
 
-extern EXPLOSION Explosion[8];
-extern i32 i_explosion;
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+void ResetExplosions() {
+    memset(Explosion, 0, sizeof(Explosion));
+    i_explosion = 0;
+}
 
 EXPLOSION *AddExplosion(nuvec_s *position, float radius, float strength, GameObject_s *object, i32 effect, i32 flags) {
     EXPLOSION *explosion = &Explosion[i_explosion];
@@ -43,74 +95,8 @@ EXPLOSION *AddExplosion(nuvec_s *position, float radius, float strength, GameObj
     return explosion;
 }
 
-void SetupBlowupSfx(WORLDINFO_s *, specialsfx_s *) {
+void DrawExplosions() {
 }
-
-void ResetExplosions() {
-    memset(Explosion, 0, sizeof(Explosion));
-    i_explosion = 0;
-}
-
-extern f32 FRAMETIME;
-void UpdateExplosion_Generic(EXPLOSION *);
-
-void UpdateExplosions() {
-#define UPDATE_EXPLOSION(index)                                                                                        \
-    do {                                                                                                               \
-        EXPLOSION *explosion = &Explosion[index];                                                                      \
-        if (explosion->field_0x1c < explosion->field_0x20) {                                                           \
-            explosion->field_0x1c += FRAMETIME;                                                                        \
-            if (explosion->field_0x1c >= explosion->field_0x20) {                                                      \
-                explosion->field_0x1c = explosion->field_0x20;                                                         \
-            } else {                                                                                                   \
-                if (explosion->object != NULL && (explosion->object->apiobj.flags_low & 1) == 0) {                     \
-                    explosion->object = NULL;                                                                          \
-                }                                                                                                      \
-                UpdateExplosion_Generic(explosion);                                                                    \
-            }                                                                                                          \
-        }                                                                                                              \
-    } while (0)
-
-    UPDATE_EXPLOSION(0);
-    UPDATE_EXPLOSION(1);
-    UPDATE_EXPLOSION(2);
-    UPDATE_EXPLOSION(3);
-    UPDATE_EXPLOSION(4);
-    UPDATE_EXPLOSION(5);
-    UPDATE_EXPLOSION(6);
-
-#undef UPDATE_EXPLOSION
-
-    EXPLOSION *explosion = &Explosion[7];
-    if (explosion->field_0x1c < explosion->field_0x20) {
-        explosion->field_0x1c += FRAMETIME;
-        if (explosion->field_0x1c >= explosion->field_0x20) {
-            explosion->field_0x1c = explosion->field_0x20;
-            return;
-        }
-        if (explosion->object != NULL && (explosion->object->apiobj.flags_low & 1) == 0) {
-            explosion->object = NULL;
-        }
-        UpdateExplosion_Generic(explosion);
-    }
-}
-
-extern WORLDINFO_s *WORLD;
-extern "C" i32 ParticlesPerSecond(f32, f32);
-extern "C" i32 AddGameDebrisRot(APIDEBRISSYS_s *, i32, NUVEC *, i32, u16, u16);
-i32 SphereSphereOverlapScaleY(NUVEC *, f32, f32, NUVEC *, f32, f32);
-BOLTTYPE_s *BoltType_FindByID(i32, WORLDINFO_s *);
-PART_s *Bolt_HitParts(BOLT_s *, NUVEC *, NUVEC *, NUVEC *, f32, i32);
-i32 CannotKill(GameObject_s *);
-i32 Player_HasInvincibility(GameObject_s *);
-void ObjHitShield(GameObject_s *, GameObject_s *, i32, BOLT_s *);
-void NewBuzz(nupad_s *, f32, i32);
-void NewRumble(nupad_s *, f32, i32);
-void NewRumbleAllPlayers(f32, f32, i32, i32);
-void GameCam_HitJudder();
-void Arcade_AIKilled(i32);
-void Arcade_PlayerKilled(i32, i32);
-GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *, NUVEC *, i32, f32, NUVEC *, NUVEC *, BOLT_s *, u32, u8 *);
 
 void UpdateExplosion_Generic(EXPLOSION *explosion) {
     const f32 progress = explosion->field_0x1c / explosion->field_0x20;
@@ -276,3 +262,45 @@ void UpdateExplosion_Generic(EXPLOSION *explosion) {
             NewBuzz(explosion->object->pad_gamepad->pad, 0.1f, 0);
     }
 }
+
+void UpdateExplosions() {
+#define UPDATE_EXPLOSION(index)                                                                                        \
+    do {                                                                                                               \
+        EXPLOSION *explosion = &Explosion[index];                                                                      \
+        if (explosion->field_0x1c < explosion->field_0x20) {                                                           \
+            explosion->field_0x1c += FRAMETIME;                                                                        \
+            if (explosion->field_0x1c >= explosion->field_0x20) {                                                      \
+                explosion->field_0x1c = explosion->field_0x20;                                                         \
+            } else {                                                                                                   \
+                if (explosion->object != NULL && (explosion->object->apiobj.flags_low & 1) == 0) {                     \
+                    explosion->object = NULL;                                                                          \
+                }                                                                                                      \
+                UpdateExplosion_Generic(explosion);                                                                    \
+            }                                                                                                          \
+        }                                                                                                              \
+    } while (0)
+
+    UPDATE_EXPLOSION(0);
+    UPDATE_EXPLOSION(1);
+    UPDATE_EXPLOSION(2);
+    UPDATE_EXPLOSION(3);
+    UPDATE_EXPLOSION(4);
+    UPDATE_EXPLOSION(5);
+    UPDATE_EXPLOSION(6);
+
+#undef UPDATE_EXPLOSION
+
+    EXPLOSION *explosion = &Explosion[7];
+    if (explosion->field_0x1c < explosion->field_0x20) {
+        explosion->field_0x1c += FRAMETIME;
+        if (explosion->field_0x1c >= explosion->field_0x20) {
+            explosion->field_0x1c = explosion->field_0x20;
+            return;
+        }
+        if (explosion->object != NULL && (explosion->object->apiobj.flags_low & 1) == 0) {
+            explosion->object = NULL;
+        }
+        UpdateExplosion_Generic(explosion);
+    }
+}
+

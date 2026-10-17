@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 // Startup / permanent-data loading.
 //
 // This TU owns the permanent arena bootstrap and the loading-screen frame
@@ -53,66 +56,54 @@
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
-
-// ---------------------------------------------------------------------------
-// Engine symbols defined in other TUs (declared here to avoid pulling large
-// headers).  Linkage matches the defining TU.
-// ---------------------------------------------------------------------------
-
-// C++ linkage — defined in nu3d.
-NUMTL *NuMtlCreate3D(i32 count);
+#include "decomp.h"
+#include "legoapi/world/world.h"
+#include <stdio.h>
+#include "gameapi/gui/apimenu.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/characters/core/charconfig.h"
+#include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/world/level.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/render/fx.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/audio/audio.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/actions/character/legoapi_tag.h"
+#include "legoapi/ai/core/gameai.h"
+#include "legoapi/ai/game/creature.h"
+#include "legoapi/characters/core/characters.h"
+#include "legoapi/core/startup/text.h"
+#include "legoapi/items/objects/things.h"
+#include "legoapi/lib/text.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/menus/screens/gamestatus_lsw.h"
+#include "legoapi/world/levels.h"
+#include "nu2api/nu3d/nu3d_includes.h"
+#include "nu2api/nuandroid/ios_device.h"
 
 extern "C" {
     // nucore / nurndr plain stubs and editor helpers (extern "C" TUs).
-    f32 NuIOS_GetAspectRatio(void);
-    i32 NuIOS_GetDeviceLanguage(void);
     void NuLanguageSet(i32 language);
-    void NuCameraSet(NUCAMERA *cam);
     void NuFrameBegin(void);
     f32 NuFrameEnd(void);
-    i32 NuRndrBeginScene(i32 flags);
-    void NuRndrEndScene(void);
-    void NuMtlDestroy(NUMTL *mtl);
-    NUMTL *NuMtlCreate(i32 count);
-    void NuMtlUpdate(NUMTL *mtl);
-    void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
-    void SetActionInfo(ACTIONINFO_s *action_info, EXTRAACTIONDATA_s *extra_action_data);
-    void SetProceduralAnimationFn(void *fn);
     void DrawMenu(i32 menu_id);
-    extern i32 GameMenuLevel;
 }
 
 // C++ linkage — defined in their own TUs.
 void InitMemCard(void);                                         // saveload.cpp
 void Text_LoadFont(char *path, VARIPTR *buf, VARIPTR *buf_end); // text.cpp
 void *Text_IsFontLoaded(void);                                  // text.cpp
-void Text_InitStringTable(i32, VARIPTR *, VARIPTR *);
-void Text_InitTable(TEXTENTRY *, i32, i32);
-void Text_LoadStrings(VARIPTR *, VARIPTR *);
-void Text_InitDefaultStrings(void);
-void LevelProgress_ReserveBufferSpace(VARIPTR *buf, VARIPTR buf_end);
-void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, i32 a4, i32 a5);
-void LevelSplines_InitForGame(LEVELSPLINE *tab);
-NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
-void CreateThingManager(void);
-void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end);
-void GameAnimSys_AllocateLevelProgressData(VARIPTR *buf, VARIPTR *buf_end, i32 a3, i32 a4);
-void LSW_registerStatusScreen(void);
-void initGameHintSys_LSW(void);
 void Movies_ConfigureList(char *path, VARIPTR *buf, VARIPTR *buf_end);
-CHARACTERDATA *ConfigureCharacterList(char *path, VARIPTR *buf, VARIPTR *buf_end, i32 max, i32 *count, i32 stride,
-                                      GAMECHARACTERDATA **gcdata);
-void CharScenes_Init(VARIPTR *buf, VARIPTR *buf_end);
-void FixUpCharacters(CHARFIXUP *fixup);
-void CharCategories_Init(CHARCATEGORY *cat);
-LEVELDATA *Levels_ConfigureList(char *path, VARIPTR *buf, VARIPTR *buf_end, i32 max, i32 *count,
-                                LEVELSETDEFAULTSFN *set_defaults);
-void FixUpLevels(LEVELFIXUP *fixup);
-EPISODEDATA *Episodes_ConfigureList(char *path, VARIPTR *buf, VARIPTR *buf_end, i32 max, i32 *count);
-void NewGame(void);
-void InitGameAfterConfig(void);
 GIZAIMESSAGESYS_s *CreateGizAIMessageSys(VARIPTR *buf, VARIPTR *buf_end, i32 size);
 
 // buffer globals owned by the batman TU (batman.h declares them extern "C")
@@ -121,49 +112,18 @@ extern "C" {
     extern VARIPTR characterbuffer_base;
     extern VARIPTR characterbuffer_end;
 }
-void BackDrop_Init(char *path, VARIPTR *buf, VARIPTR *buf_end);
-void BackDrop_Draw(float alpha, i32 flags);
-void BackDrop_Update(float dt);
-void BackDrop_ResetColours();
-void BackDrop_UpdateColours(i32 instant);
-void TextCrawl_Init(TEXTCRAWL_s *crawl, i32 id, i32 unk);
-void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text);
-void LoadPerm1(void);
-void LoadPerm2(void);
-void RegisterHelpers(void);
 void UpdateGameMenu(GAMEPAD_s *pad, i32 a2);
-void SetBackgroundMusic(i32 track);
-void UpdateTimer(TIMER *timer);
-void IntroText_Draw(f32 alpha);
-void ReadPads(void);
 
 // Globals / objects declared elsewhere.
-extern i16 id_DEFAULTCHARACTER[2];
-extern i16 id_QUIGONJINN;
 extern i16 id_OBIWANKENOBI;
-extern GAMEPAD_s GamePad[64]; // gamepads.cpp, bss @0x127a500
-extern i32 readpads_always;
+extern "C" GAMEPAD_s GamePad[64]; // gamepads.cpp, bss @0x127a500
 extern u8 RAP_WARNING_R, RAP_WARNING_G, RAP_WARNING_B;
-
-extern Fade fade;
-extern FadeWipe fadeWipe;
-extern FadeStillWipe fadeStillWipe;
-extern FadeStill fadeStill;
 
 void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size); // gameobjects.cpp
 struct CHARFIXUP;
 extern CHARFIXUP CharFixUp[222]; // characters.cpp
 
 // LSW gameplay hooks wired by LoadPermData.
-i32 CutScene_StartFn_LSW(CUTINFO *);
-void CutScene_PreUpdateFn_LSW(CUTINFO *);
-void CutScene_PostUpdateFn_LSW(void);
-void CutScene_StoppedFn_LSW(CUTINFO *);
-i32 CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *, NUGCUTCHAR_s *);
-i32 InitBolt_AddMomentumType_LSW(BOLT_s *, GameObject_s *, nuvec_s *);
-i32 Bolt_HitPlatFn_LSW(BOLT_s *);
-i32 Bolt_HitCustomFn_LSW(BOLT_s *, nuvec_s *);
-void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *);
 void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *);
 
 // ---------------------------------------------------------------------------
@@ -217,6 +177,60 @@ namespace {
 static i32 legal_tid;      // texture id of the loaded legal screen
 static i32 loadlegal_done; // legal texture already attempted
 static NUMTL *legal_mtl;   // material wrapping the legal texture
+
+// ---------------------------------------------------------------------------
+// Public permutations — thin wrappers that set up the arena.
+// ---------------------------------------------------------------------------
+
+void StartPerm(void) {
+    permbuffer_ptr.addr = permbuffer_base.addr;
+    permbuffer_end.addr = superbuffer_end.addr;
+}
+
+// libTTapp.so 0x470de0: close the permbuffer, carve out the character
+// buffer, and split the remaining superbuffer in half between the two world
+// bump buffers. This is what gives each WORLDINFO its buffer_start /
+// giz_buffer / buffer_end cursors that WorldInfo_Reset restores.
+void EndPerm(void) {
+    usize aligned = ALIGN(permbuffer_ptr.addr, 4);
+    permbuffer_end.addr = aligned;
+    permbuffer_size = (i32)(aligned - permbuffer_base.addr);
+
+    characterbuffer_ptr.addr = aligned;
+    characterbuffer_base.addr = aligned;
+    usize world_start = aligned + static_cast<usize>(CHARACTERBUFFERSIZE);
+    characterbuffer_end.addr = world_start;
+    superbuffer_ptr.addr = world_start;
+    superbuffer_base.addr = world_start;
+
+    usize half = (superbuffer_end.addr - world_start) >> 1;
+    WorldInfo[0].giz_buffer.addr = world_start;
+    WorldInfo[0].buffer_start = reinterpret_cast<void *>(world_start);
+    WorldInfo[0].unknown_0108.addr = world_start + half;
+    WorldInfo[1].giz_buffer.addr = world_start + half;
+    WorldInfo[1].buffer_start = reinterpret_cast<void *>(world_start + half);
+    WorldInfo[1].unknown_0108.addr = superbuffer_end.addr;
+    editbuffer_end.addr = superbuffer_end.addr - static_cast<usize>(EDITBUFFERENDSIZE);
+}
+
+struct HINT_s;
+
+struct MechTouchUIElement;
+struct PLAYERITEM_s;
+struct PLAYERITEMTYPE_s;
+struct PLAYERPACKET_s;
+struct SOCKPOSITION_s;
+struct TouchHolder;
+
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
+
+namespace {
+
+} // namespace
+
+struct AIROW_s;
+struct nunativegscene_s;
+struct SHOPINPUT;
 
 // ---------------------------------------------------------------------------
 // Permanent-data initialisation (background thread entry).
@@ -386,15 +400,6 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 0x10);
     PermDataLoaded = 1;
-}
-
-// ---------------------------------------------------------------------------
-// Public permutations — thin wrappers that set up the arena.
-// ---------------------------------------------------------------------------
-
-void StartPerm(void) {
-    permbuffer_ptr.addr = permbuffer_base.addr;
-    permbuffer_end.addr = superbuffer_end.addr;
 }
 
 void LoadPerm(void) {
@@ -695,28 +700,69 @@ void LoadPerm(void) {
     WORLD = saved_world;
 }
 
-// libTTapp.so 0x470de0: close the permbuffer, carve out the character
-// buffer, and split the remaining superbuffer in half between the two world
-// bump buffers. This is what gives each WORLDINFO its buffer_start /
-// giz_buffer / buffer_end cursors that WorldInfo_Reset restores.
-void EndPerm(void) {
-    usize aligned = ALIGN(permbuffer_ptr.addr, 4);
-    permbuffer_end.addr = aligned;
-    permbuffer_size = (i32)(aligned - permbuffer_base.addr);
+void CheckForPlayersTurnedOff() {
+    for (i32 source_index = 0; source_index < 2; ++source_index) {
+        GameObject_s *source = Player[source_index];
+        if (source != NULL && (source->apiobj.flags_high & APIOBJECT_HIGH_FLAG_CHARACTER) == 0) {
+            for (i32 target_index = 2; target_index < 8; ++target_index) {
+                GameObject_s *target = Player[target_index];
+                if (target == NULL || (target->tag_flags & 2) != 0 || (target->field_0xefb & 4) != 0 ||
+                    target->character_context == 0x24 || target->character_context == 0x1f) {
+                    continue;
+                }
 
-    characterbuffer_ptr.addr = aligned;
-    characterbuffer_base.addr = aligned;
-    usize world_start = aligned + static_cast<usize>(CHARACTERBUFFERSIZE);
-    characterbuffer_end.addr = world_start;
-    superbuffer_ptr.addr = world_start;
-    superbuffer_base.addr = world_start;
-
-    usize half = (superbuffer_end.addr - world_start) >> 1;
-    WorldInfo[0].giz_buffer.addr = world_start;
-    WorldInfo[0].buffer_start = reinterpret_cast<void *>(world_start);
-    WorldInfo[0].unknown_0108.addr = world_start + half;
-    WorldInfo[1].giz_buffer.addr = world_start + half;
-    WorldInfo[1].buffer_start = reinterpret_cast<void *>(world_start + half);
-    WorldInfo[1].unknown_0108.addr = superbuffer_end.addr;
-    editbuffer_end.addr = superbuffer_end.addr - static_cast<usize>(EDITBUFFERENDSIZE);
+                if (target->apiobj.field_0x27d != 0 ||
+                    (target->field_0xe31 == 1 && target->apiobj.character_data->game_character->field_0x28 > 0.0f)) {
+                    TagCharacter(Player[source_index], target, 1);
+                }
+            }
+        }
+    }
 }
+
+i32 GetNumLocalPlayers() {
+    i32 count = 0;
+    if (Player[0] != NULL)
+        count = static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0;
+    if (Player[1] != NULL && Player[1]->apiobj.player_controlled)
+        count++;
+    return count;
+}
+
+i32 FreePlay_DropInToPlayerPos(GameObject_s *object) {
+    i32 result = 0;
+    if ((WORLD == NULL || WORLD->current_level != FACTORYF_LDATA) && player != NULL && FreePlay != 0 &&
+        drop_in_teleport > 1 && VehicleArea == 0 && (Arcade != 0 || teleport_all_freeplay_modes != 0) &&
+        object->field_0xcc0 == NULL && (CInfo[static_cast<i8>(object->character_context)].flags & 0x8000) == 0 &&
+        object->character_context != 0x2b && object->apiobj.model_draw_result == 0 && (object->tag_flags & 2) == 0) {
+        NUVEC position = player->apiobj.last_safe_position;
+        if (position.x == player->apiobj.position.x && position.y == player->apiobj.position.y &&
+            position.z == player->apiobj.position.z) {
+            position.z += 0.01f;
+        }
+
+        if (NuCameraClipTestSphere(&position, object->apiobj.field_0x1e0, &numtx_identity) == 0) {
+            ResetPlayerMoves(object);
+            Player_ClearContext(object, 1);
+            Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+            object->apiobj.start_position = position;
+            object->apiobj.position = position;
+            object->apiobj.velocity = v000;
+            object->apiobj.field_0x276 = player->apiobj.field_0x276;
+            ResetPlayerMoves(object);
+            object->apiobj.movement_stuck_time = 0.0f;
+            InitSurfaceInfo(object);
+            SetObjOnSurface(object, 1);
+            GameObjectOrigin(object);
+            AddGameDebris(WORLD->debris_sys, 0x5c, &object->apiobj.collision_position);
+            result = 1;
+        }
+    }
+    return result;
+}
+
+i32 PlayersDropInOut() {
+    CheckForPlayersTurnedOff();
+    return 0;
+}
+

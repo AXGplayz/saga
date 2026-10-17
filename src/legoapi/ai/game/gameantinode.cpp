@@ -5,32 +5,20 @@
 #include "legoapi/world/world.h"
 #include "legoapi/items/base/apiobject.h"
 #include "gameapi/ai/aisys/aisys.h"
-#include "gameapi/edtools/edfile.h"
-#include "editor/aieditor_state.h"
-#include "editor/aieditor_settings.h"
-#include "editor/antinode_editor_private.h"
-#include "legoapi/render/core/render.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/numath/nufloat.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nu3d/nurndr.h"
-#include "nu2api/nu3d/nuspecial.h"
 #include <string.h>
+#include "legoapi/ai/core/gameai.h"
 
 extern "C" {
     u64 GameAntinode_grid[64];
-    extern f32 default_path_heighttol;
-    extern i32 AIEDITOR_ANTINODES;
-    extern i32 aidata_version;
-    AIANTINODE_s *AIAntinodeCreateSingleFrame(NUVEC *, f32);
-    void AiRndrLine3dDbg(f32, f32, f32, f32, f32, f32, u32);
 }
 i32 ViewCamGetMode();
 NUVEC *ViewCamGetTgt();
 void GameAntinode_FindGridPosition(WORLDINFO_s *, NUVEC *, f32, f32, u8 *, u8 *, u8 *, u8 *);
-void GameAntinode_UnregisterAntiNode(GAMEANTINODESYS_s *, GAMEANTINODE_s *);
 
 void *GameAntnode_CreateSys(WORLDINFO_s *world, variptr_u *buf, variptr_u *buf_end, i32 count) {
     usize node_bytes = count * sizeof(GAMEANTINODE_s);
@@ -285,48 +273,3 @@ void GameAntinode_UnregisterAntiNode(GAMEANTINODESYS_s *system, GAMEANTINODE_s *
     --system->count;
 }
 
-void AISysDrawAntinode_Circle(AIANTINODE_s *node, u32 colour) {
-    LocaledbitsDrawSolidCircleXY(&node->position, node->radius, node->min_y, node->max_y, colour, 0, 16);
-}
-
-void AISysDrawAntinode_Ellipse(AIANTINODE_s *node, u32 colour) {
-    LocaledbitsDrawSolidEllipseXY(&node->position, node->base_radius, node->base_height, node->flags, node->min_y,
-                                  node->max_y, colour, 0, 16);
-}
-
-void AISysDrawAntinode_Rectangle(AIANTINODE_s *node, u32 colour) {
-    NUMTX matrix;
-    NuMtxSetTranslation(&matrix, &node->position);
-    NuMtxPreRotateY(&matrix, node->flags);
-
-    NUVEC corners[8] = {
-        {-node->base_radius, node->min_y, -node->base_height}, {node->base_radius, node->min_y, -node->base_height},
-        {node->base_radius, node->min_y, node->base_height},   {-node->base_radius, node->min_y, node->base_height},
-        {-node->base_radius, node->max_y, -node->base_height}, {node->base_radius, node->max_y, -node->base_height},
-        {node->base_radius, node->max_y, node->base_height},   {-node->base_radius, node->max_y, node->base_height},
-    };
-    NuVecMtxTransform(&corners[0], &corners[0], &matrix);
-    NuVecMtxTransform(&corners[1], &corners[1], &matrix);
-    NuVecMtxTransform(&corners[2], &corners[2], &matrix);
-    NuVecMtxTransform(&corners[3], &corners[3], &matrix);
-    NuVecMtxTransform(&corners[4], &corners[4], &matrix);
-    NuVecMtxTransform(&corners[5], &corners[5], &matrix);
-    NuVecMtxTransform(&corners[6], &corners[6], &matrix);
-    NuVecMtxTransform(&corners[7], &corners[7], &matrix);
-
-#define ANTINODE_DEBUG_EDGE(a, b)                                                                                      \
-    AiRndrLine3dDbg(corners[a].x, corners[a].y, corners[a].z, corners[b].x, corners[b].y, corners[b].z, colour)
-    ANTINODE_DEBUG_EDGE(0, 1);
-    ANTINODE_DEBUG_EDGE(1, 2);
-    ANTINODE_DEBUG_EDGE(2, 3);
-    ANTINODE_DEBUG_EDGE(3, 0);
-    ANTINODE_DEBUG_EDGE(4, 5);
-    ANTINODE_DEBUG_EDGE(5, 6);
-    ANTINODE_DEBUG_EDGE(6, 7);
-    ANTINODE_DEBUG_EDGE(7, 4);
-    ANTINODE_DEBUG_EDGE(0, 4);
-    ANTINODE_DEBUG_EDGE(1, 5);
-    ANTINODE_DEBUG_EDGE(2, 6);
-    ANTINODE_DEBUG_EDGE(3, 7);
-#undef ANTINODE_DEBUG_EDGE
-}

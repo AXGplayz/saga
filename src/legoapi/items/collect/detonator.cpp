@@ -13,28 +13,17 @@
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/numath/nutrig.h"
 
 #include <string.h>
+#include "legoapi/items/collect/detonator_types.h"
+#include "legoapi/actions/movement/climbing.h"
+#include "legoapi/items/collect/batarang.h"
+#include "legoapi/items/collect/detonator.h"
+#include "legoapi/props/objects/zipup.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
-
-void Batarangs_CheckLostData(void *);
-EXPLOSION *Detonate(nuvec_s *, u16);
-void Detonator_Detonate(DETONATOR_s *);
-DETONATOR_s *Detonator_FindNearest(nuvec_s *, float, GameObject_s *);
-void FastWeaponIn(GameObject_s *, i32);
-
-struct DetonatorHitData {
-    u8 field_0x00[0xc];
-    f32 field_0x0c;
-    u8 field_0x10[0x10];
-    f32 field_0x20;
-};
 
 void Detonators_Draw() {
     if (!WORLD->lev_objs[0xec].active) {
@@ -66,10 +55,6 @@ void Detonators_Draw() {
                 detonator.draw_result = NuSpecialDrawAt(&WORLD->lev_objs[0xee].special, &matrix);
         }
     }
-}
-
-void Detonators_Reset() {
-    memset(Detonator, 0, sizeof(Detonator));
 }
 
 void Detonators_Update() {
@@ -336,41 +321,3 @@ void Detonator_MoveCode(GameObject_s *object) {
     PlaySfx(const_cast<char *>("imp_thermalDet_attach"), &detonator->position);
 }
 
-#define DETONATOR_CONSIDER_NEAREST(index, owner_test)                                                                  \
-    if (Detonator[index].active != 0 && (owner_test)) {                                                                \
-        const f32 distance = NuVecDistSqr(position, &Detonator[index].position, NULL);                                 \
-        if (distance < nearest_distance) {                                                                             \
-            nearest_distance = distance;                                                                               \
-            nearest = &Detonator[index];                                                                               \
-        }                                                                                                              \
-    }
-
-DETONATOR_s *Detonator_FindNearest(nuvec_s *position, float radius, GameObject_s *owner) {
-    f32 nearest_distance = radius == 0.0f ? 1000000000.0f : radius * radius;
-    DETONATOR_s *nearest = NULL;
-    if (owner != NULL) {
-        DETONATOR_CONSIDER_NEAREST(0, Detonator[0].object == owner)
-        DETONATOR_CONSIDER_NEAREST(1, Detonator[1].object == owner)
-        DETONATOR_CONSIDER_NEAREST(2, Detonator[2].object == owner)
-        DETONATOR_CONSIDER_NEAREST(3, Detonator[3].object == owner)
-        DETONATOR_CONSIDER_NEAREST(4, Detonator[4].object == owner)
-        DETONATOR_CONSIDER_NEAREST(5, Detonator[5].object == owner)
-        DETONATOR_CONSIDER_NEAREST(6, Detonator[6].object == owner)
-        DETONATOR_CONSIDER_NEAREST(7, Detonator[7].object == owner)
-        DETONATOR_CONSIDER_NEAREST(8, Detonator[8].object == owner)
-        DETONATOR_CONSIDER_NEAREST(9, Detonator[9].object == owner)
-    } else {
-        DETONATOR_CONSIDER_NEAREST(0, true)
-        DETONATOR_CONSIDER_NEAREST(1, true)
-        DETONATOR_CONSIDER_NEAREST(2, true)
-        DETONATOR_CONSIDER_NEAREST(3, true)
-        DETONATOR_CONSIDER_NEAREST(4, true)
-        DETONATOR_CONSIDER_NEAREST(5, true)
-        DETONATOR_CONSIDER_NEAREST(6, true)
-        DETONATOR_CONSIDER_NEAREST(7, true)
-        DETONATOR_CONSIDER_NEAREST(8, true)
-        DETONATOR_CONSIDER_NEAREST(9, true)
-    }
-#undef DETONATOR_CONSIDER_NEAREST
-    return nearest;
-}

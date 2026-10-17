@@ -1,5 +1,7 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
-#include "gameapi/edtools/edui.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -12,11 +14,8 @@
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/core/config/fileselect.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/menus/screens/gamemenuall.h"
-#include "legoapi/menus/screens/gamestructure.h"
-#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
@@ -26,8 +25,6 @@
 #include "legoapi/render/core/render.h"
 #include "legoapi/menus/core/panel.h"
 #include "nu2api/nu3d/nugscn.h"
-#include "nu2api/nu3d/nuqfnt.h"
-#include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nucore/nustring.h"
@@ -35,29 +32,19 @@
 #include "nu2api/numath/nufloat.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
-#include "legoapi/items/base/collection.h"
 #include "legoapi/world/world_shared.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/menus/screens/missions.h"
 
-extern i32 NextArea_FreePlay;
-void InitMission(MISSIONSYS *, i32);
-extern f32 ICONSIZE, ICONX, DROPINALPHA, HUB_EPISODETITLEY;
-extern i16 tSELECT, tSELECTED, tSELECTING, tEXIT, tCANCEL;
-void DrawCharIcon(i32, f32, f32, f32, f32, i32, f32, f32, i32, nuhspecial_s *);
+extern f32 HUB_EPISODETITLEY;
+extern i16 tSELECT, tSELECTED, tSELECTING;
 void Hub_DrawImportantBrick(i32, f32, f32, f32, i32, i32);
-f32 GetAspectRatio();
 extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                           u8 green, u8 blue, f32 max_width, i32 max_lines);
-extern char **TTab;
-extern i16 tCANCEL;
-extern i32 menu_flash;
 extern i16 tOUTOFTIME;
-extern TIMER BonusTimer;
-extern "C" void PlaySfx(char *, NUVEC *);
-extern i32 GetMenuID(void);
+extern "C" TIMER BonusTimer;
 extern void SetBonusWinner(i32);
-extern void ResetGameMessages(void);
 extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
-
 static f32 MissionsAlpha;
 static i32 hub_mission;
 static f32 MissionIconScale[20];
@@ -365,3 +352,4 @@ void CheckMissionEnd(MISSIONSYS *ms) {
         }
     }
 }
+

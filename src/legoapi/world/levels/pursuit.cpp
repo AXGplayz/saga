@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include <stdio.h>
 #include <string.h>
 #include "nu2api/numath/nuvec.h"
@@ -5,18 +8,12 @@
 
 #include "decomp.h"
 #include "legoapi/world/level.h"
-#include "legoapi/render/core/terrain.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
-#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/gizmos/object/newblowup.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/audio/sfx.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/motion/gameanim.h"
@@ -24,25 +21,18 @@
 #include "legoapi/menus/core/gamemessage.h"
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/world/levels/levels.h"
-#include "legoapi/render/core/render.h"
-#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nulgtlaser.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nuhspecial.h"
-#include "nu2api/numath/nurand.h"
 #include "gameapi/ai/aisys/aipath.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/numath/nuang.h"
 #include "legoapi/characters/core/character.h"
-#include "legoapi/characters/motion.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
-#include "legogame/game.h"
 #include "nu2api/numath/nutrig.h"
-#include "nu2api/nucore/nugcutscene.h"
 #include "legoapi/gizmo/base/gizmo.h"
-#include "gameapi/edtools/edstubs.h"
 
 // Coruscant bounty-hunter pursuit levels (original pursuit.cpp translation unit).
 
@@ -80,6 +70,48 @@ ZAMARROW_s zamarrow;
 i32 pursuit_c_hack = 1;
 f32 traffic_test_z = -360.0f;
 
+// UpdateZamArrow is inlined into its callers apart from the message update,
+// which retail keeps as the split-out body of the IPA-SRA clone (it only needs
+// &world->lev_objs).
+static __attribute__((noinline, noclone)) void
+UpdateZamArrowBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) __asm__("_ZL14UpdateZamArrowP11WORLDINFO_s.isra.5.part.6");
+
+static inline void UpdateZamArrow(WORLDINFO_s *world) {
+    if (zamarrow.object != NULL && (zamarrow.object->apiobj.field_0x1f8 & 0x1000) != 0 &&
+        zamarrow.object->apiobj.field_0x287 == 0) {
+        if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
+            zamarrow.timer = (FRAMETIME + FRAMETIME) + zamarrow.timer;
+            if (zamarrow.timer > 1.0f) {
+                zamarrow.timer = 1.0f;
+            }
+            if (0.1f > NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f)) {
+                UpdateZamArrowBody(&world->lev_objs);
+            }
+        } else {
+            zamarrow.timer = 0.0f;
+        }
+    }
+}
+
+static void UpdateZamArrowBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) {
+    NUVEC position = zamarrow.object->apiobj.upper_position;
+    position.y += 1.0f;
+    GAMEMESSAGE_s *message = static_cast<GAMEMESSAGE_s *>(
+        AddGameMessage(const_cast<char *>(" "), &position, 0.05f, NULL, 0.0f, 255, 63, 63, 0x10083, 0.0f));
+    if (message == NULL) {
+        return;
+    }
+
+    message->alpha = static_cast<u8>(NU_SIN_LUT(static_cast<i32>(zamarrow.timer * 16384.0f)) * 128.0f);
+    message->icon = 0x134;
+    PURSUIT_ARROW_COLOURS_s *colours = reinterpret_cast<PURSUIT_ARROW_COLOURS_s *>(*lev_objs);
+    if (colours->enabled != 0) {
+        message->color1 = colours->colour[0];
+        message->color2 = colours->colour[1];
+        message->color3 = colours->colour[2];
+    }
+}
+
 // ===========================================================================
 // Coruscant — bounty-hunter pursuit (Zam Wesell)
 // ===========================================================================
@@ -98,18 +130,6 @@ void BountyHunterPursuitA_Init(WORLDINFO_s *world) {
         b->field_0x9f |= 0x20;
 }
 
-void BountyHunterPursuitB_Init(WORLDINFO_s *) {
-    STUBBED();
-}
-
-void BountyHunterPursuitC_Init(WORLDINFO_s *) {
-    STUBBED();
-}
-
-void BountyHunterPursuitD_Init(WORLDINFO_s *) {
-    STUBBED();
-}
-
 void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
     zamarrow = {};
     zamarrow.object = GetNamedGameObject(world->ai_sys, "ai_zam");
@@ -126,6 +146,14 @@ void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
         b->field_0x9f |= 0x20;
 }
 
+void BountyHunterPursuitA_Update(WORLDINFO_s *world) {
+    UpdateZamArrow(world);
+}
+
+void BountyHunterPursuitB_Init(WORLDINFO_s *) {
+    STUBBED();
+}
+
 void BountyHunterPursuitB_Reset(WORLDINFO_s *world) {
     LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator1");
     LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator2");
@@ -137,6 +165,18 @@ void BountyHunterPursuitB_Reset(WORLDINFO_s *world) {
     zamarrow = {};
     zamarrow.object = GetNamedGameObject(world->ai_sys, "ai_zam");
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "CompletedB", NULL);
+}
+
+void BountyHunterPursuitB_Update(WORLDINFO_s *world) {
+    if (LevAIMessage[0] == NULL || LevAIMessage[0]->value != 1.0f) {
+        return;
+    }
+
+    UpdateZamArrow(world);
+}
+
+void BountyHunterPursuitC_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void BountyHunterPursuitC_Reset(WORLDINFO_s *world) {
@@ -168,76 +208,6 @@ void BountyHunterPursuitC_Reset(WORLDINFO_s *world) {
     }
 }
 
-void BountyHunterPursuitD_Reset(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator1");
-    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator2");
-    LevGizmo[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator3");
-    LevGizmo[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator4");
-    LevGizmo[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator5");
-    LevGizmo[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator6");
-    LevGizmo[6] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator7");
-    LevGizmo[7] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator8");
-    LevGizmo[8] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator9");
-    LevGizmo[9] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator10");
-    LevGizmo[10] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator11");
-    LevGizmo[11] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator12");
-    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "ai_zam");
-}
-
-// UpdateZamArrow is inlined into its callers apart from the message update,
-// which retail keeps as the split-out body of the IPA-SRA clone (it only needs
-// &world->lev_objs).
-static __attribute__((noinline, noclone)) void
-UpdateZamArrowBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) __asm__("_ZL14UpdateZamArrowP11WORLDINFO_s.isra.5.part.6");
-
-static void UpdateZamArrowBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) {
-    NUVEC position = zamarrow.object->apiobj.upper_position;
-    position.y += 1.0f;
-    GAMEMESSAGE_s *message = static_cast<GAMEMESSAGE_s *>(
-        AddGameMessage(const_cast<char *>(" "), &position, 0.05f, NULL, 0.0f, 255, 63, 63, 0x10083, 0.0f));
-    if (message == NULL) {
-        return;
-    }
-
-    message->alpha = static_cast<u8>(NU_SIN_LUT(static_cast<i32>(zamarrow.timer * 16384.0f)) * 128.0f);
-    message->icon = 0x134;
-    PURSUIT_ARROW_COLOURS_s *colours = reinterpret_cast<PURSUIT_ARROW_COLOURS_s *>(*lev_objs);
-    if (colours->enabled != 0) {
-        message->color1 = colours->colour[0];
-        message->color2 = colours->colour[1];
-        message->color3 = colours->colour[2];
-    }
-}
-
-static inline void UpdateZamArrow(WORLDINFO_s *world) {
-    if (zamarrow.object != NULL && (zamarrow.object->apiobj.field_0x1f8 & 0x1000) != 0 &&
-        zamarrow.object->apiobj.field_0x287 == 0) {
-        if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
-            zamarrow.timer = (FRAMETIME + FRAMETIME) + zamarrow.timer;
-            if (zamarrow.timer > 1.0f) {
-                zamarrow.timer = 1.0f;
-            }
-            if (0.1f > NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f)) {
-                UpdateZamArrowBody(&world->lev_objs);
-            }
-        } else {
-            zamarrow.timer = 0.0f;
-        }
-    }
-}
-
-void BountyHunterPursuitB_Update(WORLDINFO_s *world) {
-    if (LevAIMessage[0] == NULL || LevAIMessage[0]->value != 1.0f) {
-        return;
-    }
-
-    UpdateZamArrow(world);
-}
-
-void BountyHunterPursuitA_Update(WORLDINFO_s *world) {
-    UpdateZamArrow(world);
-}
-
 void BountyHunterPursuitC_Update(WORLDINFO_s *world) {
     UpdateZamArrow(world);
 
@@ -266,6 +236,26 @@ void BountyHunterPursuitC_Update(WORLDINFO_s *world) {
             entry->active = entry->direction == -1;
         }
     }
+}
+
+void BountyHunterPursuitD_Init(WORLDINFO_s *) {
+    STUBBED();
+}
+
+void BountyHunterPursuitD_Reset(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator1");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator2");
+    LevGizmo[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator3");
+    LevGizmo[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator4");
+    LevGizmo[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator5");
+    LevGizmo[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator6");
+    LevGizmo[6] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator7");
+    LevGizmo[7] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator8");
+    LevGizmo[8] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator9");
+    LevGizmo[9] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator10");
+    LevGizmo[10] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator11");
+    LevGizmo[11] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "generator12");
+    LevGameObject[0] = GetNamedGameObject(world->ai_sys, "ai_zam");
 }
 
 void BountyHunterPursuitD_Update(WORLDINFO_s *) {
@@ -311,3 +301,4 @@ void BountyHunterPursuitD_Update(WORLDINFO_s *) {
         NuLgtLaser(0, 1.0f, 1.0f, 0.01f, &nearest->position, &delta, 0xff808040, 1.5f, distance);
     }
 }
+

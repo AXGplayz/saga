@@ -1,18 +1,17 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include <cstdio>
 
 #include "decomp.h"
 #include "legoapi/menus/core/gamemessages.h"
-#include "legoapi/menus/core/panel.h"
 #include "legoapi/menus/screens/store.h"
 #include "globals.h"
-#include "gameapi/gui/apimenu.h"
 #include "legoapi/audio/audio.h"
-#include "legoapi/audio/sfx.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
-#include "legoapi/world/area.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/nustring.h"
@@ -20,81 +19,74 @@
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nutrig.h"
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
-extern void IncreaseScore(u32 *, u64, i32);
-extern void SetBonusWinner(i32);
-extern void Arcade_CoinCollected(i32, u32 *, u32);
-extern void PlayRepeatSfx(char *, i32, f32, char, f32, nuvec_s *);
-void ResetGameMessages();
-void AddFancyMessageRGB(char *, float, float, float, float, i32, unsigned char, unsigned char, unsigned char);
+#include "legoapi/menus/core/gamemessages_types.h"
+#include "legoapi/render/core/render.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/menus/core/text.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include "nu2api/nu3d/nurndr.h"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
 
 GAMEMESSAGE_s GameMessage[128] = {};
 
 static i32 GameMessageIndex;
 
-/* The public game-message type intentionally only exposes the fields used by
- * callers.  This is the backing layout consumed by the original message
- * queue; its first 0x7c bytes are either a text pointer or inline text. */
-struct GAME_MESSAGE_DATA {
-    char *text;
-    char text_buffer[0x78];
-    nuvec_s position_a; // 0x7c
-    nuvec_s target_position;
-    nuvec_s position;
-    nuvec_s start_position;
-    f32 field_0xac;
-    f32 target_scale;
-    f32 field_0xb4;
-    f32 field_0xb8;
-    f32 elapsed;
-    f32 duration;
-    f32 field_0xc4;
-    f32 field_0xc8;
-    f32 field_0xcc;
-    f32 field_0xd0;
-    f32 field_0xd4;
-    u32 flags;
-    u32 score;
-    u16 field_0xe0;
-    u16 field_0xe2;
-    u16 field_0xe4;
-    u16 icon;
-    union {
-        nuvec_s color;
-        nuhspecial_s special;
-    };
-    u8 red;
-    u8 green;
-    u8 blue;
-    u8 alpha;
-    u8 active;
-    u8 field_0xf9;
-    u8 field_0xfa;
-    u8 field_0xfb;
-    u8 field_0xfc;
-    u8 field_0xfd;
-    u8 field_0xfe;
-    u8 field_0xff;
-    void (*delay_fn)(GAMEMESSAGE_s *);
-    void (*tick_fn)(GAMEMESSAGE_s *);
-    void (*update_fn)(GAMEMESSAGE_s *);
-    void *field_0x10c;
-    void (*end_fn)(GAMEMESSAGE_s *);
-};
-
-static_assert(sizeof(GAME_MESSAGE_DATA) == sizeof(GAMEMESSAGE_s), "game message backing layout");
-static_assert(offsetof(GAME_MESSAGE_DATA, tick_fn) == offsetof(GAMEMESSAGE_s, tick_fn),
-              "game message backing callback offset");
-
 ADDGAMEMSG AddGameMsg_Default = {
     NULL, &v000, &v000, 1.0f, 1.0f, 0xff, 0xff, 0xff, 0x80, 0,  1.0f, 0.0f, 0, -1,
     NULL, 0,     0.0f,  0.0f, NULL, NULL, NULL, NULL, NULL, -1, 0,    0xff, 0,
 };
+
+void *AddGameMessage(char *text, nuvec_s *position, float scale, nuvec_s *target_position, float target_scale,
+                     unsigned char red, unsigned char green, unsigned char blue, u32 flags, float duration);
+
+struct GAMEMESSAGE_s;
+struct nuhspecial_s;
+
+nuhspecial_s *(*GameMsg_GetExtraObjFn)(GAMEMESSAGE_s *);
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+void ResetGameMessages() {
+    for (i32 i = 0; i < 128; i++) {
+        GameMessage[i].active = 0;
+    }
+}
 
 GAMEMESSAGE_s *AddGameMsg(ADDGAMEMSG *message) {
     GAME_MESSAGE_DATA *slot;
@@ -253,173 +245,6 @@ void *AddGameMessage(char *text, nuvec_s *position, float scale, nuvec_s *target
     return AddGameMsg(&message);
 }
 
-void AddFancyMessage(char *text, float x, float y, float scale, float duration, i32 message_id, i32 colour_type) {
-    const i32 red = 0xff;
-    const i32 green = 0xff - ((static_cast<u32>(colour_type) < 1) << 6);
-    const i32 blue = ~(-static_cast<i32>(static_cast<u32>(colour_type) < 1)) & 0xff;
-    AddFancyMessageRGB(text, x, y, scale, duration, message_id, red, green, blue);
-}
-
-void EndScoreMessage(GAMEMESSAGE_s *message) {
-    GAME_MESSAGE_DATA *data = reinterpret_cast<GAME_MESSAGE_DATA *>(message);
-    if (CoinsGoToMainTotal() != 0) {
-        i32 icon = static_cast<i16>(data->icon);
-        if (data->icon != 0xffff) {
-            if (static_cast<u32>(icon - 0xb7) < 4) {
-                icon -= 4;
-            } else if (static_cast<u32>(icon - 0xbf) < 4) {
-                icon -= 4;
-            } else if (static_cast<u32>(icon - 0xc7) < 4) {
-                icon -= 4;
-            } else if (static_cast<u32>(icon - 0xd5) < 4) {
-                icon += 4;
-            }
-            cointotal_i_obj[static_cast<i8>(data->field_0xfd)] = icon;
-        }
-        CoinTotalScale = 1.5f;
-
-        if (SuperStory != 0) {
-            IncreaseScore(&SuperStoryScore, data->score, 0);
-        } else {
-            WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-            if (world->area != NULL && (world->area->flags & 0x100) != 0) {
-                if (static_cast<u32>(BonusCoinTotal) < BonusCoinTarget) {
-                    IncreaseScore(reinterpret_cast<u32 *>(&BonusCoinTotal), data->score, 0);
-                    if (static_cast<u32>(BonusCoinTotal) >= BonusCoinTarget) {
-                        BonusCoinTotal = static_cast<i32>(BonusCoinTarget);
-                        SetBonusWinner(static_cast<i8>(data->field_0xfd));
-                        BonusWinFlag = 0;
-                        NewMenu(32, -1, -1);
-                        PlaySfx("MK-Panel", NULL);
-                        ResetGameMessages();
-                    }
-                }
-            } else {
-                IncreaseScore(&Game.coins, data->score, 1);
-            }
-        }
-    } else {
-        const i8 player_index = static_cast<i8>(data->field_0xfd);
-        if (static_cast<u8>(player_index) > 1 || Player[player_index] == NULL ||
-            Player[player_index]->coinpacket == NULL) {
-            goto play_counter_sound;
-        }
-
-        GameObject_s *object = Player[player_index];
-        COINPACKET *packet = object->coinpacket;
-        const u32 old_coins = packet->coins;
-        if (static_cast<i16>(data->icon) != -1) {
-            packet->lastcoin = data->icon;
-        }
-
-        if (BonusWinner == -1) {
-            IncreaseScore(&packet->coins, data->score, 1);
-            packet = object->coinpacket;
-            packet->scale = 1.5f;
-        }
-        if (BuildUpDone == 0) {
-            BuildUpScale = 1.5f;
-        }
-        if (Arcade != 0) {
-            Arcade_CoinCollected(static_cast<i8>(data->field_0xfd), &packet->coins, old_coins);
-            goto play_counter_sound;
-        }
-        if (BonusArea == 0 || BonusWinner != -1 || packet->coins <= 999999) {
-            goto play_counter_sound;
-        }
-
-        packet->coins = 1000000;
-        SetBonusWinner(static_cast<i8>(data->field_0xfd));
-        BonusWinFlag = 0;
-        NewMenu(31, -1, -1);
-        PlaySfx("MK-Panel", NULL);
-        ResetGameMessages();
-    }
-
-play_counter_sound:
-    if (DoubleScoreTime > 0.0f) {
-        PlayRepeatSfx("Counter", -1, 0.0f, 2, 0.1f, NULL);
-    } else {
-        PlaySfx("Counter", NULL);
-    }
-}
-
-void ResetGameMessages() {
-    for (i32 i = 0; i < 128; i++) {
-        GameMessage[i].active = 0;
-    }
-}
-
-i32 FindGameMsgsWithID(i32 id, i32 remove, i32 player, GAMEMESSAGE_s *exclude) {
-    i32 count = 0;
-    GAME_MESSAGE_DATA *message = reinterpret_cast<GAME_MESSAGE_DATA *>(&GameMessage[0]);
-    GAME_MESSAGE_DATA *end = reinterpret_cast<GAME_MESSAGE_DATA *>(&GameMessage[128]);
-    GAME_MESSAGE_DATA *excluded = reinterpret_cast<GAME_MESSAGE_DATA *>(exclude);
-
-    if (remove == 0) {
-        if (player != -1) {
-            for (; message != end; ++message) {
-                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded &&
-                    static_cast<i8>(message->field_0xfd) == player) {
-                    ++count;
-                }
-            }
-        } else {
-            for (; message != end; ++message) {
-                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded) {
-                    ++count;
-                }
-            }
-        }
-    } else {
-        if (player != -1) {
-            for (; message != end; ++message) {
-                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded &&
-                    static_cast<i8>(message->field_0xfd) == player) {
-                    ++count;
-                    message->active = 0;
-                }
-            }
-        } else {
-            for (; message != end; ++message) {
-                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded) {
-                    ++count;
-                    message->active = 0;
-                }
-            }
-        }
-    }
-    return count;
-}
-
-void AddGameMsgCount(nuvec_s *position, i32 count, i32 total, unsigned char red, unsigned char green,
-                     unsigned char blue, float field_0xd4) {
-    char text[32];
-    sprintf(text, "%i/%i", count, total);
-
-    void *message = position != NULL ? AddGameMessage(text, position, 0.6f, NULL, 0.8f, red, green, blue, 0x4023, 1.0f)
-                                     : AddGameMessage(text, &v001, 0.6f, NULL, 0.8f, red, green, blue, 0x4020, 1.0f);
-    if (message != NULL) {
-        *reinterpret_cast<float *>(reinterpret_cast<char *>(message) + 0xd4) = field_0xd4;
-    }
-}
-
-void AddFancyMessageRGB(char *text, float x, float y, float scale, float duration, i32 message_id, unsigned char red,
-                        unsigned char green, unsigned char blue) {
-    if (message_id != 0) {
-        GameAudio_PlaySfx(0x2c, NULL, 0, 0);
-        GameAudio_PlaySfx(0x26, NULL, 0, 0);
-        NewRumbleAllPlayers(0.7f, 0.0f, 0, 0);
-        GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
-    }
-
-    NUVEC position = {x, y, 1.0f};
-    scale += scale;
-    const f32 scale_offset = scale * 0.5f;
-    AddGameMessage(text, &position, scale, &position, scale + scale_offset, red, green, blue, 0x4020, duration);
-    AddGameMessage(text, &position, scale, &position, scale - scale_offset, red, green, blue, 0x4020, duration);
-}
-
 void UpdateGameMessages() {
     using MessageFn = void (*)(GAMEMESSAGE_s *);
     GAME_MESSAGE_DATA *message = reinterpret_cast<GAME_MESSAGE_DATA *>(&GameMessage[0]);
@@ -535,3 +360,183 @@ void TransformGameMessages(nuvec_s *camera_position, nuvec_s *camera_scale, nuve
         message->start_position.z = 1.0f;
     }
 }
+
+void DrawGameMessages() {
+    extern GAMEMESSAGE_s GameMessage[128];
+    extern i32 DrawPanel3DObjectNoAlpha(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32);
+
+    GAMEMESSAGE_s *message = GameMessage;
+    GAMEMESSAGE_s *end = message + 128;
+    for (; message != end; ++message) {
+        if (message->active == 0) {
+            continue;
+        }
+        if (message->field_0xfb != 0 && (message->flags & 0x40000) == 0) {
+            continue;
+        }
+        if (message->field_0xd0 > 0.0f) {
+            continue;
+        }
+        if (!(message->duration > message->elapsed) && message->field_0xfa == 0) {
+            continue;
+        }
+
+        u32 flags = message->flags;
+        f32 progress = message->elapsed / message->duration;
+        if ((flags & 0x100) != 0) {
+            progress = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 16384.0f + 16384.0f));
+        } else if ((flags & 0x200) != 0) {
+            progress = NU_SIN_LUT(static_cast<i32>(progress * 16384.0f));
+        } else if ((flags & 0x400) != 0) {
+            progress = NU_SIN_LUT(static_cast<i32>(progress * 32768.0f));
+        } else if ((flags & 0x800) != 0) {
+            progress = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 32768.0f));
+        }
+
+        f32 scale = (flags & 5) == 5 ? message->field_0xb8 : message->field_0xb4;
+        NUVEC position = message->start_position;
+        if (message->field_0xd4 != 0.0f && message->field_0xfb == 0) {
+            const f32 limit = message->field_0xd4;
+            if (position.x < -limit) {
+                position.x = -limit;
+            } else if (position.x > limit) {
+                position.x = limit;
+            }
+            if (position.y < -limit) {
+                position.y = -limit;
+            } else if (position.y > limit) {
+                position.y = limit;
+            }
+        }
+
+        if ((flags & 8) != 0) {
+            if (message->update_fn != NULL) {
+                message->update_fn(message);
+                flags = message->flags;
+            }
+            position.x = position.x + (message->target_position.x - position.x) * progress;
+            position.y = position.y + (message->target_position.y - position.y) * progress;
+            position.z = position.z + (message->target_position.z - position.z) * progress;
+        }
+        if ((flags & 0x20) != 0) {
+            scale += (message->target_scale - scale) * progress;
+        }
+        position.z += message->field_0xc8;
+        position.x += message->field_0xc4;
+
+        if (message->draw_callback != NULL) {
+            message->draw_callback(message, &position, scale);
+            continue;
+        }
+
+        if (NuSpecialExistsFn(&message->special) != 0) {
+            const u32 draw_flags = message->flags;
+            if ((draw_flags & 0x20000) != 0) {
+                DrawPanel3DObjectNoAlpha(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                         message->rotation_y, message->field_0xe4, &message->special, 2);
+            } else {
+                const f32 alpha = (draw_flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f;
+                DrawPanel3DObject(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                  message->rotation_y, message->field_0xe4, &message->special, 2, alpha);
+            }
+            if (GameMsg_GetExtraObjFn != NULL) {
+                nuhspecial_s *extra = GameMsg_GetExtraObjFn(message);
+                if (extra != NULL && NuSpecialExistsFn(extra) != 0) {
+                    const u32 draw_flags = message->flags;
+                    if ((draw_flags & 0x20000) != 0) {
+                        DrawPanel3DObjectNoAlpha(position.x, position.y, position.z, scale, scale, scale,
+                                                 message->field_0xe0, message->rotation_y, message->field_0xe4, extra,
+                                                 2);
+                    } else {
+                        const f32 alpha =
+                            (draw_flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f;
+                        DrawPanel3DObject(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                          message->rotation_y, message->field_0xe4, extra, 2, alpha);
+                    }
+                }
+            }
+        } else {
+            char *text = message->text != NULL ? message->text : message->text_buffer;
+            Text3DEx(text, position.x, position.y, position.z, scale, scale, scale, message->field_0xfc, message->red,
+                     message->green, message->blue, message->alpha);
+        }
+    }
+}
+
+i32 FindGameMsgsWithID(i32 id, i32 remove, i32 player, GAMEMESSAGE_s *exclude) {
+    i32 count = 0;
+    GAME_MESSAGE_DATA *message = reinterpret_cast<GAME_MESSAGE_DATA *>(&GameMessage[0]);
+    GAME_MESSAGE_DATA *end = reinterpret_cast<GAME_MESSAGE_DATA *>(&GameMessage[128]);
+    GAME_MESSAGE_DATA *excluded = reinterpret_cast<GAME_MESSAGE_DATA *>(exclude);
+
+    if (remove == 0) {
+        if (player != -1) {
+            for (; message != end; ++message) {
+                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded &&
+                    static_cast<i8>(message->field_0xfd) == player) {
+                    ++count;
+                }
+            }
+        } else {
+            for (; message != end; ++message) {
+                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded) {
+                    ++count;
+                }
+            }
+        }
+    } else {
+        if (player != -1) {
+            for (; message != end; ++message) {
+                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded &&
+                    static_cast<i8>(message->field_0xfd) == player) {
+                    ++count;
+                    message->active = 0;
+                }
+            }
+        } else {
+            for (; message != end; ++message) {
+                if (message->active != 0 && static_cast<i8>(message->field_0xfe) == id && message != excluded) {
+                    ++count;
+                    message->active = 0;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+void AddGameMsgCount(nuvec_s *position, i32 count, i32 total, unsigned char red, unsigned char green,
+                     unsigned char blue, float field_0xd4) {
+    char text[32];
+    sprintf(text, "%i/%i", count, total);
+
+    void *message = position != NULL ? AddGameMessage(text, position, 0.6f, NULL, 0.8f, red, green, blue, 0x4023, 1.0f)
+                                     : AddGameMessage(text, &v001, 0.6f, NULL, 0.8f, red, green, blue, 0x4020, 1.0f);
+    if (message != NULL) {
+        *reinterpret_cast<float *>(reinterpret_cast<char *>(message) + 0xd4) = field_0xd4;
+    }
+}
+
+void AddFancyMessageRGB(char *text, float x, float y, float scale, float duration, i32 message_id, unsigned char red,
+                        unsigned char green, unsigned char blue) {
+    if (message_id != 0) {
+        GameAudio_PlaySfx(0x2c, NULL, 0, 0);
+        GameAudio_PlaySfx(0x26, NULL, 0, 0);
+        NewRumbleAllPlayers(0.7f, 0.0f, 0, 0);
+        GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
+    }
+
+    NUVEC position = {x, y, 1.0f};
+    scale += scale;
+    const f32 scale_offset = scale * 0.5f;
+    AddGameMessage(text, &position, scale, &position, scale + scale_offset, red, green, blue, 0x4020, duration);
+    AddGameMessage(text, &position, scale, &position, scale - scale_offset, red, green, blue, 0x4020, duration);
+}
+
+void AddFancyMessage(char *text, float x, float y, float scale, float duration, i32 message_id, i32 colour_type) {
+    const i32 red = 0xff;
+    const i32 green = 0xff - ((static_cast<u32>(colour_type) < 1) << 6);
+    const i32 blue = ~(-static_cast<i32>(static_cast<u32>(colour_type) < 1)) & 0xff;
+    AddFancyMessageRGB(text, x, y, scale, duration, message_id, red, green, blue);
+}
+

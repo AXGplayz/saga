@@ -1,61 +1,25 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "nu2api/nu3d/nuportal.h"
 #include "decomp.h"
-#include "legoapi/actions/character/suit.h"
-#include "legoapi/actions/character/streaks.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world_shared.h"
 #include "nu2api/nu3d/nucamera.h"
-#include "nu2api/nu3d/numtl.h"
-#include "nu2api/nu3d/nulgtlaser.h"
 #include "nu2api/nu3d/nutex.h"
-#include "legoapi/core/input/qrand.h"
-#include "legoapi/core/input/gamepads.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/charconfig.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/characters/motion.h"
-#include "legoapi/characters/motion/gameanim.h"
-#include "legoapi/items/base/collection.h"
 #include "legoapi/items/base/apiobject.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/screens/store.h"
-#include "legoapi/menus/screens/gamestructure.h"
-#include "legoapi/menus/screens/shop.h"
-#include "legoapi/render/fx.h"
-#include "legoapi/render/light/lighting.h"
-#include "legoapi/render/core/terrain.h"
-#include "legoapi/gizmos/object/lever.h"
-#include "legoapi/gizmos/door/zipups.h"
 #include "legoapi/gizmo/base/gizmo.h"
-#include "legoapi/gizmo/base/gizmessage.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmos/object/newblowup.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmos/transport/grapples.h"
-#include "legoapi/props/objects/tightrope.h"
-#include "legoapi/gizmos/door/spinner.h"
-#include "legoapi/gizmos/trigger/minicut.h"
-#include "legoapi/gizmos/transport/tubes.h"
-#include "legoapi/gizmos/traps/gizturrets.h"
 #include "legoapi/gizmos/trigger/ai.h"
-#include "legoapi/gizmos/trigger/giztimer.h"
-#include "legoapi/gizmos/trigger/gizrandom.h"
-#include "legoapi/gizmos/trigger/gizspecial.h"
 #include "legoapi/props/doors/door.h"
-#include "legoapi/gizmos/door/plugs.h"
-#include "legoapi/gizmos/door/push.h"
-#include "legoapi/gizmos/fx/edgizshadowmachine.h"
-#include "legoapi/gizmos/transport/gizportal.h"
-#include "legoapi/props/objects/techno.h"
 #include "legoapi/world/level.h"
-#include "legoapi/world/areas.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/mission.h"
-#include "gameapi/ai/aisys/aisys.h"
-#include "gameapi/edtools/edstubs.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nuspecial.h"
@@ -64,117 +28,79 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include "legoapi/menus/core/text.h"
-#include "legoapi/actions/character/specialmoves.h"
-#include "legoapi/audio/audio.h"
-#include "legoapi/characters/core/customiser.h"
-#include "nu2api/numusic/numusic.h"
 #include "nu2api/numath/nutrig.h"
+#include "gameapi/edtools/edui.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameframework/saveload.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/world/area.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/render/core/render.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/nufloat.h"
+#include "batman.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "nu2api/nu3d/nurndr.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "legoapi/props/system/socksys.h"
+#include "nu2api/nucore/numemory.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nufile/nufpar.h"
+#include "nu2api/numusic/sfx.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include <stddef.h>
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <stdlib.h>
+#include <cstdio>
+#include "nu2api/nu3d/nuspline.h"
+#include <new>
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/numath/nuang.h"
+#include "legoapi/characters/core/characters.h"
 
 static CHARSCENE_s *CharScene_Area;
 
-// LoadPerm1 is one of the few game-level entry points which wires together
-// otherwise C-linkage engine subsystems.  Keep these declarations local: the
-// individual subsystem TUs intentionally expose their original plain names.
-extern "C" {
-    i32 rtlInitDynamic(VARIPTR *, VARIPTR, i32);
-    void DebrisSetup(VARIPTR *, VARIPTR, char *, i32, i32, i32);
-    void DebrisRegisterCutoffCameraVec(void *);
-    void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
-    void InitParts(i32, VARIPTR *, VARIPTR *);
-    void ParticleReset(void);
-    i32 NuFileExists(char *);
-    i32 NuStrCpy(char *, const char *);
-    i32 edppLoadPage(char *, i32, usize);
-    void NuRndrShadowInit(u8 *);
-    void NuTexAnimProgSysInit(void);
-    void terrainpickupinit(char *, void **);
-
-    extern f32 animduration_blendouttime;
-    extern i32 Grass_Available;
-    extern i32 DEBPAGE_GENERAL;
-    extern i32 DEBPAGE_CHARACTER;
-    extern void *perm_debrissys;
-}
-
-struct AISYS_s;
-void AIScriptLoadAll(char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS_s *sys);
-void InitTexAnimScripts(char **names);
-void BackDrop_Init(char *path, VARIPTR *buf, VARIPTR *buf_end);
-
-i32 PARTPAGE_GENERAL = -1;
-
 // The original table at 0x006281a0.  These are the material animation
 // scripts made available before the permanent things scene is loaded.
-char *TexAnimList_LSW[32] = {
-    (char *)"arrow",          (char *)"blink_01",      (char *)"blink_02",    (char *)"blink_03",
-    (char *)"coin",           (char *)"coin_pause",    (char *)"control",     (char *)"ds_esc_intro_1",
-    (char *)"ds_esc_intro_2", (char *)"ds_1",          (char *)"helpmeobi",   (char *)"lightening1",
-    (char *)"plasma",         (char *)"screen",        (char *)"Dso_screen",  (char *)"anakinbows",
-    (char *)"anakinkilling",  (char *)"anakinspod",    (char *)"boost1",      (char *)"boost2",
-    (char *)"boost3",         (char *)"boost4",        (char *)"gasganospod", (char *)"helpobi",
-    (char *)"hologram1",      (char *)"hologramnoise", (char *)"play8",       (char *)"quidie",
-    (char *)"sebulbaspod",    (char *)"sidious",       (char *)"crowd",       NULL,
-};
-
-void InitRipples(ripple_set_s **, VARIPTR *, VARIPTR *, i32);
-void CreateFadeMaterials();
-void CreateUsefulMaterials();
-extern ripple_set_s *ripples;
-extern NUMTL *ShadowMat;
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
-void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *game_keywords);
-void ExtraCharacterFixUpAfterConfig();
-extern i32 CHARPAK;
-
-extern i32 GetMenuID(void);
-extern i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count);
-extern i32 Collection_Got(i32 id);
-extern void Customiser_SaveModelTextureIDs(CUSTOMISER *customiser, CHARACTERMODEL_s *model);
-extern CUSTOMISER *CharacterCustomiser;
-extern VARIPTR characterbuffer_ptr;
-extern VARIPTR characterbuffer_end;
-extern i32 waiting_for_character;
-extern f32 WaitingForCharacterTime;
-
-extern "C" {
-    i32 hub_character_ready = -1;
-}
-
-APICHARACTERMODELLIST_s PermModelList[] = {{-1, 0}};
-
-enum LegoObjectId : i16 {
-    LEGO_OBJECT_FLOOR_TARGET = 0x55,
-};
-
-void LSW_SetIndy(i32) {
-    LedgeTerrain_On = 0;
-    Grapples_Available = 0;
-    SuperCarry_Bash = 0;
-    SuperCarry_Jump = 0;
-    PUNCHGAP = 0.3f;
-    PUNCHCHARGAP = 0.3f;
-    HINTS_ON = 1;
-
-    TechnoSys.interaction_time = 0.2f;
-    TechnoSys.idle_offset = v000;
-    TechnoSys.active_offset = v000;
-    TechnoSys.active_effect_id = 0x2c;
-    TechnoSys.success_effect_id = -1;
-    TechnoSys.failure_effect_id = -1;
-    TechnoSys.complete_offset = v000;
-    TechnoSys.floor_target_object_id = LEGO_OBJECT_FLOOR_TARGET;
-    TechnoSys.activation_effect_id = 0x2d;
-    TechnoSys.completion_effect_id = 0x2e;
-
-    LeverSys.floor_target_object_id = LEGO_OBJECT_FLOOR_TARGET;
-    GameAudio_SetActionMusicTimes(1.0f, 6.0f);
-}
 
 void HairMovement(GameObject_s *object) {
     constexpr f32 gravity = -1.8325958f;
@@ -573,19 +499,365 @@ void HeadMovement(GameObject_s *object) {
     }
 }
 
-nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id);
-
-void CharScene_Draw(WORLDINFO_s *world, i32 character_id, numtx_s *matrix, numtx_s *reflection_matrix) {
-    nuhspecial_s *special = CharScene_FindHSpecial(world, character_id);
-    if (special != NULL) {
-        if (matrix != NULL) {
-            NuSpecialDrawAt(special, matrix);
-        }
-        if (reflection_matrix != NULL) {
-            NuSpecialDrawAt(special, reflection_matrix);
-        }
+void ResetCharacterBuffer(i32 force_reset) {
+    if (force_reset == 0 && Area != -1 && Area == last_area) {
+        return;
     }
+
+    characterbuffer_ptr = characterbuffer_base;
+    memset(characterbuffer_base.void_ptr, 0, CHARACTERBUFFERSIZE);
+    apicharsys->loaded_model_count = apicharsys->permanent_model_count;
+    apicharsys->animation_load_attempts = apicharsys->area_animation_count;
+    apicharsys->loaded_animation_count = apicharsys->area_animation_count;
 }
+
+static NUGSCN **IconScene;
+static char IconPath[0x40] = "stuff\\icons\\";
+
+struct nuhspecial_s;
+
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+union variptr_u;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
 
 i32 CharIDFromName(char *name) {
     for (i32 i = 0; i < CHARCOUNT; i++) {
@@ -661,628 +933,6 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
     }
 }
 
-extern i16 tUNKNOWN;
-extern "C" {
-    extern i16 id_R2Q5;
-    void PlaySfx(char *, nuvec_s *);
-    void PlaySfxAndSetVolume(char *, nuvec_s *, f32);
-}
-void Move_CHARACTER(GameObject_s *);
-void Animate_CHARACTER(GameObject_s *);
-
-void FixUpCharacters(CHARFIXUP *fixup) {
-    for (i32 i = 0; i < CHARCOUNT; ++i) {
-        GCDataList[i] = GCDATA_DEFAULT;
-
-        CHARACTERDATA &character = CDataList[i];
-        if (character.field0_0x0 == -1) {
-            character.field0_0x0 = tUNKNOWN;
-        }
-        if (character.move_fn == NULL) {
-            character.move_fn = Move_CHARACTER;
-        }
-        if (character.animate_fn == NULL) {
-            character.animate_fn = Animate_CHARACTER;
-        }
-    }
-
-    if (fixup != NULL) {
-        while (fixup->name != NULL) {
-            if (fixup->id != NULL) {
-                *fixup->id = (i16)CharIDFromName(fixup->name);
-            }
-            ++fixup;
-        }
-    }
-}
-
-void PostAnimate_FETT(GameObject_s *object) {
-    if (object->apiobj.field_0x287 != 0) {
-        return;
-    }
-
-    const i8 context = object->character_context;
-    if (context != -1 && !((context == 0x15 && object->context_animation == 62) ||
-                           (context == 0x14 && object->context_animation == 77) ||
-                           (context == 0x2e && object->context_animation == 111) ||
-                           (context == 0x0a && object->context_animation == 60))) {
-        return;
-    }
-    if (object->field_0xe31 != 1 || object->apiobj.field_0x288 == 0) {
-        return;
-    }
-
-    const i32 count = ParticlesPerSecond(100.0f, FRAMETIME);
-    const i32 first_joint = object->id == id_BOBAFETT ? 10 : 7;
-    if (object->apiobj.character_model->points_of_interest[first_joint] != NULL) {
-        AddGameDebrisRot(WORLD->debris_sys, 27, NUMTX_GET_ROW_VEC(&object->joint_matrices[first_joint], 3), count, 0,
-                         object->apiobj.facing_angle);
-    }
-    if (object->apiobj.character_model->points_of_interest[8] != NULL) {
-        AddGameDebrisRot(WORLD->debris_sys, 27, NUMTX_GET_ROW_VEC(&object->joint_matrices[8], 3), count, 0,
-                         object->apiobj.facing_angle);
-    }
-    PlaySfx(const_cast<char *>("JgThrust"), &object->apiobj.collision_position);
-}
-
-void ResetAICreature(GameObject_s *, AISYS_s *);
-void LightGameObject(GameObject_s *, void *);
-void InitSurfaceInfo(GameObject_s *);
-i32 SetObjOnSurface(GameObject_s *, i32);
-extern NUVEC plr_lastpos;
-
-void FinishWeirdoNames(i32 which) {
-    if (which != 1) {
-        NuStrUpr(Game.customizer[0].name, Game.customizer[0].name);
-        i32 length = NuStrLen(Game.customizer[0].name);
-        for (; length <= 14; length++) {
-            Game.customizer[0].name[length] = ' ';
-        }
-        Game.customizer[0].name[15] = '\0';
-        if (which == 0) {
-            return;
-        }
-    }
-    NuStrUpr(Game.customizer[1].name, Game.customizer[1].name);
-    i32 length = NuStrLen(Game.customizer[1].name);
-    for (; length <= 14; length++) {
-        Game.customizer[1].name[length] = ' ';
-    }
-    Game.customizer[1].name[15] = '\0';
-}
-
-GameObject_s *ActivateCharacter(char *name, nuvec_s *position, i32 angle) {
-    if (Mission_Active(NULL) != NULL)
-        return NULL;
-    if (name == NULL)
-        return NULL;
-    GameObject_s *object = GetNamedGameObject(WORLD->ai_sys, name);
-    if (object == NULL || (object->apiobj.flags_high & 0x10) != 0)
-        return NULL;
-    if (FreePlay != 0 && (object->apiobj.field_0x1f4 & 0x400) == 0)
-        return NULL;
-    if (object->ai.field_0x134 != 0xff) {
-        ResetAICreature(object, WORLD->ai_sys);
-    } else {
-        object->apiobj.flags_high |= 0x10;
-        AIScriptSetBaseScriptStateByName(reinterpret_cast<AISCRIPTPROCESS *>(&object->ai), const_cast<char *>("Base"));
-        if (position != NULL) {
-            object->apiobj.position = *position;
-            object->apiobj.field_0x276 = angle;
-            object->apiobj.facing_angle = angle;
-            object->apiobj.movement_facing_angle = angle;
-            AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 0xff, 1);
-            object->apiobj.initial_position = object->apiobj.position;
-            object->apiobj.collision_position = object->apiobj.position;
-            plr_lastpos = object->apiobj.position;
-            object->apiobj.start_position = object->apiobj.position;
-            object->apiobj.respawn_position = object->apiobj.position;
-            object->apiobj.last_safe_position = object->apiobj.position;
-            object->saved_position = object->apiobj.position;
-            object->reset_velocity = v000;
-            object->apiobj.velocity = v000;
-            InitSurfaceInfo(object);
-            SetObjOnSurface(object, 0);
-        }
-    }
-    LightGameObject(object, WORLD->rtl_set);
-    return object;
-}
-
-extern i32 addcreature_override_id_check;
-
-extern f32 default_mover_extra;
-extern void SetGameObjectCharacterData(GameObject_s *obj);
-extern void GetTopBot(GameObject_s *obj);
-extern void GameObjectDimensions(GameObject_s *obj);
-extern void GameObjectOrigin(GameObject_s *obj);
-extern void ResetCharacterIdle(GameObject_s *obj, i32 mode, i32 idle);
-extern void ResetPlayerPacket(PLAYERPACKET_s *packet, CHARACTERDATA_s *data);
-
-static u32 LayerBit(u8 layer) {
-    return 1u << layer;
-}
-
-static void SetLayers_BOB(GameObject_s *object) {
-    i32 head_layer[6] = {1, 2, 3, 21, 22, 23};
-    i32 body_layer[8] = {5, 6, 7, 8, 9, 10, 16, 17};
-    i32 legs_layer[3] = {11, 12, 15};
-    i32 arms_layer[2] = {13, 14};
-    i32 hands_layer[2] = {19, 20};
-    object->random_layer_variant = qrand() <= 0x7fff;
-    qrand();
-    object->field_0x1054 = 1;
-    object->field_0x1054 |= 1u << head_layer[qrand() / 0x2aab];
-    object->field_0x1054 |= 1u << body_layer[qrand() / 0x2000];
-    object->field_0x1054 |= 1u << legs_layer[qrand() / 0x5556];
-    object->field_0x1054 |= 1u << arms_layer[qrand() / 0x8000];
-    object->field_0x1054 |= 1u << hands_layer[qrand() / 0x8000];
-}
-
-// Retail keeps only the IPA-SRA clone, which receives &*layers.
-#if defined(__i386__)
-#define MOSEISLEY_LAYERS_ATTR __attribute__((noinline, noclone, regparm(1)))
-#else
-#define MOSEISLEY_LAYERS_ATTR __attribute__((noinline, noclone))
-#endif
-static MOSEISLEY_LAYERS_ATTR void SetLayers_MOSEISLEYCITIZEN(u32 *layers)
-    __asm__("_ZL26SetLayers_MOSEISLEYCITIZENP12GameObject_s.isra.2");
-static void SetLayers_MOSEISLEYCITIZEN(u32 *layers) {
-    static const u8 hat_layers[5] = {0, 0, 0, 7, 14};
-    static const u8 head_layers[5] = {20, 20, 8, 8, 4};
-    static const u8 body_layers[3] = {3, 9, 19};
-    static const u8 arm_layers[3] = {1, 12, 15};
-    static const u8 hand_layers[3] = {2, 13, 16};
-    static const u8 waist_layers[3] = {6, 10, 17};
-    static const u8 leg_layers[3] = {5, 11, 18};
-
-    *layers = 0;
-    *layers |= LayerBit(hat_layers[qrand() / 0x3334]);
-    *layers |= LayerBit(head_layers[qrand() / 0x3334]);
-    *layers |= LayerBit(body_layers[qrand() / 0x5556]);
-    *layers |= LayerBit(arm_layers[qrand() / 0x5556]);
-    *layers |= LayerBit(hand_layers[qrand() / 0x5556]);
-    *layers |= LayerBit(waist_layers[qrand() / 0x5556]);
-    *layers |= LayerBit(leg_layers[qrand() / 0x5556]);
-}
-
-i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
-    addcreature_override_id_check = 0;
-    if (id < 0) {
-        return 0;
-    }
-    if (id > 0x153 || apicharsys->playermodelids[id] == -1) {
-        return 0;
-    }
-
-    CHARACTERDATA *character_data = &apicharsys->char_data[id];
-    obj->apiobj.character_data = character_data;
-    GAMECHARACTERDATA *game_character_data = static_cast<GAMECHARACTERDATA *>(character_data->field11_0x24);
-    obj->field_0x1054 = game_character_data->layer_mask;
-    obj->apiobj.field_0x1f4 = 0;
-    obj->field_0x107c = -1;
-    memset(obj->player_packet, 0, 0x798);
-    obj->apiobj.field_0x27c = -1;
-
-    const NUVEC start_position = *Player_StartPos(obj);
-    if (param != 0) {
-        obj->apiobj.field_0x1f4 |= 0x4002;
-    } else {
-        obj->apiobj.field_0x1f4 |= 2;
-    }
-    if ((WORLD->current_level->flags & 0x40000) == 0) {
-        obj->apiobj.field_0x1f4 |= 0x40;
-    }
-
-    obj->pad_gamepad = GamePad_Allocate();
-    obj->pad_gamepad->input_mode = 1;
-    const u8 hitpoints = obj->apiobj.character_data->game_character->hitpoints;
-    obj->hitpoints = hitpoints;
-    obj->current_hp = hitpoints;
-    ResetPlayerPacket(reinterpret_cast<PLAYERPACKET_s *>(obj->player_packet),
-                      reinterpret_cast<CHARACTERDATA_s *>(obj->apiobj.character_data));
-
-    obj->apiobj.movement_direction = v000;
-    const u8 field_0xf5 = obj->apiobj.character_data->game_character->field_0xf5;
-    obj->field_0xe38 = 4;
-    obj->field_0xe37 = field_0xf5;
-    obj->id = static_cast<i16>(id);
-    obj->apiobj.character_model = &apicharsys->models[apicharsys->playermodelids[id]];
-    obj->suit = Suit_GetDefault(id);
-    obj->ai.field_0x134 = 0xff;
-    SetGameObjectCharacterData(obj);
-
-    obj->apiobj.start_position = start_position;
-    obj->apiobj.position = obj->apiobj.start_position;
-    obj->field_0x1018 = 0.5f;
-    obj->apiobj.initial_position = start_position;
-    obj->apiobj.collision_position = obj->apiobj.initial_position;
-
-    GetTopBot(obj);
-    GameObjectDimensions(obj);
-    obj->apiobj.anim_packet.animation_index = 1;
-
-    i32 reset_animation = 1;
-    if (obj->apiobj.character_model != NULL) {
-        void **animation_table = obj->apiobj.character_model->model_data_b;
-        if (animation_table[1] == NULL) {
-            for (i32 i = 0; i < 0xe9; i++) {
-                if (animation_table[i] != NULL) {
-                    obj->apiobj.anim_packet.animation_index = static_cast<u16>(i);
-                    reset_animation = i;
-                    break;
-                }
-            }
-        }
-    }
-    ResetAnimPacket(&obj->apiobj.anim_packet, reset_animation);
-    ResetCharacterIdle(obj, 2, GetDefaultIdle(obj));
-    ResetLights(&obj->apiobj.position, &obj->light_data, WORLD->rtl_set);
-
-    obj->ai.mover_height = obj->apiobj.field_0x1dc + default_mover_extra;
-    GameObjectOrigin(obj);
-    obj->apiobj.last_safe_position = obj->apiobj.position;
-    obj->saved_position = obj->apiobj.position;
-
-    game_character_data = obj->apiobj.character_data->game_character;
-    obj->field_0xf01 = (obj->field_0xf01 & ~8) | (((game_character_data->flags_090 >> 17) & 1) << 3);
-    if (obj->id == id_MOSEISLEYCITIZEN) {
-        SetLayers_MOSEISLEYCITIZEN(&obj->field_0x1054);
-    } else if (obj->id == id_CANTINAALIEN) {
-        static const u8 head_layers[3] = {0, 3, 6};
-        static const u8 body_layers[3] = {1, 4, 7};
-        static const u8 leg_layers[3] = {2, 5, 8};
-        obj->field_0x1054 = 0;
-        obj->field_0x1054 |= LayerBit(head_layers[qrand() / 0x5556]);
-        obj->field_0x1054 |= LayerBit(body_layers[qrand() / 0x5556]);
-        obj->field_0x1054 |= LayerBit(leg_layers[qrand() / 0x5556]);
-    } else if (obj->id == id_CLOUDCITYCITIZEN) {
-        static const u8 head_layers[3] = {1, 5, 7};
-        static const u8 body_layers[3] = {2, 3, 6};
-        static const u8 leg_layers[3] = {0, 4, 8};
-        obj->field_0x1054 = 0;
-        obj->field_0x1054 |= LayerBit(head_layers[qrand() / 0x5556]);
-        obj->field_0x1054 |= LayerBit(body_layers[qrand() / 0x5556]);
-        obj->field_0x1054 |= LayerBit(leg_layers[qrand() / 0x5556]);
-        obj->field_0xf01 = (obj->field_0xf01 & ~8) | (((obj->field_0x1054 >> 7) & 1) << 3);
-    } else if (obj->id == id_BOB) {
-        SetLayers_BOB(obj);
-    } else if (obj->id == id_GEONOSIAN) {
-        obj->random_layer_variant = qrand() <= 0x7fff;
-    }
-
-    if ((obj->apiobj.character_data->game_character->flags_090 & 0x8000) != 0) {
-        obj->apiobj.field_0x1f4 |= 0x20000;
-    } else {
-        obj->apiobj.field_0x1f4 &= ~0x20000;
-    }
-    return 1;
-}
-
-void Shards_HandleLostObj(WORLDINFO_s *, GameObject_s *);
-void LoseHelmet(GameObject_s *, i32, i32);
-void DestroySnakeBody(GameObject_s *);
-void InitPlayerAI(GameObject_s *);
-void Player_ClearContext(GameObject_s *, i32);
-void ResetPlayerMoves(GameObject_s *);
-void Player_ResetContexts(PLAYERPACKET_s *);
-void InitSurfaceInfo(GameObject_s *);
-i32 SetObjOnSurface(GameObject_s *, i32);
-void GizForce_ResetLOS(GameObject_s *);
-i32 StartSlide(GameObject_s *, i32);
-
-i32 NewPlayerCharacter(GameObject_s *object, i32 id, i32 old_id, i32) {
-    if (id == old_id)
-        return 0;
-    if (id < 0 || id >= CHARCOUNT || apicharsys->playermodelids[id] == -1)
-        return 0;
-    Shards_HandleLostObj(WORLD, object);
-    if (VehicleArea == 0)
-        AddGameDebris(WORLD->debris_sys, 0x5c, &object->apiobj.collision_position);
-    i8 context = object->character_context;
-    i16 lean = object->movement_lean_angle;
-    u32 lean_enabled = object->apiobj.character_data->model_flags & 0x2000;
-    LoseHelmet(object, 0, 1);
-    DestroySnakeBody(object);
-    object->id = id;
-    u8 health = object->current_hp;
-    NUVEC velocity = object->apiobj.velocity;
-    u8 hitpoints = object->hitpoints;
-    u8 saved_flags = (object->apiobj.flags_high >> 5) & 1;
-    object->apiobj.character_model = &apicharsys->models[apicharsys->playermodelids[id]];
-    object->apiobj.character_data = &apicharsys->char_data[id];
-    object->takeover_source = NULL;
-    object->suit = Suit_GetDefault(id);
-    u32 saved_f14 = object->field_0xf14;
-    u32 saved_f20 = object->field_0xf20;
-    u8 saved_efe = (object->field_0xefe >> 5) & 1;
-    u8 route = object->ai.current_route;
-    u8 next_route = object->ai.next_route;
-    AIPATHINFO path = object->ai.path_info;
-    u32 frame_state = object->ai.frame_state;
-    InitPlayerAI(object);
-    object->field_0xefe = (object->field_0xefe & ~0x20) | (saved_efe << 5);
-    object->field_0xf20 = saved_f20;
-    object->ai.next_route = next_route;
-    object->ai.path_info = path;
-    object->field_0xf14 = saved_f14;
-    object->field_0x1004 = 1.0f;
-    object->ai.current_route = route;
-    object->ai.frame_state = frame_state;
-    GAMECHARACTERDATA *data = object->apiobj.character_data->game_character;
-    object->field_0x1054 = data->layer_mask;
-    object->field_0xe37 = data->field_0xf5;
-    object->field_0xe38 = 4;
-    Player_ClearContext(object, 1);
-    ResetPlayerMoves(object);
-    SetGameObjectCharacterData(object);
-    ResetAnimPacket(&object->apiobj.anim_packet, -1);
-    Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
-    GetTopBot(object);
-    GameObjectDimensions(object);
-    object->hud_icon_timer = 2.0f;
-    object->input_toggle_hold_time = TOGGLEHOLDTIME;
-    object->field_0xefc |= 0x80;
-    InitSurfaceInfo(object);
-    i32 on_surface = SetObjOnSurface(object, 1);
-    GizForce_ResetLOS(object);
-    object->field_0xefe &= ~8;
-    object->current_hp = health;
-    object->hitpoints = hitpoints;
-    object->field_0xef0 = 0;
-    object->pause_context_state = 0;
-    object->apiobj.flags_high = (object->apiobj.flags_high & ~0x20) | (saved_flags << 5);
-    ResetMiniAnimPacket(&object->mini_animation, -1);
-    object->weapon_scale = (object->field_0xe22 & 1) != 0 ? 1.0f : 0.0f;
-    object->field_0xe32 = 0;
-    if (!on_surface)
-        object->apiobj.velocity.y = velocity.y;
-    else
-        object->ground_contact_grace_timer = 0.2f;
-    if (context == 0x33 && StartSlide(object, 0)) {
-        object->apiobj.velocity.x = velocity.x;
-        object->apiobj.velocity.z = velocity.z;
-    }
-    if (object->apiobj.velocity.y == 0.0f)
-        object->apiobj.velocity.y = -0.1f;
-    if (lean_enabled && (object->apiobj.character_data->model_flags & 0x2000) != 0)
-        object->movement_lean_angle = lean;
-    data = apicharsys->char_data[object->id].game_character;
-    // Read everything before the stores so the four-float copy vectorizes like retail.
-    const f32 viewdistance = data->viewdistance;
-    const f32 heardistance = data->heardistance;
-    const f32 maxviewheight = data->maxviewheight;
-    const f32 minviewheight = data->minviewheight;
-    const u32 flags_090_bit17 = (object->apiobj.character_data->game_character->flags_090 >> 17) & 1;
-    object->apiobj.viewdistance = viewdistance;
-    object->apiobj.heardistance = heardistance;
-    object->apiobj.maxviewheight = maxviewheight;
-    object->apiobj.minviewheight = minviewheight;
-    object->field_0xf01 = (object->field_0xf01 & ~8) | (flags_090_bit17 << 3);
-    if (object->id == id_MOSEISLEYCITIZEN) {
-        SetLayers_MOSEISLEYCITIZEN(&object->field_0x1054);
-    } else if (object->id == id_CANTINAALIEN) {
-        static const u8 head_layer[3] = {0, 3, 6};
-        static const u8 body_layer[3] = {1, 4, 7};
-        static const u8 legs_layer[3] = {2, 5, 8};
-        object->field_0x1054 = 0;
-        object->field_0x1054 |= LayerBit(head_layer[qrand() / 0x5556]);
-        object->field_0x1054 |= LayerBit(body_layer[qrand() / 0x5556]);
-        object->field_0x1054 |= LayerBit(legs_layer[qrand() / 0x5556]);
-    } else if (object->id == id_CLOUDCITYCITIZEN) {
-        static const u8 head_layer[3] = {1, 5, 7};
-        static const u8 body_layer[3] = {2, 3, 6};
-        static const u8 legs_layer[3] = {0, 4, 8};
-        object->field_0x1054 = 0;
-        object->field_0x1054 |= LayerBit(head_layer[qrand() / 0x5556]);
-        object->field_0x1054 |= LayerBit(body_layer[qrand() / 0x5556]);
-        object->field_0x1054 |= LayerBit(legs_layer[qrand() / 0x5556]);
-        object->field_0xf01 = (object->field_0xf01 & ~8) | (((object->field_0x1054 >> 7) & 1) << 3);
-    } else if (object->id == id_BOB) {
-        SetLayers_BOB(object);
-    } else if (object->id == id_GEONOSIAN) {
-        object->random_layer_variant = qrand() <= 0x7fff;
-    }
-    if ((object->apiobj.character_data->game_character->flags_090 & 0x8000) != 0)
-        object->apiobj.field_0x1f4 |= 0x20000;
-    else
-        object->apiobj.field_0x1f4 &= ~0x20000;
-    return 1;
-}
-
-struct DefaultIdleCharacterData {
-    u8 pad[0x116];
-    u8 use_standard_idle;
-};
-
-i32 GetDefaultIdle(GameObject_s *obj) {
-    CHARACTERDATA *character = obj->apiobj.character_data;
-    DefaultIdleCharacterData *game_character = static_cast<DefaultIdleCharacterData *>(character->field11_0x24);
-
-    i32 animation;
-    i32 table_offset;
-    if (game_character->use_standard_idle != 0) {
-        animation = 25;
-        table_offset = 100;
-    } else {
-        const u32 alternate = character->model_flags & 0x80;
-        table_offset = alternate != 0 ? 472 : 100;
-        animation = alternate != 0 ? 118 : 25;
-    }
-    if (obj->batarang != NULL && *(reinterpret_cast<u8 *>(obj->batarang) + 0x7d) != 0) {
-        return 151;
-    }
-
-    u8 *animation_table = reinterpret_cast<u8 *>(obj->apiobj.character_model->model_data_b);
-    void *entry = *reinterpret_cast<void **>(animation_table + table_offset);
-    if ((*reinterpret_cast<i32 *>(animation_table + 4) == 0 || (obj->field_0xe22 & 1) != 0 || obj->field_0xe32 == 1) &&
-        entry != NULL) {
-        return animation;
-    }
-    return 1;
-}
-
-void ResetCharacterIdle(GameObject_s *object, i32 mode, i32 animation) {
-    // Animation 151 belongs to the held-batarang override and deliberately
-    // leaves the ordinary idle scheduler untouched.
-    if (animation == 151) {
-        return;
-    }
-
-    object->idle_animation = static_cast<i16>(animation);
-    object->idle_animation_time = 0.0f;
-
-    CHARACTERMODEL_s *model = object->apiobj.character_model;
-    CHARACTERANIM_s *animation_info;
-    i32 repetitions;
-    // The signed > 0 test (rather than != 0) keeps the retail branch layout.
-    if (model->model_data_b[object->idle_animation] != NULL &&
-        (animation_info = static_cast<CHARACTERANIM_s *>(model->model_data_a[object->idle_animation]),
-         repetitions = static_cast<u8>(animation_info->minimum_repetitions)) > 0) {
-        const i32 maximum = static_cast<u8>(animation_info->maximum_repetitions);
-        if (repetitions < maximum) {
-            repetitions += qrand() / (0xffff / (maximum - repetitions) + 1);
-        }
-        object->idle_animation_limit =
-            AnimDuration(object->id, object->idle_animation, 0.0f, 0.0f, 0) * repetitions - animduration_blendouttime;
-    } else {
-        object->idle_animation_limit = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 7.0f + 8.0f;
-    }
-
-    if (mode > 0) {
-        object->idle_total_time = 0.0f;
-        if (mode != 1) {
-            object->previous_idle_animation = -1;
-        }
-    }
-}
-
-static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
-    CHARACTERDATA *character = object->apiobj.character_data;
-    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-    const i32 alternate_idle = game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25;
-
-    i32 candidates[233];
-    i32 candidate_count = 0;
-    CHARACTERMODEL_s *model = object->apiobj.character_model;
-    for (i32 animation = 0; animation < 233; ++animation) {
-        if (model->model_data_b[animation] == NULL) {
-            continue;
-        }
-        CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-        if ((info->flags & 0x10) == 0) {
-            continue;
-        }
-        if (__builtin_expect(alternate_idle == default_idle, 0)) {
-            if ((info->flags & 0x800) != 0) {
-                candidates[candidate_count++] = animation;
-            }
-        } else if ((info->flags & 0x800) == 0) {
-            candidates[candidate_count++] = animation;
-        }
-    }
-
-    if (__builtin_expect(candidate_count == 0, 0)) {
-        ResetCharacterIdle(object, 0, default_idle);
-        return;
-    }
-
-    if (candidate_count != 1) {
-        do {
-            object->idle_animation = static_cast<i16>(candidates[qrand() / (0xffff / candidate_count + 1)]);
-        } while (object->idle_animation == object->previous_idle_animation);
-    } else {
-        object->idle_animation = static_cast<i16>(candidates[0]);
-    }
-
-    CHARACTERANIM_s *info =
-        static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[object->idle_animation]);
-    i32 repetitions = static_cast<u8>(info->minimum_repetitions);
-    if (repetitions == 0) {
-        repetitions = 1;
-    } else {
-        const i32 maximum = static_cast<u8>(info->maximum_repetitions);
-        if (maximum != 0 && maximum > repetitions) {
-            repetitions += qrand() / (0xffff / (maximum - repetitions) + 1);
-        }
-    }
-    object->previous_idle_animation = object->idle_animation;
-    if (repetitions > 1 &&
-        (static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[object->idle_animation])->flags &
-         2) == 0) {
-        repetitions = 1;
-    }
-
-    object->idle_animation_time = 0.0f;
-    const f32 duration = AnimDuration(object->id, object->idle_animation, 0.0f, 0.0f, 0);
-    object->idle_animation_limit = duration * repetitions - animduration_blendouttime;
-}
-
-void UpdateCharacterIdle(GameObject_s *object) {
-    if (object->apiobj.character_model == NULL) {
-        return;
-    }
-
-    CHARACTERDATA *character = object->apiobj.character_data;
-    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-    const i32 alternate_idle = game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25;
-    ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    const i16 requested = packet.requested_animation;
-
-    i32 idle;
-    if (requested == 1 && packet.previous_animation == alternate_idle) {
-        idle = 1;
-    } else if (requested == alternate_idle && packet.previous_animation == 1) {
-        idle = alternate_idle;
-    } else if (requested != 1 && requested != alternate_idle) {
-        idle = GetDefaultIdle(object);
-    } else {
-        idle = -1;
-    }
-    if (idle != -1) {
-        ResetCharacterIdle(object, 1, idle);
-        return;
-    }
-
-    if (packet.requested_animation == 1) {
-        object->idle_total_time += FRAMETIME;
-        object->idle_animation_time += FRAMETIME;
-        if (object->idle_animation_time >= object->idle_animation_limit) {
-            if (object->idle_animation == 1) {
-                NewCharacterIdle(object, 1);
-            } else {
-                ResetCharacterIdle(object, 1, 1);
-            }
-        }
-    } else if (packet.requested_animation == alternate_idle) {
-        object->idle_total_time += FRAMETIME;
-        object->idle_animation_time += FRAMETIME;
-        if (object->idle_animation_time >= object->idle_animation_limit) {
-            if (object->idle_animation == alternate_idle) {
-                NewCharacterIdle(object, alternate_idle);
-            } else {
-                ResetCharacterIdle(object, 1, alternate_idle);
-            }
-        }
-    } else {
-        ResetCharacterIdle(object, 1, GetDefaultIdle(object));
-        return;
-    }
-    packet.requested_animation = object->idle_animation;
-}
-
-void UpdateCharacterIDs() {
-    const u16 count = ShopCollection.count_y;
-    if (count) {
-        COLLECTID *collect = ShopCollection.list;
-        shopitem_s *item = CharItems;
-        for (i32 i = 0; i < count; ++i, ++item, ++collect) {
-            item->price = collect->field3_0x4;
-            item->item_id = collect->id;
-        }
-    }
-}
-
 void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_u buf_end) {
     char path[128];
     if (CharScene_Area == NULL) {
@@ -1307,281 +957,6 @@ void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_
     }
 }
 
-void CharScenes_AreaDump() {
-    if (CharScene_Area == NULL) {
-        return;
-    }
-    for (i32 i = 0; i < CHARCOUNT; ++i) {
-        CHARSCENE_s &entry = CharScene_Area[i];
-        if (entry.scene != NULL) {
-            NuGScnRemove(entry.scene);
-        }
-        entry.scene = NULL;
-    }
-}
-
-// Original characters.cpp cluster: SetMoveAndAnimateFunctions (ELF 0x460dc0)
-// follows the scene/category helpers and precedes character model loading.
-void SetMoveAndAnimateFunctions(u32 model_flag_mask, u32 model_flag_value, u32 game_flag_mask, u32 game_flag_value,
-                                i32 movement_type, void *move_function, void *animate_function, void *draw_function) {
-    for (i32 i = 0; i < CHARCOUNT; ++i) {
-        if (model_flag_mask != 0 && (CDataList[i].model_flags & model_flag_mask) != model_flag_value)
-            continue;
-        if (game_flag_mask != 0 && (GCDataList[i].flags_090 & game_flag_mask) != game_flag_value)
-            continue;
-        if (movement_type != -1 && static_cast<i8>(GCDataList[i].uses_weapon_action) != movement_type)
-            continue;
-        if (move_function != NULL)
-            CDataList[i].move_fn = reinterpret_cast<CHARACTERUPDATEFN>(move_function);
-        if (animate_function != NULL)
-            CDataList[i].animate_fn = reinterpret_cast<CHARACTERUPDATEFN>(animate_function);
-        if (draw_function != NULL)
-            CDataList[i].draw_fn = reinterpret_cast<CHARACTERUPDATEFN>(draw_function);
-    }
-}
-
-void DeactivateGameObject(GameObject_s *);
-
-void DeactivateCharacter(char *name) {
-    if (Mission_Active(NULL) != NULL || name == NULL)
-        return;
-    GameObject_s *object = GetNamedGameObject(WORLD->ai_sys, name);
-    if (object != NULL && (FreePlay == 0 || (object->apiobj.field_0x1f4 & 0x400) != 0)) {
-        DeactivateGameObject(object);
-    }
-}
-
-void LoadSingleCharacter(bgprocinfo_s *) {
-    APICHARACTERMODELLIST_s list[2] = {
-        {static_cast<i16>(waiting_for_character), 1},
-        {-1, 0},
-    };
-
-    apiloadcharactermodels_append = 1;
-    apiloadcharactermodels_nopakfile = CHARPAK == 0;
-    APILoadCharacterModels(list, 0, &characterbuffer_ptr, characterbuffer_end, 1);
-    IconScenes_Load(list, 0, &characterbuffer_ptr, &characterbuffer_end);
-
-    NUGSCN *icon_scene = IconScene_FindById(list[0].model_id);
-    if (icon_scene != NULL && LEVELOBJECTCOUNT > 0) {
-        for (i32 i = 0; i < LEVELOBJECTCOUNT; ++i) {
-            if (ObjTab[i].kind != 3) {
-                continue;
-            }
-
-            if (WORLD->lev_objs[i].active != 0) {
-                continue;
-            }
-
-            if (NuSpecialFind(icon_scene, &WORLD->lev_objs[i].special, ObjTab[i].name, 1) != 0) {
-                WORLD->lev_objs[i].active = 1;
-            }
-        }
-    }
-
-    Customiser_SaveModelTextureIDs(CharacterCustomiser, APICharacterLoaded(list[0].model_id));
-    hub_character_ready = waiting_for_character;
-    waiting_for_character = -1;
-    g_loadingCharacterInHub = 0;
-}
-
-void CharScenes_LevelDump(WORLDINFO_s *world) {
-    CHARSCENE_s *scenes = world->minikit.character_scenes;
-    if (scenes != NULL) {
-        for (i32 i = 0; i < CHARCOUNT; ++i) {
-            if (world->minikit.character_scenes[i].scene != NULL) {
-                NuGScnRemove(world->minikit.character_scenes[i].scene);
-            }
-            world->minikit.character_scenes[i].scene = NULL;
-        }
-    }
-}
-
-void UpdateCharacterLoad() {
-    const i32 menu_id = GetMenuID();
-    if (menu_id == 13) {
-        return;
-    }
-    if (menu_id >= 15 && menu_id <= 19) {
-        return;
-    }
-
-    if (LOADEROFF != 0 || BGLOAD == 0 || waiting_for_character != -1 || hub_character_ready != -1 ||
-        bgGetProcActive() != NULL || global_dlist_manager.ndisplay_lists > 0xfd) {
-        return;
-    }
-
-    const i32 required_buffer =
-        (static_cast<i32>((static_cast<f32>(CHARACTERBUFFERSIZE) / 7077888.0f) * 1048576.0f) + 0x3ff) & ~0x3ff;
-    if (required_buffer > static_cast<i32>(characterbuffer_end.addr - characterbuffer_ptr.addr)) {
-        return;
-    }
-
-    i32 candidates[0x154] __attribute__((aligned(16)));
-    i32 candidate_count = 0;
-
-    if (id_BARMAN != -1 && APICharacterLoaded(id_BARMAN) == NULL) {
-        candidates[candidate_count++] = id_BARMAN;
-    } else if (id_CANTINABAND != -1 && APICharacterLoaded(id_CANTINABAND) == NULL) {
-        candidates[candidate_count++] = id_CANTINABAND;
-    } else if (id_WEIRDO1 != -1 && APICharacterLoaded(id_WEIRDO1) == NULL) {
-        candidates[candidate_count++] = id_WEIRDO1;
-    } else if (id_WEIRDO2 != -1 && APICharacterLoaded(id_WEIRDO2) == NULL) {
-        candidates[candidate_count++] = id_WEIRDO2;
-    } else if (id_JABBA != -1 && APICharacterLoaded(id_JABBA) == NULL) {
-        candidates[candidate_count++] = id_JABBA;
-    } else if (id_MOSEISLEYCITIZEN != -1 && APICharacterLoaded(id_MOSEISLEYCITIZEN) == NULL) {
-        candidates[candidate_count++] = id_MOSEISLEYCITIZEN;
-    } else if (id_CANTINAALIEN != -1 && APICharacterLoaded(id_CANTINAALIEN) == NULL) {
-        candidates[candidate_count++] = id_CANTINAALIEN;
-    } else if (id_WOMPRAT != -1 && APICharacterLoaded(id_WOMPRAT) == NULL) {
-        candidates[candidate_count++] = id_WOMPRAT;
-    } else {
-        i32 pack_index = 0;
-        for (STOREPACK *pack = StorePack; pack != StorePack + 11; ++pack, ++pack_index) {
-            if (g_lowEndLevelBehaviour != 0 && Hub_LowEnd_IconsInsteadOfModels != 0) {
-                continue;
-            }
-            if (Store_IsPackUnlocked(pack_index) != 0 || pack->id == NULL) {
-                continue;
-            }
-
-            const i32 id = *pack->id;
-            if (id != -1 && APICharacterLoaded(id) == NULL) {
-                candidates[candidate_count++] = id;
-                break;
-            }
-        }
-
-        if (candidate_count == 0) {
-            for (i32 id = 0; id < CHARCOUNT; ++id) {
-                if (id == id_DROIDEKA || (CDataList[id].model_flags & 0x04002000) != 0 ||
-                    APICharacterLoaded(id) != NULL) {
-                    continue;
-                }
-                if (static_cast<i32>(CDataList[id].field5_0x14) + apicharsys->loaded_animation_count >
-                    apicharsys->animation_capacity) {
-                    continue;
-                }
-                if (InCollectList_Index(id, NULL, 0) == -1 || Collection_Got(id) == 0) {
-                    continue;
-                }
-                candidates[candidate_count++] = id;
-            }
-        }
-    }
-
-    if (candidate_count == 0) {
-        return;
-    }
-
-    i32 candidate = 0;
-    if (candidate_count != 1) {
-        candidate = qrand() / ((0xffff / candidate_count) + 1);
-    }
-    waiting_for_character = candidates[candidate];
-    WaitingForCharacterTime = 0.0f;
-    bgPostRequest(LoadSingleCharacter, NULL, NULL, 0);
-}
-
-extern VARIPTR characterbuffer_base;
-extern i32 CHARACTERBUFFERSIZE;
-extern i32 Area;
-extern i32 last_area;
-
-void ResetCharacterBuffer(i32 force_reset) {
-    if (force_reset == 0 && Area != -1 && Area == last_area) {
-        return;
-    }
-
-    characterbuffer_ptr = characterbuffer_base;
-    memset(characterbuffer_base.void_ptr, 0, CHARACTERBUFFERSIZE);
-    apicharsys->loaded_model_count = apicharsys->permanent_model_count;
-    apicharsys->animation_load_attempts = apicharsys->area_animation_count;
-    apicharsys->loaded_animation_count = apicharsys->area_animation_count;
-}
-
-void NextStatusStage(STATUSPACKET_s *);
-i32 AddToCollection(i32);
-void NewStatusRumbleBuzz(i32, f32, f32, i32);
-void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32);
-extern "C" void PlaySfx(char *, nuvec_s *);
-void Collection_Draw(COLLECTION_s *, f32, f32, f32, APICHARACTERMODELLIST_s *, f32, i32);
-void Collection_GetPos(COLLECTION_s *, i32, f32 *, f32 *);
-void DrawCharIcon(i32, f32, f32, f32, f32, i32, f32, f32, i32, nuhspecial_s *);
-extern f32 ICONSIZE;
-extern i32 STATUS_R, STATUS_G, STATUS_B;
-f32 COLLECTION_Y_STATUS = -0.3f;
-static i32 playedappearsfx;
-static i32 playedmovesfx;
-
-void CollectCharcters_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 active) {
-    COLLECTION_s *collection = packet->vehicle_area ? &VehicleCollection : &CharacterCollection;
-    if (active == 0)
-        return;
-    if (stage->field_0x14 == 0) {
-        const f32 offscreen = (1.0f - fabsf(COLLECTION_Y_STATUS)) + 1.0f;
-        const f32 ratio = NuFdiv(stage->field_0x18, stage->field_0x1c);
-        Collection_Draw(collection, 0.0f,
-                        NuTrigTable[(static_cast<i32>(ratio * 16384.0f) >> 1) & 0x7fff] *
-                                (COLLECTION_Y_STATUS + offscreen) -
-                            offscreen,
-                        collection->field_10, NULL, 1.0f, 0);
-        return;
-    }
-    const i32 id = StatusCollectList.ids[stage->field_0x14 - 1];
-    if (id == -1)
-        return;
-    Collection_Draw(collection, 0.0f, COLLECTION_Y_STATUS, collection->field_10, NULL, 1.0f, 0);
-    f32 time = stage->field_0x18;
-    f32 x = 0.0f, y = 0.7f, size = 0.4f, icon_alpha = 1.0f, text_alpha;
-    if (time < 0.5f) {
-        if (time > 0.25f && playedappearsfx == 0) {
-            PlaySfx(const_cast<char *>("Char_Icon_App"), NULL);
-            playedappearsfx = 1;
-            time = stage->field_0x18;
-        }
-        text_alpha = NuTrigTable[(static_cast<i32>((time + time) * 16384.0f) >> 1) & 0x7fff];
-        icon_alpha = time + time;
-    } else if (time < 2.0f) {
-        text_alpha = 1.0f;
-        playedappearsfx = 0;
-        playedmovesfx = 0;
-    } else {
-        text_alpha = 1.0f - NuTrigTable[(static_cast<i32>((time - 2.0f) * 16384.0f) >> 1) & 0x7fff];
-        if (playedmovesfx == 0) {
-            PlaySfx(const_cast<char *>("Char_Icon_Slide"), NULL);
-            playedmovesfx = 1;
-        }
-        const f32 blend =
-            1.0f - (NuTrigTable[(static_cast<i32>((time - 2.0f) * 32768.0f + 16384.0f) >> 1) & 0x7fff] + 1.0f) * 0.5f;
-        if (InCollectList_Index(id, collection->list, collection->count_y) != -1) {
-            f32 target_x, target_y;
-            Collection_GetPos(collection, id, &target_x, &target_y);
-            f32 target_size = collection->field_10 * ICONSIZE;
-            if (Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0)
-                target_size *= 0.875f;
-            x = target_x * blend + 0.0f;
-            y = (target_y - 0.7f) * blend + 0.7f;
-            size = (target_size - 0.4f) * blend + 0.4f;
-        }
-    }
-    DrawCharIcon(id, x, y, 0.0f, size, 0xa7, icon_alpha, icon_alpha, 1, NULL);
-    SmartTextEx(TTab[CDataList[id].name_id], 0.0f, 0.35f, 1.0f, 0.6f, 0.6f, 0.6f, 0, STATUS_R, STATUS_G, STATUS_B, 1.7f,
-                1, NULL, 0, static_cast<i32>(text_alpha * 128.0f));
-}
-
-void CollectCharcters_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
-    if (stage->field_0x14 == 0)
-        stage->field_0x14 = 1;
-    while (StatusCollectList.ids[stage->field_0x14 - 1] != -1) {
-        AddToCollection(StatusCollectList.ids[stage->field_0x14 - 1]);
-        ++stage->field_0x14;
-    }
-    NextStatusStage(packet);
-    NextStatusStage(packet);
-}
-
 nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id) {
     nuhspecial_s *special;
     if (__builtin_expect(CharScene_Area != NULL && CharScene_Area[character_id].scene != NULL, 1)) {
@@ -1597,439 +972,159 @@ nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *world, i32 character_id) {
     return special;
 }
 
-void PostAnimate_ASTROMECH(GameObject_s *object) {
-    const i8 context = object->character_context;
-    if (object->apiobj.field_0x287 == 0 && context == 0 && object->apiobj.model_draw_result != 0 &&
-        object->apiobj.field_0x288 != 0) {
-        if (object->field_0xe31 != 3 || (object->pad_gamepad->buttons_held & GAMEPAD_JUMP) != 0) {
-            const i32 count = ParticlesPerFrame(object->field_0xe31 == 3 ? 0.25f : 1.0f, FRAMETIME);
-            if (count > 0) {
-                const i32 effect = object->id == id_R2Q5 ? 12 : 11;
-                if (object->apiobj.character_model->points_of_interest[2] != NULL) {
-                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[2], 3), count,
-                                     0x71c7, object->apiobj.facing_angle);
-                }
-                if (object->apiobj.character_model->points_of_interest[3] != NULL) {
-                    AddGameDebrisRot(WORLD->debris_sys, effect, NUMTX_GET_ROW_VEC(&object->joint_matrices[3], 3), count,
-                                     0x8e38, object->apiobj.facing_angle);
-                }
-            }
-            PlaySfxAndSetVolume(const_cast<char *>("R2Thrust"), &object->apiobj.collision_position,
-                                object->field_0xe31 == 3 ? 0.5f : 1.0f);
+void CharScene_Draw(WORLDINFO_s *world, i32 character_id, numtx_s *matrix, numtx_s *reflection_matrix) {
+    nuhspecial_s *special = CharScene_FindHSpecial(world, character_id);
+    if (special != NULL) {
+        if (matrix != NULL) {
+            NuSpecialDrawAt(special, matrix);
         }
-    } else if (context == -1 && object->pad_gamepad->input_magnitude > 0.0f) {
-        if (object->communicate_blend > 0.0f) {
-            PlaySfx(const_cast<char *>("drd_r2_mvt_water_lp"), &object->apiobj.upper_position);
-        } else if (object->apiobj.field_0x27d != 0) {
-            PlaySfx(const_cast<char *>("R2Move"), &object->apiobj.collision_position);
-        }
-    }
-
-    if (object->communicate_blend > 0.0f && object->communicate_blend < 1.0f) {
-        const i32 effect = WORLD->debris_sys->entries[object->id == id_R2Q5 ? 1 : 3].effect;
-        if (effect != -1) {
-            const i32 count = ParticlesPerSecond(100.0f, FRAMETIME);
-            if (count > 0) {
-                const i32 locator = object->apiobj.character_data->game_character->thingy_locator;
-                if (locator != -1) {
-                    NUVEC_ALIGNED16 position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[locator], 3);
-                    if (object->apiobj.field_0x27f == 9 && object->apiobj.water_height > position.y) {
-                        position.y = object->apiobj.water_height;
-                    }
-                    AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
-                }
-            }
+        if (reflection_matrix != NULL) {
+            NuSpecialDrawAt(special, reflection_matrix);
         }
     }
 }
 
-AILOCATOR_s *LocalGetRandomLocator(AILOCATOR_s **locators, i32 count, f32 clip_radius, NUVEC *position,
-                                   f32 max_distance, i32 outside_camera, f32 max_delta_y, f32 min_delta_y) {
-    i32 candidates[64] __attribute__((aligned(16)));
-    if (count > 64) {
-        count = 64;
-    }
-    i32 candidate_count = 0;
-    for (i32 i = 0; i < count; ++i) {
-        if (locators[i] == NULL) {
-            continue;
-        }
-        bool valid = false;
-        if (outside_camera != 0) {
-            if (NuCameraClipTestSphere(&locators[i]->position, 0.0f, &numtx_identity) == 0) {
-                valid = true;
+void CharScenes_LevelDump(WORLDINFO_s *world) {
+    CHARSCENE_s *scenes = world->minikit.character_scenes;
+    if (scenes != NULL) {
+        for (i32 i = 0; i < CHARCOUNT; ++i) {
+            if (world->minikit.character_scenes[i].scene != NULL) {
+                NuGScnRemove(world->minikit.character_scenes[i].scene);
             }
-        } else {
-            valid = true;
-            if (clip_radius > 0.0f) {
-                if (NuCameraClipTestSphere(&locators[i]->position, clip_radius, &numtx_identity) == 0) {
-                    const i16 room = static_cast<i16>(NuPortalWhichRoom(WORLD->current_gscn, &locators[i]->position));
-                    valid = false;
-                    if (room >= 0 && WORLD->rooms_visible_ptr[room] == 0) {
-                        valid = true;
-                    }
-                }
-            }
-        }
-        if (valid != 0) {
-            if (max_distance == 1000000000.0f) {
-                candidates[candidate_count++] = i;
-            } else {
-                NUVEC delta __attribute__((aligned(16)));
-                const f32 distance = NuVecDistSqr(position, &locators[i]->position, &delta);
-                if (min_delta_y != 1000000000.0f && min_delta_y > delta.y) {
-                    continue;
-                }
-                if (max_delta_y != 1000000000.0f && delta.y > max_delta_y) {
-                    continue;
-                }
-                if (max_distance * max_distance > distance) {
-                    candidates[candidate_count++] = i;
-                }
-            }
-        }
-    }
-    if (candidate_count == 0) {
-        return NULL;
-    }
-    const i32 selected = qrand() / (65535 / candidate_count + 1);
-    AILOCATOR_s *result = locators[candidates[selected]];
-    locators[candidates[selected]] = NULL;
-    return result;
-}
-
-AILOCATOR_s *LocalGetNearestLocator(AILOCATOR_s **locators, i32 count, f32 clip_radius, NUVEC *position,
-                                    f32 max_distance, i32 outside_camera, f32 max_delta_y, f32 min_delta_y) {
-    f32 nearest_distance = max_distance == 1000000000.0f ? 1000000000.0f : max_distance * max_distance;
-    i32 candidates[64];
-    i32 candidate_count = 0;
-    if (count > 64) {
-        count = 64;
-    }
-    for (i32 i = 0; i < count; ++i) {
-        if (locators[i] == NULL) {
-            continue;
-        }
-        if (outside_camera != 0) {
-            if (NuCameraClipTestSphere(&locators[i]->position, 0.0f, &numtx_identity) != 0) {
-                continue;
-            }
-        } else if (clip_radius > 0.0f &&
-                   NuCameraClipTestSphere(&locators[i]->position, clip_radius, &numtx_identity) == 0) {
-            continue;
-        }
-        candidates[candidate_count++] = i;
-    }
-    i32 nearest = -1;
-    for (i32 i = 0; i < candidate_count; ++i) {
-        NUVEC delta;
-        const f32 distance = NuVecDistSqr(position, &locators[candidates[i]]->position, &delta);
-        if (min_delta_y != 1000000000.0f && min_delta_y > delta.y) {
-            continue;
-        }
-        if (max_delta_y != 1000000000.0f && delta.y > max_delta_y) {
-            continue;
-        }
-        if (!(nearest_distance > distance)) {
-            continue;
-        }
-        nearest_distance = distance;
-        nearest = i;
-    }
-    if (nearest == -1) {
-        return NULL;
-    }
-    AILOCATOR_s *result = locators[candidates[nearest]];
-    locators[candidates[nearest]] = NULL;
-    return result;
-}
-
-i32 newCharactersCollected(STATUSPACKET_s *) {
-    i32 count = 0;
-    for (i16 *player_id = Area_PlayerIDList; *player_id != -1 && count < 7; ++player_id) {
-        const i16 player = *player_id;
-        const i32 id = player;
-        i32 previous = 0;
-        while (previous < count && StatusCollectList.ids[previous] != id) {
-            ++previous;
-        }
-        if (previous == count) {
-            if (__builtin_expect(Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0, 1)) {
-                continue;
-            }
-            const i32 index = InCollectList_Index(id, MasterCollection.list, MasterCollection.count_y);
-            if (__builtin_expect(index != -1 && MasterCollection.list[index].can_buy == 0, 0)) {
-                StatusCollectList.ids[count++] = player;
-                if (MasterCollection.list[index].field5_0x9 != 0) {
-                    AddToCompletionPoints(POINTS_PER_CHARACTER);
-                }
-            }
-        }
-    }
-    StatusCollectList.ids[count] = -1;
-    return count;
-}
-
-void CollectCharcters_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    if (stage->field_0x14 == 0) {
-        stage->field_0x1c = 1.0f;
-        stage->field_0x18 += elapsed;
-        if (stage->field_0x18 >= 1.0f) {
-            stage->field_0x14 = 1;
-            if (StatusCollectList.ids[0] == -1) {
-                GameAudio_PlaySfx(0x32, NULL, 0, 0);
-                NewStatusRumbleBuzz(-1, 0.6f, 0.0f, 0);
-                NextStatusStage(packet);
-            } else {
-                stage->field_0x18 = 0.0f;
-                stage->field_0x1c = 3.0f;
-            }
-        }
-    } else {
-        stage->field_0x18 += elapsed;
-        if (stage->field_0x18 >= stage->field_0x1c) {
-            AddToCollection(StatusCollectList.ids[stage->field_0x14 - 1]);
-            PlaySfx(const_cast<char *>("LegoClicks"), NULL);
-            ++stage->field_0x14;
-            stage->field_0x18 = 0.0f;
-            stage->field_0x1c = 3.0f;
-            if (StatusCollectList.ids[stage->field_0x14 - 1] == -1)
-                NextStatusStage(packet);
+            world->minikit.character_scenes[i].scene = NULL;
         }
     }
 }
 
-i32 SetProtocolDroidFallAnim(GameObject_s *object) {
-    switch (object->field_0xe38) {
-        case 1:
-            return 76;
-        case 2:
-            return 75;
-        case 3:
-            return 40;
-        default:
-            return 5;
-    }
-}
-
-void CollectCharactersOff_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 active) {
-    COLLECTION_s *collection = packet->vehicle_area ? &VehicleCollection : &CharacterCollection;
-    if (active == 0)
+void CharScenes_AreaDump() {
+    if (CharScene_Area == NULL) {
         return;
-    f32 alpha = 1.0f;
-    if (stage->field_0x14 > 0)
-        alpha = 1.0f - NuFdiv(stage->field_0x18, stage->field_0x1c);
-    Collection_Draw(collection, 0.0f, COLLECTION_Y_STATUS, collection->field_10, NULL, alpha, 0);
-}
-
-void CollectCharactersOff_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
-}
-
-void ScaleGameObject(GameObject_s *obj);
-
-void SetGameObjectCharacterData(GameObject_s *obj) {
-    CHARACTERDATA *data = obj->apiobj.character_data;
-    obj->apiobj.field_0xa8 = data->field17_0x3c;
-    obj->field_0x1008 = data->field14_0x30;
-    obj->field_0xffc = data->field15_0x34;
-    obj->field_0x1000 = data->field16_0x38;
-    ScaleGameObject(obj);
-}
-
-void CollectCharactersOff_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
-    switch (stage->field_0x14) {
-        case 0:
-            stage->field_0x18 = 0.0f;
-            stage->field_0x1c = 1.0f;
-            stage->field_0x14 = 1;
-            break;
-        case 1:
-            stage->field_0x18 += elapsed;
-            if (stage->field_0x18 >= stage->field_0x1c)
-                NextStatusStage(packet);
-            break;
+    }
+    for (i32 i = 0; i < CHARCOUNT; ++i) {
+        CHARSCENE_s &entry = CharScene_Area[i];
+        if (entry.scene != NULL) {
+            NuGScnRemove(entry.scene);
+        }
+        entry.scene = NULL;
     }
 }
 
-extern i32 dagobah_training;
+void IconScenes_Init(char *path, variptr_u *buf, variptr_u *) {
+    const usize table_size = static_cast<usize>(CHARCOUNT) * sizeof(*IconScene);
+    IconScene = reinterpret_cast<NUGSCN **>(ALIGN(buf->addr, 4));
+    buf->addr = reinterpret_cast<usize>(IconScene) + table_size;
+    memset(IconScene, 0, table_size);
 
-i32 TakeOverYodaSeekDistanceHack(GameObject_s *object, GameObject_s *luke, nuvec_s *offset) {
-    if ((object->field_0xf00 & 2) == 0 || dagobah_training == 0 || object->field_0xcc0 != NULL || luke == NULL ||
-        (luke->apiobj.flags_low & 0x80) == 0)
-        return 0;
-    if (!(NuVecDistSqr(&object->apiobj.position, &luke->apiobj.position, offset) < 0.7f * 0.7f))
-        return 0;
-    NuVecRotateY(offset, offset, -static_cast<i32>(luke->apiobj.field_0x276));
-    return offset->z > 0.0f;
+    if (path != NULL && NuStrLen(path) <= 0x3f) {
+        NuStrCpy(IconPath, path);
+    }
 }
 
-void SetProtocolDroidInterfaceAction(GameObject_s *object) {
-    if (object->field_0xe38 == 3)
-        object->context_animation = 0x45;
-    else if (object->field_0xe38 == 2)
-        object->context_animation = 0x46;
-    else if (object->field_0xe38 == 1)
-        object->context_animation = 0x47;
+NUGSCN *IconScene_FindById(i32 character_id) {
+    if (character_id < 0 || character_id >= CHARCOUNT) {
+        return NULL;
+    }
+    return IconScene[character_id];
 }
 
-void SetProtocolDroidDeactivatedAction(GameObject_s *object) {
-    if (object->field_0xe38 == 3)
-        object->context_animation = 0x42;
-    else if (object->field_0xe38 == 2)
-        object->context_animation = 0x43;
-    else if (object->field_0xe38 == 1)
-        object->context_animation = 0x44;
+void IconScenes_Load(APICHARACTERMODELLIST_s *list, i32, variptr_u *buf, variptr_u *buf_end) {
+    if (list == NULL || IconScene == NULL) {
+        return;
+    }
+
+    for (; list->model_id != -1; ++list) {
+        const i32 character_id = list->model_id;
+        if (IconScene[character_id] != NULL || list->count == 0) {
+            continue;
+        }
+
+        const i32 object_index = CDataList[character_id].field20_0x42;
+        if (object_index == -1) {
+            continue;
+        }
+
+        char path[0x100];
+        NuStrCpy(path, IconPath);
+        NuStrCat(path, LevelObject_FindNameFromIndex(object_index));
+        NuStrCat(path, ".gsc");
+        IconScene[character_id] = NuGScnRead(buf, *buf_end, path);
+        if (IconScene[character_id] != NULL && IconScene[character_id]->display_list != NULL) {
+            IconScene[character_id]->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
+        }
+    }
 }
 
-NUMTL *lightningmat;
-extern NUMTL *DebMat[10];
-extern "C" void NuWaterInit(void);
-extern "C" void NuBridgeInit(void);
-
-void LoadPerm1() {
-    char buf[0x100];
-
-    rtlInitDynamic(&permbuffer_ptr, superbuffer_end, 0x40);
-    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
-    DebrisSetup(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\particle", 0x100, 0x200, 0x200);
-    DebrisRegisterCutoffCameraVec(reinterpret_cast<NUVEC *>(&global_camera.mtx.m30));
-    if (Grass_Available != 0) {
-        edgraSetup(&permbuffer_ptr, permbuffer_end, 0x200, 0x20, 0x40);
+void IconScenes_Dump() {
+    if (IconScene == NULL) {
+        return;
     }
-    lightningmat = NuMtlCreateEx(1, 10);
-    lightningmat->diffuse_color.b = 1.0f;
-    lightningmat->diffuse_color.g = 1.0f;
-    lightningmat->diffuse_color.r = 1.0f;
-    lightningmat->attribs.alpha_mode = 2;
-    lightningmat->attribs.filter_mode = 1;
-    lightningmat->attribs.unknown_1_1_2 = 1;
-    lightningmat->attribs.unknown_1_4_8 = 1;
-    lightningmat->attribs.cull_mode = 2;
-    lightningmat->attribs.z_mode = 1;
-    lightningmat->opacity = 0.999f;
-    lightningmat->tex_id = DebMat[5]->tex_id;
-    lightningmat->attribs.alpha_fail = 1;
-    NuMtlUpdate(lightningmat);
-    NuLgtSetArcMat(lightningmat, 0.0f, 0.50390625f, 0.25f, 0.5625f);
-    NuWaterInit();
-    NuBridgeInit();
-    InitParts(0x40, &permbuffer_ptr, &permbuffer_end);
-    ParticleReset();
 
-    NuStrCpy(buf, (char *)"stuff\\general.ptl");
-    if (NuFileExists(buf) != 0) {
-        DEBPAGE_GENERAL = edppLoadPage(buf, 0, 0);
+    for (i32 i = 0; i < CHARCOUNT; ++i) {
+        if (IconScene[i] != NULL) {
+            NuGScnRemove(IconScene[i]);
+            IconScene[i] = NULL;
+        }
     }
-    NuStrCpy(buf, (char *)"stuff\\char.ptl");
-    if (NuFileExists(buf) != 0) {
-        DEBPAGE_CHARACTER = edppLoadPage(buf, 5, 0);
+}
+
+void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 frame_object_id, float character_alpha,
+                  float frame_alpha, i32 draw_character, nuhspecial_s *override_special) {
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    const u16 character_spin = static_cast<u16>(drawcharicon_hspecial_spin);
+    drawcharicon_hspecial_spin = 0;
+
+    if (ObjTabList == NULL || world == NULL) {
+        return;
     }
-    perm_debrissys = InitGameDebris(&permbuffer_ptr, &permbuffer_end, 0x190, 0x93, debris_name, 0);
 
-    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
-    InitStreaks(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\streak.pnt");
-    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
-    InitRopeMtl((char *)"rope", &permbuffer_ptr, &permbuffer_end);
-    InitRipples(&ripples, &permbuffer_ptr, &permbuffer_end, 0x40);
-    permbuffer_ptr.addr = (permbuffer_ptr.addr + 0xff) & ~0xffu;
-
-    ShadowMat = NuMtlCreate3D(1);
-    ShadowMat->diffuse_color.r = 1.0f;
-    ShadowMat->diffuse_color.g = 1.0f;
-    ShadowMat->diffuse_color.b = 1.0f;
-    ShadowMat->sort_pri = 0xff;
-    ShadowMat->opacity = 0.999f;
-    u8 *attributes = reinterpret_cast<u8 *>(&ShadowMat->attribs);
-    attributes[1] = (attributes[1] & 0x0f) | 0x60;
-    attributes[0] = (attributes[0] & 0xf0) | 1;
-    attributes[2] = (attributes[2] & 0x8c) | 0x12;
-    ShadowMat->tex_id = static_cast<i16>(NuTexRead((char *)"stuff\\gradient", &permbuffer_ptr, permbuffer_end));
-    NuMtlUpdate(ShadowMat);
-
-    u8 shadow_random[0x800];
-    for (i32 i = 0; i < 0x800; ++i) {
-        shadow_random[i] = static_cast<u8>(qrand() >> 8);
+    nuhspecial_s special;
+    if (drawcharicon_find != 0) {
+        NuSpecialFind(things_scene, &special, ObjTabList[frame_object_id].name, 1);
+    } else {
+        special = world->lev_objs[frame_object_id].special;
     }
-    NuRndrShadowInit(shadow_random);
-    CreateFadeMaterials();
-    CreateUsefulMaterials();
 
-    edgraClumpsReset();
-    edanimParamReset();
-    NuTexAnimProgSysInit();
-    InitTexAnimScripts(TexAnimList_LSW);
+    if (NuSpecialExistsFn(&special) != 0) {
+        DrawPanel3DObject(x, y, z + 1.0f, scale, scale, scale, 0, 0, 0, &special, 0, frame_alpha);
+    }
 
-    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
-    things_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\things.gsc");
-    NUGSCN *terrain_scene = NULL;
-    if (things_scene != NULL) {
-        edbitsRegisterThingsScene(things_scene);
-        terrain_scene = things_scene;
-        if (things_scene->display_list != NULL) {
-            things_scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
+    if (draw_character != 0) {
+        if (override_special != NULL && NuSpecialExistsFn(override_special) != 0) {
+            const f32 special_scale = scale * drawcharicon_hspecial_scale;
+            DrawPanel3DObject(x, y, z + 1.0f + drawcharicon_hspecial_dz, special_scale, special_scale, special_scale, 0,
+                              character_spin, 0, override_special, 0, character_alpha);
+        } else {
+            i32 icon_object_id;
+            if (character_id == -1) {
+                icon_object_id = LEGOOBJ_ICON_QUESTION;
+            } else {
+                icon_object_id = CDataList[character_id].field20_0x42;
+                if (icon_object_id != -1 && GCDataList[character_id].field275_0x116 == 0 &&
+                    icon_object_id != LEGOOBJ_ICON_WEIRDO) {
+                    ++icon_object_id;
+                }
+            }
+
+            if (icon_object_id != -1) {
+                if (drawcharicon_find != 0) {
+                    NUGSCN *icon_scene = character_id == -1 ? NULL : IconScene_FindById(character_id);
+                    if (icon_scene != NULL) {
+                        NuSpecialFind(icon_scene, &special, ObjTabList[icon_object_id].name, 1);
+                    } else {
+                        NuSpecialFind(things_scene, &special, ObjTabList[icon_object_id].name, 1);
+                    }
+                } else {
+                    special = world->lev_objs[icon_object_id].special;
+                }
+
+                if (NuSpecialExistsFn(&special) != 0) {
+                    DrawPanel3DObject(x, y, z + 1.0f, scale, scale, scale, 0, 0, 0, &special, 0, character_alpha);
+                }
+            }
         }
     }
 
-    things_scene_terrain = TerrainInitEx(-1, &permbuffer_ptr, permbuffer_end.void_ptr, 0, (char *)"stuff\\things",
-                                         terrain_scene, 0, 0x14, 0x14, 0x14);
-    terrainpickupinit((char *)"stuff\\things", &things_scene_terrain);
-    BackDrop_Init((char *)"stuff\\starfield.gsc", &permbuffer_ptr, &permbuffer_end);
-
-    NuMtlSetCurrentRenderPlane(0xf);
-    edpartSetParticlePage(DEBPAGE_GENERAL);
-    NuStrCpy(buf, (char *)"stuff\\general.par");
-    if (NuFileExists(buf) != 0) {
-        PARTPAGE_GENERAL = edpartLoadPage(buf, 0, things_scene);
-    }
-    NuMtlSetCurrentRenderPlane(0);
-    AIScriptLoadAll((char *)"scripts", &permbuffer_ptr, &permbuffer_end, NULL);
+    drawcharicon_find = 0;
+    drawcharicon_i_panel = -1;
 }
 
-void LoadPerm2() {
-    extern i16 CustomiserActionList_Game[];
-    extern i16 tALL;
-    extern i16 tJEDI;
-    extern i16 tBLASTER;
-    extern i16 tBOUNTYHUNTERCHARACTERS;
-
-    CharConfig_ConfigureAll(1, ConfigChar_GameKeywords);
-    ExtraCharacterFixUpAfterConfig();
-    apiloadcharactermodels_nopakfile = CHARPAK == 0;
-    APILoadCharacterModels(PermModelList, 1, &permbuffer_ptr, permbuffer_end, 1);
-
-    Collection_CreateMaster(const_cast<char *>("All"), NULL, &MasterCollection, 15, COLLECTION_DEFAULTSCALE);
-    Collection_CreateCustom(const_cast<char *>("Characters"), &tALL, &CharacterCollection, 0, 0x04002000, 0, 0, 16,
-                            &permbuffer_ptr, &permbuffer_end, 0, 0.725f);
-    Collection_CreateCustom(const_cast<char *>("Vehicles"), NULL, &VehicleCollection, 0x2000, 0x04000000, 0, 0, 7,
-                            &permbuffer_ptr, &permbuffer_end, 0, 1.0f);
-    Collection_CreateCustom(const_cast<char *>("Minikits"), NULL, &MiniKitCollection, 0x04000000, 0, 0, 0, 12,
-                            &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
-    Collection_CreateCustom(const_cast<char *>("Shop"), NULL, &ShopCollection, 0, 0, 0, 1, 10, &permbuffer_ptr,
-                            &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
-    Collection_CreateCustom(const_cast<char *>("Jedi"), &tJEDI, &JediCollection, 8, 0, 0, 0, 7, &permbuffer_ptr,
-                            &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
-    Collection_CreateCustom(const_cast<char *>("BlasterZipUps"), &tBLASTER, &BlasterCollection, 0x100080, 0x01000000, 0,
-                            0, 11, &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
-    Collection_CreateCustom(const_cast<char *>("BountyHunters"), &tBOUNTYHUNTERCHARACTERS, &BountyHunterCollection,
-                            0x01000000, 0, 0, 0, 4, &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
-    Areas_ConfigureResidents(&permbuffer_ptr, &permbuffer_end);
-    CharacterCustomiser =
-        Customiser_Configure(const_cast<char *>("chars\\customiser.txt"), &permbuffer_ptr, &permbuffer_end, id_WEIRDO1,
-                             id_WEIRDO2, Customiser_PieceAvailable, Customiser_PieceConfig,
-                             LevelObject_FindIndexFromName, Game.customizer, CustomiserActionList_Game);
-    SpecialMoves_Configure(const_cast<char *>("chars\\specialmoves.txt"), &permbuffer_ptr, &permbuffer_end);
-
-    // Every status-screen level plays the status screen music in all three track slots.
-    for (i32 i = 0; i < LEVELCOUNT; ++i) {
-        if ((LDataList[i].flags & LEVEL_STATUS) != 0) {
-            LDataList[i].music_index = GetMusicIndex(const_cast<char *>("statusscreen"), MusicInfo, -1);
-            LDataList[i].music_tracks[0][0] = LDataList[i].music_tracks[0][1] =
-                music_man.GetTrackHandle(TRACK_CLASS_QUIET, "statusscreen");
-            LDataList[i].music_tracks[1][0] = LDataList[i].music_tracks[1][1] =
-                music_man.GetTrackHandle(TRACK_CLASS_ACTION, "statusscreen");
-            LDataList[i].music_tracks[2][0] = LDataList[i].music_tracks[2][1] =
-                music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "statusscreen");
-        }
-    }
-    Store_RestorePurchases();
-}

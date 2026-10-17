@@ -1,6 +1,8 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "MechInputTouch/MechInputTouch_types.h"
-#include "legoapi/core/config/cheat.h"
 #include "globals.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
 
@@ -46,69 +48,95 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "legoapi/world/levels/hub_types.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "gameframework/saveload.h"
+#include "legoapi/audio/audio.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/menus/screens/arcade.h"
+#include "legoapi/misc.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufpar.h"
+#include <stdlib.h>
+#include "legoapi/core/input/qrand.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nusound/nusound.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nu3d/numtl.h"
+#include <math.h>
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/numusic/numusic.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/numath/nuvec4.h"
+#include <cfloat>
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include <stdarg.h>
+#include <float.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/numath/nuplane.h"
+#include "legoapi/render/light/shadow.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "legoapi/props/system/socksys.h"
+#include "nu2api/nucore/nutime.h"
+#include "legoapi/characters/core/customiser.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/nuportal.h"
+#include <stddef.h>
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "legoapi/misc/utilities.h"
+#include <new>
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "gameapi/ai/aisys/gameaiscript.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/menus/core/hint.h"
+#include "legoapi/menus/screens/customise.h"
+#include "legoapi/world/levels/episodes.h"
+#include "legoapi/world/levels/hub.h"
+#include "legoapi/world/missions.h"
 
-extern void Customiser_LoadAll(CUSTOMISER *, WORLDINFO_s *);
-extern void Customiser_Init(CUSTOMISER *);
-extern void Customiser_Reset(CUSTOMISER *);
-extern void Customiser_Draw3D(CUSTOMISER *);
-extern void Customiser_Update(CUSTOMISER *, WORLDINFO_s *);
-void Hub_ResetPanel();
-extern void InitShop(WORLDINFO_s *);
-extern void DrawShop3D(WORLDINFO_s *);
-extern i32 Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
-extern void CutScenePlayer_Reset();
-extern FadeSystem FadeSys;
-extern GAMESAVE_s TempGame;
-extern i32 shop_save_done;
-extern i32 shop_quit;
-extern f32 ShopLockedScale;
-extern HINTSYS_s hintsys;
-extern i32 only_process_this_hint_id;
-extern u8 show_unlock_shop_hint;
-extern void *GetHintFromUIButton();
-extern "C" void NuIOS_RecordFlurryEvent(char *);
-bool HubShopUnlocked();
-bool HubCustomiserUnlocked();
-extern i32 Customiser_MenuAvailable(CUSTOMISER *);
-extern GAMESAVE_s OldCustomiseGame;
-extern i32 customiser_save_done;
-extern i32 customiser_quit;
-extern i32 customiser_changed;
-extern u8 show_unlock_customiser_hint;
-extern i32 Missions_PartyAvailable(MISSIONSYS_s *);
-extern "C" i32 TriggerAutoSave();
-extern AREADATA *E1VEHICLE_ADATA;
-extern u8 show_unlock_minikitviewer_hint;
-bool HubMinikitViewerUnlocked();
-void Hub_ActivateDoorMenu(LEVELDATA_s **);
-extern "C" void PlaySfxAndSetPitch(char *, NUVEC *, f32);
-AILOCATOR_s *LocalGetNearestLocator(AILOCATOR_s **, i32, f32, NUVEC *, f32, i32, f32, f32);
-extern i32 Episode_CountOpenAreas(i32, i32, AREASAVE_s *);
-extern void UpdateCharacterLoad();
-extern void ResetForceBack();
-extern void Hint_CancelCurrent();
-extern f32 SeekLinearF(f32, f32, f32);
-extern i32 qrand();
-extern void Door_GoThrough(WORLDINFO_s *, DOOR_s *, i32);
-extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
-extern void BackDrop_ResetColours();
-extern f32 MainRenderTargetTime;
-extern void MakeFreePlayModelList(i32 first_model, i32 second_model, i32 area, i32 level, i32 include_bonus);
-extern void GameDrawMenuEntry(MENU *menu, char *text);
-extern i32 GameAudio_GetSfxId(i32 sfx);
-extern i32 MenuSFX;
-extern char **TTab;
-extern i16 tPLAYER1;
-extern i16 tPLAYER2;
 extern i16 tPLAY;
-extern f32 ICONX;
-extern f32 ICONSIZE;
-extern i32 DrawPanel3DObjectNoAlpha(f32, f32, f32, f32, f32, f32, u16, u16, u16, nuhspecial_s *, i32);
-extern void NewLevelFromMenu(LEVELDATA_s *level, i32 menu_id, i32 menu_y, i32 remember_hub);
 
 // These two arrays are generic level-loader state rather than hub-owned state.
-extern u64 LevHSpecialExists;
-extern GIZBUILDIT_s *LevBuildIt[4];
 
 i32 hub_from_superstory = -1;
 i32 hub_from_mission = -1;
@@ -190,13 +218,9 @@ static i8 i_selectminikitepisode = 0;
 static i32 hub_minikitviewer_area = 0;
 static f32 hub_minikitviewer_alpha = 0.0f;
 extern f32 Hub_PadSpeed[2];
-extern u16 Hub_PadAngle[2];
 f32 hub_minikitviewer_movewait;
 f32 hub_minikitviewer_move;
 static NUVEC hub_minikitviewer_pos = {-27.0f, 0.1f, -22.125f};
-void NewRumbleAllPlayers(f32, f32, i32, i32);
-extern "C" void PlaySfx(char *, NUVEC *);
-void PushAway(NUVEC *, f32, NUVEC *, NUVEC *, GameObject_s *, GameObject_s *, f32, u32);
 
 static char *EpisodeNumerals[6] = {"I", "II", "III", "IV", "V", "VI"};
 
@@ -207,45 +231,17 @@ f32 HUB_EPISODETITLESIZE = 0.5f;
 f32 HUB_EPISODESUBTITLESIZE = 0.6f;
 
 extern f32 HUB_EPISODETITLEY, HUB_EPISODESUBTITLEY;
-extern f32 PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITSCALE, PANEL_MINIKITY, PANEL_MINIKITCOUNTY, PANEL3DMULX;
-extern i32 newgamecam;
+extern f32 PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTY;
 extern f32 newgamecamtime;
 extern i16 tMAP, tSTORY, tFREEPLAY, tREPLAYSTORY, tCHAPTER, tBONUS2, tMINIKITS, tMINIKIT;
 extern i16 tBOUNTYHUNTERMISSIONS, tBOUNTYHUNTERMISSIONS2, tSTORYCLIPS2;
 extern i32 EpMiniKitCount, EpMiniKitTotal, EpCharKitCount, EpCharKitTotal, EpBuildUpCount, EpBuildUpTotal;
 extern i32 EpStoryBuildUpCount, EpStoryBuildUpTotal, EpFreePlayBuildUpCount, EpFreePlayBuildUpTotal;
 extern i32 EpRedBrickCount, EpRedBrickTotal, EpGoldBrickCount, EpGoldBrickTotal, EpCompleteCount;
-extern u8 MENUNORMALR, MENUNORMALG, MENUNORMALB, MENUENTRYR, MENUENTRYG, MENUENTRYB;
-extern u8 MENUFLASH0R, MENUFLASH0G, MENUFLASH0B, MENUFLASH1R, MENUFLASH1G, MENUFLASH1B;
-extern f32 menu_pulse, menu_pulsate;
-extern i32 menu_flash;
-extern AREADATA *SENATE_ADATA;
-void DrawShopPanel();
-i32 Missions_NumCompleted(MISSIONSYS *, MISSIONSAVE *, i32);
-void Hub_DrawImportantBrick(i32, f32, f32, f32, i32, i32);
-void Hub_DrawAreaStats(f32, i32, i32);
-static void Hub_DrawMiniKitCount(f32, f32, i32, i32, f32);
-static void Hub_DrawSuperBonusStats(AREADATA *, f32);
-static void Hub_DrawArcadeStats(f32);
-static void Hub_DrawBonusModeMenu(i32, f32);
-static void Hub_DrawSelectModeMenu(i32, f32);
-void Collection_Draw(COLLECTION_s *, f32, f32, f32, APICHARACTERMODELLIST_s *, f32, i32);
 
 // Retail only has the IPA-SRA clone (the unused fourth argument dropped).
 static __attribute__((noinline, noclone)) void
 Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode) __asm__("_ZL18Hub_DrawBonusStatsfiii.isra.3");
-
-static void Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode) {
-    if (episode == -1 && area != -1)
-        episode = static_cast<i8>(ADataList[area].episode_index);
-    if (episode != -1) {
-        Episode_FindAreaFromFlags(&EDataList[episode], 5, 4);
-        Episode_FindAreaFromFlags(&EDataList[episode], 5, 5);
-        SmartTextEx(TTab[tSTORYCLIPS2], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
-                    HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f,
-                    1, NULL, 0, static_cast<i32>(alpha * 128.0f));
-    }
-}
 
 static const NUVEC Hub_PercentPos = {-26.713f, 0.7f, -48.777f};
 static const NUVEC ClipsSignOffset = {-0.114f, -0.0385f, -0.045f};
@@ -270,74 +266,6 @@ static inline void Hub_SetStatsTextMtx(NUMTX *mtx, i32 angle) {
     mtx->m32 = 0.0f;
     mtx->m33 = 1.0f;
 }
-
-void Hub_ClearStats();
-void Hub_UpdateMiniKits(WORLDINFO_s *);
-void Hub_InitFreePlaySelect(i32, i32, i32);
-void WipeBackToHub();
-static void Hub_MakeFreePlayList(i32 first_model, i32 second_model);
-
-enum HUB_DOOR_MENU_ID {
-    HUB_DOOR_MENU_STANDARD = 15,
-    HUB_DOOR_MENU_BONUS = 16,
-    HUB_DOOR_MENU_VEHICLE = 17,
-    HUB_DOOR_MENU_EPISODE_BONUS = 18,
-};
-
-enum HUB_VEHICLE_COLLECTION_MASK : u32 {
-    HUB_VEHICLE_COLLECTION_ALLOWED = 0x04002000,
-    HUB_VEHICLE_COLLECTION_REQUIRED = 0x00002000,
-};
-
-enum HUB_FREEPLAY_MODEL_FLAGS : u32 {
-    HUB_FREEPLAY_MODEL_VEHICLE = 0x00002000,
-    HUB_FREEPLAY_MODEL_MINIKIT = 0x04000000,
-};
-
-enum HUB_AUDIO_EVENT {
-    HUB_AUDIO_EVENT_OPEN_DOOR_MENU = 0x2d,
-};
-
-enum {
-    HUB_VEHICLE_ID_CAPACITY = 344,
-};
-
-struct HUBAREAINFO_s {
-    const char *area_name;
-    const char *door_name;
-    const char *lock_name;
-    const char *bonus_gizmo_name;
-    const char *bonus_gizmo_name_2;
-    f32 panel_offset;
-    f32 panel_scale;
-    u8 flags;
-    u8 force_open;
-    AREADATA_s *area;
-    GIZMO *door;
-    nuhspecial_s lock;
-    GIZMO *bonus_gizmo;
-    GIZMO *bonus_gizmo_2;
-};
-
-struct HUBEPISODEINFO_s {
-    i16 episode;
-    i16 flags;
-    const char *door_name;
-    const char *lock_on_name;
-    const char *lock_off_name;
-    u8 force_open;
-    EPISODEDATA *data;
-    GIZMO *door;
-    nuhspecial_s lock_on;
-    nuhspecial_s lock_off;
-};
-
-#if UINTPTR_MAX == 0xffffffff
-DECOMP_ASSERT(sizeof(HUBAREAINFO_s) == 0x3c, "HUBAREAINFO_s size");
-DECOMP_ASSERT(offsetof(HUBAREAINFO_s, force_open) == 0x1d, "HUBAREAINFO_s force_open offset");
-DECOMP_ASSERT(offsetof(HUBAREAINFO_s, area) == 0x20, "HUBAREAINFO_s area offset");
-DECOMP_ASSERT(sizeof(HUBEPISODEINFO_s) == 0x34, "HUBEPISODEINFO_s size");
-#endif
 
 // The original table is ordered exactly like areas.txt.  The last two entries
 // are the network/bonus doors and the null record terminates every hub scan.
@@ -404,6 +332,2785 @@ f32 HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK[6] = {-0.3f, 0.0f, 0.6f, -0.6f, 0.0f, 0.
 static f32 HUB_AREAPANELX_TWOTRUEJEDIGOLDBRICKS[6] = {-0.15f, -0.45f, 0.75f, -0.75f, 0.45f, 0.15f};
 static f32 HUB_AREAPANELX_1TRUEJEDIGB_NOCHALLENGE[6] = {-0.201f, 0.201f, 0.6f, -0.6f, 0.0f, 0.0f};
 f32 *HUB_AREAPANELX = HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK;
+
+static void Hub_UpdatePackObstacle(i32 pack) {
+    if (LevGizObst[12 - pack] == NULL) {
+        return;
+    }
+    if (!Store_IsPackUnlocked(pack)) {
+        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
+        obstacle->progress_flags &= static_cast<u8>(~1);
+        obstacle->runtime_flags |= 8;
+    } else {
+        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
+        obstacle->progress_flags |= 1;
+        obstacle->runtime_flags &= static_cast<u8>(~8);
+    }
+}
+
+static void Hub_ResetBuildIts() {
+    i32 buildit_index = 0;
+    for (i32 i = 0; HubAreaInfo[i].area_name != NULL; ++i) {
+        if (HubAreaInfo[i].bonus_gizmo != NULL) {
+            if ((Game.field_0x7c26[2] & (1 << buildit_index)) != 0) {
+                GizBuildIt_SetToEnd(static_cast<GIZBUILDIT_s *>(HubAreaInfo[i].bonus_gizmo->object));
+            }
+            ++buildit_index;
+        }
+    }
+    if ((Game.field_0x7c26[2] & 0x80) != 0 && LevGizmo[0] != NULL) {
+        GizBuildIt_SetToEnd(static_cast<GIZBUILDIT_s *>(LevGizmo[0]->object));
+    }
+}
+
+i32 hub_forceshopsave = 0;
+
+extern f32 hub_minikitviewer_movewait, hub_minikitviewer_move;
+f32 HUB_MINIKITVIEWER_REFLECTY = 0.09f;
+
+static inline void MiniKitSetRotationX(NUMTX *m, NUANG a) {
+    const f32 cosine = NU_COS_LUT(a);
+    const f32 sine = NU_SIN_LUT(a);
+    m->m00 = 1.0f;
+    m->m11 = cosine;
+    m->m12 = sine;
+    m->m21 = -sine;
+    m->m22 = cosine;
+    m->m01 = 0.0f;
+    m->m02 = 0.0f;
+    m->m03 = 0.0f;
+    m->m10 = 0.0f;
+    m->m13 = 0.0f;
+    m->m20 = 0.0f;
+    m->m23 = 0.0f;
+    m->m30 = 0.0f;
+    m->m31 = 0.0f;
+    m->m32 = 0.0f;
+    m->m33 = 1.0f;
+}
+
+static inline void MiniKitRotateX(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m01 = m->m01;
+    f32 m11 = m->m11;
+    f32 m21 = m->m21;
+    f32 m31 = m->m31;
+
+    m->m01 = m01 * cosx - m->m02 * sinx;
+    m->m02 = m01 * sinx + m->m02 * cosx;
+    m->m11 = m11 * cosx - m->m12 * sinx;
+    m->m12 = m11 * sinx + m->m12 * cosx;
+    m->m21 = m21 * cosx - m->m22 * sinx;
+    m->m22 = m21 * sinx + m->m22 * cosx;
+    m->m31 = m31 * cosx - m->m32 * sinx;
+    m->m32 = m31 * sinx + m->m32 * cosx;
+}
+
+static inline void MiniKitRotateY(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m00 = m->m00;
+    f32 m10 = m->m10;
+    f32 m20 = m->m20;
+    f32 m30 = m->m30;
+
+    m->m00 = m00 * cosx + m->m02 * sinx;
+    m->m02 = m->m02 * cosx - m00 * sinx;
+    m->m10 = m10 * cosx + m->m12 * sinx;
+    m->m12 = m->m12 * cosx - m10 * sinx;
+    m->m20 = m20 * cosx + m->m22 * sinx;
+    m->m22 = m->m22 * cosx - m20 * sinx;
+    m->m30 = m30 * cosx + m->m32 * sinx;
+    m->m32 = m->m32 * cosx - m30 * sinx;
+}
+
+static inline void MiniKitRotateZ(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m00 = m->m00;
+    f32 m10 = m->m10;
+    f32 m20 = m->m20;
+    f32 m30 = m->m30;
+
+    m->m00 = m00 * cosx - m->m01 * sinx;
+    m->m01 = m00 * sinx + m->m01 * cosx;
+    m->m10 = m10 * cosx - m->m11 * sinx;
+    m->m11 = m10 * sinx + m->m11 * cosx;
+    m->m20 = m20 * cosx - m->m21 * sinx;
+    m->m21 = m20 * sinx + m->m21 * cosx;
+    m->m30 = m30 * cosx - m->m31 * sinx;
+    m->m31 = m30 * sinx + m->m31 * cosx;
+}
+
+static inline HUBAREAINFO_s *Hub_FindAreaInfoByIndex(i32 area) {
+    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
+        if (info->area != NULL && area == info->area->index)
+            return info;
+    }
+    return NULL;
+}
+
+// All recovered callers use player zero and full opacity. Keeping this private
+// allows the compiler to specialize those constant arguments naturally.
+// Retail only keeps the player-one, full-alpha specialisation of the cursor
+// drawing body; its name records the partial-inlining and constprop clones.
+static __attribute__((noinline, noclone)) void
+Hub_DrawIconCursors(COLLECTION_s *collection,
+                    f32 scale) __asm__("_ZL19Hub_DrawIconCursorsP12COLLECTION_siff.part.9.constprop.51");
+
+extern i16 tSELECT, tSELECTED, tSELECTING, tCONFIRMED, tYES, tNO;
+
+static void Hub_FindSpecial(WORLDINFO_s *world, nuhspecial_s *special, const char *name) {
+    NuSpecialFind(world->current_gscn, special, const_cast<char *>(name), 1);
+}
+
+// Private hub menu and drawing helpers.
+
+extern i16 tARCADE_NAME, tARCADE_NEEDTWOPLAYERS;
+static __used__ void Hub_UpdateSelectMode();
+extern i16 tSELECT, tBACK, tSELECTING;
+extern AREADATA *E1CHARACTER_ADATA, *E2CHARACTER_ADATA, *E3CHARACTER_ADATA, *E4CHARACTER_ADATA, *E5CHARACTER_ADATA, *E6CHARACTER_ADATA;
+extern i16 id_PALPATINE, id_LAMASU, id_WOOKIEE, id_WAMPA, id_BAT, id_HANINCARBONITE;
+ARCADE_LEVEL_s ArcadeLevel[12] = {{&E1CHARACTER_ADATA, &id_GUNGAN},
+                                  {&SENATE_ADATA, &id_PALPATINE},
+                                  {&BONUSKAMINO_ADATA, &id_LAMASU},
+                                  {&E2CHARACTER_ADATA, &id_GEONOSIAN},
+                                  {&UTAPAU_ADATA, &id_GRIEVOUS},
+                                  {&BONUSKASHYYYK_ADATA, &id_WOOKIEE},
+                                  {&E3CHARACTER_ADATA, &id_RANCOR},
+                                  {&E4CHARACTER_ADATA, &id_JAWA},
+                                  {&HOTH_ADATA, &id_WAMPA},
+                                  {&BONUSDAGOBAH_ADATA, &id_BAT},
+                                  {&E5CHARACTER_ADATA, &id_HANINCARBONITE},
+                                  {&E6CHARACTER_ADATA, &id_EWOK}};
+extern i16 tSUPERSTORY, tCHARACTERBONUS, tVEHICLEBONUS;
+i32 hub_bonusmode = 0;
+f32 BlipL[2] = {};
+f32 BlipR[2] = {};
+f32 BlipU[2] = {};
+f32 BlipD[2] = {};
+
+extern i16 tCHALLENGE, tLOCKED;
+extern i16 tBESTTIME;
+extern i16 tWINNER;
+extern i16 tARCADE_NEEDTWOPLAYERS;
+static f32 Arcade_NeedTwoPlayers_Scale = 1.0f;
+i32 Arcade_Score[2];
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+struct starfighter_s;
+
+struct APICHARACTERMODELLIST_s;
+
+struct AIROW_s;
+struct nuqthdr_s;
+struct nunativegscene_s;
+struct SHOPINPUT;
+
+extern i16 tSELECT;
+extern i16 tSELECTING;
+
+u16 hub_iconang[4] = {};
+static f32 hub_icontime[4] = {};
+static i32 hub_icondang[4] = {};
+
+extern i16 tCHALLENGECOMPLETE, tMINIKIT;
+
+static inline void UpdateIconWibbleAxis(i32 i) {
+    hub_icontime[i] -= FRAMETIME;
+    if (hub_icontime[i] <= 0.0f) {
+        hub_icondang[i] = static_cast<i32>(QRAND_FLOAT() * 262144.0f - 131072.0f);
+        hub_icontime[i] = QRAND_FLOAT() * 2.0f + 1.0f;
+    }
+    hub_iconang[i] = static_cast<u16>(static_cast<i32>(hub_iconang[i] + hub_icondang[i] * FRAMETIME));
+}
+
+extern i16 tTRUEJEDI, tSTORY, tFREEPLAY;
+extern i16 tMAP, tRESTART, tFINISHSTORY, tCONTINUESTORY, tFINALCHAPTERLOCKED, tNEXTCHAPTERLOCKED;
+
+struct FLOWBOX_s;
+
+static NUVEC PercentHint_TriggerPos = {-28.421f, 0.0f, -52.462f};
+
+extern i16 tCHAPTER;
+
+struct CUTSCENEPLAYERCLIP;
+struct instNUGCUTCHAR_s;
+struct NUGCUTCHAR_s;
+struct NUGCUTRIGID_s;
+struct instNUGCUTRIGID_s;
+
+extern void (*CutScene_OverrideConfigFileNameFn)(char *, i32, i32);
+
+typedef isize __attribute__((may_alias)) NuGCutWord;
+
+struct instNUGCUTSCENE_s;
+struct NUGCUTLOCATORSYS_s;
+struct instNUGCUTLOCATOR_s;
+struct NUGCUTLOCATOR_s;
+struct numtx_s;
+
+extern "C" {
+extern void *(*DefragCreateInstFn)(void *, NUGCUTSCENE_s *, VARIPTR *);
+
+}
+
+struct ani3_animheader_s;
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+    // ---------------------------------------------------------------------------
+    // Culling / visibility / portals / occlusion
+    // ---------------------------------------------------------------------------
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+struct nuframebuffer_s;
+struct nushaderobject_s;
+union variptr_u;
+
+extern i16 id_GAMORREANGUARD, id_PRINCESSLEIASLAVE, id_LAMASU, id_TAUNWE;
+
+i32 GizmoFileReadGameAnimSet(GAMEANIMSET_s *set, void *world_ptr,
+                             void (*read_object_data)(GAMEANIMOBJ_s *, unsigned char), unsigned char version,
+                             char *prefix, char *suffix);
+
+extern "C" {
+extern void (*checkantinodefns[3])(APIOBJECT *, AIANTINODE *, NUVEC *, f32);
+    extern void (*checkantinodefns[3])(APIOBJECT_s *, AIANTINODE_s *, NUVEC *, f32);
+}
+
+extern "C" {
+void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
+} // extern "C"
+
+// Callback storage is declared in reverse linked-BSS order because the
+// original GCC 4.7 -O3 object emits these definitions in reverse source order.
+extern "C" {
+void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
+} // extern "C"
+
+extern "C" {
+void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
+
+}
+
+extern f32 HUB_EPISODETITLEY;
+extern i16 tSELECT, tSELECTED, tSELECTING;
+extern i16 tBACK;
+extern i16 tSTORY;
+extern i16 tFREEPLAY;
+extern i16 tREPLAYSTORY;
+extern i16 tLOCKED;
+
+extern void (*drawslotinfofn)(f32, f32, i32, i32);
+extern void (*drawslotsfn)(MENU *, f32);
+
+void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
+                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
+
+struct rtl_s;
+struct rtlidata_s;
+
+extern f32 HUB_EPISODESUBTITLEY;
+extern f32 HUB_EPISODETITLEY;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+extern f32 PANEL_MINIKITCOUNTSCALE;
+extern f32 PANEL_MINIKITCOUNTY;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
+extern i16 tMAP;
+extern i16 tYES;
+extern i16 tNO;
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+}
+
+void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
+                          void (*drawSaveIcon)(void), void *extradata, i32 extradataSize);
+
+extern void (*FS_Callback)(char *, char *);
+
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+extern "C" {
+void TextRegisterButtonMapFn(void (*fn)(char *, char *));
+void TextRegisterPulseTimerFn(f32 (*fn)(f32));
+}
+
+extern "C" {
+    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
+}
+
+extern "C" {
+extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
+} // extern "C"
+
+struct rtlset;
+
+struct spacelevel_s;
+struct quickboltinfo;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern EdInputContext * Input;
+extern f32 Scale;
+extern EdEnumControl::Item OpenClosedItems[3];
+extern EdEnumControl::Item OnOffItems[3];
+extern EdEnumControl::Item YesNoItems[3];
+extern i32 AxisColour[8];
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+extern f32 MouseScale;
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" i16 id_LANDSPEEDER;
+extern f32 newgamecamtime, cutscenecam_focalLength, CamStopBlend, EMPERORFIGHTA_CAMDYHACK;
+extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
+GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
+                                    i32 (*)(GameObject_s *), bool);
+
+extern "C" {
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *));
+
+}
+
+void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+} // extern "C"
+
+extern "C" {
+void TextRegisterButtonMapFn(void (*fn)(char *, char *));
+
+void TextRegisterPulseTimerFn(f32 (*fn)(f32));
+
+}
+
+static void Hub_DrawBonusModeMenu(int selected, float alpha) {
+    char text[3][128];
+    if (__builtin_expect(bonusmodearcade, 0)) {
+        const i32 full_opacity = static_cast<i32>(alpha * 128.0f);
+        f32 y = 0.3062499761581421f;
+        MENU *menu = &GameMenu[GameMenuLevel];
+        AREADATA *area;
+        for (i32 i = 0; i < 3; ++i) {
+            i16 *label;
+            memcpy(&label, reinterpret_cast<const u8 *>(&ArcadeItem) + i * 8, sizeof(label));
+            if (__builtin_expect(!!(label), 0))
+                NuStrCpy(text[0], TTab[*label]);
+            else
+                text[0][0] = 0;
+            i32 opacity = full_opacity;
+            if (i != 1 && i != 2) {
+                if (text[0][0])
+                    NuStrCat(text[0], ": ");
+                area = *ArcadeLevel[ArcadeItem.level].area;
+                if (area && area->name_id != 0 && TTab[area->name_id])
+                    NuStrCat(text[0], TTab[area->name_id]);
+                else
+                    NuStrCat(text[0], "?");
+            } else if (i == 1) {
+                if (text[0][0])
+                    NuStrCat(text[0], ": ");
+                char *mode_text = TTab[*Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].text];
+                NuStrCat(text[0], mode_text ? mode_text : "?");
+                if (__builtin_expect(area && Game_LevelSave && area->levels[0] != -1, 0)) {
+                    const i32 level = area->levels[0];
+                    if ((reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave)[level].arcade_flags &
+                         (1u << (static_cast<i8>(ArcadeItem.field_c_0xc) & 31))) != 0)
+                        NuStrCat(text[0], " ~2$");
+                    if ((reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave)[level].arcade_flags & 7) == 7) {
+                        const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_REDBRICKSCALE;
+                        const i32 rotation =
+                            static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f) & 0xffff;
+                        const u16 tilt = static_cast<i32>(1820.0f * NuTrigTable[rotation & 0x7fff]) - 0x1555;
+                        DrawPanel3DObjectNoAlpha(0.0f, y + 0.35f, 1.0f, scale, scale, scale, tilt, rotation, 0,
+                                                 &WORLD->lev_objs[211].special, 2);
+                    }
+                }
+            } else if (*ArcadeLevel[ArcadeItem.level].area == NULL)
+                opacity = full_opacity / 3;
+            i32 red, green, blue;
+            if (selected && i == hub_bonusmode && TestForController()) {
+                if (menu_pulsate > 0.0f) {
+                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                           static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
+                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                             static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
+                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                            static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
+                } else {
+                    red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
+                    green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
+                    blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
+                }
+            } else if (menu_pulse > 0.0f) {
+                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                       static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                         static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                        static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+            } else {
+                red = MENUENTRYR;
+                blue = MENUENTRYB;
+                green = MENUENTRYG;
+            }
+
+            smarttextex_drawmessagebox = 1;
+            SmartTextEx(text[0], 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
+                        static_cast<u8>(blue), 1.7f, 1, 0, 0, opacity);
+            menu->item_x[i] = 0.0f;
+            menu->item_y[i] = y;
+            menu->item_width[i] = text3d_width;
+            menu->item_height[i] = text3d_height;
+            menu->item_column[i] = 0;
+            menu->item_row[i] = i;
+
+            y -= 0.175f;
+        }
+        return;
+    }
+    const i32 menu_level = GameMenuLevel;
+    if (hub_new_level == -1 || LDataList[hub_new_level].area_index == -1 ||
+        (ADataList[LDataList[hub_new_level].area_index].flags & 0x100) == 0)
+        return;
+    i32 count;
+    if (hub_bonusepisode != -1) {
+        NuStrCpy(text[0], TTab[tSUPERSTORY]);
+        NuStrCpy(text[1], TTab[tCHARACTERBONUS]);
+        NuStrCpy(text[2], TTab[tVEHICLEBONUS]);
+        const i32 character_area = Episode_FindAreaFromFlags(&EDataList[hub_bonusepisode], 5, 4);
+        const i32 vehicle_area = Episode_FindAreaFromFlags(&EDataList[hub_bonusepisode], 5, 5);
+        if (character_area != -1 && ADataList[character_area].name_id != -1 &&
+            TTab[ADataList[character_area].name_id]) {
+            const i32 name = ADataList[character_area].name_id;
+            NuStrCat(text[1], " (");
+            NuStrCat(text[1], TTab[name]);
+            NuStrCat(text[1], ")");
+        }
+        if (vehicle_area != -1 && ADataList[vehicle_area].name_id != -1 && TTab[ADataList[vehicle_area].name_id]) {
+            const i32 name = ADataList[vehicle_area].name_id;
+            NuStrCat(text[2], " (");
+            NuStrCat(text[2], TTab[name]);
+            NuStrCat(text[2], ")");
+        }
+        count = 3;
+    } else {
+        NuStrCpy(text[0], TTab[hub_bonusarea != -1 ? ADataList[hub_bonusarea].name_id : -1]);
+        count = 1;
+    }
+    f32 y = (count - 1) * 0.1f + 0.125f;
+    const i32 full_opacity = static_cast<i32>(alpha * 128.0f);
+    MENU *menu = &GameMenu[menu_level];
+    for (i32 i = 0; i < count; ++i) {
+        i32 red, green, blue;
+        if (selected && i == hub_bonusmode && TestForController()) {
+            if (menu_pulsate > 0.0f) {
+                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                       static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
+                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                         static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
+                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                        static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
+            } else {
+                red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
+                green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
+                blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
+            }
+        } else if (menu_pulse > 0.0f) {
+            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+        } else {
+            red = MENUENTRYR;
+            green = MENUENTRYG;
+            blue = MENUENTRYB;
+        }
+
+        i32 opacity = full_opacity;
+        if (i == 2 && Collection_GetIDList(&MiniKitCollection, 0x4000000, 0x4000000, NULL, NULL, NULL, 0) <= 0)
+            opacity = full_opacity / 4;
+        smarttextex_drawmessagebox = 1;
+        SmartTextEx(text[i], 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
+                    static_cast<u8>(blue), 1.7f, 1, 0, 0, opacity);
+        menu->item_x[i] = 0.0f;
+        menu->item_y[i] = y;
+        menu->item_width[i] = text3d_width;
+        menu->item_height[i] = text3d_height;
+        menu->item_column[i] = 0;
+        menu->item_row[i] = i;
+
+        y -= 0.2f;
+    }
+}
+
+static void Hub_DrawMiniKitCount(f32 x, f32 y, i32 count, i32 total, f32 alpha) {
+    const i32 object = hub_drawminikitcount_charkit ? 207 : 206;
+    hub_drawminikitcount_charkit = 0;
+    char text[128];
+    if (total == 1)
+        NuStrCpy(text, count == 1 ? "$" : "X");
+    else
+        sprintf(text, "%i/%i", count, total);
+
+    Text3DEx(text, x, y, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
+             0, 255, 0, 127, static_cast<u8>(static_cast<i32>(128.0f * alpha)));
+    const u16 rotation = (NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f;
+    const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_MINIKITSCALE;
+    const i16 tilt = 1820.0f * NuTrigTable[rotation & 0x7fff];
+    DrawPanel3DObjectNoAlpha(x, y + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 1.0f, scale, scale, scale, tilt, rotation, 0,
+                             &WORLD->lev_objs[object].special, 2);
+}
+
+static void Hub_DrawSelectModeMenu(int selected, float alpha) {
+    const i32 area = LDataList[hub_new_level].area_index;
+    const i32 complete = Game.area_save[area].area_complete;
+    const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
+    i32 unlocked = FreePlayUnlocked();
+    if (unlocked != 1 && area != -1) {
+        unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
+    }
+    i32 opacity[10];
+    i32 text_ids[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    i32 count = 0;
+    if (!lost_temple) {
+        text_ids[count] = complete ? tREPLAYSTORY : tSTORY;
+        opacity[count++] = 128;
+        if ((ADataList[area].flags & 0x1000) == 0) {
+            text_ids[count] = tFREEPLAY;
+            opacity[count++] = complete && unlocked ? 128 : 48;
+            if ((ADataList[area].flags & 0x10) != 0 && Store_IsPackUnlocked(8)) {
+                text_ids[count] = tCHALLENGE;
+                opacity[count++] = complete && Store_IsPackUnlocked(8) ? 128 : 48;
+            }
+        }
+    }
+    f32 y = (count - 1) * 0.1f + 0.125f;
+    if (text_ids[1] == tFREEPLAY && !unlocked)
+        y += 0.2f;
+    MENU *menu = &GameMenu[GameMenuLevel];
+    for (i32 i = 0; i < count; ++i) {
+        i32 red, green, blue;
+        if (selected && i == hub_selectmode && TestForController()) {
+            if (menu_pulsate > 0.0f) {
+                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                       static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
+                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                         static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
+                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                        static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
+            } else {
+                red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
+                green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
+                blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
+            }
+        } else if (menu_pulse > 0.0f) {
+            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+        } else {
+            red = MENUENTRYR;
+            green = MENUENTRYG;
+            blue = MENUENTRYB;
+        }
+        const i32 text_id = text_ids[i];
+        char *text = TTab[text_id];
+        char buffer[128];
+        if (!unlocked) {
+            if (alpha == 1.0f) {
+                Hint_SetHintFromId(0x164, 0, 1);
+                Hint_Draw(-1);
+            } else {
+                Hint_CancelCurrent();
+            }
+            if (text_id == tFREEPLAY) {
+                sprintf(buffer, "%s (%s)", text, TTab[tLOCKED]);
+                text = buffer;
+            }
+        }
+        smarttextex_drawmessagebox = 1;
+        SmartTextEx(text, 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
+                    static_cast<u8>(blue), 1.7f, 1, 0, 0, static_cast<i32>(opacity[i] * alpha));
+        menu->item_x[i] = 0.0f;
+        menu->item_y[i] = y;
+        menu->item_width[i] = text3d_width;
+        menu->item_height[i] = text3d_height;
+        menu->item_column[i] = 0;
+        menu->item_row[i] = i;
+        y -= 0.2f;
+    }
+}
+
+static void Hub_MakeFreePlayList(i32 first_model, i32 second_model) {
+    fpcount = 0;
+    const i32 area = LDataList[hub_new_level].area_index;
+
+    if (hub_makefreeplaylist_addotherid != 0) {
+        if (second_model == -1) {
+            const i32 other_player = PlayerID[1];
+            if (other_player != -1 && other_player != PlayerID[0] && other_player != first_model) {
+                second_model = other_player;
+            }
+        }
+        hub_makefreeplaylist_addotherid = 0;
+    }
+
+    MakeFreePlayModelList(first_model, second_model, area, -1, 1);
+    if (area != -1 && (ADataList[area].flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
+                          (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) {
+        for (i32 index = 0; index < FreePlayModelCount; ++index) {
+            const i32 model = FreePlayModelList[index].model_id;
+            if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_MINIKIT) == 0 ||
+                InCollectList_Index(model, MiniKitCollection.list, MiniKitCollection.count_y) == -1 ||
+                PlayerList[0] == model || PlayerList[1] == model || Collection_Got(model) == 0) {
+                continue;
+            }
+            fplist[fpcount++] = FreePlayModelList[index];
+        }
+    } else {
+        const i32 selectable_count = FreePlayResidentCount + FreePlayBonusCount;
+        for (i32 offset = 0; offset < selectable_count; ++offset) {
+            const i32 index = offset + 2;
+            const i32 model = FreePlayModelList[index].model_id;
+            if (model == -1) {
+                break;
+            }
+            if (area != -1) {
+                if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0) {
+                    if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_VEHICLE) == 0) {
+                        continue;
+                    }
+                } else if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_VEHICLE) != 0) {
+                    continue;
+                }
+            }
+            if (Collection_Got(model) != 0) {
+                fplist[fpcount++] = FreePlayModelList[index];
+            }
+        }
+    }
+
+    fplist[fpcount].model_id = -1;
+    if (fpcount > 3) {
+        for (i32 shuffle = 0; shuffle < 64; ++shuffle) {
+            const i32 first_offset = qrand() / (0xffff / (fpcount - 2) + 1);
+            const i32 second_offset = qrand() / (0xffff / (fpcount - 3) + 1);
+            const i32 second_index = (second_offset + first_offset) % (fpcount - 2) + 2;
+            const i32 first_index = first_offset + 2;
+            const APICHARACTERMODELLIST_s saved = fplist[first_index];
+            fplist[first_index] = fplist[second_index];
+            fplist[second_index] = saved;
+        }
+    }
+}
+
+static void Hub_DrawBonusStats(f32 alpha, i32 area, i32 episode) {
+    if (episode == -1 && area != -1)
+        episode = static_cast<i8>(ADataList[area].episode_index);
+    if (episode != -1) {
+        Episode_FindAreaFromFlags(&EDataList[episode], 5, 4);
+        Episode_FindAreaFromFlags(&EDataList[episode], 5, 5);
+        SmartTextEx(TTab[tSTORYCLIPS2], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
+                    HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f,
+                    1, NULL, 0, static_cast<i32>(alpha * 128.0f));
+    }
+}
+
+static void Hub_DrawIconCursors(COLLECTION_s *collection, f32 scale) {
+    const i32 player = 0;
+    const f32 alpha = 1.0f;
+    i32 model = MenuPacket.player_model[player];
+    const i32 index = InCollectList_Index(model, collection->list, collection->count_y);
+    if (index == -1)
+        return;
+    if (Collection_Got(model) == 0)
+        model = -1;
+    if (MenuPacket.active_player[player] == 0) {
+        DrawCharIcon(model, collection->list[index].grid_x, collection->list[index].grid_y, 0.0f,
+                     collection->field_10 * ICONSIZE * scale, 0xa6, alpha, alpha, 1, NULL);
+        return;
+    }
+    f32 size = Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0 ? 0.14f : 0.16f;
+    size *= collection->field_10 / 0.675f;
+    if (freeplay_time[player] <= 0.0f) {
+        if (freeplay_selected[player] != 0)
+            size = 0.0f;
+    } else {
+        f32 progress = freeplay_time[player] / 0.75f;
+        if (freeplay_selected[player] == 0)
+            progress = 1.0f - progress;
+        size *= 1.0f - (NU_SIN_LUT(static_cast<i32>(progress * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
+    }
+    if (size * scale > 0.0f) {
+        const f32 offset = (collection->field_10 / 0.675f) * 0.01f;
+        DrawCharIcon(model, collection->list[index].grid_x + offset * NU_SIN_LUT(hub_iconang[player * 2]),
+                     collection->list[index].grid_y + NU_SIN_LUT(hub_iconang[player * 2 + 1]) * offset, -0.0025f,
+                     size * scale, 0xa6, alpha, alpha, 1, NULL);
+    }
+}
+
+i32 Hub_BonusBuildIt(GIZBUILDIT_s *buildit) {
+    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
+        if (info->bonus_gizmo != NULL && info->bonus_gizmo->object == buildit) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void TurnEpisodeDoorLightsOn(i32 episode) {
+    for (i32 i = 0; i < 9; ++i) {
+        if (HubEpisodeInfo[i].episode == episode) {
+            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_on))
+                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
+            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_off))
+                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_off, 0);
+            break;
+        }
+    }
+}
+
+void WipeBackToHub() {
+    NewMenu(-1, -1, -1);
+    ResetTimer(&JoinInTimer, 0.0f);
+    NuStrCpy(Door_ExitName, Door_Last->name);
+    StartDoorPositions();
+    NewGameMode();
+    bonusmodearcade = 0;
+    HubMainRenderTimeHack = 1;
+}
+
+i32 Arcade_BothPlayersActive() {
+    // The shipped mobile implementation returns true unconditionally.
+    return true;
+}
+
+i32 Arcade_GetMode(u32 *flags) {
+    if (Arcade == 0) {
+        if (flags != NULL) {
+            *flags = 0;
+        }
+        return -1;
+    }
+    if (flags != NULL) {
+        *flags = Arcade_Mode[ArcadeItem.field_c_0xc].field8_0x8;
+    }
+    return ArcadeItem.field_c_0xc;
+}
+
+void Arcade_ResetPanel() {
+    Arcade_NeedTwoPlayers_Scale = 1.0f;
+}
+
+void Arcade_UpdatePanel(i32 paused) {
+    if (Arcade == 0 || paused != 0 || Arcade_BothPlayersActive()) {
+        Arcade_NeedTwoPlayers_Scale = 1.0f;
+    } else {
+        Arcade_NeedTwoPlayers_Scale = SeekLinearF(Arcade_NeedTwoPlayers_Scale, 1.0f, FRAMETIME);
+        if (static_cast<i32>(GameTimer.time_elapsed * 2.0f) != static_cast<i32>(GameTimer.last_time_elapsed * 2.0f)) {
+            GameAudio_PlaySfx(0x35, NULL, 0, 0);
+        }
+    }
+}
+
+void Arcade_DrawPanel(i32 paused) {
+    if (Arcade == 0 || paused != 0 || Arcade_BothPlayersActive()) {
+        return;
+    }
+    f32 phase = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
+    i32 angle = static_cast<i32>((phase + phase) * 65536.0f);
+    i32 alpha = static_cast<i32>((NuTrigTable[(angle >> 1) & 0x7fff] * 0.2f + 0.8f) * 128.0f);
+    f32 scale = Arcade_NeedTwoPlayers_Scale * 0.6f;
+    SmartTextEx(TTab[tARCADE_NEEDTWOPLAYERS], 0.0f, -0.55f, 1.0f, scale, scale, scale, 0, 255, 0, 0,
+                Arcade_NeedTwoPlayers_Scale * 1.7f, 1, NULL, 0, alpha);
+}
+
+void Arcade_AwardPoint(i32 player_index, i32 reset_score, i32) {
+    if (reset_score != 0) {
+        Arcade_Score[player_index] = 0;
+    } else {
+        if (BonusWinner != -1) {
+            return;
+        }
+        if (Arcade_BothPlayersActive()) {
+            ++Arcade_Points[player_index];
+            if (Arcade_Points[player_index] > 0) {
+                SetBonusWinner(player_index);
+                BonusWinFlag = 0;
+                NewMenu(0xb, -1, -1);
+                ++Arcade_Score[player_index];
+            }
+        }
+    }
+    if (Game_LevelSave != NULL) {
+        u8 mode_bit = 1u << Arcade_GetMode(NULL);
+        LEVELSAVE_s *saves = reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave);
+        LEVELSAVE_s *save = &saves[WORLD->level_idx];
+        if ((save->arcade_flags & mode_bit) == 0) {
+            save->arcade_flags |= mode_bit;
+            if (Game_AreaSave != NULL && Area != -1 && (saves[WORLD->level_idx].arcade_flags & 7) == 7) {
+                Game_AreaSave[Area].area_complete = 1;
+                ReCalculateCompletionPoints();
+            }
+            TriggerAutoSave();
+        }
+    }
+}
+
+void Arcade_PlayerKilled(i32 player_index, i32 extra) {
+    if (static_cast<u32>(player_index) > 1 || (Arcade_Mode[ArcadeItem.field_c_0xc].field8_0x8 & 1) == 0) {
+        return;
+    }
+    if (Arcade_BothPlayersActive()) {
+        ++AreaGlobals.values.arcade_player_kills[player_index];
+        Arcade_AwardPoint(player_index, 0, extra);
+    } else {
+        Arcade_AwardPoint(player_index, 0, 0);
+    }
+}
+
+void Arcade_AIKilled(i32 player_index) {
+    if (static_cast<u32>(player_index) > 1 || (Arcade_Mode[ArcadeItem.field_c_0xc].field8_0x8 & 2) == 0) {
+        return;
+    }
+    if (Arcade_BothPlayersActive()) {
+        ++AreaGlobals.values.arcade_ai_kills[player_index];
+        PlaySfx(const_cast<char *>("env_padLight_on"), NULL);
+        if (Player[player_index] != NULL && Player[player_index]->coinpacket != NULL) {
+            Player[player_index]->coinpacket->scale = 1.5f;
+        }
+        if (AreaGlobals.values.arcade_ai_kills[player_index] >=
+            static_cast<u32>(Arcade_Mode[ArcadeItem.field_c_0xc].target)) {
+            Arcade_AwardPoint(player_index, 0, 0);
+            AreaGlobals.values.arcade_ai_kills[0] = 0;
+            AreaGlobals.values.arcade_ai_kills[1] = 0;
+            GameObject_s *other = Player[(player_index + 1) & 1];
+            if (other != NULL && other->coinpacket != NULL) {
+                other->coinpacket->scale = 1.5f;
+            }
+        }
+    } else {
+        GameAudio_PlaySfx(0x32, NULL, 0, 0);
+        if (Player[player_index] != NULL && Player[player_index]->coinpacket != NULL) {
+            Player[player_index]->coinpacket->scale = 1.5f;
+        }
+        Arcade_NeedTwoPlayers_Scale = 1.5f;
+    }
+}
+
+void Arcade_CoinCollected(i32 player_index, u32 *score, u32 previous_score) {
+    if (static_cast<u32>(player_index) > 1) {
+        return;
+    }
+    i32 flags = Arcade_Mode[ArcadeItem.field_c_0xc].field8_0x8;
+    if ((flags & 8) != 0) {
+        if (Player[player_index] != NULL && Player[player_index]->coinpacket != NULL &&
+            Player[player_index]->coinpacket->coins >= arcade_placed_stud_total) {
+            Arcade_AwardPoint(player_index, 0, 0);
+        }
+    } else if ((flags & 4) != 0) {
+        if (Arcade_BothPlayersActive()) {
+            if (Player[player_index] != NULL && Player[player_index]->coinpacket != NULL &&
+                Player[player_index]->coinpacket->coins >=
+                    static_cast<u32>(Arcade_Mode[ArcadeItem.field_c_0xc].target)) {
+                Arcade_AwardPoint(player_index, 0, 0);
+                if (Player[0] != NULL && Player[0]->coinpacket != NULL) {
+                    Player[0]->coinpacket->coins = 0;
+                }
+                if (Player[1] != NULL && Player[1]->coinpacket != NULL) {
+                    Player[1]->coinpacket->coins = 0;
+                }
+                GameObject_s *other = Player[(player_index + 1) & 1];
+                if (other != NULL && other->coinpacket != NULL) {
+                    other->coinpacket->scale = 1.5f;
+                }
+            }
+        } else {
+            *score = previous_score;
+            Arcade_NeedTwoPlayers_Scale = 1.25f;
+        }
+    }
+}
+
+void Arcade_Kill(i32 player_index, i32 killed_player) {
+    if (Arcade != 0 && static_cast<u32>(player_index) <= 1) {
+        if (static_cast<u32>(killed_player) <= 1) {
+            Arcade_PlayerKilled(player_index, 0);
+        } else if (killed_player == -1) {
+            Arcade_AIKilled(player_index);
+        }
+    }
+}
+
+void Arcade_UpdateEndMenu(MENU_s *menu) {
+    if (menu->menu_time >= 5.0f) {
+        NewLData = HUB_LDATA;
+    } else if (menu->menu_time >= 1.5f && BonusWinFlag == 0) {
+        PlaySfx(const_cast<char *>("Victory"), NULL);
+        BonusWinFlag = 1;
+    }
+}
+
+void Arcade_DrawEndMenu(MENU_s *) {
+    if (MenuStopDraw != 0) {
+        return;
+    }
+    SmartTextEx(TTab[tWINNER], 0.0f, STATSPOSY, 1.0f, 1.0f, 1.0f, 1.0f, 0, 0, menu_flash ? 191 : 255, 0, 1.7f, 1, NULL,
+                0, 128);
+}
+
+COLLECTION_s *GetFreePlayCollection(i32 area) {
+    const u16 area_flags = ADataList[area].flags;
+    if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
+        return &CharacterCollection;
+    }
+    if ((area_flags & AREAFLAG_BONUS_AREA) != 0) {
+        return &MiniKitCollection;
+    }
+    return &VehicleCollection;
+}
+
+void ResetIconWibble() {
+    hub_iconang[0] = static_cast<u16>(qrand());
+    hub_icontime[0] = 0.0f;
+    hub_iconang[1] = static_cast<u16>(qrand());
+    hub_icontime[1] = 0.0f;
+    hub_iconang[2] = static_cast<u16>(qrand());
+    hub_icontime[2] = 0.0f;
+    hub_iconang[3] = static_cast<u16>(qrand());
+    hub_icontime[3] = 0.0f;
+}
+
+void Hub_InitFreePlaySelect(i32 area, i32 first_model, i32 second_model) {
+    COLLECTION_s *collection = GetFreePlayCollection(area);
+    if (collection == &VehicleCollection) {
+        if (first_model == -1)
+            first_model = VehicleCollection.list[0].id;
+        if (second_model == -1) {
+            second_model = VehicleCollection.list[1].id;
+            goto make_default_pair;
+        }
+        goto make_selected_pair;
+    }
+    if (collection == &MiniKitCollection) {
+        if (first_model == -1)
+            first_model = MiniKitCollection.list[0].id;
+        if (second_model == -1) {
+            second_model = MiniKitCollection.list[1].id;
+            goto make_default_pair;
+        }
+        goto make_selected_pair;
+    }
+    Hub_MakeFreePlayList(-1, -1);
+    goto use_player_models;
+
+make_selected_pair:
+    Hub_MakeFreePlayList(first_model, second_model);
+    if (first_model == -1)
+        goto use_player_models;
+    goto store_model_pair;
+
+make_default_pair:
+    Hub_MakeFreePlayList(first_model, second_model);
+    if (first_model == -1 || second_model == -1)
+        goto use_player_models;
+
+store_model_pair:
+    MenuPacket.player_model[0] = static_cast<i16>(first_model);
+    MenuPacket.player_model[1] = static_cast<i16>(second_model);
+    goto initialize_selection;
+
+use_player_models:
+    MenuPacket.player_model[0] = Player[0] != NULL ? Player[0]->id : -1;
+    MenuPacket.player_model[1] = Player[1] != NULL ? Player[1]->id : -1;
+
+initialize_selection:
+    freeplaytime = 0.0f;
+    freeplaymode = 0;
+    freeplayduration = 1.0f;
+    freeplay_selected[0] = 0;
+    freeplay_selected[1] = 0;
+    uprepeattime[0] = 0.0f;
+    rightrepeattime[0] = 0.0f;
+    uprepeattime[1] = 0.0f;
+    rightrepeattime[1] = 0.0f;
+    downrepeattime[0] = 0.0f;
+    leftrepeattime[0] = 0.0f;
+    downrepeattime[1] = 0.0f;
+    leftrepeattime[1] = 0.0f;
+    ResetIconWibble();
+    hub_freeplay_area = area;
+}
+
+static __used__ void Hub_UpdateSelectMode() {
+    i16 ids[HUB_VEHICLE_ID_CAPACITY];
+    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f) {
+        return;
+    }
+    MENU *menu = &GameMenu[GameMenuLevel];
+    const i32 area = static_cast<i8>(LDataList[hub_new_level].area_index);
+    const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
+    u16 freeplay_unlocked = FreePlayUnlocked();
+    if (freeplay_unlocked != 1 && area != -1) {
+        freeplay_unlocked =
+            static_cast<i8>(ADataList[area].episode_index) == -1 && (ADataList[area].flags & 0x4000) != 0;
+    }
+    switch (selectmodemode) {
+        case 1:
+            selectmodetime += FRAMETIME;
+            if (!(selectmodeduration <= selectmodetime)) {
+                return;
+            }
+            MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
+                                  static_cast<i8>(LDataList[hub_new_level].area_index), -1, 1);
+            makeplayerlist_freeplay = 2;
+            NextArea_FreePlay = 1;
+            FreePlay = 1;
+            NewLData = Area_FindNextPlayLevel(hub_new_level);
+            break;
+        case 2:
+            selectmodetime += FRAMETIME;
+            if (!(selectmodeduration <= selectmodetime) || NewLData != NULL) {
+                return;
+            }
+            NextArea_FreePlay = 0;
+            FreePlay = 0;
+            NewLData = &LDataList[hub_new_level];
+            break;
+        case 3:
+            selectmodetime += FRAMETIME;
+            if (selectmodeduration <= selectmodetime) {
+                WipeBackToHub();
+            }
+            return;
+        case 4:
+            selectmodetime += FRAMETIME;
+            if (selectmodeduration <= selectmodetime) {
+                NewLData = HUB_LDATA;
+                PlayTrailer = hub_selectmode;
+            }
+            return;
+        case 0: {
+            i32 last_choice = 0;
+            if (!lost_temple && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0) {
+                last_choice = 1;
+                if ((ADataList[area].flags & 0x10) != 0 && Store_IsPackUnlocked(8)) {
+                    last_choice = 2;
+                }
+            }
+            const u32 select_mask = GAMEPAD_MENUSELECT;
+            const u32 cancel_mask = GAMEPAD_MENUCANCEL;
+            const u32 up_mask = GAMEPAD_DUP;
+            const u32 down_mask = GAMEPAD_DDOWN;
+            i32 confirm = 0, cancel = 0, up = 0, down = 0;
+            for (i32 i = 0; i < 2; ++i) {
+                if (!MenuPacket.active_player[i])
+                    continue;
+                const u32 pressed = GamePad[i].buttons_pressed;
+                if ((pressed & select_mask) != 0) {
+                    confirm = true;
+                    break;
+                }
+                if ((pressed & cancel_mask) != 0) {
+                    cancel = true;
+                    break;
+                }
+                const u32 directions = pressed | GamePad[i].left_directions;
+                if ((directions & up_mask) != 0) {
+                    up = true;
+                } else if ((directions & down_mask) != 0) {
+                    down = true;
+                }
+            }
+            if (menu->input_activity != 0) {
+                if (menu->confirm_pressed != 0) {
+                    menu->confirm_pressed = 0;
+                    hub_selectmode = menu->selected_item;
+                    confirm = true;
+                } else if (menu->cancel_pressed != 0 && !confirm) {
+                    cancel = true;
+                }
+            }
+            if (confirm) {
+                if (!lost_temple) {
+                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                    if (hub_selectmode == 0) {
+                        selectmodetime = 0.0f;
+                        selectmodemode = 2;
+                        selectmodeduration = 0.6f;
+                        return;
+                    }
+                    if (hub_selectmode == 1 && Game.area_save[area].area_complete != 0 && freeplay_unlocked) {
+                        i32 first = -1, second = -1;
+                        if ((ADataList[area].flags & 1) != 0) {
+
+                            const i32 count =
+                                Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED,
+                                                     HUB_VEHICLE_COLLECTION_REQUIRED, ids, &first, &second, 0);
+                            if (count == 1) {
+                                selectmodetime = 0.0f;
+                                selectmodemode = 1;
+                                selectmodeduration = 0.6f;
+                                MenuPacket.player_model[0] = ids[0];
+                                MenuPacket.player_model[1] = ids[0];
+                                return;
+                            }
+                        }
+                        hub_freeplaysource = 0;
+                        Hub_InitFreePlaySelect(area, first, second);
+                        NewMenu(17, -1, -1);
+                        return;
+                    }
+                    if (hub_selectmode == 2 && Game.area_save[area].area_complete != 0 && Store_IsPackUnlocked(8)) {
+                        hub_freeplaysource = 0;
+                        Hub_InitFreePlaySelect(area, -1, -1);
+                        NewMenu(17, -1, -1);
+                        return;
+                    }
+                    if (hub_selectmode != 1 && hub_selectmode != 2) {
+                        return;
+                    }
+                }
+                GameAudio_PlaySfx(0x32, NULL, 0, 0);
+            } else if (cancel) {
+                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                selectmodetime = 0.0f;
+                selectmodemode = 3;
+                selectmodeduration = 0.6f;
+            } else {
+                const i32 previous = hub_selectmode;
+                if (up) {
+                    if (hub_selectmode > 0) {
+                        --hub_selectmode;
+                    }
+                } else if (down && hub_selectmode < last_choice) {
+                    ++hub_selectmode;
+                }
+                if (hub_selectmode != previous) {
+                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+                }
+            }
+            return;
+        }
+        default:
+            return;
+    }
+    loadareacharacters_no_backdrop_reset = 1;
+    const FADETYPE fade = {FADE_TYPE_STILL};
+    FadeSys.SetFade(fade, 0);
+    FinishLoop_On = 0;
+}
+
+void UpdateIconWibble() {
+    UpdateIconWibbleAxis(0);
+    UpdateIconWibbleAxis(1);
+    UpdateIconWibbleAxis(2);
+    UpdateIconWibbleAxis(3);
+}
+
+void Hub_UpdateFreePlaySelect() {
+    COLLECTION_s *collection = GetFreePlayCollection(hub_freeplay_area);
+    if (freeplay_time[0] > 0.0f)
+        freeplay_time[0] -= FRAMETIME;
+    if (freeplay_time[1] > 0.0f)
+        freeplay_time[1] -= FRAMETIME;
+    UpdateIconWibble();
+    MENU *menu = &GameMenu[GameMenuLevel];
+    switch (freeplaymode) {
+        case 0:
+            freeplaytime += FRAMETIME;
+            if (__builtin_expect(freeplaytime >= freeplayduration, 1)) {
+                freeplaytime = 0.0f;
+                freeplaymode = 1;
+                freeplayduration = 0.0f;
+                freeplay_i[0] = InCollectList_Index(MenuPacket.player_model[0], collection->list, collection->count_y);
+                if (freeplay_i[0] == -1)
+                    freeplay_i[0] = 0;
+                freeplay_selected[0] = 0;
+                freeplay_i[1] = InCollectList_Index(MenuPacket.player_model[1], collection->list, collection->count_y);
+                if (__builtin_expect(freeplay_i[1] == -1, 1))
+                    freeplay_i[1] = freeplay_i[0] == 1 ? 0 : 1;
+                freeplay_selected[1] = 0;
+            }
+            break;
+        case 1: {
+            i32 active = 0, confirmed = 0;
+            bool exit = false;
+            auto menu_input_activity = menu->input_activity;
+            auto collection_count_x = collection->count_x;
+            for (i32 player = 0; player < 2; ++player) {
+                const i32 other = (player + 1) & 1;
+                const i32 previous = freeplay_i[player];
+                i32 index = previous;
+                bool select = false, cancel = false;
+                if (__builtin_expect(menu_input_activity != 0 && player == 0, 1)) {
+                    if (menu->confirm_pressed != 0) {
+                        if (__builtin_expect(menu->selected_item == 9999, 0))
+                            select = 1;
+                        else
+                            index = menu->selected_item;
+                    }
+                    cancel = menu->cancel_pressed != 0;
+                }
+                if (MenuPacket.active_player[player] != 0) {
+                    if ((GamePad[player].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT) != 0) {
+                        select = 1;
+                    } else if ((GamePad[player].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL) != 0) {
+                        cancel = 1;
+                    } else if (__builtin_expect(freeplay_selected[player] == 0, 0)) {
+                        const u32 pressed = GamePad[player].buttons_pressed | GamePad[player].left_directions;
+                        const u32 held = GamePad[player].buttons_held | GamePad[player].buttons_released;
+                        i32 up = pressed & GAMEPAD_DUP, down = pressed & GAMEPAD_DDOWN;
+                        i32 left = pressed & GAMEPAD_DLEFT, right = pressed & GAMEPAD_DRIGHT;
+                        i32 up_held = held & GAMEPAD_DUP, down_held = held & GAMEPAD_DDOWN;
+                        i32 left_held = held & GAMEPAD_DLEFT, right_held = held & GAMEPAD_DRIGHT;
+                        if (down && up)
+                            down = up = 0;
+                        if (right && left)
+                            right = left = 0;
+                        if (down_held && up_held)
+                            down_held = up_held = 0;
+                        if (right_held && left_held)
+                            right_held = left_held = 0;
+                        MenuRepeat(&up_held, &up, &uprepeattime[player], &uprepeatcount[player], 0.1f, FRAMETIME);
+                        MenuRepeat(&down_held, &down, &downrepeattime[player], &downrepeatcount[player], 0.1f,
+                                   FRAMETIME);
+                        MenuRepeat(&left_held, &left, &leftrepeattime[player], &leftrepeatcount[player], 0.1f,
+                                   FRAMETIME);
+                        MenuRepeat(&right_held, &right, &rightrepeattime[player], &rightrepeatcount[player], 0.1f,
+                                   FRAMETIME);
+                        if (up) {
+                            const i32 columns = collection_count_x;
+                            const i32 count = collection->count_y;
+                            const i32 span = (static_cast<u32>(count) / static_cast<u32>(columns) + 1) * columns;
+                            index = previous;
+                            do {
+                                index -= columns;
+                                if (__builtin_expect(index < 0, 1)) {
+                                    index += span;
+                                    if (index >= count)
+                                        index -= columns;
+                                }
+                            } while (collection->list[index].id == MenuPacket.player_model[other]);
+                        } else if (down) {
+                            const i32 count = collection->count_y;
+                            const i32 columns = collection_count_x;
+                            const i32 span = (static_cast<u32>(count) / static_cast<u32>(columns) + 1) * columns;
+                            index = previous;
+                            do {
+                                index += columns;
+                                if (index >= count) {
+                                    if (index < span)
+                                        index += columns;
+                                    index -= span;
+                                }
+                            } while (collection->list[index].id == MenuPacket.player_model[other]);
+                        } else if (__builtin_expect(!!(left), 0)) {
+                            const i32 count = collection->count_y;
+                            const i32 columns = collection_count_x;
+                            index = previous;
+                            do {
+                                i32 column = index % columns - 1;
+                                if (column < 0)
+                                    column += columns;
+                                index = (index / columns) * columns + column;
+                                if (index >= count)
+                                    index = count - 1;
+                            } while (collection->list[index].id == MenuPacket.player_model[other]);
+                        } else if (right) {
+                            const i32 columns = collection_count_x;
+                            const i32 count = collection->count_y;
+                            index = previous;
+                            do {
+                                i32 column = index % columns + 1;
+                                const i32 row = (index / columns) * columns;
+                                if (column >= columns)
+                                    column -= columns;
+                                index = row + column < count ? row + column : row;
+                            } while (collection->list[index].id == MenuPacket.player_model[other]);
+                        }
+                    }
+                    ++active;
+                    if (freeplay_selected[player] >= 2)
+                        ++confirmed;
+                }
+                if (freeplay_selected[player] == 1 && freeplay_time[player] < 0.0f) {
+                    freeplay_selected[player] = 2;
+                } else if (select && freeplay_time[player] <= 0.0f) {
+                    if (__builtin_expect(freeplay_selected[player] == 0, 1)) {
+                        if (Collection_Got(collection->list[freeplay_i[player]].id) == 0) {
+                            GameAudio_PlaySfx(0x32, NULL, 0, 0);
+                        } else {
+                            freeplay_time[player] = 0.75f;
+                            freeplay_selected[player] = 1;
+                            GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                        }
+                    } else if (freeplay_selected[player] == 1) {
+                        freeplay_selected[player] = 2;
+                        GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                    }
+                }
+                if (cancel) {
+                    if (freeplay_selected[player] != 1) {
+                        if (freeplay_selected[player] != 2) {
+                            if (freeplay_selected[player] == 0 && freeplay_time[player] <= 0.0f) {
+                                exit = 1;
+                            }
+                        } else {
+                            if (MenuPacket.active_player[other] != 0 && freeplay_selected[other] < 2) {
+                                freeplay_selected[player] = 1;
+                                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                            }
+                        }
+                    } else {
+                        if (freeplay_time[player] <= 0.0f) {
+                            BigIconAlpha[player] = 0.0f;
+                            freeplay_time[player] = 0.75f;
+                            freeplay_selected[player] = 0;
+                            GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                        }
+                    }
+                }
+                // Touch navigation commits after selection, just like the
+                // original: confirmation checks the previously selected model.
+                if (index != previous) {
+                    freeplay_i[player] = index;
+                    MenuPacket.player_model[player] = collection->list[index].id;
+                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+                }
+            }
+            if (confirmed == active) {
+                if (netclient == 0) {
+                    const i32 area = LDataList[hub_new_level].area_index;
+                    if (area == -1 || (ADataList[area].flags & 1) == 0)
+                        hub_makefreeplaylist_addotherid = 1;
+                    Hub_MakeFreePlayList(MenuPacket.player_model[0], MenuPacket.player_model[1]);
+                } else {
+                    if (net_recievedFreePlayList == 0)
+                        break;
+                    fpcount = 0;
+                    for (i32 i = 0; i < net_FreePlayModelCount; ++i) {
+                        FreePlayModelList[i] = NetFreePlayModelList[i];
+                        if (Collection_Got(NetFreePlayModelList[i].model_id) != 0)
+                            fplist[fpcount++] = NetFreePlayModelList[i];
+                    }
+                    fplist[fpcount].model_id = -1;
+                    if (fpcount > 3) {
+                        for (i32 shuffle = 0; shuffle < 64; ++shuffle) {
+                            const i32 first_offset = qrand() / (0xffff / (fpcount - 2) + 1);
+                            const i32 first = first_offset + 2;
+                            const i32 second =
+                                (qrand() / (0xffff / (fpcount - 3) + 1) + first_offset) % (fpcount - 2) + 2;
+                            const APICHARACTERMODELLIST_s saved = fplist[first];
+                            fplist[first] = fplist[second];
+                            fplist[second] = saved;
+                        }
+                    }
+                    NextArea_FreePlay = 1;
+                    FreePlay = 1;
+                }
+                freeplaytime = 0.0f;
+                freeplaymode = 3;
+                freeplayduration = 1.0f;
+            } else if (exit) {
+                fpcount = 0;
+                freeplaytime = 0.0f;
+                freeplaymode = 2;
+                freeplayduration = 0.6f;
+                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+            }
+            break;
+        }
+        case 2:
+            freeplaytime += FRAMETIME;
+            if (__builtin_expect(freeplaytime >= freeplayduration, 1))
+                WipeBackToHub();
+            break;
+        case 3:
+            freeplaytime += FRAMETIME;
+            if (freeplaytime >= freeplayduration) {
+                freeplaytime = 0.0f;
+                freeplaymode = 4;
+                freeplayduration = 1.5f;
+            }
+            break;
+        case 4:
+            freeplaytime += FRAMETIME;
+            if (freeplaytime >= freeplayduration) {
+                makeplayerlist_freeplay = 1;
+                NewLData = &LDataList[hub_new_level];
+                NextArea_FreePlay = 1;
+                FreePlay = 1;
+                NewLData = Area_FindNextPlayLevel(NewLData->idx);
+                loadareacharacters_no_backdrop_reset = 1;
+                FadeSys.fade = 1.0f;
+                FinishLoop_On = 0;
+                if (hub_freeplaysource == 0) {
+                    if (hub_selectmode == 2)
+                        InitChallenge(NewLData->area_index);
+                } else if (__builtin_expect(hub_freeplaysource == 1 && bonusmodearcade != 0, 0)) {
+                    Arcade = 1;
+                    Arcade_Points[0] = Arcade_Points[1] = 0;
+                }
+            }
+            break;
+    }
+    if (__builtin_expect(freeplaymode == 1, 1))
+        BigIconAlpha[0] = SeekLinearF(BigIconAlpha[0], 1.0f, FRAMETIME + FRAMETIME);
+    else
+        BigIconAlpha[0] = 0.0f;
+    if (freeplaymode == 1)
+        BigIconAlpha[1] = SeekLinearF(BigIconAlpha[1], 1.0f, FRAMETIME + FRAMETIME);
+    else
+        BigIconAlpha[1] = 0.0f;
+}
+
+// The level callback carries the streaming-buffer arguments used by most
+// level loaders, but the original hub loader only forwards the world to the
+// persistent character customiser.
+void Hub_Load(WORLDINFO_s *world, variptr_u *, variptr_u *) {
+    Customiser_LoadAll(CharacterCustomiser, world);
+}
+
+void Hub_LoadAndFixUpMiniKits(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end) {
+    buf->addr = ALIGN(buf->addr, 4);
+    world->hub_minikits = reinterpret_cast<HUBMINIKIT_s *>(buf->addr);
+    buf->addr = ALIGN(buf->addr + static_cast<usize>(AREACOUNT) * sizeof(HUBMINIKIT_s), 4);
+    world->minikit_pieces_buf = reinterpret_cast<HUBMINIKITPIECES_s **>(buf->addr);
+    memset(world->minikit_pieces_buf, 0, static_cast<usize>(AREACOUNT) * sizeof(*world->minikit_pieces_buf));
+    buf->addr += static_cast<usize>(AREACOUNT) * sizeof(*world->minikit_pieces_buf);
+
+    for (i32 i = 0; i < AREACOUNT; ++i) {
+        world->minikit_pieces_buf[i] = NULL;
+        if ((ADataList[i].flags & AREAFLAG_MINIKIT) == 0 || ADataList[i].minikit_id == -1) {
+            continue;
+        }
+        world->minikit_pieces_buf[i] = reinterpret_cast<HUBMINIKITPIECES_s *>(buf->addr);
+        buf->addr += 0x18;
+        MiniKit_Load(reinterpret_cast<MINIKIT *>(world->minikit_pieces_buf[i]), ADataList[i].minikit_id, buf, buf_end,
+                     NULL);
+        MINIKIT *minikit = reinterpret_cast<MINIKIT *>(world->minikit_pieces_buf[i]);
+        if (minikit->gscn == NULL) {
+            world->minikit_pieces_buf[i] = NULL;
+            buf->addr -= 0x18;
+        } else {
+            MiniKit_InitPieces(minikit, 10, buf, buf_end);
+            minikit->field_0x9 = static_cast<i8>(i);
+        }
+    }
+}
+
+void Hub_InitMiniKits(WORLDINFO_s *world) {
+    HUBMINIKIT_s *kit = world->hub_minikits;
+    if (kit != NULL) {
+        for (i32 area_index = 0; area_index < AREACOUNT; ++area_index, ++kit) {
+            kit->position.y = 2000000.0f;
+            kit->scale = 0.0f;
+            kit->field_0x10 = 0.0f;
+            kit->rotation = qrand();
+            for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
+                if (info->area != NULL && area_index == info->area->index)
+                    break;
+            }
+            const f32 height = GameShadow(NULL, &kit->position, 5.0f, -1);
+            if (height != 2000000.0f)
+                kit->position.y = height;
+            kit->phase_x = qrand();
+            kit->phase_y = qrand();
+            kit->phase_z = qrand();
+            kit->phase_rotation = qrand();
+            kit->rate_x = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
+            kit->rate_y = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
+            kit->rate_z = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
+            kit->rate_rotation = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 10922.0f + 10922.0f);
+            kit->velocity_x = 0.0f;
+            kit->rotation_velocity = 0;
+            kit->offset_x = 0.0f;
+            kit->velocity_z = 0.0f;
+            kit->target_rotation = kit->rotation;
+            kit->offset_z = 0.0f;
+            kit->tilt = 0;
+            kit->target_piece_count = 0;
+            kit->displayed_piece_count = 0;
+        }
+    }
+}
+
+void Hub_UpdateMiniKits(WORLDINFO_s *world) {
+    i32 count[72];
+    i32 viewer = 0;
+    f32 speed = 0.0f;
+    u16 angle = 0;
+    if (GetMenuID() == 14) {
+        viewer = 1;
+        MENU *menu = &GameMenu[GameMenuLevel];
+        if (hub_minikitviewer_movewait <= 0.0f) {
+            if (Hub_PadSpeed[0] > 0.0f && Hub_PadSpeed[1] > 0.0f) {
+                speed = (Hub_PadSpeed[0] + Hub_PadSpeed[1]) * 0.5f;
+                angle = Hub_PadAngle[0] + RotDiff(Hub_PadAngle[0], Hub_PadAngle[1]) * 0.5f + GameCam->yaw;
+            } else if (Hub_PadSpeed[0] > 0.0f) {
+                speed = Hub_PadSpeed[0];
+                angle = Hub_PadAngle[0] + GameCam->yaw;
+            } else if (Hub_PadSpeed[1] > 0.0f) {
+                speed = Hub_PadSpeed[1];
+                angle = Hub_PadAngle[1] + GameCam->yaw;
+            }
+            i32 confirm = 0;
+            if (menu->input_activity && menu->confirm_pressed) {
+                if (menu->selected_item == i_selectminikitepisode)
+                    confirm = 1;
+                else
+                    i_selectminikitepisode = menu->selected_item;
+            }
+            if (confirm || (GamePad[0].buttons_pressed & GAMEPAD_MENUSELECT)) {
+                if (Game_AreaSave == NULL || Game_AreaSave[hub_minikitviewer_area].minikit_complete) {
+                    if (Episode_CountOpenAreas(i_selectminikitepisode, -1, Game_AreaSave)) {
+                        i32 area = Episode_FindAreaFromFlags(&EDataList[i_selectminikitepisode], 5, 5);
+                        if (area != -1) {
+                            hub_new_level = ADataList[area].levels[0];
+                            Hub_MakeFreePlayList(ADataList[hub_minikitviewer_area].minikit_id, -1);
+                            makeplayerlist_freeplay = 1;
+                            NewLData = &LDataList[hub_new_level];
+                            NextArea_FreePlay = 1;
+                            FreePlay = 1;
+                            GameAudio_PlaySfx(48, NULL, 0, 0);
+                        }
+                    } else {
+                        GameAudio_PlaySfx(50, NULL, 0, 0);
+                        GameCam_HitRoll();
+                    }
+                }
+            } else if ((GamePad[0].buttons_pressed & GAMEPAD_DLEFT) && i_selectminikitepisode > 0) {
+                --i_selectminikitepisode;
+            } else if ((GamePad[0].buttons_pressed & GAMEPAD_DRIGHT) && i_selectminikitepisode < 5) {
+                ++i_selectminikitepisode;
+            }
+        }
+    }
+    if (world->minikit_pieces_buf != NULL && world->hub_minikits != NULL) {
+        if (viewer) {
+            if (hub_minikitviewer_alpha < 1.0f) {
+                hub_minikitviewer_alpha += FRAMETIME * 2.0f;
+                if (hub_minikitviewer_alpha > 1.0f)
+                    hub_minikitviewer_alpha = 1.0f;
+            }
+        } else
+            hub_minikitviewer_alpha = 0.0f;
+        if (hub_minikitviewer_movewait > 0.0f) {
+            hub_minikitviewer_movewait -= FRAMETIME;
+            if (hub_minikitviewer_movewait <= 0.0f)
+                hub_minikitviewer_move = 0.0f;
+        }
+        PlaySfx("ui_hover_lp", &hub_minikitviewer_pos);
+        HUBMINIKIT_s *kit = world->hub_minikits;
+        for (i32 i = 0; i < AREACOUNT; ++i, ++kit) {
+            HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[i];
+            if (pieces == NULL)
+                continue;
+            count[i] = Game.area_save[i].minikit_count;
+            if (count[i] > pieces->piece_count)
+                count[i] = pieces->piece_count;
+            kit->scale = 1.0f;
+            f32 vx = (0.0f - kit->offset_x) * 5.0f;
+            f32 vz = (0.0f - kit->offset_z) * 5.0f;
+            kit->velocity_x = SeekValF(kit->velocity_x, vx, 10.0f);
+            kit->velocity_z = SeekValF(kit->velocity_z, vz, 10.0f);
+            kit->offset_z += kit->velocity_z * FRAMETIME;
+            kit->offset_x += kit->velocity_x * FRAMETIME;
+            u16 old_rotation = kit->rotation;
+            if (i == hub_minikitviewer_area) {
+                if (speed > 0.0f)
+                    kit->target_rotation =
+                        TurnRot(kit->target_rotation, angle + 0x8000, (u16)(32768.0f * kit->scale), NULL);
+                kit->target_piece_count = count[i];
+                if (viewer && count[i] >= pieces->piece_count &&
+                    ((MenuPacket.active_player[0] && (GamePad[0].buttons_held & GAMEPAD_ACTION)) ||
+                     (MenuPacket.active_player[1] && (GamePad[1].buttons_held & GAMEPAD_ACTION))))
+                    kit->target_piece_count = 1;
+            } else if (count[i] != 0)
+                kit->target_piece_count = count[i];
+            else {
+                kit->target_piece_count = 0;
+                kit->displayed_piece_count = 0;
+            }
+            kit->rotation = SeekRot(kit->rotation, kit->target_rotation, 3.0f);
+            i32 rate = (i32)((f32)RotDiff(old_rotation, kit->rotation) / FRAMETIME);
+            rate = (MAX(-65536, (MIN(65536, rate))));
+            rate /= 8;
+            rate = (MAX(-4551, (MIN(4551, rate))));
+            kit->rotation_velocity = SeekRot(kit->rotation_velocity, rate, 8.0f);
+            i32 tilt = 0;
+            if (i == hub_minikitviewer_area && speed > 0.0f) {
+                i32 diff = RotDiff(old_rotation, kit->rotation);
+                f32 angular_speed = (f32)(diff < 0 ? -diff : diff) / FRAMETIME;
+                if (angular_speed < 32768.0f)
+                    tilt = -(i32)((1.0f - angular_speed * (1.0f / 32768.0f)) * 4551.0f);
+            }
+            kit->tilt = SeekRot(kit->tilt, tilt, 3.0f);
+            for (i32 j = 0; j < pieces->piece_count; ++j) {
+                pieces->pieces[j].enabled = 0;
+                if (NuSpecialExistsFn(&pieces->pieces[j])) {
+                    NuSpecialSetVisibility(&pieces->pieces[j], 0);
+                    if (j < count[i])
+                        pieces->pieces[j].enabled = 1;
+                }
+            }
+            kit->phase_x = (i32)((f32)kit->phase_x + kit->rate_x * FRAMETIME);
+            if (kit->phase_x > 65536)
+                kit->phase_x -= 65536;
+            kit->phase_y = (i32)((f32)kit->phase_y + kit->rate_y * FRAMETIME);
+            if (kit->phase_y > 65536)
+                kit->phase_y -= 65536;
+            kit->phase_z = (i32)((f32)kit->phase_z + kit->rate_z * FRAMETIME);
+            if (kit->phase_z > 65536)
+                kit->phase_z -= 65536;
+            kit->phase_rotation = (i32)((f32)kit->phase_rotation + kit->rate_rotation * FRAMETIME);
+            if (kit->phase_rotation > 65536)
+                kit->phase_rotation -= 65536;
+            i32 model = ADataList[i].minikit_id;
+            if (model != -1 && world->hub_minikits != NULL) {
+                HUBMINIKIT_s *current = &world->hub_minikits[i];
+                HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(i);
+                CHARACTERDATA *data = &CDataList[model];
+                current->radius = data->collision_radius;
+                current->height_ratio = (data->bounds_max_y - data->bounds_min_y) / (data->collision_radius * 2.0f);
+                current->collision_center.x = current->position.x + current->offset_x;
+                current->collision_center.y = current->position.y + (data->bounds_max_y + data->bounds_min_y) * 0.5f;
+                current->collision_center.z = current->position.z + current->offset_z;
+                current->collision_center.y +=
+                    (1.0f - (NU_SIN_LUT((i32)(32768.0f * current->scale + 16384.0f)) + 1.0f) * 0.5f) * 0.333f;
+                current->collision_center.y += 0.025f * NU_SIN_LUT(current->phase_rotation) * current->scale;
+                current->collision_center.y += info ? info->panel_offset : 0.0f;
+                current->bounds_min.x = current->collision_center.x - current->radius;
+                current->bounds_min.z = current->collision_center.z - current->radius;
+                current->bounds_min.y = current->collision_center.y - current->radius * current->height_ratio;
+                current->bounds_max.y = current->collision_center.y + current->radius * current->height_ratio;
+                current->bounds_max.z = current->collision_center.z + current->radius;
+                current->bounds_max.x = current->collision_center.x + current->radius;
+            }
+        }
+        kit = world->hub_minikits;
+        for (i32 i = 0; i < AREACOUNT; ++i, ++kit) {
+            if (world->minikit_pieces_buf[i] == NULL)
+                continue;
+            if (kit->displayed_piece_count != kit->target_piece_count &&
+                (i32)(GameTimer.time_elapsed / 0.15f) != (i32)(GameTimer.last_time_elapsed / 0.15f)) {
+                if (kit->displayed_piece_count < kit->target_piece_count)
+                    ++kit->displayed_piece_count;
+                else if (kit->displayed_piece_count > kit->target_piece_count)
+                    --kit->displayed_piece_count;
+                if (i == hub_minikitarea)
+                    PlaySfx("LegoForm", &kit->position);
+                NewRumbleAllPlayers(0.0f, 0.0f, 1, 0);
+            }
+            if (count[i] > 0 && kit->displayed_piece_count != 0) {
+                PushAway(&kit->collision_center, kit->radius, &kit->bounds_min, &kit->bounds_max, NULL, NULL, 2.5f, 5);
+                AIAntinodeCreateSingleFrame(&kit->collision_center, kit->radius);
+            }
+        }
+    }
+}
+
+void Hub_DrawMiniKits(WORLDINFO_s *world) {
+    NUMTX piece_matrix;
+    if (world->minikit_pieces_buf == NULL || world->hub_minikits == NULL)
+        return;
+    i32 areas[72];
+    i32 selected = -1;
+    i32 count = 0;
+    for (i32 area = 0; area < AREACOUNT; ++area) {
+        if (ADataList[area].flags & 0x10) {
+            areas[count] = area;
+            if (area == hub_minikitviewer_area)
+                selected = count;
+            ++count;
+        }
+    }
+    for (i32 index = 0; index < count; ++index) {
+        HUBMINIKIT_s *kit = world->hub_minikits;
+        const i32 area = areas[index];
+        HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[area];
+        if (pieces == NULL || ADataList[area].minikit_id == -1)
+            continue;
+        HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(area);
+        f32 x;
+        if (area == areas[(selected + (count - 2)) % count])
+            x = -4.0f;
+        else if (area == areas[(selected + (count - 1)) % count])
+            x = -2.0f;
+        else if (area == areas[selected])
+            x = 0.0f;
+        else if (area == areas[(selected + 1) % count])
+            x = 2.0f;
+        else if (area == areas[(selected + 2) % count])
+            x = 4.0f;
+        else
+            continue;
+        x += hub_minikitviewer_pos.x;
+        if (hub_minikitviewer_movewait > 0.0f) {
+            x += (1.0f - (1.0f + NU_SIN_LUT((i32)(hub_minikitviewer_movewait * 32768.0f + 16384.0f))) * 0.5f) * 2.0f *
+                 hub_minikitviewer_move;
+        }
+        kit += area;
+        const f32 scale = kit->scale;
+        f32 lift = 1.0f - (1.0f + NU_SIN_LUT((i32)(scale * 32768.0f + 16384.0f))) * 0.5f;
+        const u16 phase_x = (i32)(NU_SIN_LUT(kit->phase_x) * 910.0f);
+        const u16 phase_z = (i32)(NU_SIN_LUT(kit->phase_z) * 910.0f);
+        const u16 phase_y = (i32)(NU_SIN_LUT(kit->phase_y) * 910.0f);
+        lift *= 0.333f;
+        const u16 rotation = (i32)(RotDiff(0, phase_y) * scale) + kit->rotation;
+        const f32 bob = NU_SIN_LUT(kit->phase_rotation) * 0.025f * scale;
+        const f32 tilt_scale = (info ? info->panel_scale : 1.0f) * scale;
+        NUMTX matrix;
+        MiniKitSetRotationX(&matrix, (i32)(RotDiff(0, kit->tilt) * tilt_scale));
+        MiniKitRotateX(&matrix, (i32)(RotDiff(0, phase_x) * scale));
+        MiniKitRotateZ(&matrix, (i32)(RotDiff(0, phase_z) * scale));
+        MiniKitRotateY(&matrix, rotation);
+        matrix.m30 = x + kit->offset_x;
+        matrix.m31 = hub_minikitviewer_pos.y + (lift + bob + (info ? info->panel_offset : 0.0f));
+        matrix.m32 = hub_minikitviewer_pos.z + kit->offset_z;
+        NuMtxPreRotateZ(&matrix, (i32)(RotDiff(0, kit->rotation_velocity) * scale));
+        for (i32 piece = 0; piece < pieces->piece_count; ++piece) {
+            if (pieces->pieces[piece].enabled && NuSpecialExistsFn(&pieces->pieces[piece].special) &&
+                piece < kit->displayed_piece_count) {
+                piece_matrix = pieces->pieces[piece].matrix;
+                NuMtxMulVU0(&piece_matrix, &piece_matrix, &matrix);
+                NUMTX reflected;
+                const i32 drawn = NuSpecialDrawAt(&pieces->pieces[piece].special, &piece_matrix);
+                if (HUB_MINIKITVIEWER_REFLECTY != 2000000.0f &&
+                    MatrixReflection(&piece_matrix, 2, HUB_MINIKITVIEWER_REFLECTY, 2000000.0f, &reflected)) {
+                    NuRndrStartReflectionRender(drawn);
+                    NuSpecialDrawAt(&pieces->pieces[piece].special, &reflected);
+                    NuRndrEndReflectionRender();
+                }
+            }
+        }
+        if (NuSpecialExistsFn(&pieces->base.special)) {
+            NUMTX base_matrix;
+            NuMtxSetRotationY(&base_matrix, rotation);
+            base_matrix.m30 = x;
+            base_matrix.m31 = 0.143f;
+            base_matrix.m32 = hub_minikitviewer_pos.z;
+            NuSpecialDrawAtAlpha(&pieces->base.special, &base_matrix, 1.0f - 0.5f * kit->scale);
+        }
+    }
+    SetLevelLights(world->rtl_set, 1.0f);
+}
+
+void Hub_LockUnlockDoors(WORLDINFO_s *) {
+}
+
+void Hub_DrawStarField() {
+    GetMenuID();
+}
+
+void Hub_DrawImportantBrick(i32 object, f32 x, f32 y, f32 alpha, i32 count, i32 total) {
+    char text[32];
+    const i32 rotation = static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f) & 0xffff;
+    const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_REDBRICKSCALE;
+    const u16 tilt = static_cast<i32>(1820.0f * NuTrigTable[rotation & 0x7fff]) - 910;
+    DrawPanel3DObjectNoAlpha(x, y + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 1.0f, scale, scale, scale, tilt, rotation, 0,
+                             &WORLD->lev_objs[object].special, 2);
+    if (total >= 0 && count >= 0) {
+        if (total == 1)
+            NuStrCpy(text, count == 1 ? "$" : "X");
+        else
+            sprintf(text, "%i/%i", count, total);
+        Text3DEx(text, x, y, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale, PANEL_MINIKITCOUNTSCALE,
+                 PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(static_cast<i32>(128.0f * alpha)));
+    }
+}
+
+static void Hub_DrawArcadeStats(float alpha) {
+    const i32 menu_id = GetMenuID();
+    f32 alpha_scaled = alpha * 128.0f;
+    const i32 opacity = static_cast<i32>(alpha_scaled);
+    const f32 title_scale = HUB_EPISODESUBTITLESIZE;
+    SmartTextEx(TTab[tARCADE_NAME], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, title_scale, title_scale, title_scale, 0,
+                static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG), static_cast<u8>(HUB_EPISODEB), 1.7f, 1, 0,
+                0, opacity);
+
+    i32 complete_count = 0;
+    i32 area_count = 0;
+    if (Game_AreaSave != NULL) {
+        for (i32 i = 0; i < 12; ++i) {
+            AREADATA *area = *ArcadeLevel[i].area;
+            if ((area->flags & 0x800) != 0)
+                continue;
+            ++area_count;
+            AREASAVE_s *save = &Game_AreaSave[area->index];
+            if (save->area_complete ||
+                static_cast<f32>(static_cast<i32>(area->challenge_trial_time)) > save->challenge_trial_time)
+                ++complete_count;
+        }
+    }
+    Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, alpha, complete_count, area_count);
+
+    if (GetMenuID() == 16) {
+        return;
+    }
+    if (menu_id != -1 || Arcade_BothPlayersActive())
+        return;
+    i32 text_id = tARCADE_NEEDTWOPLAYERS;
+    if (text_id == -1)
+        return;
+    const f32 pulse = 0.75f + 0.25f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
+                                          NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f)));
+    SmartTextEx(TTab[text_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
+                HUB_EPISODETITLESIZE, 0, 255, 0, 0, 1.7f, 1, 0, 0, static_cast<i32>(pulse * alpha_scaled));
+}
+
+static void Hub_DrawSuperBonusStats(AREADATA_s *area, float alpha) {
+    const i32 opacity = static_cast<i32>(alpha * 128.0f);
+    char *title = "?";
+    if (area)
+        title = TTab[area->name_id];
+    SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                HUB_EPISODESUBTITLESIZE, 0, static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG),
+                static_cast<u8>(HUB_EPISODEB), 1.7f, 1, NULL, 0, opacity);
+    if (area && Game.area_save[area->index].area_complete) {
+        char text[64];
+        SmartTextEx(TTab[tBESTTIME], 0.0f, HUB_EPISODETITLEY + 0.125f, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
+                    HUB_EPISODETITLESIZE, 0, 191, 0, 127, 0.7f, 1, NULL, 0, opacity);
+        Text_MakeTime(Game.area_save[area->index].challenge_trial_time, 1, 1, 1, text);
+        Text3DEx(text, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                 HUB_EPISODESUBTITLESIZE, 0, 255, 255, 255, static_cast<u8>(opacity));
+        if (GOLDBRICKFORSUPERBONUS)
+            Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY + 0.125f, alpha, -1, -1);
+    }
+}
+
+void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
+    AREADATA *areas = ADataList;
+    char heading[128];
+    char text[128];
+    i16 clips[128];
+    if (mode == 18 || (LOSTTEMPLE_ADATA != NULL && LOSTTEMPLE_ADATA->index == area_index)) {
+        char *subtitle = TTab[tSTORYCLIPS2];
+        heading[0] = '\0';
+        bool fade = lastepisodesmode != -1;
+        if (mode == 18) {
+            if (episodesmode == 3) {
+                const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
+                CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
+                CutScenePlayer_GetText(clips[i_clip[i_episodes]], heading, text, 3);
+                subtitle = text;
+            } else if (episodesmode == 2 ||
+                       (episodesmode == 1 && hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1)) {
+                subtitle = TTab[EDataList[i_episodes].text_id];
+                NuStrCpy(heading, TTab[EDataList[i_episodes].name_id]);
+            }
+            if (__builtin_expect(lastepisodesmode == -1, 1)) {
+                fade = episodesmode == 2 && hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1;
+            } else {
+                fade = episodesmode != 1;
+            }
+        }
+        if (fade && episodestime < episodesduration) {
+            phase = (episodestime / episodesduration) * phase;
+        }
+        if (subtitle != NULL) {
+            SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                        HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
+                        static_cast<i32>(128.0f * phase));
+        }
+        if (heading[0] != '\0') {
+            SmartTextEx(heading, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
+                        HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
+                        static_cast<i32>(phase * 128.0f));
+        }
+        return;
+    }
+    AREADATA *area = &areas[area_index];
+    const i32 alpha = static_cast<i32>(phase * 128.0f);
+
+    if (VEHICLES_ADATA != NULL && VEHICLES_ADATA->index == area_index) {
+        return;
+    }
+
+    SmartTextEx(TTab[area->name_id], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+
+    AREASAVE_s *save = &Game.area_save[area_index];
+    const u16 flags = area->flags;
+    if ((flags & 0x10) != 0) {
+        if (save->area_complete != 0 && (flags & 4) == 0) {
+            Episode_CountOpenAreas(static_cast<i8>(area->episode_index), area_index, Game.area_save);
+
+            if (BOTHTRUEJEDIGOLDBRICKS != 0) {
+                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                NuStrCpy(text, save->true_hero_complete[0] ? "$" : "X");
+                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f, 0,
+                            255, 255, 255, 0.4f, 1, NULL, 0, static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
+
+                DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                NuStrCpy(text, save->true_hero_complete[1] ? "$" : "X");
+                Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f,
+                            0, 255, 255, 255, 0.4f, 1, NULL, 0, static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
+            } else {
+                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
+                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+            }
+
+            if ((area->flags & 0x10) != 0) {
+                Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODETITLEY, save->minikit_count, 10, phase);
+            }
+            Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODETITLEY, phase, save->red_brick_collected, 1);
+            Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODETITLEY, phase, EpGoldBrickCount,
+                                   EpGoldBrickTotal);
+            if (Store_IsPackUnlocked(8)) {
+                hub_drawminikitcount_charkit = 1;
+                Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODETITLEY, EpCharKitCount, EpCharKitTotal, phase);
+            }
+            return;
+        }
+
+        if (static_cast<i8>(area->area_index) != -1 && (flags & 0x14) == 0x10) {
+            sprintf(text, "%s %i", TTab[tCHAPTER], static_cast<i8>(area->area_index) + 1);
+            SmartTextEx(text, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
+                        HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+        }
+        return;
+    }
+
+    if (__builtin_expect(save->area_complete == 0, 1)) {
+        return;
+    }
+
+    f32 build_x = 0.0f;
+    if ((flags & 0x4000) != 0)
+        build_x = 0.20100002f;
+    if ((flags & 0x800) != 0) {
+        Hub_DrawImportantBrick(251, build_x, HUB_EPISODESUBTITLEY - 0.05f, phase, -1, -1);
+    } else if ((flags & 0x4000) != 0) {
+        const i32 gold_count = 1 + (save->true_hero_complete[0] || save->true_hero_complete[1]);
+        Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, phase, gold_count, 2);
+    } else {
+        Hub_DrawImportantBrick(211, -0.0f, HUB_EPISODESUBTITLEY + 0.05f, phase, -1, -1);
+    }
+    if ((area->flags & 0x4000) == 0) {
+        return;
+    }
+    DrawBuildUpBar(build_x, HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                   NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+    NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
+    Text3DEx(text, build_x, HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
+             PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+}
+
+void Hub_DrawFreePlaySelect() {
+    static f32 radarpulsetimer = 2.0f;
+    static APICHARACTERMODELLIST_s list[341];
+    COLLECTION_s *collection = GetFreePlayCollection(hub_freeplay_area);
+    if (FadeSys.fade > 0.0f)
+        return;
+    const i32 menu_level = GameMenuLevel;
+    if (freeplaymode == 0) {
+        const f32 progress = freeplaytime / (freeplayduration * 0.5f);
+        const f32 alpha = 1.0f - progress;
+        if (progress <= 1.0f && alpha > 0.0f) {
+            AREADATA *area = &ADataList[last_hub_area];
+            if ((area->flags & 0x100) == 0) {
+                if ((area->flags & AREAFLAG_BONUS_AREA) != 0) {
+                    if (bonusmodearcade != 0) {
+                        Hub_DrawArcadeStats(alpha);
+                    } else {
+                        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
+                    }
+                    Hub_DrawBonusModeMenu(0, alpha);
+                } else {
+                    Hub_DrawAreaStats(alpha, last_hub_area, -1);
+                    if (VEHICLES_ADATA == NULL || VEHICLES_ADATA->index != last_hub_area) {
+                        Hub_DrawSelectModeMenu(0, alpha);
+                    }
+                }
+            } else {
+                Hub_DrawSuperBonusStats(area, alpha);
+                Hub_DrawBonusModeMenu(0, alpha);
+            }
+        }
+    }
+
+    if (freeplaymode != 3 && freeplaymode != 4) {
+        f32 fade = 1.0f;
+        if (freeplaymode == 2) {
+            fade = 0.0f;
+            if (freeplaytime < freeplayduration - 0.1f)
+                fade = 1.0f - freeplaytime / (freeplayduration - 0.1f);
+        }
+        i32 model = FreePlayModelList[0].model_id;
+        f32 opacity = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * fade;
+        if (freeplay_time[0] > 0.0f) {
+            f32 progress = freeplay_time[0] / 0.75f;
+            if (__builtin_expect(freeplay_selected[0] == 0, 0))
+                progress = 1.0f - progress;
+            opacity *= progress;
+        } else if (freeplay_selected[0] != 0) {
+            model = MenuPacket.player_model[0];
+        }
+        if (opacity > 0.0f)
+            DrawCharIcon(model, -ICONX, STATSPOSY, 0.0f, ICONSIZE, 0xa6, opacity, opacity, 1, NULL);
+        if (__builtin_expect(freeplaymode == 1 && MenuPacket.active_player[0] != 0, 0)) {
+            const i32 selected = MenuPacket.player_model[0];
+            model = Collection_Got(selected) ? selected : -1;
+            opacity = MenuPacket.active_player[0] ? 1.0f : DROPINALPHA;
+            if (freeplay_time[0] <= 0.0f)
+                opacity *= BigIconAlpha[0];
+            const f32 base_x = MenuPacket.active_player[1] ? -0.4f : 0.0f;
+            const f32 base_size = Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0 ? 0.30625f : 0.35f;
+            f32 x = base_x, y = 0.7f, size = base_size;
+            // An already-selected icon remains at its base without drawing or
+            // name/radar updates until the next transition starts.
+            if (freeplay_time[0] > 0.0f || freeplay_selected[0] == 0) {
+                f32 eased = 0.0f;
+                f32 progress = 1.0f;
+                if (__builtin_expect(freeplay_time[0] > 0.0f, 0)) {
+                    progress = freeplay_time[0] / 0.75f;
+                    if (freeplay_selected[0] == 0)
+                        progress = 1.0f - progress;
+                    eased =
+                        1.0f - (NU_SIN_LUT(static_cast<i32>((1.0f - progress) * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
+                }
+                x = (-ICONX - base_x) * eased + base_x;
+                size = (COLLECTION_ICONSIZE - base_size) * eased + base_size;
+                y = (STATSPOSY - 0.7f) * eased + 0.7f;
+                if (opacity > 0.0f) {
+                    if (freeplay_time[0] > 0.0f || opacity != 1.0f) {
+                        radarpulsetimer = 2.0f;
+                    } else if (radarpulsetimer < 0.0f) {
+                        const VuVec position{x, y, 0.0f, 1.0f};
+                        MechSystems::Get()->NewRadarPulse(position, false);
+                        radarpulsetimer = 2.0f;
+                    } else {
+                        radarpulsetimer -= FRAMETIME;
+                    }
+                    f32 grow = 1.0f;
+                    if (!TestForController()) {
+                        const f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
+                        if (elapsed > 4.0f) {
+                            f32 wave = NU_SIN_LUT(static_cast<i32>(NuFmod(elapsed, 4.0f) * 0.25f * 65536.0f)) - 0.8f;
+                            if (wave < 0.0f)
+                                wave = 0.0f;
+                            grow += wave;
+                        }
+                    }
+                    DrawCharIcon(model, x, y, 0.0f, grow * size, 0xa6, opacity, opacity, 1, NULL);
+                }
+                if (model != -1 && progress > 0.0f) {
+                    char name[64];
+                    char *text = GameObj_GetName(model, NULL, name);
+                    SmartTextEx(text, base_x, 0.475f, 1.0f, 0.45f, 0.45f, 0.45f, 1, 255, 191, 0, 1.25f, 2, NULL, 0,
+                                static_cast<i32>(opacity * 128.0f * progress));
+                }
+            }
+            GameMenu[menu_level].item_x[0] = x;
+            GameMenu[menu_level].item_y[0] = y;
+            GameMenu[menu_level].item_width[0] = size * 0.5f;
+            GameMenu[menu_level].item_height[0] = 0.0f;
+        }
+    }
+    if (freeplaymode == 0) {
+        list[0].model_id = MenuPacket.player_model[0];
+        list[1].model_id = -1;
+        const f32 offset = (1.0f - NuFabs(COLLECTION_Y_HUB)) + 1.0f;
+        const f32 y =
+            (COLLECTION_Y_HUB + offset) * NU_SIN_LUT(static_cast<i32>((freeplaytime / freeplayduration) * 16384.0f)) -
+            offset;
+        Collection_Draw(collection, 0.0f, y, collection->field_10, list, 1.0f, 1);
+        Hub_DrawIconCursors(collection, 1.0f);
+        return;
+    }
+    if (freeplaymode == 1) {
+        list[0].model_id = MenuPacket.player_model[0];
+        list[1].model_id = -1;
+        Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, 1.0f, 1);
+        Hub_DrawIconCursors(collection, 1.0f);
+        i32 status = -1, select = -1, cancel = -1;
+        if (freeplay_selected[0] == 0 && freeplay_time[0] <= 0.0f) {
+            select = tSELECT;
+            status = tSELECTING;
+            cancel = tEXIT;
+        } else if (freeplay_selected[0] == 1 && freeplay_time[0] <= 0.0f) {
+            status = tSELECTED;
+            select = tYES;
+            cancel = tNO;
+        } else if (freeplay_selected[0] >= 2 && freeplay_selected[0] < 4 && MenuPacket.active_player[1] != 0 &&
+                   freeplay_selected[0] > freeplay_selected[1]) {
+            status = tCONFIRMED;
+            cancel = tCANCEL;
+        }
+        DrawPlayerIconPrompts(MenuPacket.active_player[0], select, 1.0f, -1, cancel, -1, status,
+                              MenuPacket.active_player[1], 0, 1.0f, -1, 0, -1, 0);
+        return;
+    }
+    if (freeplaymode != 3 && freeplaymode != 4) {
+        if (freeplaymode == 2) {
+            list[0].model_id = MenuPacket.player_model[0];
+            i32 count = 1;
+            for (i32 i = 0; i < fpcount; ++i)
+                list[count++] = fplist[i];
+            list[count].model_id = -1;
+            f32 alpha = 0.0f;
+            if (freeplaytime < freeplayduration - 0.1f)
+                alpha = 1.0f - freeplaytime / (freeplayduration - 0.1f);
+            Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
+            if (alpha >= 0.0f)
+                Hub_DrawIconCursors(collection, alpha);
+        }
+        return;
+    }
+    list[0].model_id = MenuPacket.player_model[0];
+    i32 count = 1;
+    i16 second = MenuPacket.player_model[1];
+    if (second == -1) {
+        second = PlayerList[1];
+        if (__builtin_expect(second == list[0].model_id, 0))
+            second = -1;
+    }
+    if (second != -1)
+        list[count++].model_id = second;
+    list[count].model_id = -1;
+    for (i32 i = 0; i < fpcount; ++i) {
+        if (InModelList(list, fplist[i].model_id, NULL) == 0) {
+            list[count++] = fplist[i];
+            list[count].model_id = -1;
+        }
+    }
+    const f32 progress = freeplaytime / freeplayduration;
+    if (freeplaymode == 3) {
+        const f32 alpha = freeplaytime >= 0.8f ? 0.0f : 1.0f - freeplaytime / 0.8f;
+        Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
+    }
+    f32 size = 0.35f;
+    if (count > 8) {
+        size = 0.35f - static_cast<f32>(count - 8) * 0.02f;
+        if (size < 0.1f)
+            size = 0.1f;
+    }
+    f32 dx = COLLECTION_DX * (size / COLLECTION_ICONSIZE);
+    if (Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0)
+        dx *= 0.75f;
+    const f32 dy = 0.875f * (size / COLLECTION_ICONSIZE) * COLLECTION_DY * 0.5f;
+    f32 x = -(static_cast<f32>(count - 1) * dx * 0.5f * 0.5f);
+    for (i32 i = 0; i < count; ++i) {
+        const f32 y = (i & 1) == 0 ? -dy : dy;
+        f32 target_size = size;
+        if (Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0)
+            target_size *= 0.875f;
+        if (freeplaymode == 3) {
+            f32 source_x, source_y, source_size, opacity;
+            i32 frame;
+            if (i == 0) {
+                source_x = -ICONX;
+                source_y = STATSPOSY;
+                source_size = COLLECTION_ICONSIZE;
+                opacity = MenuPacket.active_player[0] ? 1.0f : DROPINALPHA;
+                frame = 0xa6;
+            } else {
+                const i32 index = InCollectList_Index(list[i].model_id, collection->list, collection->count_y);
+                if (index == -1) {
+                    x += dx * 0.5f;
+                    continue;
+                }
+                source_x = collection->list[index].grid_x;
+                source_y = collection->list[index].grid_y;
+                source_size = collection->field_10 * COLLECTION_ICONSIZE;
+                if (__builtin_expect(Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0, 0))
+                    source_size *= 0.875f;
+                opacity = 1.0f;
+                frame = 0xa7;
+            }
+            const f32 eased = 1.0f - (NU_SIN_LUT(static_cast<i32>(progress * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
+            DrawCharIcon(list[i].model_id, (x - source_x) * eased + source_x, (y - source_y) * eased + source_y, 0.0f,
+                         (target_size - source_size) * eased + source_size, frame, eased * (1.0f - opacity) + opacity,
+                         eased * (1.0f - opacity) + opacity, 1, NULL);
+        } else {
+            const f32 offset = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 16384.0f + 16384.0f));
+            DrawCharIcon(list[i].model_id, offset + offset + x, y, 0.0f, target_size, i == 0 ? 0xa6 : 0xa7, 1.0f, 1.0f,
+                         1, NULL);
+        }
+        x += dx * 0.5f;
+    }
+}
+
+void Hub_UpdateKit() {
+    MENU *menu = &GameMenu[GameMenuLevel];
+    i32 right = 0, left = 0, cancel = 0;
+    if (hub_minikitviewer_movewait <= 0.0f) {
+        for (i32 i = 0; i < 2; ++i) {
+            if (MenuPacket.active_player[i]) {
+                if ((GamePad[i].buttons_held & GAMEPAD_TOGGLELEFT) == 0) {
+                    if ((GamePad[i].buttons_held & GAMEPAD_TOGGLERIGHT) != 0)
+                        ++right;
+                } else if ((GamePad[i].buttons_held & GAMEPAD_TOGGLERIGHT) == 0)
+                    ++left;
+                if ((GamePad[i].buttons_pressed & GAMEPAD_MENUCANCEL) != 0)
+                    cancel = 1;
+            }
+        }
+    }
+    if (menu->input_activity) {
+        if (menu->left_pressed)
+            ++left;
+        if (menu->right_pressed)
+            ++right;
+        if (menu->cancel_pressed)
+            cancel = 1;
+    }
+    i32 previous = hub_minikitviewer_area;
+    if (left && !right) {
+        hub_minikitviewer_move = -1.0f;
+        i32 index = previous;
+        i32 attempts = 0;
+        do {
+            --index;
+            // Original backward traversal wraps to AREACOUNT itself.
+            if (index < 0)
+                index = AREACOUNT;
+            if (++attempts >= AREACOUNT)
+                break;
+        } while ((ADataList[index].flags & 0x10) == 0);
+        hub_minikitviewer_area = index;
+    } else if (right && !left) {
+        hub_minikitviewer_move = 1.0f;
+        i32 index = previous;
+        i32 attempts = 0;
+        do {
+            ++index;
+            if (index >= AREACOUNT)
+                index = 0;
+            if (++attempts >= AREACOUNT)
+                break;
+        } while ((ADataList[index].flags & 0x10) == 0);
+        hub_minikitviewer_area = index;
+    }
+    if (hub_minikitviewer_area != previous) {
+        hub_minikitviewer_movewait = 1.0f;
+        hub_minikitviewer_alpha = 0.0f;
+        PlaySfx(const_cast<char *>("JForcePush"), &hub_minikitviewer_pos);
+    }
+    if (cancel) {
+        GameAudio_PlaySfx(49, NULL, 0, 0);
+        MenuReset();
+        hub_minikitarea = -1;
+        hub_minikitarea_time = 0.0f;
+        hub_minikitarea_opentime = 0.0f;
+        LevLock[4] = 1;
+        LevTime[4] = 0.6f;
+    }
+}
+
+void Hub_Reset(WORLDINFO_s *world) {
+    Customiser_Reset(CharacterCustomiser);
+    if (Hub_ResetAIFn != NULL) {
+        Hub_ResetAIFn(world);
+    }
+
+    for (i32 i = 20; i < 52; ++i) {
+        if (((LevHSpecialExists >> i) & 1) != 0) {
+            NuSpecialSetVisibility(&LevHSpecial[i], 1);
+        }
+        const i32 hidden = i + 32;
+        if (((LevHSpecialExists >> hidden) & 1) != 0) {
+            NuSpecialSetVisibility(&LevHSpecial[hidden], 0);
+        }
+    }
+
+    if (NuSpecialExistsFn(&LevHSpecial[84]) != 0) {
+        NuSpecialSetVisibility(&LevHSpecial[84], 0);
+    }
+
+    for (i32 i = 0; HubAreaInfo[i].area_name != NULL; ++i) {
+        if (HubAreaInfo[i].door == NULL) {
+            continue;
+        }
+        AREADATA_s *area = HubAreaInfo[i].area;
+        i32 open = Episode_CountOpenAreas(static_cast<i8>(area->episode_index), area->index, Game_AreaSave);
+        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(HubAreaInfo[i].door->object);
+        if (open != 0) {
+            obstacle->runtime_flags &= static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
+            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 1);
+        } else {
+            obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
+            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 0);
+        }
+    }
+
+    for (i32 i = 0; static_cast<u16>(HubEpisodeInfo[i].episode) <= 8; ++i) {
+        if (HubEpisodeInfo[i].door == NULL) {
+            continue;
+        }
+        i32 open = Episode_CountOpenAreas(HubEpisodeInfo[i].episode, -1, Game_AreaSave);
+        if (open == 0) {
+            open = HubEpisodeInfo[i].force_open;
+        }
+        if (open == 0) {
+            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags |=
+                GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
+            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 0);
+        } else {
+            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags &=
+                static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
+            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
+        }
+    }
+    if (Store_IsPackUnlocked(6) == 0) {
+        NuSpecialSetVisibility(&HubEpisodeInfo[8].lock_on, 0);
+    }
+
+    hub_jabbaawake = 0.0f;
+    buildits_reset = 0;
+    Hub_HologramAlpha = 0.0f;
+    Hub_HologramTargetAlpha = 0.0f;
+    Hub_PreventDropOutTime = 0.0f;
+}
+
+void Hub_ClearStats() {
+    statstime = 0.0f;
+    cointotaltime = 0.0f;
+    goldbricktime = 0.0f;
+}
+
+__attribute__((optimize("O2", "tree-vectorize"))) i32 Percent_UpdateHint(HINT_s *hint) {
+    i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    if (hint->completion_flags[control_mode] != 0 || WORLD->current_level != HUB_LDATA || FadeSys.fade != 0.0f ||
+        Game_CompletionSave == NULL || Game_CompletionSave[0] < COMPLETIONPOINTS)
+        return 0;
+
+    i32 active_players = 0;
+    i32 nearby_players = 0;
+    GameObject_s *object = Player[0];
+    if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0) {
+        active_players++;
+        if (NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) < 4.0f)
+            nearby_players++;
+    }
+    object = Player[1];
+    if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0) {
+        active_players++;
+        if (NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) < 4.0f)
+            nearby_players++;
+    }
+    if (active_players != nearby_players || active_players <= 0)
+        return 0;
+    hint->pad_0x05[0] = 4;
+    return 1;
+}
+
+i32 IndyUnlocked_UpdateHint(HINT_s *hint) {
+    i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    if (hint->completion_flags[control_mode] != 0 || WORLD->current_level != HUB_LDATA)
+        return 0;
+    if (FadeSys.fade != 0.0f || Game.indy_unlocked == 0)
+        return 0;
+    hint->pad_0x05[0] = 4;
+    return 1;
+}
+
+bool HubShopUnlocked() {
+    return true;
+}
+
+bool HubCustomiserUnlocked() {
+    return true;
+}
+
+bool HubMinikitViewerUnlocked() {
+    return true;
+}
 
 void Hub_Draw3D(WORLDINFO_s *world) {
     Store_HubDrawFloorTargets(world);
@@ -517,34 +3224,1248 @@ i32 Hub_InMenu() {
     return 0;
 }
 
-static void Hub_UpdatePackObstacle(i32 pack) {
-    if (LevGizObst[12 - pack] == NULL) {
-        return;
+void Hub_DrawPanel(WORLDINFO_s *) {
+    char text[256];
+    char title[128];
+    if (newgamecam) {
+        f32 alpha = 0.0f;
+        if (newgamecamtime < 2.0f)
+            alpha = 0.0f;
+        else if (newgamecamtime < 2.5f)
+            alpha = (newgamecamtime - 2.0f) * 2.0f;
+        else if (newgamecamtime < 7.5f)
+            alpha = 1.0f;
+        else if (newgamecamtime < 8.0f)
+            alpha = 1.0f - (newgamecamtime - 7.5f) * 2.0f;
+        if (alpha > 0.0f)
+            SmartTextEx(TTab[tMAP], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, 0.8f, 0.8f, 0.8f, 0,
+                        HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, static_cast<i32>(alpha * 128.0f));
     }
-    if (!Store_IsPackUnlocked(pack)) {
-        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
-        obstacle->progress_flags &= static_cast<u8>(~1);
-        obstacle->runtime_flags |= 8;
-    } else {
-        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
-        obstacle->progress_flags |= 1;
-        obstacle->runtime_flags &= static_cast<u8>(~8);
+    DrawShopPanel();
+
+    if (hub_episode != -1 && hub_episode_time > 0.0f) {
+        const i32 alpha = static_cast<i32>(128.0f * hub_episode_time);
+        if (hub_episode == 6) {
+            i32 red_total = 0, red_count = 0, free_total = 0, free_count = 0;
+            i32 story_total = 0, story_count = 0, buildup_total = 0, buildup_count = 0;
+            i32 char_total = 0, char_count = 0, mini_total = 0, mini_count = 0;
+            i32 both_true_jedi_bricks;
+            i32 i = 0;
+            for (; i < EPISODECOUNT; ++i) {
+                Episode_CountOpenAreas(i, -1, Game.area_save);
+                mini_count += EpMiniKitCount;
+                mini_total += EpMiniKitTotal;
+                char_count += EpCharKitCount;
+                char_total += EpCharKitTotal;
+                buildup_count += EpBuildUpCount;
+                buildup_total += EpBuildUpTotal;
+                both_true_jedi_bricks = BOTHTRUEJEDIGOLDBRICKS;
+                if (__builtin_expect(!!(both_true_jedi_bricks), 1)) {
+                    story_total += EpStoryBuildUpTotal;
+                    story_count += EpStoryBuildUpCount;
+                    free_count += EpFreePlayBuildUpCount;
+                    free_total += EpFreePlayBuildUpTotal;
+                }
+                red_count += EpRedBrickCount;
+                red_total += EpRedBrickTotal;
+            }
+            if (i == 0)
+                both_true_jedi_bricks = BOTHTRUEJEDIGOLDBRICKS;
+            stats_xscale = 0.8f;
+            if (both_true_jedi_bricks) {
+                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
+                sprintf(text, "%i/%i", story_count, story_total);
+                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], 0.235f + HUB_EPISODESUBTITLEY, 1.0f, 0.45f, 0.45f, 0.45f,
+                            0, 255, 255, 255, 0.4f, 1, NULL, 0,
+                            static_cast<i32>(static_cast<f32>(TJTYPEA) * hub_episode_time));
+                DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
+                sprintf(text, "%i/%i", free_count, free_total);
+                Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], 0.235f + HUB_EPISODESUBTITLEY, 1.0f, 0.45f, 0.45f,
+                            0.45f, 0, 255, 255, 255, 0.4f, 1, NULL, 0,
+                            static_cast<i32>(static_cast<f32>(TJTYPEA) * hub_episode_time));
+            } else {
+                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
+                sprintf(text, "%i/%i", buildup_count, buildup_total);
+                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
+                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+            }
+            Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODESUBTITLEY, mini_count, mini_total, hub_episode_time);
+            Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODESUBTITLEY, hub_episode_time, red_count,
+                                   red_total);
+            Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODESUBTITLEY, hub_episode_time, Game.gold_bricks,
+                                   GOLDBRICKPOINTS);
+            hub_drawminikitcount_charkit = 1;
+            Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODESUBTITLEY, char_count, char_total, hub_episode_time);
+            stats_xscale = 1.0f;
+        } else if (hub_episode == 7) {
+            if (MissionSys) {
+                const i32 total = MissionSys->count;
+                const i32 count = Missions_NumCompleted(MissionSys, &Game.mission_save, 0);
+                Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, hub_episode_time, count, total);
+                SmartTextEx(TTab[tBOUNTYHUNTERMISSIONS2 ? tBOUNTYHUNTERMISSIONS2 : tBOUNTYHUNTERMISSIONS], 0.0f,
+                            HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                            HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
+                            alpha);
+            }
+        } else if (hub_episode == 8) {
+            i32 gold_count = 0, gold_total = 0, buildup_count = 0, buildup_total = 0;
+            for (i32 i = 0; i < AREACOUNT; ++i) {
+                AREADATA *area = &ADataList[i];
+                AREASAVE_s *save = &Game.area_save[i];
+                if (area == HUB_ADATA || (area->flags & 0x22) || area->episode_index != 0xff || (area->flags & 0x2010))
+                    continue;
+                if (area->flags & 0x100) {
+                    if (GOLDBRICKFORSUPERBONUS) {
+                        ++gold_total;
+                        if (save->area_complete)
+                            ++gold_count;
+                    }
+                    continue;
+                }
+                if (area->flags & 4 || area->flags & 0x800)
+                    continue;
+                ++gold_total;
+                if (save->area_complete)
+                    ++gold_count;
+                if (area->flags & 0x4000) {
+                    ++gold_total;
+                    ++buildup_total;
+                    if (save->true_hero_complete[0] || save->true_hero_complete[1]) {
+                        ++gold_count;
+                        ++buildup_count;
+                    }
+                }
+            }
+            if (__builtin_expect(!buildup_total, 0)) {
+                f32 x = 0.0f;
+                if (Game.indy_unlocked) {
+                    Hub_DrawImportantBrick(251, 0.1f, HUB_EPISODETITLEY - 0.225f, hub_episode_time, -1, -1);
+                    x = -0.1f;
+                }
+                Hub_DrawImportantBrick(211, x, HUB_EPISODETITLEY, hub_episode_time, gold_count, gold_total);
+            } else {
+                Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, hub_episode_time, gold_count, gold_total);
+                DrawBuildUpBar(0.20100002f, HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
+                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
+                sprintf(text, "%i/%i", buildup_count, buildup_total);
+                Text3DEx(text, 0.20100002f, HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
+                         PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127,
+                         static_cast<u8>(static_cast<i32>(128.0f * hub_episode_time)));
+            }
+            SmartTextEx(TTab[tBONUS2], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
+                        HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB,
+                        1.7f, 1, NULL, 0, alpha);
+        } else if (hub_episode >= 0 && hub_episode < EPISODECOUNT) {
+            EPISODEDATA *episode = &EDataList[hub_episode];
+            const f32 phase = hub_episode_time;
+            Episode_CountOpenAreas(hub_episode, -1, Game.area_save);
+            if (EpCompleteCount) {
+                if (BOTHTRUEJEDIGOLDBRICKS) {
+                    DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
+                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                    sprintf(text, "%i/%i", EpStoryBuildUpCount, EpStoryBuildUpTotal);
+                    Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                    SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], 0.235f + HUB_EPISODETITLEY, 1.0f, 0.45f, 0.45f, 0.45f,
+                                0, 255, 255, 255, 0.4f, 1, NULL, 0,
+                                static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
+                    DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
+                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                    sprintf(text, "%i/%i", EpFreePlayBuildUpCount, EpFreePlayBuildUpTotal);
+                    Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                    SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], 0.235f + HUB_EPISODETITLEY, 1.0f, 0.45f, 0.45f,
+                                0.45f, 0, 255, 255, 255, 0.4f, 1, NULL, 0,
+                                static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
+                } else {
+                    DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
+                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
+                    sprintf(text, "%i/%i", EpBuildUpCount, EpBuildUpTotal);
+                    Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
+                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
+                }
+                Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODETITLEY, EpMiniKitCount, EpMiniKitTotal, phase);
+                Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODETITLEY, phase, EpRedBrickCount,
+                                       EpRedBrickTotal);
+                Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODETITLEY, phase, EpGoldBrickCount,
+                                       EpGoldBrickTotal);
+                if (__builtin_expect(!!(Store_IsPackUnlocked(8)), 0)) {
+                    hub_drawminikitcount_charkit = 1;
+                    Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODETITLEY, EpCharKitCount, EpCharKitTotal, phase);
+                }
+            } else if (episode->name_id != -1) {
+                SmartTextEx(TTab[episode->name_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE,
+                            HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB,
+                            1.7f, 1, NULL, 0, alpha);
+            }
+            if (__builtin_expect(episode->text_id != -1, 0))
+                SmartTextEx(TTab[episode->text_id], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
+                            HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG,
+                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+        }
+    }
+    if (hub_area != -1 && hub_area_time > 0.0f) {
+        if (GameCam->sock_position.location.sock == 7 && (ADataList[hub_area].flags & 5) == 5) {
+            i32 count = 0, total = 0;
+            if (Game_AreaSave) {
+                for (i32 i = 0; i < AREACOUNT; ++i) {
+                    if (__builtin_expect((ADataList[i].flags & 5) == 5, 0)) {
+                        ++total;
+                        if (Game_AreaSave[i].area_complete ||
+                            static_cast<f32>(static_cast<i32>(ADataList[i].challenge_trial_time)) >
+                                Game_AreaSave[i].challenge_trial_time)
+                            ++count;
+                    }
+                }
+            }
+            Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, hub_area_time, count, total);
+            SmartTextEx(TTab[tMINIKITS ? tMINIKITS : tMINIKIT], 0.0f, HUB_EPISODESUBTITLEY, 1.0f,
+                        HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER,
+                        HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * hub_area_time));
+        } else {
+            AREADATA *area = &ADataList[hub_area];
+            if (area->flags & 0x100) {
+                Hub_DrawSuperBonusStats(area, hub_area_time);
+            } else if (area->flags & 4) {
+                if (SENATE_ADATA && SENATE_ADATA->index == hub_area)
+                    Hub_DrawArcadeStats(hub_area_time);
+                else
+                    Hub_DrawBonusStats(hub_area_time, hub_area, -1);
+            } else {
+                Hub_DrawAreaStats(hub_area_time, hub_area, -1);
+            }
+        }
+    }
+    if (GetMenuID() == 14) {
+        const f32 phase = hub_minikitviewer_alpha;
+        const i32 index = hub_minikitviewer_area;
+        AREADATA *area = &ADataList[index];
+        AREASAVE_s *save = &Game.area_save[index];
+        const i32 alpha = static_cast<i32>(phase * 128.0f);
+        if (save->minikit_complete) {
+            const f32 scale = HUB_EPISODETITLESIZE;
+            if (area->minikit_id != -1 && CDataList[area->minikit_id].name_id != -1)
+                SmartTextEx(TTab[CDataList[area->minikit_id].name_id], 0.0f, HUB_EPISODETITLEY, 1.0f,
+                            HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER,
+                            HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+            sprintf(title, "(%s)", TTab[area->name_id]);
+            if (scale > 0.0f)
+                SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
+                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+        } else if (save->minikit_count) {
+            const f32 scale = HUB_EPISODESUBTITLESIZE;
+            Hub_DrawMiniKitCount(0.0f, HUB_EPISODETITLEY, save->minikit_count, 10, phase);
+            char *name = TTab[area->name_id];
+            if (scale > 0.0f && name)
+                SmartTextEx(name, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
+                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+        } else if (area->area_index != 0xff && area->episode_index != 0xff) {
+            const f32 scale = HUB_EPISODESUBTITLESIZE;
+            const i8 episode = area->episode_index;
+            Hub_DrawMiniKitCount(0.0f, HUB_EPISODETITLEY, 0, 10, phase);
+            sprintf(title, "%s, %s %i", TTab[EDataList[episode].name_id], TTab[tCHAPTER],
+                    static_cast<i8>(ADataList[index].area_index) + 1);
+            if (scale > 0.0f)
+                SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
+                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
+        }
+        MENU *menu = &GameMenu[GameMenuLevel];
+        if (!Game_AreaSave || Game_AreaSave[index].minikit_complete) {
+            NUVEC minimum, maximum;
+            NuSpecialGetBounds(&WORLD->lev_objs[167].special, &minimum, &maximum);
+            const f32 icon_size = ICONSIZE;
+            const f32 text_scale = (icon_size / 0.35f) * 0.95f;
+            const f32 spacing = 1.2f * (icon_size * (maximum.x - minimum.x)) / PANEL3DMULX;
+            f32 x = -spacing * 2.5f;
+            const f32 y = HUB_EPISODETITLEY + (HUB_EPISODETITLEY - HUB_EPISODESUBTITLEY) * 1.5f;
+            f32 grow = 1.0f;
+            if (!TestForController()) {
+                const f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
+                if (elapsed > 4.0f) {
+                    f32 wave = NU_SIN_LUT(static_cast<i32>((NuFmod(elapsed, 4.0f) * 0.25f) * 65536.0f)) - 0.8f;
+                    if (wave < 0.0f)
+                        wave = 0.0f;
+                    grow = wave + 1.0f;
+                }
+            }
+            for (i32 i = 0; i < 6; ++i) {
+                i32 red, green, blue;
+                f32 size = 1.0f;
+                if (i == i_selectminikitepisode) {
+                    size = 1.2f;
+                    if (TestForController()) {
+                        if (menu_pulsate > 0.0f) {
+                            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                                   static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
+                            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                                     static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
+                            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                                    static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
+                        } else {
+                            red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
+                            green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
+                            blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
+                        }
+                        goto hub_episode_colour_ready;
+                    }
+                }
+                // Touch selection and the other entries share the normal menu pulse.
+                if (menu_pulse > 0.0f) {
+                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                           static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                             static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                            static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+                } else {
+                    red = MENUENTRYR;
+                    green = MENUENTRYG;
+                    blue = MENUENTRYB;
+                }
+            hub_episode_colour_ready:
+                size *= grow;
+                f32 opacity = phase;
+                if (!Episode_CountOpenAreas(i, -1, Game_AreaSave))
+                    opacity *= 0.25f;
+                Text3DEx(EpisodeNumerals[i], x, y, 1.0f, text_scale * size, text_scale * size, text_scale * size, 0,
+                         red, green, blue, static_cast<u8>(static_cast<i32>(128.0f * opacity)));
+                const i32 bonus = Episode_FindAreaFromFlags(&EDataList[i], 5, 5);
+                i32 object = 167;
+                if (bonus != -1 && Game_AreaSave &&
+                    (Game_AreaSave[bonus].area_complete ||
+                     static_cast<f32>(static_cast<i32>(ADataList[bonus].challenge_trial_time)) >
+                         Game_AreaSave[bonus].challenge_trial_time))
+                    object = 168;
+                const f32 scale = icon_size * size;
+                DrawPanel3DObject(x, y, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[object].special, 0,
+                                  opacity);
+                menu->item_x[i] = x;
+                menu->item_y[i] = y;
+                menu->item_width[i] = scale * 0.5f;
+                menu->item_height[i] = 0.0f;
+                x += spacing;
+            }
+        } else {
+            for (i32 i = 0; i < 6; ++i)
+                menu->item_width[i] = 0.0f;
+        }
+    }
+    if (hub_buildit != -1 && hub_buildit_time > 0.0f) {
+        i32 total;
+        if (hub_buildit == 999)
+            total = LevBuildIt[0]->anim_object_count * 2;
+        else {
+            GIZMO *gizmo = HubAreaInfo[hub_buildit].bonus_gizmo;
+            if (!gizmo)
+                return;
+            total = static_cast<GIZBUILDIT_s *>(gizmo->object)->anim_object_count;
+        }
+        const i32 count = total > Game.gold_bricks ? Game.gold_bricks : total;
+        Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODESUBTITLEY, hub_buildit_time, count, total);
     }
 }
 
-static void Hub_ResetBuildIts() {
-    i32 buildit_index = 0;
-    for (i32 i = 0; HubAreaInfo[i].area_name != NULL; ++i) {
-        if (HubAreaInfo[i].bonus_gizmo != NULL) {
-            if ((Game.field_0x7c26[2] & (1 << buildit_index)) != 0) {
-                GizBuildIt_SetToEnd(static_cast<GIZBUILDIT_s *>(HubAreaInfo[i].bonus_gizmo->object));
+void Hub_ResetPanel() {
+    hub_episode = -1;
+    hub_episode_time = 0.0f;
+    hub_area = -1;
+    hub_area_time = 0.0f;
+    hub_buildit = -1;
+    hub_buildit_time = 0.0f;
+    hub_minikitarea = -1;
+    hub_minikitarea_time = 0.0f;
+}
+
+void Hub_Init(WORLDINFO_s *world) {
+    static NUVEC arcadelightpos = {-22.49f, 0.79f, -49.9975f};
+
+    Store_RestorePurchases();
+    Hub_LowEnd_IconsInsteadOfModels = 0;
+
+    if (BOTHTRUEJEDIGOLDBRICKS != 0) {
+        HUB_AREAPANELX = HUB_AREAPANELX_TWOTRUEJEDIGOLDBRICKS;
+    } else if (Store_IsPackUnlocked(8) == 0) {
+        HUB_AREAPANELX = HUB_AREAPANELX_1TRUEJEDIGB_NOCHALLENGE;
+    } else {
+        HUB_AREAPANELX = HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK;
+    }
+
+    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
+        info->door = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->door_name));
+        info->bonus_gizmo = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->bonus_gizmo_name));
+        info->bonus_gizmo_2 = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->bonus_gizmo_name_2));
+        info->area = Area_FindByName(const_cast<char *>(info->area_name), NULL);
+        Hub_FindSpecial(world, &info->lock, info->lock_name);
+    }
+
+    for (HUBEPISODEINFO_s *info = HubEpisodeInfo; info->episode != -1; ++info) {
+        info->data = info->episode >= 0 && info->episode < EPISODECOUNT ? &EDataList[info->episode] : NULL;
+        info->door = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->door_name));
+        Hub_FindSpecial(world, &info->lock_on, info->lock_on_name);
+        Hub_FindSpecial(world, &info->lock_off, info->lock_off_name);
+    }
+
+    hub_minikitviewer_gizmo =
+        GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, const_cast<char *>("conveyor_test"));
+    hub_minikitviewer_camspl = NuSplineFind(world->current_gscn, const_cast<char *>("mini_cam_e1_1"));
+    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, const_cast<char *>("network_door"));
+    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, const_cast<char *>("DE7"));
+
+    static const char *const lock_names[] = {
+        "lock_4_off", "lock_4_on",    "lock_5_off",  "lock_5_on",    "lock_6_off",  "lock_6_on",    "lock_b_off",
+        "lock_b_on",  "lock_4_7_off", "lock_4_7_on", "lock_5_7_off", "lock_5_7_on", "lock_6_7_off", "lock_6_7_on",
+    };
+    for (i32 i = 0; i < 14; ++i) {
+        Hub_FindSpecial(world, &LevHSpecial[i], lock_names[i]);
+    }
+
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[15], const_cast<char *>("holo"), 1) != 0) {
+        NuSpecialSetVisibility(&LevHSpecial[15], 0);
+    }
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[16], const_cast<char *>("lock_7_on"), 1) != 0 &&
+        Store_IsPackUnlocked(6) == 0) {
+        NuSpecialSetVisibility(&LevHSpecial[16], 0);
+    }
+    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[20], const_cast<char *>("ps2_only_"), 32, 0);
+    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[52], const_cast<char *>("psp_only_"), 32, 0);
+    Hub_FindSpecial(world, &LevHSpecial[84], "fake_wall");
+
+    Hub_ResetPanel();
+    InitShop(world);
+    Hub_LockUnlockDoors(world);
+    Hub_InitMiniKits(world);
+    LevTime[0] = 3.0f;
+    LevTime[1] = 3.0f;
+    Hub_HologramAlpha = 0.0f;
+    Hub_HologramTargetAlpha = 0.0f;
+    Customiser_Init(CharacterCustomiser);
+    if (Hub_InitAIFn != NULL) {
+        Hub_InitAIFn(world);
+    }
+
+    hub_startoutsidebonusdoor_area = -1;
+    CutScenePlayer_Reset();
+    LevBuildIt[0] = GizBuildIt_Find(world, const_cast<char *>("fountain"));
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>("fountain"));
+    if (LevBuildIt[0] == NULL || LevGizmo[0] == NULL) {
+        LevBuildIt[0] = NULL;
+        LevGizmo[0] = NULL;
+    }
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>("garageLever"));
+    Arcade = 0;
+    NuMtxSetRotationZ(&LevMtx, 0x4000);
+    NuMtxRotateY(&LevMtx, 0xf600);
+    NuMtxTranslate(&LevMtx, &arcadelightpos);
+    Store_HubInitFloorTargets(world);
+    hub_custodians_finished_loading = 0;
+}
+
+void CutScenePlayer_DrawGrid(COLLECTION_s *collection, i16 *ids, float x, float y, i32 selected, float alpha) {
+    if (FadeSys.fade > 0.0f || !WORLD->lev_objs[167].active)
+        return;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
+    const i32 rows = collection->count_y / collection->count_x;
+    const f32 scale = ICONSIZE * 1.2f;
+    NUVEC minimum, maximum;
+    NuSpecialGetBounds(&WORLD->lev_objs[167].special, &minimum, &maximum);
+    const f32 dx = (maximum.x - minimum.x) * scale / PANEL3DMULX;
+    const f32 dy = -(maximum.y - minimum.y) * scale / PANEL3DMULY;
+    y -= rows * dy * 0.5f;
+    const f32 first_x = x - (collection->count_x - 1) * dx * 0.5f;
+    CUTSCENEPLAYER_s *player = static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available());
+    MENU *menu = &GameMenu[GameMenuLevel];
+    i32 previous_area = -1, colour = -1;
+    static const u8 colours[8][3] = {{255, 63, 0},  {255, 127, 0},  {255, 223, 0},  {0, 255, 63},
+                                     {0, 127, 255}, {191, 31, 255}, {255, 31, 191}, {255, 255, 255}};
+    for (i32 row = 0; row <= rows; ++row, y += dy) {
+        x = first_x;
+        for (i32 column = 0; column < collection->count_x; ++column, x += dx) {
+            const i32 i = row * collection->count_x + column;
+            if (i >= collection->count_y)
+                continue;
+            COLLECTID *item = &collection->list[i];
+            item->grid_y = y;
+            item->grid_x = x;
+            if (__builtin_expect(alpha <= 0.0f, 0))
+                continue;
+            i32 object = i == selected ? (menu_flash ? 168 : 166) : 167;
+            f32 opacity = CutScenePlayer_CanStart(ids[i]) ? alpha : 0.375f * alpha;
+            DrawPanel3DObject(x, y, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[object].special, 0, opacity);
+            menu->item_x[i] = x;
+            menu->item_y[i] = y;
+            menu->item_width[i] = scale * 0.5f;
+            menu->item_height[i] = 0.0f;
+            char text[32];
+            sprintf(text, "%i", i + 1);
+            i32 area = LDataList[player->clips[ids[i]].level_id].area_index;
+            if (__builtin_expect(area != previous_area, 1)) {
+                previous_area = area;
+                if (++colour > 7)
+                    colour = 7;
             }
-            ++buildit_index;
+            const f32 text_scale = scale * 3.5f;
+            Text3DEx(text, x, y, 1.0f, text_scale * 0.925f, text_scale, text_scale, 0, colours[colour][0],
+                     colours[colour][1], colours[colour][2], static_cast<u8>(static_cast<i32>(opacity * 128.0f)));
         }
     }
-    if ((Game.field_0x7c26[2] & 0x80) != 0 && LevGizmo[0] != NULL) {
-        GizBuildIt_SetToEnd(static_cast<GIZBUILDIT_s *>(LevGizmo[0]->object));
+}
+
+// The original private draw helper shares EpisodeNumerals with the hub menus.
+static void DrawEpisodesMenu(i32 selected, f32 alpha) {
+    const i32 menu_level = GameMenuLevel;
+    MENU *menu = &GameMenu[menu_level];
+    if (episodesmode != 0) {
+        if (episodesmode == 1) {
+            if (hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1)
+                goto draw_clips;
+        } else if (episodesmode == 2) {
+            goto draw_clips;
+        } else if (episodesmode == 3) {
+            goto draw_play;
+        } else {
+            return;
+        }
     }
+    {
+        NUVEC minimum, maximum;
+        NuSpecialGetBounds(&WORLD->lev_objs[167].special, &minimum, &maximum);
+        f32 dx = (maximum.x - minimum.x) * 0.35f;
+        f32 dy = -(maximum.y - minimum.y) * 0.35f;
+        dx /= PANEL3DMULX;
+        dy /= PANEL3DMULY;
+        f32 y = -dy * 0.5f;
+        const f32 first_x = -dx;
+        for (i32 row = 0; row < 2; ++row, y += dy) {
+            f32 x = first_x;
+            for (i32 column = 0; column < 3; ++column, x += dx) {
+                const i32 episode = row * 3 + column;
+                u32 red, green, blue;
+                if (selected && episode == i_episodes && TestForController()) {
+                    if (menu_pulsate > 0.0f) {
+                        red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                               static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
+                        blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                                static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
+                        green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                                 static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
+                    } else {
+                        red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
+                        green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
+                        blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
+                    }
+                } else if (menu_pulse > 0.0f) {
+                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                           static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                             static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                            static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+                } else {
+                    red = MENUENTRYR;
+                    green = MENUENTRYG;
+                    blue = MENUENTRYB;
+                }
+                f32 opacity = 1.0f;
+                if (Game_AreaSave != NULL && Game_AreaSave[EDataList[episode].area_ids[0]].complete == 0)
+                    opacity = 0.375f;
+                opacity = opacity * alpha;
+                if (episodesmode != 1 && episodestime < episodesduration)
+                    opacity = opacity * (episodestime / episodesduration);
+                Text3DEx(EpisodeNumerals[episode], x, y, 1.0f, 0.95f, 0.95f, 0.95f, 0, red, green, blue,
+                         static_cast<i32>(128.0f * opacity));
+                DrawPanel3DObject(x, y, 1.0f, 0.35f, 0.35f, 0.35f, 0, 0, 0, &WORLD->lev_objs[167].special, 0, opacity);
+                menu->item_x[episode] = x;
+                menu->item_y[episode] = y;
+                menu->item_width[episode] = 0.175f;
+                menu->item_height[episode] = 0.0f;
+            }
+        }
+        memset(GameMenu[menu_level].item_width + 6, 0, 394 * sizeof(f32));
+        memset(GameMenu[menu_level].item_height + 6, 0, 394 * sizeof(f32));
+        return;
+    }
+draw_clips: {
+    COLLECTION_s collection = CharacterCollection;
+    i16 clips[128];
+    const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
+    collection.count_y = CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
+    collection.field_10 = 1.0f;
+    collection.count_x = 7;
+    if (episodesmode != 1 && episodestime < episodesduration)
+        alpha = (episodestime / episodesduration) * alpha;
+    CutScenePlayer_DrawGrid(&collection, clips, 0.0f, 0.05f, i_clip[i_episodes], alpha);
+    return;
+}
+draw_play: {
+    if (episodestime < episodesduration)
+        alpha = (episodestime / episodesduration) * alpha;
+    const f32 time = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
+    alpha = (0.15f * NU_SIN_LUT(static_cast<i32>((time + time) * 65536.0f)) + 0.85f) * alpha;
+    const u8 text_alpha = static_cast<i32>(128.0f * alpha);
+    Text3DEx(TTab[tPLAY], 0.0f, -0.15f, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+             0, 255, 255, 255, text_alpha);
+    DrawPanel3DObject(0.0f, 0.15f, 1.0f, 0.35f, 0.35f, 0.35f, 0, 0, 0, &WORLD->lev_objs[167].special, 0, alpha);
+    menu->item_x[0] = 0.0f;
+    menu->item_y[0] = 0.15f;
+    menu->item_width[0] = 0.175f;
+    menu->item_height[0] = 0.0f;
+    const f32 text_scale = 0.35f * 3.0f;
+    Text3DEx(">", 0.0105f, 0.15f, 1.0f, text_scale * 1.5f, text_scale, text_scale, 0, 255, 255, 255, text_alpha);
+    memset(GameMenu[menu_level].item_width + 1, 0, 399 * sizeof(f32));
+    memset(GameMenu[menu_level].item_height + 1, 0, 399 * sizeof(f32));
+}
+}
+
+void MenuInitEpisodes(MENU_s *) {
+    lastepisodesmode = -1;
+    episodestime = 0.0f;
+    episodesmode = 0;
+    episodesduration = 0.6f;
+    if (Game_AreaSave != NULL && Game_AreaSave[EDataList[i_episodes].area_ids[0]].complete == 0) {
+        i_episodes = 0;
+    }
+    if (hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1) {
+        episodesmode = 2;
+        if (HubStartDoor == NULL) {
+            i_episodes = LDataList[hub_new_level].episode_index;
+        }
+    } else if (HubStartDoor != NULL) {
+        episodesmode = 2;
+    }
+}
+
+void MenuUpdateEpisodes(MENU_s *) {
+    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f)
+        return;
+    const f32 elapsed = FRAMETIME;
+    episodestime = elapsed + episodestime;
+    MENU *menu = &GameMenu[GameMenuLevel];
+    i16 clips[128];
+    switch (episodesmode) {
+        case 0: {
+            i32 up = 0, down = 0, left = 0, right = 0, confirm = 0, cancel = 0;
+            for (i32 player = 0; player < 2; ++player) {
+                if (__builtin_expect(!MenuPacket.active_player[player], 0))
+                    continue;
+                const u32 pressed = GamePad[player].buttons_pressed;
+                if (__builtin_expect(!!(pressed & GAMEPAD_MENUSELECT), 0)) {
+                    confirm = 1;
+                    break;
+                }
+                if (pressed & GAMEPAD_MENUCANCEL) {
+                    cancel = 1;
+                    break;
+                }
+                const u32 directions = pressed | GamePad[player].left_directions;
+                if (directions & GAMEPAD_DUP)
+                    up = 1;
+                else if (directions & GAMEPAD_DDOWN)
+                    down = 1;
+                else if (directions & GAMEPAD_DLEFT)
+                    left = 1;
+                else if (directions & GAMEPAD_DRIGHT)
+                    right = 1;
+            }
+            if (menu->input_activity) {
+                if (menu->confirm_pressed) {
+                    if (menu->selected_item == i_episodes)
+                        confirm = 1;
+                    else
+                        i_episodes = menu->selected_item;
+                }
+                if (__builtin_expect(!!(menu->cancel_pressed), 0))
+                    cancel = 1;
+            }
+            if (confirm) {
+                if (Game_AreaSave != NULL && Game_AreaSave[EDataList[i_episodes].area_ids[0]].complete) {
+                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                    episodestime = 0.0f;
+                    lastepisodesmode = episodesmode;
+                    episodesmode = 2;
+                    episodesduration = 0.6f;
+                } else {
+                    GameAudio_PlaySfx(0x32, NULL, 0, 0);
+                }
+            } else if (cancel) {
+                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                episodestime = 0.0f;
+                lastepisodesmode = episodesmode;
+                episodesmode = 1;
+                episodesduration = 0.6f;
+            } else {
+                const i8 previous = i_episodes;
+                if (up && previous >= 3)
+                    i_episodes -= 3;
+                else if (down && previous < 3)
+                    i_episodes += 3;
+                else if (left && previous % 3 > 0)
+                    --i_episodes;
+                else if (right && previous % 3 != 2)
+                    ++i_episodes;
+                if (previous != i_episodes)
+                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+            }
+            break;
+        }
+        case 1:
+            episodestime = episodestime + elapsed;
+            if (episodestime < episodesduration)
+                return;
+            WipeBackToHub();
+            break;
+        case 2: {
+            const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
+            const u16 count = CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
+            if (__builtin_expect(i_clip[i_episodes] >= count, 1))
+                i_clip[i_episodes] = count - 1;
+            const i32 previous = i_clip[i_episodes];
+            bool confirm = false, cancel = false;
+            if (MenuPacket.active_player[0]) {
+                if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT) {
+                    confirm = true;
+                } else if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL) {
+                    cancel = true;
+                } else {
+                    const u32 held = GamePad[0].buttons_held | GamePad[0].buttons_released;
+                    const u32 pressed = GamePad[0].buttons_pressed | GamePad[0].left_directions;
+                    i32 up = pressed & GAMEPAD_DUP, down = pressed & GAMEPAD_DDOWN;
+                    i32 left = pressed & GAMEPAD_DLEFT, right = pressed & GAMEPAD_DRIGHT;
+                    i32 up_held = held & GAMEPAD_DUP, down_held = held & GAMEPAD_DDOWN;
+                    i32 left_held = held & GAMEPAD_DLEFT, right_held = held & GAMEPAD_DRIGHT;
+                    if (down && up)
+                        down = up = 0;
+                    if (right && left)
+                        right = left = 0;
+                    if (down_held && up_held)
+                        down_held = up_held = 0;
+                    if (right_held && left_held)
+                        right_held = left_held = 0;
+                    MenuRepeat(&up_held, &up, uprepeattime, uprepeatcount, 0.1f, FRAMETIME);
+                    MenuRepeat(&down_held, &down, downrepeattime, downrepeatcount, 0.1f, FRAMETIME);
+                    MenuRepeat(&left_held, &left, leftrepeattime, leftrepeatcount, 0.1f, FRAMETIME);
+                    MenuRepeat(&right_held, &right, rightrepeattime, rightrepeatcount, 0.1f, FRAMETIME);
+                    if (__builtin_expect(!up, 0)) {
+                        if (down) {
+                            i32 next = previous + 7;
+                            if (next >= count) {
+                                const i32 rows = count / 7 + 1;
+                                next = (next < rows * 7 ? previous + 14 : next) - rows * 7;
+                            }
+                            i_clip[i_episodes] = next;
+                        } else if (__builtin_expect(!!(left), 0)) {
+                            i32 column = previous % 7 - 1;
+                            if (column < 0)
+                                column += 7;
+                            i32 next = column + previous / 7 * 7;
+                            if (next >= count)
+                                next = count - 1;
+                            i_clip[i_episodes] = next;
+                        } else if (right) {
+                            i32 column = previous % 7 + 1;
+                            if (column == 7)
+                                column -= 7;
+                            const i32 row = previous / 7 * 7;
+                            const i32 next = row + column;
+                            if (next < count) {
+                                i_clip[i_episodes] = next;
+                            } else {
+                                i_clip[i_episodes] = row;
+                            }
+                        }
+                    } else {
+                        i32 next = previous - 7;
+                        if (__builtin_expect(next < 0, 0)) {
+                            next += (count / 7 + 1) * 7;
+                            if (next >= count)
+                                next -= 7;
+                        }
+                        i_clip[i_episodes] = next;
+                    }
+                }
+            }
+            if (menu->input_activity && menu->confirm_pressed) {
+                if (__builtin_expect(menu->selected_item == i_clip[i_episodes], 0))
+                    confirm = true;
+                else
+                    i_clip[i_episodes] = menu->selected_item;
+            }
+            if (confirm) {
+                if (CutScenePlayer_CanStart(clips[i_clip[i_episodes]])) {
+                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                    episodestime = 0.0f;
+                    lastepisodesmode = episodesmode;
+                    episodesmode = 3;
+                    episodesduration = 0.6f;
+                } else {
+                    GameAudio_PlaySfx(0x32, NULL, 0, 0);
+                }
+            } else if (menu->cancel_pressed || cancel) {
+                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                episodestime = 0.0f;
+                lastepisodesmode = episodesmode;
+                episodesmode = 0;
+                episodesduration = 0.6f;
+                if (__builtin_expect(hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1, 0))
+                    episodesmode = 1;
+            } else if (previous != i_clip[i_episodes]) {
+                GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+            }
+            break;
+        }
+        case 3: {
+            const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
+            CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
+            i32 confirm = 0, cancel = 0;
+            if (MenuPacket.active_player[0]) {
+                if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT)
+                    confirm = 1;
+                else if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL)
+                    cancel = 1;
+            }
+            if (confirm || menu->confirm_pressed) {
+                const i16 clip = clips[i_clip[i_episodes]];
+                GameAudio_PlaySfx(0x30, NULL, 0, 0);
+                CutScenePlayer_Start(clip, hub_new_level);
+                hub_goto_clipsmenu_episode = 99;
+            } else if (menu->cancel_pressed || cancel) {
+                GameAudio_PlaySfx(0x31, NULL, 0, 0);
+                lastepisodesmode = episodesmode;
+                episodestime = 0.0f;
+                episodesmode = 2;
+                episodesduration = 0.6f;
+            }
+            break;
+        }
+    }
+}
+
+void MenuDrawEpisodes(MENU_s *) {
+    if (FadeSys.fade > 0.0f)
+        return;
+    f32 alpha = 1.0f;
+    if (episodesmode == 1) {
+        if (!(episodestime < 0.5f))
+            return;
+        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((episodestime + episodestime) * 16384.0f));
+        if (!(alpha > 0.0f))
+            return;
+    }
+    Hub_DrawAreaStats(alpha, last_hub_area, 18);
+    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
+    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
+    if (MainRenderTime <= 0.0f) {
+        DrawEpisodesMenu(1, alpha);
+    } else if (MainRenderTime < 1.0f) {
+        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
+        DrawEpisodesMenu(0, menu_alpha * alpha);
+    }
+    if (MainRenderTime <= 0.0f && alpha == 1.0f)
+        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
+                              MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
+}
+
+void MenuInitClips(MENU_s *) {
+}
+
+void MenuUpdateClips(MENU_s *) {
+}
+
+void MenuDrawClips(MENU_s *) {
+}
+
+void MenuInitSelectMode(MENU_s *) {
+    const i32 area = LDataList[hub_new_level].area_index;
+    if (LOSTTEMPLE_ADATA != NULL && LOSTTEMPLE_ADATA->index == area) {
+        hub_selectmode = 0;
+    } else {
+        bool unlocked = FreePlayUnlocked();
+        if (unlocked != 1 && area != -1)
+            unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
+        if (unlocked && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0 && Game.area_save[area].area_complete != 0)
+            hub_selectmode = 1;
+        else
+            hub_selectmode = 0;
+    }
+    selectmodemode = 0;
+}
+
+void MenuUpdateSelectMode(MENU_s *) {
+    Hub_UpdateSelectMode();
+}
+
+void MenuDrawSelectMode(MENU_s *) {
+    if (__builtin_expect(MenuStopDraw, 1))
+        return;
+    if (__builtin_expect(selectmodemode >= 1 && selectmodemode <= 3, 0)) {
+        if (FadeSys.fade > 0.0f)
+            return;
+    } else if (selectmodemode == 4) {
+        if (pFadeInfo->fade > 0.0f)
+            return;
+    }
+    f32 alpha = 1.0f;
+    switch (selectmodemode) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            if (!(selectmodetime < 0.5f))
+                return;
+            alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((selectmodetime / selectmodeduration) * 16384.0f));
+            if (!(alpha > 0.0f))
+                return;
+            break;
+    }
+    AREADATA *area = &ADataList[last_hub_area];
+    if (area->flags & 0x100)
+        Hub_DrawSuperBonusStats(area, alpha);
+    else if (area->flags & 4)
+        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
+    else
+        Hub_DrawAreaStats(alpha, last_hub_area, hub_selectmode);
+
+    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
+    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
+    if (MainRenderTime <= 0.0f) {
+        Hub_DrawSelectModeMenu(1, alpha);
+    } else if (MainRenderTime < 1.0f) {
+        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
+        Hub_DrawSelectModeMenu(0, menu_alpha * alpha);
+    }
+    if (MainRenderTime > 0.0f)
+        return;
+    if (selectmodemode == 0 && alpha == 1.0f)
+        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
+                              MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
+}
+
+void MenuInitBonusMode(MENU_s *) {
+    bonusmodemode = 0;
+    hub_bonusmode = 0;
+    hub_bonusarea = LDataList[hub_new_level].area_index;
+    hub_bonusepisode = static_cast<i8>(ADataList[hub_bonusarea].episode_index);
+    bonusmodearcade = SENATE_ADATA != NULL && hub_bonusarea == SENATE_ADATA->index;
+}
+
+void MenuUpdateBonusMode(MENU_s *) {
+    MENU *menu = &GameMenu[GameMenuLevel];
+    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f)
+        return;
+
+    const f32 blip_frame_time = *reinterpret_cast<volatile const f32 *>(&FRAMETIME);
+    if (BlipL[0] > 0.0f)
+        BlipL[0] -= blip_frame_time;
+    if (BlipR[0] > 0.0f)
+        BlipR[0] -= blip_frame_time;
+    if (BlipU[0] > 0.0f)
+        BlipU[0] -= blip_frame_time;
+    if (BlipD[0] > 0.0f)
+        BlipD[0] -= blip_frame_time;
+    i32 player_up[2] = {}, player_down[2] = {};
+    if (BlipL[1] > 0.0f)
+        BlipL[1] -= blip_frame_time;
+    if (BlipR[1] > 0.0f)
+        BlipR[1] -= blip_frame_time;
+    if (BlipU[1] > 0.0f)
+        BlipU[1] -= blip_frame_time;
+    if (BlipD[1] > 0.0f)
+        BlipD[1] -= blip_frame_time;
+    i32 player_left[2] = {}, player_right[2] = {};
+
+    switch (bonusmodemode) {
+        case 1:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime < bonusmodeduration)
+                return;
+            InitSuperStory(SuperStoryEpisode);
+            NewLData = &LDataList[hub_new_level];
+            FadeSys.fade = 1.0f;
+            FinishLoop_On = 0;
+            loadareacharacters_no_backdrop_reset = 1;
+            return;
+        case 2:
+        case 3:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime < bonusmodeduration)
+                return;
+            MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
+                                  LDataList[hub_new_level].area_index, -1, 1);
+            makeplayerlist_freeplay = 2;
+            NextArea_FreePlay = 1;
+            FreePlay = 1;
+            NewLData = &LDataList[hub_new_level];
+            FadeSys.fade = 1.0f;
+            FinishLoop_On = 0;
+            loadareacharacters_no_backdrop_reset = 1;
+            return;
+        case 4:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime >= bonusmodeduration)
+                WipeBackToHub();
+            return;
+        case 0:
+            break;
+        default:
+            return;
+    }
+
+    i32 confirm = 0, cancel = 0, up = 0, down = 0, left = 0, right = 0;
+    for (i32 i = 0; i < 2; ++i) {
+        if (!MenuPacket.active_player[i])
+            continue;
+        const u32 pressed = GamePad[i].buttons_pressed;
+        if (pressed & GAMEPAD_MENUSELECT) {
+            confirm = 1;
+            break;
+        } else if (pressed & GAMEPAD_MENUCANCEL) {
+            cancel = 1;
+            break;
+        } else {
+            const u32 direction = pressed | GamePad[i].left_directions;
+            if (direction & GAMEPAD_DUP)
+                up = player_up[i] = 1;
+            else if (direction & GAMEPAD_DDOWN)
+                down = player_down[i] = 1;
+            else if (direction & GAMEPAD_DLEFT)
+                left = player_left[i] = 1;
+            else if (direction & GAMEPAD_DRIGHT)
+                right = player_right[i] = 1;
+        }
+    }
+
+    if (menu->input_activity) {
+        if (!bonusmodearcade) {
+            if (menu->confirm_pressed) {
+                hub_bonusmode = menu->selected_item;
+                confirm = 1;
+            }
+        } else {
+            const i32 item = menu->selected_item;
+            const u8 choices = reinterpret_cast<u8 *>(&ArcadeItem)[item * 8 + 5];
+            if (menu->left_pressed && choices >= 2)
+                right = 1;
+            if (menu->right_pressed && choices >= 2)
+                left = 1;
+            if (menu->confirm_pressed) {
+                if (choices == 1) {
+                    hub_bonusmode = item;
+                    confirm = 1;
+                } else if (item == hub_bonusmode) {
+                    right = 1;
+                } else {
+                    hub_bonusmode = item;
+                    menu->confirm_pressed = 0;
+                }
+            }
+        }
+        if (menu->cancel_pressed)
+            cancel = 1;
+    }
+
+    if (player_up[0])
+        BlipU[0] = 0.1f;
+    if (player_down[0])
+        BlipD[0] = 0.1f;
+    if (player_left[0])
+        BlipL[0] = 0.1f;
+    if (player_right[0])
+        BlipR[0] = 0.1f;
+    if (player_up[1])
+        BlipU[1] = 0.1f;
+    if (player_down[1])
+        BlipD[1] = 0.1f;
+    if (player_left[1])
+        BlipL[1] = 0.1f;
+    if (player_right[1])
+        BlipR[1] = 0.1f;
+
+    if (bonusmodearcade) {
+        if (confirm) {
+            if (hub_bonusmode != 2)
+                return;
+            AREADATA *area = *ArcadeLevel[ArcadeItem.level].area;
+            if (area == NULL) {
+                GameAudio_PlaySfx(0x32, NULL, 0, 0);
+                return;
+            }
+            GameAudio_PlaySfx(0x30, NULL, 0, 0);
+            hub_freeplaysource = 1;
+            hub_new_level = area->levels[0];
+            Hub_InitFreePlaySelect(area->index, -1, -1);
+            NewMenu(17, -1, -1);
+            return;
+        }
+    } else if (confirm) {
+        GameAudio_PlaySfx(0x30, NULL, 0, 0);
+        if (hub_new_level == -1)
+            return;
+        const i8 area = LDataList[hub_new_level].area_index;
+        if (area == -1 || (ADataList[area].flags & 0x100) == 0)
+            return;
+        hub_freeplaysource = 1;
+        Hub_InitFreePlaySelect(area, -1, -1);
+        NewMenu(17, -1, -1);
+        return;
+    }
+
+    if (cancel) {
+        GameAudio_PlaySfx(0x31, NULL, 0, 0);
+        bonusmodemode = 4;
+        bonusmodetime = 0.0f;
+        bonusmodeduration = 0.6f;
+        return;
+    }
+
+    if (!bonusmodearcade) {
+        if (hub_bonusepisode == -1 || !up || hub_bonusmode <= 0)
+            return;
+        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+        --hub_bonusmode;
+        return;
+    }
+
+    if (up) {
+        if (hub_bonusmode <= 0)
+            return;
+        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+        --hub_bonusmode;
+        return;
+    }
+    if (down) {
+        if (hub_bonusmode >= 2)
+            return;
+        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+        ++hub_bonusmode;
+        return;
+    }
+    i8 *entries = reinterpret_cast<i8 *>(&ArcadeItem);
+    const i32 count = static_cast<u8>(entries[hub_bonusmode * 8 + 5]);
+    if (count > 1) {
+        if (!left) {
+            if (right) {
+                GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+                if (++entries[hub_bonusmode * 8 + 4] >= count)
+                    entries[hub_bonusmode * 8 + 4] = 0;
+            }
+        } else {
+            GameAudio_PlaySfx(0x2f, NULL, 0, 0);
+            if (--entries[hub_bonusmode * 8 + 4] < 0)
+                entries[hub_bonusmode * 8 + 4] = count - 1;
+        }
+    }
+}
+
+void MenuDrawBonusMode(MENU_s *) {
+    if (MenuStopDraw)
+        return;
+    if (bonusmodemode >= 1 && bonusmodemode <= 4 && FadeSys.fade > 0.0f)
+        return;
+
+    f32 alpha = 1.0f;
+    if (bonusmodemode >= 1 && bonusmodemode <= 4) {
+        if (!(bonusmodetime < 0.5f))
+            return;
+        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((bonusmodetime / bonusmodeduration) * 16384.0f));
+        if (!(alpha > 0.0f))
+            return;
+    }
+
+    if (bonusmodearcade)
+        Hub_DrawArcadeStats(alpha);
+    else if (hub_bonusepisode != -1)
+        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
+    else
+        Hub_DrawSuperBonusStats(hub_bonusarea == -1 ? NULL : &ADataList[hub_bonusarea], alpha);
+
+    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
+    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
+
+    if (MainRenderTime <= 0.0f) {
+        Hub_DrawBonusModeMenu(1, alpha);
+    } else if (MainRenderTime < 1.0f) {
+        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
+        Hub_DrawBonusModeMenu(0, menu_alpha * alpha);
+    }
+
+    if (MainRenderTime > 0.0f)
+        return;
+    if (bonusmodemode == 0 && alpha == 1.0f) {
+        f32 prompt_alpha = 0.333f;
+        if (bonusmodearcade && hub_bonusmode == 2 && *ArcadeLevel[ArcadeItem.level].area != NULL)
+            prompt_alpha = alpha;
+        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, prompt_alpha, -1, tBACK, -1, -1,
+                              MenuPacket.active_player[1], tSELECT, prompt_alpha, -1, tBACK, -1, -1);
+    }
+}
+
+void MenuInitFreePlay(MENU_s *menu) {
+    menu->first_row = 0;
+    menu->last_row = 2;
+    menu->selected_row = 0;
+    menu->selected_item = 0;
+}
+
+void MenuUpdateFreePlay(MENU_s *) {
+    Hub_UpdateFreePlaySelect();
+}
+
+void MenuDrawFreePlay(MENU_s *) {
+    if (MenuStopDraw == 0) {
+        Hub_DrawFreePlaySelect();
+    }
+}
+
+void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
+    const i32 index = (*level)->area_index;
+    if (index == -1) {
+        return;
+    }
+
+    const i32 area = last_hub_area;
+    if (area != index) {
+        *level = NULL;
+        return;
+    }
+
+    MakeMenuPacket();
+    hub_new_level = ADataList[area].levels[0];
+    *level = NULL;
+    hub_episode_time = 0.0f;
+    hub_area_time = 0.0f;
+    MainRenderTargetTime = 0.0f;
+    NeedScreenGrab(1);
+    BackDrop_ResetColours();
+
+    i32 menu_id;
+    if (area != -1 && (ADataList[area].flags & AREAFLAG_BONUS_AREA) != 0) {
+        menu_id = ADataList[area].episode_index != 0xff ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_BONUS;
+    } else if (VEHICLES_ADATA != NULL && area == VEHICLES_ADATA->index) {
+        // The original sizes this list for 340 vehicle ids.
+        i16 vehicle_ids[340];
+        i32 vehicle_count;
+        Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED, HUB_VEHICLE_COLLECTION_REQUIRED,
+                             vehicle_ids, &vehicle_count, NULL, 0);
+        menu_id = HUB_DOOR_MENU_VEHICLE;
+        hub_freeplaysource = -1;
+        Hub_InitFreePlaySelect(area, vehicle_count, -1);
+    } else {
+        menu_id = HUB_DOOR_MENU_STANDARD;
+        if (LOSTTEMPLE_ADATA != NULL) {
+            menu_id = area == LOSTTEMPLE_ADATA->index ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_STANDARD;
+        }
+    }
+
+    GameAudio_PlaySfx(HUB_AUDIO_EVENT_OPEN_DOOR_MENU, NULL, 0, 0);
+    Hint_CancelCurrent();
+    NewMenu(menu_id, -1, -1);
 }
 
 void Hub_Update(WORLDINFO_s *world) {
@@ -1091,823 +5012,6 @@ void Hub_Update(WORLDINFO_s *world) {
     ResetForceBack();
 }
 
-void Hub_DrawPanel(WORLDINFO_s *) {
-    char text[256];
-    char title[128];
-    if (newgamecam) {
-        f32 alpha = 0.0f;
-        if (newgamecamtime < 2.0f)
-            alpha = 0.0f;
-        else if (newgamecamtime < 2.5f)
-            alpha = (newgamecamtime - 2.0f) * 2.0f;
-        else if (newgamecamtime < 7.5f)
-            alpha = 1.0f;
-        else if (newgamecamtime < 8.0f)
-            alpha = 1.0f - (newgamecamtime - 7.5f) * 2.0f;
-        if (alpha > 0.0f)
-            SmartTextEx(TTab[tMAP], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, 0.8f, 0.8f, 0.8f, 0,
-                        HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, static_cast<i32>(alpha * 128.0f));
-    }
-    DrawShopPanel();
-
-    if (hub_episode != -1 && hub_episode_time > 0.0f) {
-        const i32 alpha = static_cast<i32>(128.0f * hub_episode_time);
-        if (hub_episode == 6) {
-            i32 red_total = 0, red_count = 0, free_total = 0, free_count = 0;
-            i32 story_total = 0, story_count = 0, buildup_total = 0, buildup_count = 0;
-            i32 char_total = 0, char_count = 0, mini_total = 0, mini_count = 0;
-            i32 both_true_jedi_bricks;
-            i32 i = 0;
-            for (; i < EPISODECOUNT; ++i) {
-                Episode_CountOpenAreas(i, -1, Game.area_save);
-                mini_count += EpMiniKitCount;
-                mini_total += EpMiniKitTotal;
-                char_count += EpCharKitCount;
-                char_total += EpCharKitTotal;
-                buildup_count += EpBuildUpCount;
-                buildup_total += EpBuildUpTotal;
-                both_true_jedi_bricks = BOTHTRUEJEDIGOLDBRICKS;
-                if (__builtin_expect(!!(both_true_jedi_bricks), 1)) {
-                    story_total += EpStoryBuildUpTotal;
-                    story_count += EpStoryBuildUpCount;
-                    free_count += EpFreePlayBuildUpCount;
-                    free_total += EpFreePlayBuildUpTotal;
-                }
-                red_count += EpRedBrickCount;
-                red_total += EpRedBrickTotal;
-            }
-            if (i == 0)
-                both_true_jedi_bricks = BOTHTRUEJEDIGOLDBRICKS;
-            stats_xscale = 0.8f;
-            if (both_true_jedi_bricks) {
-                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
-                sprintf(text, "%i/%i", story_count, story_total);
-                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], 0.235f + HUB_EPISODESUBTITLEY, 1.0f, 0.45f, 0.45f, 0.45f,
-                            0, 255, 255, 255, 0.4f, 1, NULL, 0,
-                            static_cast<i32>(static_cast<f32>(TJTYPEA) * hub_episode_time));
-                DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
-                sprintf(text, "%i/%i", free_count, free_total);
-                Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], 0.235f + HUB_EPISODESUBTITLEY, 1.0f, 0.45f, 0.45f,
-                            0.45f, 0, 255, 255, 255, 0.4f, 1, NULL, 0,
-                            static_cast<i32>(static_cast<f32>(TJTYPEA) * hub_episode_time));
-            } else {
-                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
-                sprintf(text, "%i/%i", buildup_count, buildup_total);
-                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODESUBTITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-            }
-            Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODESUBTITLEY, mini_count, mini_total, hub_episode_time);
-            Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODESUBTITLEY, hub_episode_time, red_count,
-                                   red_total);
-            Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODESUBTITLEY, hub_episode_time, Game.gold_bricks,
-                                   GOLDBRICKPOINTS);
-            hub_drawminikitcount_charkit = 1;
-            Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODESUBTITLEY, char_count, char_total, hub_episode_time);
-            stats_xscale = 1.0f;
-        } else if (hub_episode == 7) {
-            if (MissionSys) {
-                const i32 total = MissionSys->count;
-                const i32 count = Missions_NumCompleted(MissionSys, &Game.mission_save, 0);
-                Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, hub_episode_time, count, total);
-                SmartTextEx(TTab[tBOUNTYHUNTERMISSIONS2 ? tBOUNTYHUNTERMISSIONS2 : tBOUNTYHUNTERMISSIONS], 0.0f,
-                            HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-                            HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
-                            alpha);
-            }
-        } else if (hub_episode == 8) {
-            i32 gold_count = 0, gold_total = 0, buildup_count = 0, buildup_total = 0;
-            for (i32 i = 0; i < AREACOUNT; ++i) {
-                AREADATA *area = &ADataList[i];
-                AREASAVE_s *save = &Game.area_save[i];
-                if (area == HUB_ADATA || (area->flags & 0x22) || area->episode_index != 0xff || (area->flags & 0x2010))
-                    continue;
-                if (area->flags & 0x100) {
-                    if (GOLDBRICKFORSUPERBONUS) {
-                        ++gold_total;
-                        if (save->area_complete)
-                            ++gold_count;
-                    }
-                    continue;
-                }
-                if (area->flags & 4 || area->flags & 0x800)
-                    continue;
-                ++gold_total;
-                if (save->area_complete)
-                    ++gold_count;
-                if (area->flags & 0x4000) {
-                    ++gold_total;
-                    ++buildup_total;
-                    if (save->true_hero_complete[0] || save->true_hero_complete[1]) {
-                        ++gold_count;
-                        ++buildup_count;
-                    }
-                }
-            }
-            if (__builtin_expect(!buildup_total, 0)) {
-                f32 x = 0.0f;
-                if (Game.indy_unlocked) {
-                    Hub_DrawImportantBrick(251, 0.1f, HUB_EPISODETITLEY - 0.225f, hub_episode_time, -1, -1);
-                    x = -0.1f;
-                }
-                Hub_DrawImportantBrick(211, x, HUB_EPISODETITLEY, hub_episode_time, gold_count, gold_total);
-            } else {
-                Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, hub_episode_time, gold_count, gold_total);
-                DrawBuildUpBar(0.20100002f, HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * hub_episode_time)), 1.0f, 1.0f, 0);
-                sprintf(text, "%i/%i", buildup_count, buildup_total);
-                Text3DEx(text, 0.20100002f, HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
-                         PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127,
-                         static_cast<u8>(static_cast<i32>(128.0f * hub_episode_time)));
-            }
-            SmartTextEx(TTab[tBONUS2], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
-                        HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB,
-                        1.7f, 1, NULL, 0, alpha);
-        } else if (hub_episode >= 0 && hub_episode < EPISODECOUNT) {
-            EPISODEDATA *episode = &EDataList[hub_episode];
-            const f32 phase = hub_episode_time;
-            Episode_CountOpenAreas(hub_episode, -1, Game.area_save);
-            if (EpCompleteCount) {
-                if (BOTHTRUEJEDIGOLDBRICKS) {
-                    DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
-                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                    sprintf(text, "%i/%i", EpStoryBuildUpCount, EpStoryBuildUpTotal);
-                    Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                    SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], 0.235f + HUB_EPISODETITLEY, 1.0f, 0.45f, 0.45f, 0.45f,
-                                0, 255, 255, 255, 0.4f, 1, NULL, 0,
-                                static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
-                    DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
-                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                    sprintf(text, "%i/%i", EpFreePlayBuildUpCount, EpFreePlayBuildUpTotal);
-                    Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                    SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], 0.235f + HUB_EPISODETITLEY, 1.0f, 0.45f, 0.45f,
-                                0.45f, 0, 255, 255, 255, 0.4f, 1, NULL, 0,
-                                static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
-                } else {
-                    DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100,
-                                   100, NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                    sprintf(text, "%i/%i", EpBuildUpCount, EpBuildUpTotal);
-                    Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                             PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                }
-                Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODETITLEY, EpMiniKitCount, EpMiniKitTotal, phase);
-                Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODETITLEY, phase, EpRedBrickCount,
-                                       EpRedBrickTotal);
-                Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODETITLEY, phase, EpGoldBrickCount,
-                                       EpGoldBrickTotal);
-                if (__builtin_expect(!!(Store_IsPackUnlocked(8)), 0)) {
-                    hub_drawminikitcount_charkit = 1;
-                    Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODETITLEY, EpCharKitCount, EpCharKitTotal, phase);
-                }
-            } else if (episode->name_id != -1) {
-                SmartTextEx(TTab[episode->name_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE,
-                            HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB,
-                            1.7f, 1, NULL, 0, alpha);
-            }
-            if (__builtin_expect(episode->text_id != -1, 0))
-                SmartTextEx(TTab[episode->text_id], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
-                            HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG,
-                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-        }
-    }
-    if (hub_area != -1 && hub_area_time > 0.0f) {
-        if (GameCam->sock_position.location.sock == 7 && (ADataList[hub_area].flags & 5) == 5) {
-            i32 count = 0, total = 0;
-            if (Game_AreaSave) {
-                for (i32 i = 0; i < AREACOUNT; ++i) {
-                    if (__builtin_expect((ADataList[i].flags & 5) == 5, 0)) {
-                        ++total;
-                        if (Game_AreaSave[i].area_complete ||
-                            static_cast<f32>(static_cast<i32>(ADataList[i].challenge_trial_time)) >
-                                Game_AreaSave[i].challenge_trial_time)
-                            ++count;
-                    }
-                }
-            }
-            Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, hub_area_time, count, total);
-            SmartTextEx(TTab[tMINIKITS ? tMINIKITS : tMINIKIT], 0.0f, HUB_EPISODESUBTITLEY, 1.0f,
-                        HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER,
-                        HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * hub_area_time));
-        } else {
-            AREADATA *area = &ADataList[hub_area];
-            if (area->flags & 0x100) {
-                Hub_DrawSuperBonusStats(area, hub_area_time);
-            } else if (area->flags & 4) {
-                if (SENATE_ADATA && SENATE_ADATA->index == hub_area)
-                    Hub_DrawArcadeStats(hub_area_time);
-                else
-                    Hub_DrawBonusStats(hub_area_time, hub_area, -1);
-            } else {
-                Hub_DrawAreaStats(hub_area_time, hub_area, -1);
-            }
-        }
-    }
-    if (GetMenuID() == 14) {
-        const f32 phase = hub_minikitviewer_alpha;
-        const i32 index = hub_minikitviewer_area;
-        AREADATA *area = &ADataList[index];
-        AREASAVE_s *save = &Game.area_save[index];
-        const i32 alpha = static_cast<i32>(phase * 128.0f);
-        if (save->minikit_complete) {
-            const f32 scale = HUB_EPISODETITLESIZE;
-            if (area->minikit_id != -1 && CDataList[area->minikit_id].name_id != -1)
-                SmartTextEx(TTab[CDataList[area->minikit_id].name_id], 0.0f, HUB_EPISODETITLEY, 1.0f,
-                            HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER,
-                            HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-            sprintf(title, "(%s)", TTab[area->name_id]);
-            if (scale > 0.0f)
-                SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
-                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-        } else if (save->minikit_count) {
-            const f32 scale = HUB_EPISODESUBTITLESIZE;
-            Hub_DrawMiniKitCount(0.0f, HUB_EPISODETITLEY, save->minikit_count, 10, phase);
-            char *name = TTab[area->name_id];
-            if (scale > 0.0f && name)
-                SmartTextEx(name, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
-                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-        } else if (area->area_index != 0xff && area->episode_index != 0xff) {
-            const f32 scale = HUB_EPISODESUBTITLESIZE;
-            const i8 episode = area->episode_index;
-            Hub_DrawMiniKitCount(0.0f, HUB_EPISODETITLEY, 0, 10, phase);
-            sprintf(title, "%s, %s %i", TTab[EDataList[episode].name_id], TTab[tCHAPTER],
-                    static_cast<i8>(ADataList[index].area_index) + 1);
-            if (scale > 0.0f)
-                SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
-                            HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-        }
-        MENU *menu = &GameMenu[GameMenuLevel];
-        if (!Game_AreaSave || Game_AreaSave[index].minikit_complete) {
-            NUVEC minimum, maximum;
-            NuSpecialGetBounds(&WORLD->lev_objs[167].special, &minimum, &maximum);
-            const f32 icon_size = ICONSIZE;
-            const f32 text_scale = (icon_size / 0.35f) * 0.95f;
-            const f32 spacing = 1.2f * (icon_size * (maximum.x - minimum.x)) / PANEL3DMULX;
-            f32 x = -spacing * 2.5f;
-            const f32 y = HUB_EPISODETITLEY + (HUB_EPISODETITLEY - HUB_EPISODESUBTITLEY) * 1.5f;
-            f32 grow = 1.0f;
-            if (!TestForController()) {
-                const f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
-                if (elapsed > 4.0f) {
-                    f32 wave = NU_SIN_LUT(static_cast<i32>((NuFmod(elapsed, 4.0f) * 0.25f) * 65536.0f)) - 0.8f;
-                    if (wave < 0.0f)
-                        wave = 0.0f;
-                    grow = wave + 1.0f;
-                }
-            }
-            for (i32 i = 0; i < 6; ++i) {
-                i32 red, green, blue;
-                f32 size = 1.0f;
-                if (i == i_selectminikitepisode) {
-                    size = 1.2f;
-                    if (TestForController()) {
-                        if (menu_pulsate > 0.0f) {
-                            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
-                                                   static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
-                            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
-                                                     static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
-                            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
-                                                    static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
-                        } else {
-                            red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
-                            green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
-                            blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
-                        }
-                        goto hub_episode_colour_ready;
-                    }
-                }
-                // Touch selection and the other entries share the normal menu pulse.
-                if (menu_pulse > 0.0f) {
-                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                           static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                             static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                            static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-                } else {
-                    red = MENUENTRYR;
-                    green = MENUENTRYG;
-                    blue = MENUENTRYB;
-                }
-            hub_episode_colour_ready:
-                size *= grow;
-                f32 opacity = phase;
-                if (!Episode_CountOpenAreas(i, -1, Game_AreaSave))
-                    opacity *= 0.25f;
-                Text3DEx(EpisodeNumerals[i], x, y, 1.0f, text_scale * size, text_scale * size, text_scale * size, 0,
-                         red, green, blue, static_cast<u8>(static_cast<i32>(128.0f * opacity)));
-                const i32 bonus = Episode_FindAreaFromFlags(&EDataList[i], 5, 5);
-                i32 object = 167;
-                if (bonus != -1 && Game_AreaSave &&
-                    (Game_AreaSave[bonus].area_complete ||
-                     static_cast<f32>(static_cast<i32>(ADataList[bonus].challenge_trial_time)) >
-                         Game_AreaSave[bonus].challenge_trial_time))
-                    object = 168;
-                const f32 scale = icon_size * size;
-                DrawPanel3DObject(x, y, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[object].special, 0,
-                                  opacity);
-                menu->item_x[i] = x;
-                menu->item_y[i] = y;
-                menu->item_width[i] = scale * 0.5f;
-                menu->item_height[i] = 0.0f;
-                x += spacing;
-            }
-        } else {
-            for (i32 i = 0; i < 6; ++i)
-                menu->item_width[i] = 0.0f;
-        }
-    }
-    if (hub_buildit != -1 && hub_buildit_time > 0.0f) {
-        i32 total;
-        if (hub_buildit == 999)
-            total = LevBuildIt[0]->anim_object_count * 2;
-        else {
-            GIZMO *gizmo = HubAreaInfo[hub_buildit].bonus_gizmo;
-            if (!gizmo)
-                return;
-            total = static_cast<GIZBUILDIT_s *>(gizmo->object)->anim_object_count;
-        }
-        const i32 count = total > Game.gold_bricks ? Game.gold_bricks : total;
-        Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODESUBTITLEY, hub_buildit_time, count, total);
-    }
-}
-
-i32 Hub_PanelBusy() {
-    if (hub_episode != -1 || hub_area != -1 || hub_minikitarea != -1 || hub_buildit != -1) {
-        return 1;
-    }
-
-    if (GetMenuID() == 20 || GetMenuID() == 21 || GetMenuID() == 22 || GetMenuID() == 23) {
-        return 1;
-    }
-    return 0;
-}
-
-void Hub_UpdateKit() {
-    MENU *menu = &GameMenu[GameMenuLevel];
-    i32 right = 0, left = 0, cancel = 0;
-    if (hub_minikitviewer_movewait <= 0.0f) {
-        for (i32 i = 0; i < 2; ++i) {
-            if (MenuPacket.active_player[i]) {
-                if ((GamePad[i].buttons_held & GAMEPAD_TOGGLELEFT) == 0) {
-                    if ((GamePad[i].buttons_held & GAMEPAD_TOGGLERIGHT) != 0)
-                        ++right;
-                } else if ((GamePad[i].buttons_held & GAMEPAD_TOGGLERIGHT) == 0)
-                    ++left;
-                if ((GamePad[i].buttons_pressed & GAMEPAD_MENUCANCEL) != 0)
-                    cancel = 1;
-            }
-        }
-    }
-    if (menu->input_activity) {
-        if (menu->left_pressed)
-            ++left;
-        if (menu->right_pressed)
-            ++right;
-        if (menu->cancel_pressed)
-            cancel = 1;
-    }
-    i32 previous = hub_minikitviewer_area;
-    if (left && !right) {
-        hub_minikitviewer_move = -1.0f;
-        i32 index = previous;
-        i32 attempts = 0;
-        do {
-            --index;
-            // Original backward traversal wraps to AREACOUNT itself.
-            if (index < 0)
-                index = AREACOUNT;
-            if (++attempts >= AREACOUNT)
-                break;
-        } while ((ADataList[index].flags & 0x10) == 0);
-        hub_minikitviewer_area = index;
-    } else if (right && !left) {
-        hub_minikitviewer_move = 1.0f;
-        i32 index = previous;
-        i32 attempts = 0;
-        do {
-            ++index;
-            if (index >= AREACOUNT)
-                index = 0;
-            if (++attempts >= AREACOUNT)
-                break;
-        } while ((ADataList[index].flags & 0x10) == 0);
-        hub_minikitviewer_area = index;
-    }
-    if (hub_minikitviewer_area != previous) {
-        hub_minikitviewer_movewait = 1.0f;
-        hub_minikitviewer_alpha = 0.0f;
-        PlaySfx(const_cast<char *>("JForcePush"), &hub_minikitviewer_pos);
-    }
-    if (cancel) {
-        GameAudio_PlaySfx(49, NULL, 0, 0);
-        MenuReset();
-        hub_minikitarea = -1;
-        hub_minikitarea_time = 0.0f;
-        hub_minikitarea_opentime = 0.0f;
-        LevLock[4] = 1;
-        LevTime[4] = 0.6f;
-    }
-}
-
-void Hub_CallBarman(GameObject_s *) {
-}
-
-void Hub_ClearStats() {
-    statstime = 0.0f;
-    cointotaltime = 0.0f;
-    goldbricktime = 0.0f;
-}
-
-i32 hub_forceshopsave = 0;
-
-void Hub_ResetPanel() {
-    hub_episode = -1;
-    hub_episode_time = 0.0f;
-    hub_area = -1;
-    hub_area_time = 0.0f;
-    hub_buildit = -1;
-    hub_buildit_time = 0.0f;
-    hub_minikitarea = -1;
-    hub_minikitarea_time = 0.0f;
-}
-
-bool HubShopUnlocked() {
-    return true;
-}
-
-i32 Hub_BonusBuildIt(GIZBUILDIT_s *buildit) {
-    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
-        if (info->bonus_gizmo != NULL && info->bonus_gizmo->object == buildit) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void TurnEpisodeDoorLightsOn(i32 episode) {
-    for (i32 i = 0; i < 9; ++i) {
-        if (HubEpisodeInfo[i].episode == episode) {
-            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_on))
-                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
-            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_off))
-                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_off, 0);
-            break;
-        }
-    }
-}
-
-#include "nu2api/nu3d/nurndr.h"
-extern f32 hub_minikitviewer_movewait, hub_minikitviewer_move;
-f32 HUB_MINIKITVIEWER_REFLECTY = 0.09f;
-i32 RotDiff(u16, u16);
-i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
-
-static inline void MiniKitSetRotationX(NUMTX *m, NUANG a) {
-    const f32 cosine = NU_COS_LUT(a);
-    const f32 sine = NU_SIN_LUT(a);
-    m->m00 = 1.0f;
-    m->m11 = cosine;
-    m->m12 = sine;
-    m->m21 = -sine;
-    m->m22 = cosine;
-    m->m01 = 0.0f;
-    m->m02 = 0.0f;
-    m->m03 = 0.0f;
-    m->m10 = 0.0f;
-    m->m13 = 0.0f;
-    m->m20 = 0.0f;
-    m->m23 = 0.0f;
-    m->m30 = 0.0f;
-    m->m31 = 0.0f;
-    m->m32 = 0.0f;
-    m->m33 = 1.0f;
-}
-
-static inline void MiniKitRotateX(NUMTX *m, NUANG a) {
-    f32 cosx = NU_COS_LUT(a);
-    f32 sinx = NU_SIN_LUT(a);
-    f32 m01 = m->m01;
-    f32 m11 = m->m11;
-    f32 m21 = m->m21;
-    f32 m31 = m->m31;
-
-    m->m01 = m01 * cosx - m->m02 * sinx;
-    m->m02 = m01 * sinx + m->m02 * cosx;
-    m->m11 = m11 * cosx - m->m12 * sinx;
-    m->m12 = m11 * sinx + m->m12 * cosx;
-    m->m21 = m21 * cosx - m->m22 * sinx;
-    m->m22 = m21 * sinx + m->m22 * cosx;
-    m->m31 = m31 * cosx - m->m32 * sinx;
-    m->m32 = m31 * sinx + m->m32 * cosx;
-}
-
-static inline void MiniKitRotateY(NUMTX *m, NUANG a) {
-    f32 cosx = NU_COS_LUT(a);
-    f32 sinx = NU_SIN_LUT(a);
-    f32 m00 = m->m00;
-    f32 m10 = m->m10;
-    f32 m20 = m->m20;
-    f32 m30 = m->m30;
-
-    m->m00 = m00 * cosx + m->m02 * sinx;
-    m->m02 = m->m02 * cosx - m00 * sinx;
-    m->m10 = m10 * cosx + m->m12 * sinx;
-    m->m12 = m->m12 * cosx - m10 * sinx;
-    m->m20 = m20 * cosx + m->m22 * sinx;
-    m->m22 = m->m22 * cosx - m20 * sinx;
-    m->m30 = m30 * cosx + m->m32 * sinx;
-    m->m32 = m->m32 * cosx - m30 * sinx;
-}
-
-static inline void MiniKitRotateZ(NUMTX *m, NUANG a) {
-    f32 cosx = NU_COS_LUT(a);
-    f32 sinx = NU_SIN_LUT(a);
-    f32 m00 = m->m00;
-    f32 m10 = m->m10;
-    f32 m20 = m->m20;
-    f32 m30 = m->m30;
-
-    m->m00 = m00 * cosx - m->m01 * sinx;
-    m->m01 = m00 * sinx + m->m01 * cosx;
-    m->m10 = m10 * cosx - m->m11 * sinx;
-    m->m11 = m10 * sinx + m->m11 * cosx;
-    m->m20 = m20 * cosx - m->m21 * sinx;
-    m->m21 = m20 * sinx + m->m21 * cosx;
-    m->m30 = m30 * cosx - m->m31 * sinx;
-    m->m31 = m30 * sinx + m->m31 * cosx;
-}
-
-static inline HUBAREAINFO_s *Hub_FindAreaInfoByIndex(i32 area) {
-    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
-        if (info->area != NULL && area == info->area->index)
-            return info;
-    }
-    return NULL;
-}
-
-void Hub_DrawMiniKits(WORLDINFO_s *world) {
-    NUMTX piece_matrix;
-    if (world->minikit_pieces_buf == NULL || world->hub_minikits == NULL)
-        return;
-    i32 areas[72];
-    i32 selected = -1;
-    i32 count = 0;
-    for (i32 area = 0; area < AREACOUNT; ++area) {
-        if (ADataList[area].flags & 0x10) {
-            areas[count] = area;
-            if (area == hub_minikitviewer_area)
-                selected = count;
-            ++count;
-        }
-    }
-    for (i32 index = 0; index < count; ++index) {
-        HUBMINIKIT_s *kit = world->hub_minikits;
-        const i32 area = areas[index];
-        HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[area];
-        if (pieces == NULL || ADataList[area].minikit_id == -1)
-            continue;
-        HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(area);
-        f32 x;
-        if (area == areas[(selected + (count - 2)) % count])
-            x = -4.0f;
-        else if (area == areas[(selected + (count - 1)) % count])
-            x = -2.0f;
-        else if (area == areas[selected])
-            x = 0.0f;
-        else if (area == areas[(selected + 1) % count])
-            x = 2.0f;
-        else if (area == areas[(selected + 2) % count])
-            x = 4.0f;
-        else
-            continue;
-        x += hub_minikitviewer_pos.x;
-        if (hub_minikitviewer_movewait > 0.0f) {
-            x += (1.0f - (1.0f + NU_SIN_LUT((i32)(hub_minikitviewer_movewait * 32768.0f + 16384.0f))) * 0.5f) * 2.0f *
-                 hub_minikitviewer_move;
-        }
-        kit += area;
-        const f32 scale = kit->scale;
-        f32 lift = 1.0f - (1.0f + NU_SIN_LUT((i32)(scale * 32768.0f + 16384.0f))) * 0.5f;
-        const u16 phase_x = (i32)(NU_SIN_LUT(kit->phase_x) * 910.0f);
-        const u16 phase_z = (i32)(NU_SIN_LUT(kit->phase_z) * 910.0f);
-        const u16 phase_y = (i32)(NU_SIN_LUT(kit->phase_y) * 910.0f);
-        lift *= 0.333f;
-        const u16 rotation = (i32)(RotDiff(0, phase_y) * scale) + kit->rotation;
-        const f32 bob = NU_SIN_LUT(kit->phase_rotation) * 0.025f * scale;
-        const f32 tilt_scale = (info ? info->panel_scale : 1.0f) * scale;
-        NUMTX matrix;
-        MiniKitSetRotationX(&matrix, (i32)(RotDiff(0, kit->tilt) * tilt_scale));
-        MiniKitRotateX(&matrix, (i32)(RotDiff(0, phase_x) * scale));
-        MiniKitRotateZ(&matrix, (i32)(RotDiff(0, phase_z) * scale));
-        MiniKitRotateY(&matrix, rotation);
-        matrix.m30 = x + kit->offset_x;
-        matrix.m31 = hub_minikitviewer_pos.y + (lift + bob + (info ? info->panel_offset : 0.0f));
-        matrix.m32 = hub_minikitviewer_pos.z + kit->offset_z;
-        NuMtxPreRotateZ(&matrix, (i32)(RotDiff(0, kit->rotation_velocity) * scale));
-        for (i32 piece = 0; piece < pieces->piece_count; ++piece) {
-            if (pieces->pieces[piece].enabled && NuSpecialExistsFn(&pieces->pieces[piece].special) &&
-                piece < kit->displayed_piece_count) {
-                piece_matrix = pieces->pieces[piece].matrix;
-                NuMtxMulVU0(&piece_matrix, &piece_matrix, &matrix);
-                NUMTX reflected;
-                const i32 drawn = NuSpecialDrawAt(&pieces->pieces[piece].special, &piece_matrix);
-                if (HUB_MINIKITVIEWER_REFLECTY != 2000000.0f &&
-                    MatrixReflection(&piece_matrix, 2, HUB_MINIKITVIEWER_REFLECTY, 2000000.0f, &reflected)) {
-                    NuRndrStartReflectionRender(drawn);
-                    NuSpecialDrawAt(&pieces->pieces[piece].special, &reflected);
-                    NuRndrEndReflectionRender();
-                }
-            }
-        }
-        if (NuSpecialExistsFn(&pieces->base.special)) {
-            NUMTX base_matrix;
-            NuMtxSetRotationY(&base_matrix, rotation);
-            base_matrix.m30 = x;
-            base_matrix.m31 = 0.143f;
-            base_matrix.m32 = hub_minikitviewer_pos.z;
-            NuSpecialDrawAtAlpha(&pieces->base.special, &base_matrix, 1.0f - 0.5f * kit->scale);
-        }
-    }
-    SetLevelLights(world->rtl_set, 1.0f);
-}
-
-f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
-
-void Hub_InitMiniKits(WORLDINFO_s *world) {
-    HUBMINIKIT_s *kit = world->hub_minikits;
-    if (kit != NULL) {
-        for (i32 area_index = 0; area_index < AREACOUNT; ++area_index, ++kit) {
-            kit->position.y = 2000000.0f;
-            kit->scale = 0.0f;
-            kit->field_0x10 = 0.0f;
-            kit->rotation = qrand();
-            for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
-                if (info->area != NULL && area_index == info->area->index)
-                    break;
-            }
-            const f32 height = GameShadow(NULL, &kit->position, 5.0f, -1);
-            if (height != 2000000.0f)
-                kit->position.y = height;
-            kit->phase_x = qrand();
-            kit->phase_y = qrand();
-            kit->phase_z = qrand();
-            kit->phase_rotation = qrand();
-            kit->rate_x = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
-            kit->rate_y = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
-            kit->rate_z = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 5461.0f + 5461.0f);
-            kit->rate_rotation = static_cast<i32>(static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 10922.0f + 10922.0f);
-            kit->velocity_x = 0.0f;
-            kit->rotation_velocity = 0;
-            kit->offset_x = 0.0f;
-            kit->velocity_z = 0.0f;
-            kit->target_rotation = kit->rotation;
-            kit->offset_z = 0.0f;
-            kit->tilt = 0;
-            kit->target_piece_count = 0;
-            kit->displayed_piece_count = 0;
-        }
-    }
-}
-
-void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
-    AREADATA *areas = ADataList;
-    char heading[128];
-    char text[128];
-    i16 clips[128];
-    if (mode == 18 || (LOSTTEMPLE_ADATA != NULL && LOSTTEMPLE_ADATA->index == area_index)) {
-        char *subtitle = TTab[tSTORYCLIPS2];
-        heading[0] = '\0';
-        bool fade = lastepisodesmode != -1;
-        if (mode == 18) {
-            if (episodesmode == 3) {
-                const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
-                CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
-                CutScenePlayer_GetText(clips[i_clip[i_episodes]], heading, text, 3);
-                subtitle = text;
-            } else if (episodesmode == 2 ||
-                       (episodesmode == 1 && hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1)) {
-                subtitle = TTab[EDataList[i_episodes].text_id];
-                NuStrCpy(heading, TTab[EDataList[i_episodes].name_id]);
-            }
-            if (__builtin_expect(lastepisodesmode == -1, 1)) {
-                fade = episodesmode == 2 && hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1;
-            } else {
-                fade = episodesmode != 1;
-            }
-        }
-        if (fade && episodestime < episodesduration) {
-            phase = (episodestime / episodesduration) * phase;
-        }
-        if (subtitle != NULL) {
-            SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-                        HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
-                        static_cast<i32>(128.0f * phase));
-        }
-        if (heading[0] != '\0') {
-            SmartTextEx(heading, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
-                        HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0,
-                        static_cast<i32>(phase * 128.0f));
-        }
-        return;
-    }
-    AREADATA *area = &areas[area_index];
-    const i32 alpha = static_cast<i32>(phase * 128.0f);
-
-    if (VEHICLES_ADATA != NULL && VEHICLES_ADATA->index == area_index) {
-        return;
-    }
-
-    SmartTextEx(TTab[area->name_id], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-                HUB_EPISODESUBTITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-
-    AREASAVE_s *save = &Game.area_save[area_index];
-    const u16 flags = area->flags;
-    if ((flags & 0x10) != 0) {
-        if (save->area_complete != 0 && (flags & 4) == 0) {
-            Episode_CountOpenAreas(static_cast<i8>(area->episode_index), area_index, Game.area_save);
-
-            if (BOTHTRUEJEDIGOLDBRICKS != 0) {
-                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                NuStrCpy(text, save->true_hero_complete[0] ? "$" : "X");
-                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f, 0,
-                            255, 255, 255, 0.4f, 1, NULL, 0, static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
-
-                DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                NuStrCpy(text, save->true_hero_complete[1] ? "$" : "X");
-                Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-                SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f,
-                            0, 255, 255, 255, 0.4f, 1, NULL, 0, static_cast<i32>(static_cast<f32>(TJTYPEA) * phase));
-            } else {
-                DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                               NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-                NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
-                Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
-                         PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-            }
-
-            if ((area->flags & 0x10) != 0) {
-                Hub_DrawMiniKitCount(HUB_AREAPANELX[0], HUB_EPISODETITLEY, save->minikit_count, 10, phase);
-            }
-            Hub_DrawImportantBrick(210, HUB_AREAPANELX[2], HUB_EPISODETITLEY, phase, save->red_brick_collected, 1);
-            Hub_DrawImportantBrick(211, HUB_AREAPANELX[3], HUB_EPISODETITLEY, phase, EpGoldBrickCount,
-                                   EpGoldBrickTotal);
-            if (Store_IsPackUnlocked(8)) {
-                hub_drawminikitcount_charkit = 1;
-                Hub_DrawMiniKitCount(HUB_AREAPANELX[5], HUB_EPISODETITLEY, EpCharKitCount, EpCharKitTotal, phase);
-            }
-            return;
-        }
-
-        if (static_cast<i8>(area->area_index) != -1 && (flags & 0x14) == 0x10) {
-            sprintf(text, "%s %i", TTab[tCHAPTER], static_cast<i8>(area->area_index) + 1);
-            SmartTextEx(text, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
-                        HUB_EPISODETITLESIZE, 0, HUB_EPISODER, HUB_EPISODEG, HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
-        }
-        return;
-    }
-
-    if (__builtin_expect(save->area_complete == 0, 1)) {
-        return;
-    }
-
-    f32 build_x = 0.0f;
-    if ((flags & 0x4000) != 0)
-        build_x = 0.20100002f;
-    if ((flags & 0x800) != 0) {
-        Hub_DrawImportantBrick(251, build_x, HUB_EPISODESUBTITLEY - 0.05f, phase, -1, -1);
-    } else if ((flags & 0x4000) != 0) {
-        const i32 gold_count = 1 + (save->true_hero_complete[0] || save->true_hero_complete[1]);
-        Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, phase, gold_count, 2);
-    } else {
-        Hub_DrawImportantBrick(211, -0.0f, HUB_EPISODESUBTITLEY + 0.05f, phase, -1, -1);
-    }
-    if ((area->flags & 0x4000) == 0) {
-        return;
-    }
-    DrawBuildUpBar(build_x, HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
-                   NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-    NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
-    Text3DEx(text, build_x, HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
-             PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
-}
-
-void Hub_DrawStarField() {
-    GetMenuID();
-}
-
 void Hub_MakeModelList() {
     Hub_ModelList[0] = {static_cast<i16>(PlayerID[0]), 1};
     Hub_ModelList[1] = {static_cast<i16>(PlayerID[1]), 1};
@@ -1926,2283 +5030,14 @@ void Hub_MakeModelList() {
     PlayerList[2] = -1;
 }
 
-void Hub_UpdateMiniKits(WORLDINFO_s *world) {
-    i32 count[72];
-    i32 viewer = 0;
-    f32 speed = 0.0f;
-    u16 angle = 0;
-    if (GetMenuID() == 14) {
-        viewer = 1;
-        MENU *menu = &GameMenu[GameMenuLevel];
-        if (hub_minikitviewer_movewait <= 0.0f) {
-            if (Hub_PadSpeed[0] > 0.0f && Hub_PadSpeed[1] > 0.0f) {
-                speed = (Hub_PadSpeed[0] + Hub_PadSpeed[1]) * 0.5f;
-                angle = Hub_PadAngle[0] + RotDiff(Hub_PadAngle[0], Hub_PadAngle[1]) * 0.5f + GameCam->yaw;
-            } else if (Hub_PadSpeed[0] > 0.0f) {
-                speed = Hub_PadSpeed[0];
-                angle = Hub_PadAngle[0] + GameCam->yaw;
-            } else if (Hub_PadSpeed[1] > 0.0f) {
-                speed = Hub_PadSpeed[1];
-                angle = Hub_PadAngle[1] + GameCam->yaw;
-            }
-            i32 confirm = 0;
-            if (menu->input_activity && menu->confirm_pressed) {
-                if (menu->selected_item == i_selectminikitepisode)
-                    confirm = 1;
-                else
-                    i_selectminikitepisode = menu->selected_item;
-            }
-            if (confirm || (GamePad[0].buttons_pressed & GAMEPAD_MENUSELECT)) {
-                if (Game_AreaSave == NULL || Game_AreaSave[hub_minikitviewer_area].minikit_complete) {
-                    if (Episode_CountOpenAreas(i_selectminikitepisode, -1, Game_AreaSave)) {
-                        i32 area = Episode_FindAreaFromFlags(&EDataList[i_selectminikitepisode], 5, 5);
-                        if (area != -1) {
-                            hub_new_level = ADataList[area].levels[0];
-                            Hub_MakeFreePlayList(ADataList[hub_minikitviewer_area].minikit_id, -1);
-                            makeplayerlist_freeplay = 1;
-                            NewLData = &LDataList[hub_new_level];
-                            NextArea_FreePlay = 1;
-                            FreePlay = 1;
-                            GameAudio_PlaySfx(48, NULL, 0, 0);
-                        }
-                    } else {
-                        GameAudio_PlaySfx(50, NULL, 0, 0);
-                        GameCam_HitRoll();
-                    }
-                }
-            } else if ((GamePad[0].buttons_pressed & GAMEPAD_DLEFT) && i_selectminikitepisode > 0) {
-                --i_selectminikitepisode;
-            } else if ((GamePad[0].buttons_pressed & GAMEPAD_DRIGHT) && i_selectminikitepisode < 5) {
-                ++i_selectminikitepisode;
-            }
-        }
+i32 Hub_PanelBusy() {
+    if (hub_episode != -1 || hub_area != -1 || hub_minikitarea != -1 || hub_buildit != -1) {
+        return 1;
     }
-    if (world->minikit_pieces_buf != NULL && world->hub_minikits != NULL) {
-        if (viewer) {
-            if (hub_minikitviewer_alpha < 1.0f) {
-                hub_minikitviewer_alpha += FRAMETIME * 2.0f;
-                if (hub_minikitviewer_alpha > 1.0f)
-                    hub_minikitviewer_alpha = 1.0f;
-            }
-        } else
-            hub_minikitviewer_alpha = 0.0f;
-        if (hub_minikitviewer_movewait > 0.0f) {
-            hub_minikitviewer_movewait -= FRAMETIME;
-            if (hub_minikitviewer_movewait <= 0.0f)
-                hub_minikitviewer_move = 0.0f;
-        }
-        PlaySfx("ui_hover_lp", &hub_minikitviewer_pos);
-        HUBMINIKIT_s *kit = world->hub_minikits;
-        for (i32 i = 0; i < AREACOUNT; ++i, ++kit) {
-            HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[i];
-            if (pieces == NULL)
-                continue;
-            count[i] = Game.area_save[i].minikit_count;
-            if (count[i] > pieces->piece_count)
-                count[i] = pieces->piece_count;
-            kit->scale = 1.0f;
-            f32 vx = (0.0f - kit->offset_x) * 5.0f;
-            f32 vz = (0.0f - kit->offset_z) * 5.0f;
-            kit->velocity_x = SeekValF(kit->velocity_x, vx, 10.0f);
-            kit->velocity_z = SeekValF(kit->velocity_z, vz, 10.0f);
-            kit->offset_z += kit->velocity_z * FRAMETIME;
-            kit->offset_x += kit->velocity_x * FRAMETIME;
-            u16 old_rotation = kit->rotation;
-            if (i == hub_minikitviewer_area) {
-                if (speed > 0.0f)
-                    kit->target_rotation =
-                        TurnRot(kit->target_rotation, angle + 0x8000, (u16)(32768.0f * kit->scale), NULL);
-                kit->target_piece_count = count[i];
-                if (viewer && count[i] >= pieces->piece_count &&
-                    ((MenuPacket.active_player[0] && (GamePad[0].buttons_held & GAMEPAD_ACTION)) ||
-                     (MenuPacket.active_player[1] && (GamePad[1].buttons_held & GAMEPAD_ACTION))))
-                    kit->target_piece_count = 1;
-            } else if (count[i] != 0)
-                kit->target_piece_count = count[i];
-            else {
-                kit->target_piece_count = 0;
-                kit->displayed_piece_count = 0;
-            }
-            kit->rotation = SeekRot(kit->rotation, kit->target_rotation, 3.0f);
-            i32 rate = (i32)((f32)RotDiff(old_rotation, kit->rotation) / FRAMETIME);
-            rate = (MAX(-65536, (MIN(65536, rate))));
-            rate /= 8;
-            rate = (MAX(-4551, (MIN(4551, rate))));
-            kit->rotation_velocity = SeekRot(kit->rotation_velocity, rate, 8.0f);
-            i32 tilt = 0;
-            if (i == hub_minikitviewer_area && speed > 0.0f) {
-                i32 diff = RotDiff(old_rotation, kit->rotation);
-                f32 angular_speed = (f32)(diff < 0 ? -diff : diff) / FRAMETIME;
-                if (angular_speed < 32768.0f)
-                    tilt = -(i32)((1.0f - angular_speed * (1.0f / 32768.0f)) * 4551.0f);
-            }
-            kit->tilt = SeekRot(kit->tilt, tilt, 3.0f);
-            for (i32 j = 0; j < pieces->piece_count; ++j) {
-                pieces->pieces[j].enabled = 0;
-                if (NuSpecialExistsFn(&pieces->pieces[j])) {
-                    NuSpecialSetVisibility(&pieces->pieces[j], 0);
-                    if (j < count[i])
-                        pieces->pieces[j].enabled = 1;
-                }
-            }
-            kit->phase_x = (i32)((f32)kit->phase_x + kit->rate_x * FRAMETIME);
-            if (kit->phase_x > 65536)
-                kit->phase_x -= 65536;
-            kit->phase_y = (i32)((f32)kit->phase_y + kit->rate_y * FRAMETIME);
-            if (kit->phase_y > 65536)
-                kit->phase_y -= 65536;
-            kit->phase_z = (i32)((f32)kit->phase_z + kit->rate_z * FRAMETIME);
-            if (kit->phase_z > 65536)
-                kit->phase_z -= 65536;
-            kit->phase_rotation = (i32)((f32)kit->phase_rotation + kit->rate_rotation * FRAMETIME);
-            if (kit->phase_rotation > 65536)
-                kit->phase_rotation -= 65536;
-            i32 model = ADataList[i].minikit_id;
-            if (model != -1 && world->hub_minikits != NULL) {
-                HUBMINIKIT_s *current = &world->hub_minikits[i];
-                HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(i);
-                CHARACTERDATA *data = &CDataList[model];
-                current->radius = data->collision_radius;
-                current->height_ratio = (data->bounds_max_y - data->bounds_min_y) / (data->collision_radius * 2.0f);
-                current->collision_center.x = current->position.x + current->offset_x;
-                current->collision_center.y = current->position.y + (data->bounds_max_y + data->bounds_min_y) * 0.5f;
-                current->collision_center.z = current->position.z + current->offset_z;
-                current->collision_center.y +=
-                    (1.0f - (NU_SIN_LUT((i32)(32768.0f * current->scale + 16384.0f)) + 1.0f) * 0.5f) * 0.333f;
-                current->collision_center.y += 0.025f * NU_SIN_LUT(current->phase_rotation) * current->scale;
-                current->collision_center.y += info ? info->panel_offset : 0.0f;
-                current->bounds_min.x = current->collision_center.x - current->radius;
-                current->bounds_min.z = current->collision_center.z - current->radius;
-                current->bounds_min.y = current->collision_center.y - current->radius * current->height_ratio;
-                current->bounds_max.y = current->collision_center.y + current->radius * current->height_ratio;
-                current->bounds_max.z = current->collision_center.z + current->radius;
-                current->bounds_max.x = current->collision_center.x + current->radius;
-            }
-        }
-        kit = world->hub_minikits;
-        for (i32 i = 0; i < AREACOUNT; ++i, ++kit) {
-            if (world->minikit_pieces_buf[i] == NULL)
-                continue;
-            if (kit->displayed_piece_count != kit->target_piece_count &&
-                (i32)(GameTimer.time_elapsed / 0.15f) != (i32)(GameTimer.last_time_elapsed / 0.15f)) {
-                if (kit->displayed_piece_count < kit->target_piece_count)
-                    ++kit->displayed_piece_count;
-                else if (kit->displayed_piece_count > kit->target_piece_count)
-                    --kit->displayed_piece_count;
-                if (i == hub_minikitarea)
-                    PlaySfx("LegoForm", &kit->position);
-                NewRumbleAllPlayers(0.0f, 0.0f, 1, 0);
-            }
-            if (count[i] > 0 && kit->displayed_piece_count != 0) {
-                PushAway(&kit->collision_center, kit->radius, &kit->bounds_min, &kit->bounds_max, NULL, NULL, 2.5f, 5);
-                AIAntinodeCreateSingleFrame(&kit->collision_center, kit->radius);
-            }
-        }
+
+    if (GetMenuID() == 20 || GetMenuID() == 21 || GetMenuID() == 22 || GetMenuID() == 23) {
+        return 1;
     }
+    return 0;
 }
 
-void Hub_LockUnlockDoors(WORLDINFO_s *) {
-}
-
-void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
-    const i32 index = (*level)->area_index;
-    if (index == -1) {
-        return;
-    }
-
-    const i32 area = last_hub_area;
-    if (area != index) {
-        *level = NULL;
-        return;
-    }
-
-    MakeMenuPacket();
-    hub_new_level = ADataList[area].levels[0];
-    *level = NULL;
-    hub_episode_time = 0.0f;
-    hub_area_time = 0.0f;
-    MainRenderTargetTime = 0.0f;
-    NeedScreenGrab(1);
-    BackDrop_ResetColours();
-
-    i32 menu_id;
-    if (area != -1 && (ADataList[area].flags & AREAFLAG_BONUS_AREA) != 0) {
-        menu_id = ADataList[area].episode_index != 0xff ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_BONUS;
-    } else if (VEHICLES_ADATA != NULL && area == VEHICLES_ADATA->index) {
-        // The original sizes this list for 340 vehicle ids.
-        i16 vehicle_ids[340];
-        i32 vehicle_count;
-        Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED, HUB_VEHICLE_COLLECTION_REQUIRED,
-                             vehicle_ids, &vehicle_count, NULL, 0);
-        menu_id = HUB_DOOR_MENU_VEHICLE;
-        hub_freeplaysource = -1;
-        Hub_InitFreePlaySelect(area, vehicle_count, -1);
-    } else {
-        menu_id = HUB_DOOR_MENU_STANDARD;
-        if (LOSTTEMPLE_ADATA != NULL) {
-            menu_id = area == LOSTTEMPLE_ADATA->index ? HUB_DOOR_MENU_EPISODE_BONUS : HUB_DOOR_MENU_STANDARD;
-        }
-    }
-
-    GameAudio_PlaySfx(HUB_AUDIO_EVENT_OPEN_DOOR_MENU, NULL, 0, 0);
-    Hint_CancelCurrent();
-    NewMenu(menu_id, -1, -1);
-}
-
-bool HubCustomiserUnlocked() {
-    return true;
-}
-
-// All recovered callers use player zero and full opacity. Keeping this private
-// allows the compiler to specialize those constant arguments naturally.
-// Retail only keeps the player-one, full-alpha specialisation of the cursor
-// drawing body; its name records the partial-inlining and constprop clones.
-static __attribute__((noinline, noclone)) void
-Hub_DrawIconCursors(COLLECTION_s *collection,
-                    f32 scale) __asm__("_ZL19Hub_DrawIconCursorsP12COLLECTION_siff.part.9.constprop.51");
-static void Hub_DrawIconCursors(COLLECTION_s *collection, f32 scale) {
-    const i32 player = 0;
-    const f32 alpha = 1.0f;
-    i32 model = MenuPacket.player_model[player];
-    const i32 index = InCollectList_Index(model, collection->list, collection->count_y);
-    if (index == -1)
-        return;
-    if (Collection_Got(model) == 0)
-        model = -1;
-    if (MenuPacket.active_player[player] == 0) {
-        DrawCharIcon(model, collection->list[index].grid_x, collection->list[index].grid_y, 0.0f,
-                     collection->field_10 * ICONSIZE * scale, 0xa6, alpha, alpha, 1, NULL);
-        return;
-    }
-    f32 size = Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0 ? 0.14f : 0.16f;
-    size *= collection->field_10 / 0.675f;
-    if (freeplay_time[player] <= 0.0f) {
-        if (freeplay_selected[player] != 0)
-            size = 0.0f;
-    } else {
-        f32 progress = freeplay_time[player] / 0.75f;
-        if (freeplay_selected[player] == 0)
-            progress = 1.0f - progress;
-        size *= 1.0f - (NU_SIN_LUT(static_cast<i32>(progress * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
-    }
-    if (size * scale > 0.0f) {
-        const f32 offset = (collection->field_10 / 0.675f) * 0.01f;
-        DrawCharIcon(model, collection->list[index].grid_x + offset * NU_SIN_LUT(hub_iconang[player * 2]),
-                     collection->list[index].grid_y + NU_SIN_LUT(hub_iconang[player * 2 + 1]) * offset, -0.0025f,
-                     size * scale, 0xa6, alpha, alpha, 1, NULL);
-    }
-}
-
-extern i16 tSELECT, tSELECTED, tSELECTING, tCONFIRMED, tYES, tNO, tEXIT;
-
-void Hub_DrawFreePlaySelect() {
-    static f32 radarpulsetimer = 2.0f;
-    static APICHARACTERMODELLIST_s list[341];
-    COLLECTION_s *collection = GetFreePlayCollection(hub_freeplay_area);
-    if (FadeSys.fade > 0.0f)
-        return;
-    const i32 menu_level = GameMenuLevel;
-    if (freeplaymode == 0) {
-        const f32 progress = freeplaytime / (freeplayduration * 0.5f);
-        const f32 alpha = 1.0f - progress;
-        if (progress <= 1.0f && alpha > 0.0f) {
-            AREADATA *area = &ADataList[last_hub_area];
-            if ((area->flags & 0x100) == 0) {
-                if ((area->flags & AREAFLAG_BONUS_AREA) != 0) {
-                    if (bonusmodearcade != 0) {
-                        Hub_DrawArcadeStats(alpha);
-                    } else {
-                        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
-                    }
-                    Hub_DrawBonusModeMenu(0, alpha);
-                } else {
-                    Hub_DrawAreaStats(alpha, last_hub_area, -1);
-                    if (VEHICLES_ADATA == NULL || VEHICLES_ADATA->index != last_hub_area) {
-                        Hub_DrawSelectModeMenu(0, alpha);
-                    }
-                }
-            } else {
-                Hub_DrawSuperBonusStats(area, alpha);
-                Hub_DrawBonusModeMenu(0, alpha);
-            }
-        }
-    }
-
-    if (freeplaymode != 3 && freeplaymode != 4) {
-        f32 fade = 1.0f;
-        if (freeplaymode == 2) {
-            fade = 0.0f;
-            if (freeplaytime < freeplayduration - 0.1f)
-                fade = 1.0f - freeplaytime / (freeplayduration - 0.1f);
-        }
-        i32 model = FreePlayModelList[0].model_id;
-        f32 opacity = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * fade;
-        if (freeplay_time[0] > 0.0f) {
-            f32 progress = freeplay_time[0] / 0.75f;
-            if (__builtin_expect(freeplay_selected[0] == 0, 0))
-                progress = 1.0f - progress;
-            opacity *= progress;
-        } else if (freeplay_selected[0] != 0) {
-            model = MenuPacket.player_model[0];
-        }
-        if (opacity > 0.0f)
-            DrawCharIcon(model, -ICONX, STATSPOSY, 0.0f, ICONSIZE, 0xa6, opacity, opacity, 1, NULL);
-        if (__builtin_expect(freeplaymode == 1 && MenuPacket.active_player[0] != 0, 0)) {
-            const i32 selected = MenuPacket.player_model[0];
-            model = Collection_Got(selected) ? selected : -1;
-            opacity = MenuPacket.active_player[0] ? 1.0f : DROPINALPHA;
-            if (freeplay_time[0] <= 0.0f)
-                opacity *= BigIconAlpha[0];
-            const f32 base_x = MenuPacket.active_player[1] ? -0.4f : 0.0f;
-            const f32 base_size = Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0 ? 0.30625f : 0.35f;
-            f32 x = base_x, y = 0.7f, size = base_size;
-            // An already-selected icon remains at its base without drawing or
-            // name/radar updates until the next transition starts.
-            if (freeplay_time[0] > 0.0f || freeplay_selected[0] == 0) {
-                f32 eased = 0.0f;
-                f32 progress = 1.0f;
-                if (__builtin_expect(freeplay_time[0] > 0.0f, 0)) {
-                    progress = freeplay_time[0] / 0.75f;
-                    if (freeplay_selected[0] == 0)
-                        progress = 1.0f - progress;
-                    eased =
-                        1.0f - (NU_SIN_LUT(static_cast<i32>((1.0f - progress) * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
-                }
-                x = (-ICONX - base_x) * eased + base_x;
-                size = (COLLECTION_ICONSIZE - base_size) * eased + base_size;
-                y = (STATSPOSY - 0.7f) * eased + 0.7f;
-                if (opacity > 0.0f) {
-                    if (freeplay_time[0] > 0.0f || opacity != 1.0f) {
-                        radarpulsetimer = 2.0f;
-                    } else if (radarpulsetimer < 0.0f) {
-                        const VuVec position{x, y, 0.0f, 1.0f};
-                        MechSystems::Get()->NewRadarPulse(position, false);
-                        radarpulsetimer = 2.0f;
-                    } else {
-                        radarpulsetimer -= FRAMETIME;
-                    }
-                    f32 grow = 1.0f;
-                    if (!TestForController()) {
-                        const f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
-                        if (elapsed > 4.0f) {
-                            f32 wave = NU_SIN_LUT(static_cast<i32>(NuFmod(elapsed, 4.0f) * 0.25f * 65536.0f)) - 0.8f;
-                            if (wave < 0.0f)
-                                wave = 0.0f;
-                            grow += wave;
-                        }
-                    }
-                    DrawCharIcon(model, x, y, 0.0f, grow * size, 0xa6, opacity, opacity, 1, NULL);
-                }
-                if (model != -1 && progress > 0.0f) {
-                    char name[64];
-                    char *text = GameObj_GetName(model, NULL, name);
-                    SmartTextEx(text, base_x, 0.475f, 1.0f, 0.45f, 0.45f, 0.45f, 1, 255, 191, 0, 1.25f, 2, NULL, 0,
-                                static_cast<i32>(opacity * 128.0f * progress));
-                }
-            }
-            GameMenu[menu_level].item_x[0] = x;
-            GameMenu[menu_level].item_y[0] = y;
-            GameMenu[menu_level].item_width[0] = size * 0.5f;
-            GameMenu[menu_level].item_height[0] = 0.0f;
-        }
-    }
-    if (freeplaymode == 0) {
-        list[0].model_id = MenuPacket.player_model[0];
-        list[1].model_id = -1;
-        const f32 offset = (1.0f - NuFabs(COLLECTION_Y_HUB)) + 1.0f;
-        const f32 y =
-            (COLLECTION_Y_HUB + offset) * NU_SIN_LUT(static_cast<i32>((freeplaytime / freeplayduration) * 16384.0f)) -
-            offset;
-        Collection_Draw(collection, 0.0f, y, collection->field_10, list, 1.0f, 1);
-        Hub_DrawIconCursors(collection, 1.0f);
-        return;
-    }
-    if (freeplaymode == 1) {
-        list[0].model_id = MenuPacket.player_model[0];
-        list[1].model_id = -1;
-        Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, 1.0f, 1);
-        Hub_DrawIconCursors(collection, 1.0f);
-        i32 status = -1, select = -1, cancel = -1;
-        if (freeplay_selected[0] == 0 && freeplay_time[0] <= 0.0f) {
-            select = tSELECT;
-            status = tSELECTING;
-            cancel = tEXIT;
-        } else if (freeplay_selected[0] == 1 && freeplay_time[0] <= 0.0f) {
-            status = tSELECTED;
-            select = tYES;
-            cancel = tNO;
-        } else if (freeplay_selected[0] >= 2 && freeplay_selected[0] < 4 && MenuPacket.active_player[1] != 0 &&
-                   freeplay_selected[0] > freeplay_selected[1]) {
-            status = tCONFIRMED;
-            cancel = tCANCEL;
-        }
-        DrawPlayerIconPrompts(MenuPacket.active_player[0], select, 1.0f, -1, cancel, -1, status,
-                              MenuPacket.active_player[1], 0, 1.0f, -1, 0, -1, 0);
-        return;
-    }
-    if (freeplaymode != 3 && freeplaymode != 4) {
-        if (freeplaymode == 2) {
-            list[0].model_id = MenuPacket.player_model[0];
-            i32 count = 1;
-            for (i32 i = 0; i < fpcount; ++i)
-                list[count++] = fplist[i];
-            list[count].model_id = -1;
-            f32 alpha = 0.0f;
-            if (freeplaytime < freeplayduration - 0.1f)
-                alpha = 1.0f - freeplaytime / (freeplayduration - 0.1f);
-            Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
-            if (alpha >= 0.0f)
-                Hub_DrawIconCursors(collection, alpha);
-        }
-        return;
-    }
-    list[0].model_id = MenuPacket.player_model[0];
-    i32 count = 1;
-    i16 second = MenuPacket.player_model[1];
-    if (second == -1) {
-        second = PlayerList[1];
-        if (__builtin_expect(second == list[0].model_id, 0))
-            second = -1;
-    }
-    if (second != -1)
-        list[count++].model_id = second;
-    list[count].model_id = -1;
-    for (i32 i = 0; i < fpcount; ++i) {
-        if (InModelList(list, fplist[i].model_id, NULL) == 0) {
-            list[count++] = fplist[i];
-            list[count].model_id = -1;
-        }
-    }
-    const f32 progress = freeplaytime / freeplayduration;
-    if (freeplaymode == 3) {
-        const f32 alpha = freeplaytime >= 0.8f ? 0.0f : 1.0f - freeplaytime / 0.8f;
-        Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
-    }
-    f32 size = 0.35f;
-    if (count > 8) {
-        size = 0.35f - static_cast<f32>(count - 8) * 0.02f;
-        if (size < 0.1f)
-            size = 0.1f;
-    }
-    f32 dx = COLLECTION_DX * (size / COLLECTION_ICONSIZE);
-    if (Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0)
-        dx *= 0.75f;
-    const f32 dy = 0.875f * (size / COLLECTION_ICONSIZE) * COLLECTION_DY * 0.5f;
-    f32 x = -(static_cast<f32>(count - 1) * dx * 0.5f * 0.5f);
-    for (i32 i = 0; i < count; ++i) {
-        const f32 y = (i & 1) == 0 ? -dy : dy;
-        f32 target_size = size;
-        if (Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0)
-            target_size *= 0.875f;
-        if (freeplaymode == 3) {
-            f32 source_x, source_y, source_size, opacity;
-            i32 frame;
-            if (i == 0) {
-                source_x = -ICONX;
-                source_y = STATSPOSY;
-                source_size = COLLECTION_ICONSIZE;
-                opacity = MenuPacket.active_player[0] ? 1.0f : DROPINALPHA;
-                frame = 0xa6;
-            } else {
-                const i32 index = InCollectList_Index(list[i].model_id, collection->list, collection->count_y);
-                if (index == -1) {
-                    x += dx * 0.5f;
-                    continue;
-                }
-                source_x = collection->list[index].grid_x;
-                source_y = collection->list[index].grid_y;
-                source_size = collection->field_10 * COLLECTION_ICONSIZE;
-                if (__builtin_expect(Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0, 0))
-                    source_size *= 0.875f;
-                opacity = 1.0f;
-                frame = 0xa7;
-            }
-            const f32 eased = 1.0f - (NU_SIN_LUT(static_cast<i32>(progress * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
-            DrawCharIcon(list[i].model_id, (x - source_x) * eased + source_x, (y - source_y) * eased + source_y, 0.0f,
-                         (target_size - source_size) * eased + source_size, frame, eased * (1.0f - opacity) + opacity,
-                         eased * (1.0f - opacity) + opacity, 1, NULL);
-        } else {
-            const f32 offset = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 16384.0f + 16384.0f));
-            DrawCharIcon(list[i].model_id, offset + offset + x, y, 0.0f, target_size, i == 0 ? 0xa6 : 0xa7, 1.0f, 1.0f,
-                         1, NULL);
-        }
-        x += dx * 0.5f;
-    }
-}
-
-extern f32 PANEL_REDBRICKSCALE;
-void Hub_DrawImportantBrick(i32 object, f32 x, f32 y, f32 alpha, i32 count, i32 total) {
-    char text[32];
-    const i32 rotation = static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f) & 0xffff;
-    const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_REDBRICKSCALE;
-    const u16 tilt = static_cast<i32>(1820.0f * NuTrigTable[rotation & 0x7fff]) - 910;
-    DrawPanel3DObjectNoAlpha(x, y + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 1.0f, scale, scale, scale, tilt, rotation, 0,
-                             &WORLD->lev_objs[object].special, 2);
-    if (total >= 0 && count >= 0) {
-        if (total == 1)
-            NuStrCpy(text, count == 1 ? "$" : "X");
-        else
-            sprintf(text, "%i/%i", count, total);
-        Text3DEx(text, x, y, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale, PANEL_MINIKITCOUNTSCALE,
-                 PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(static_cast<i32>(128.0f * alpha)));
-    }
-}
-
-void Hub_InitFreePlaySelect(i32 area, i32 first_model, i32 second_model) {
-    COLLECTION_s *collection = GetFreePlayCollection(area);
-    if (collection == &VehicleCollection) {
-        if (first_model == -1)
-            first_model = VehicleCollection.list[0].id;
-        if (second_model == -1) {
-            second_model = VehicleCollection.list[1].id;
-            goto make_default_pair;
-        }
-        goto make_selected_pair;
-    }
-    if (collection == &MiniKitCollection) {
-        if (first_model == -1)
-            first_model = MiniKitCollection.list[0].id;
-        if (second_model == -1) {
-            second_model = MiniKitCollection.list[1].id;
-            goto make_default_pair;
-        }
-        goto make_selected_pair;
-    }
-    Hub_MakeFreePlayList(-1, -1);
-    goto use_player_models;
-
-make_selected_pair:
-    Hub_MakeFreePlayList(first_model, second_model);
-    if (first_model == -1)
-        goto use_player_models;
-    goto store_model_pair;
-
-make_default_pair:
-    Hub_MakeFreePlayList(first_model, second_model);
-    if (first_model == -1 || second_model == -1)
-        goto use_player_models;
-
-store_model_pair:
-    MenuPacket.player_model[0] = static_cast<i16>(first_model);
-    MenuPacket.player_model[1] = static_cast<i16>(second_model);
-    goto initialize_selection;
-
-use_player_models:
-    MenuPacket.player_model[0] = Player[0] != NULL ? Player[0]->id : -1;
-    MenuPacket.player_model[1] = Player[1] != NULL ? Player[1]->id : -1;
-
-initialize_selection:
-    freeplaytime = 0.0f;
-    freeplaymode = 0;
-    freeplayduration = 1.0f;
-    freeplay_selected[0] = 0;
-    freeplay_selected[1] = 0;
-    uprepeattime[0] = 0.0f;
-    rightrepeattime[0] = 0.0f;
-    uprepeattime[1] = 0.0f;
-    rightrepeattime[1] = 0.0f;
-    downrepeattime[0] = 0.0f;
-    leftrepeattime[0] = 0.0f;
-    downrepeattime[1] = 0.0f;
-    leftrepeattime[1] = 0.0f;
-    ResetIconWibble();
-    hub_freeplay_area = area;
-}
-
-bool HubMinikitViewerUnlocked() {
-    return true;
-}
-
-void Hub_UpdateFreePlaySelect() {
-    COLLECTION_s *collection = GetFreePlayCollection(hub_freeplay_area);
-    if (freeplay_time[0] > 0.0f)
-        freeplay_time[0] -= FRAMETIME;
-    if (freeplay_time[1] > 0.0f)
-        freeplay_time[1] -= FRAMETIME;
-    UpdateIconWibble();
-    MENU *menu = &GameMenu[GameMenuLevel];
-    switch (freeplaymode) {
-        case 0:
-            freeplaytime += FRAMETIME;
-            if (__builtin_expect(freeplaytime >= freeplayduration, 1)) {
-                freeplaytime = 0.0f;
-                freeplaymode = 1;
-                freeplayduration = 0.0f;
-                freeplay_i[0] = InCollectList_Index(MenuPacket.player_model[0], collection->list, collection->count_y);
-                if (freeplay_i[0] == -1)
-                    freeplay_i[0] = 0;
-                freeplay_selected[0] = 0;
-                freeplay_i[1] = InCollectList_Index(MenuPacket.player_model[1], collection->list, collection->count_y);
-                if (__builtin_expect(freeplay_i[1] == -1, 1))
-                    freeplay_i[1] = freeplay_i[0] == 1 ? 0 : 1;
-                freeplay_selected[1] = 0;
-            }
-            break;
-        case 1: {
-            i32 active = 0, confirmed = 0;
-            bool exit = false;
-            auto menu_input_activity = menu->input_activity;
-            auto collection_count_x = collection->count_x;
-            for (i32 player = 0; player < 2; ++player) {
-                const i32 other = (player + 1) & 1;
-                const i32 previous = freeplay_i[player];
-                i32 index = previous;
-                bool select = false, cancel = false;
-                if (__builtin_expect(menu_input_activity != 0 && player == 0, 1)) {
-                    if (menu->confirm_pressed != 0) {
-                        if (__builtin_expect(menu->selected_item == 9999, 0))
-                            select = 1;
-                        else
-                            index = menu->selected_item;
-                    }
-                    cancel = menu->cancel_pressed != 0;
-                }
-                if (MenuPacket.active_player[player] != 0) {
-                    if ((GamePad[player].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT) != 0) {
-                        select = 1;
-                    } else if ((GamePad[player].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL) != 0) {
-                        cancel = 1;
-                    } else if (__builtin_expect(freeplay_selected[player] == 0, 0)) {
-                        const u32 pressed = GamePad[player].buttons_pressed | GamePad[player].left_directions;
-                        const u32 held = GamePad[player].buttons_held | GamePad[player].buttons_released;
-                        i32 up = pressed & GAMEPAD_DUP, down = pressed & GAMEPAD_DDOWN;
-                        i32 left = pressed & GAMEPAD_DLEFT, right = pressed & GAMEPAD_DRIGHT;
-                        i32 up_held = held & GAMEPAD_DUP, down_held = held & GAMEPAD_DDOWN;
-                        i32 left_held = held & GAMEPAD_DLEFT, right_held = held & GAMEPAD_DRIGHT;
-                        if (down && up)
-                            down = up = 0;
-                        if (right && left)
-                            right = left = 0;
-                        if (down_held && up_held)
-                            down_held = up_held = 0;
-                        if (right_held && left_held)
-                            right_held = left_held = 0;
-                        MenuRepeat(&up_held, &up, &uprepeattime[player], &uprepeatcount[player], 0.1f, FRAMETIME);
-                        MenuRepeat(&down_held, &down, &downrepeattime[player], &downrepeatcount[player], 0.1f,
-                                   FRAMETIME);
-                        MenuRepeat(&left_held, &left, &leftrepeattime[player], &leftrepeatcount[player], 0.1f,
-                                   FRAMETIME);
-                        MenuRepeat(&right_held, &right, &rightrepeattime[player], &rightrepeatcount[player], 0.1f,
-                                   FRAMETIME);
-                        if (up) {
-                            const i32 columns = collection_count_x;
-                            const i32 count = collection->count_y;
-                            const i32 span = (static_cast<u32>(count) / static_cast<u32>(columns) + 1) * columns;
-                            index = previous;
-                            do {
-                                index -= columns;
-                                if (__builtin_expect(index < 0, 1)) {
-                                    index += span;
-                                    if (index >= count)
-                                        index -= columns;
-                                }
-                            } while (collection->list[index].id == MenuPacket.player_model[other]);
-                        } else if (down) {
-                            const i32 count = collection->count_y;
-                            const i32 columns = collection_count_x;
-                            const i32 span = (static_cast<u32>(count) / static_cast<u32>(columns) + 1) * columns;
-                            index = previous;
-                            do {
-                                index += columns;
-                                if (index >= count) {
-                                    if (index < span)
-                                        index += columns;
-                                    index -= span;
-                                }
-                            } while (collection->list[index].id == MenuPacket.player_model[other]);
-                        } else if (__builtin_expect(!!(left), 0)) {
-                            const i32 count = collection->count_y;
-                            const i32 columns = collection_count_x;
-                            index = previous;
-                            do {
-                                i32 column = index % columns - 1;
-                                if (column < 0)
-                                    column += columns;
-                                index = (index / columns) * columns + column;
-                                if (index >= count)
-                                    index = count - 1;
-                            } while (collection->list[index].id == MenuPacket.player_model[other]);
-                        } else if (right) {
-                            const i32 columns = collection_count_x;
-                            const i32 count = collection->count_y;
-                            index = previous;
-                            do {
-                                i32 column = index % columns + 1;
-                                const i32 row = (index / columns) * columns;
-                                if (column >= columns)
-                                    column -= columns;
-                                index = row + column < count ? row + column : row;
-                            } while (collection->list[index].id == MenuPacket.player_model[other]);
-                        }
-                    }
-                    ++active;
-                    if (freeplay_selected[player] >= 2)
-                        ++confirmed;
-                }
-                if (freeplay_selected[player] == 1 && freeplay_time[player] < 0.0f) {
-                    freeplay_selected[player] = 2;
-                } else if (select && freeplay_time[player] <= 0.0f) {
-                    if (__builtin_expect(freeplay_selected[player] == 0, 1)) {
-                        if (Collection_Got(collection->list[freeplay_i[player]].id) == 0) {
-                            GameAudio_PlaySfx(0x32, NULL, 0, 0);
-                        } else {
-                            freeplay_time[player] = 0.75f;
-                            freeplay_selected[player] = 1;
-                            GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                        }
-                    } else if (freeplay_selected[player] == 1) {
-                        freeplay_selected[player] = 2;
-                        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                    }
-                }
-                if (cancel) {
-                    if (freeplay_selected[player] != 1) {
-                        if (freeplay_selected[player] != 2) {
-                            if (freeplay_selected[player] == 0 && freeplay_time[player] <= 0.0f) {
-                                exit = 1;
-                            }
-                        } else {
-                            if (MenuPacket.active_player[other] != 0 && freeplay_selected[other] < 2) {
-                                freeplay_selected[player] = 1;
-                                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                            }
-                        }
-                    } else {
-                        if (freeplay_time[player] <= 0.0f) {
-                            BigIconAlpha[player] = 0.0f;
-                            freeplay_time[player] = 0.75f;
-                            freeplay_selected[player] = 0;
-                            GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                        }
-                    }
-                }
-                // Touch navigation commits after selection, just like the
-                // original: confirmation checks the previously selected model.
-                if (index != previous) {
-                    freeplay_i[player] = index;
-                    MenuPacket.player_model[player] = collection->list[index].id;
-                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-                }
-            }
-            if (confirmed == active) {
-                if (netclient == 0) {
-                    const i32 area = LDataList[hub_new_level].area_index;
-                    if (area == -1 || (ADataList[area].flags & 1) == 0)
-                        hub_makefreeplaylist_addotherid = 1;
-                    Hub_MakeFreePlayList(MenuPacket.player_model[0], MenuPacket.player_model[1]);
-                } else {
-                    if (net_recievedFreePlayList == 0)
-                        break;
-                    fpcount = 0;
-                    for (i32 i = 0; i < net_FreePlayModelCount; ++i) {
-                        FreePlayModelList[i] = NetFreePlayModelList[i];
-                        if (Collection_Got(NetFreePlayModelList[i].model_id) != 0)
-                            fplist[fpcount++] = NetFreePlayModelList[i];
-                    }
-                    fplist[fpcount].model_id = -1;
-                    if (fpcount > 3) {
-                        for (i32 shuffle = 0; shuffle < 64; ++shuffle) {
-                            const i32 first_offset = qrand() / (0xffff / (fpcount - 2) + 1);
-                            const i32 first = first_offset + 2;
-                            const i32 second =
-                                (qrand() / (0xffff / (fpcount - 3) + 1) + first_offset) % (fpcount - 2) + 2;
-                            const APICHARACTERMODELLIST_s saved = fplist[first];
-                            fplist[first] = fplist[second];
-                            fplist[second] = saved;
-                        }
-                    }
-                    NextArea_FreePlay = 1;
-                    FreePlay = 1;
-                }
-                freeplaytime = 0.0f;
-                freeplaymode = 3;
-                freeplayduration = 1.0f;
-            } else if (exit) {
-                fpcount = 0;
-                freeplaytime = 0.0f;
-                freeplaymode = 2;
-                freeplayduration = 0.6f;
-                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-            }
-            break;
-        }
-        case 2:
-            freeplaytime += FRAMETIME;
-            if (__builtin_expect(freeplaytime >= freeplayduration, 1))
-                WipeBackToHub();
-            break;
-        case 3:
-            freeplaytime += FRAMETIME;
-            if (freeplaytime >= freeplayduration) {
-                freeplaytime = 0.0f;
-                freeplaymode = 4;
-                freeplayduration = 1.5f;
-            }
-            break;
-        case 4:
-            freeplaytime += FRAMETIME;
-            if (freeplaytime >= freeplayduration) {
-                makeplayerlist_freeplay = 1;
-                NewLData = &LDataList[hub_new_level];
-                NextArea_FreePlay = 1;
-                FreePlay = 1;
-                NewLData = Area_FindNextPlayLevel(NewLData->idx);
-                loadareacharacters_no_backdrop_reset = 1;
-                FadeSys.fade = 1.0f;
-                FinishLoop_On = 0;
-                if (hub_freeplaysource == 0) {
-                    if (hub_selectmode == 2)
-                        InitChallenge(NewLData->area_index);
-                } else if (__builtin_expect(hub_freeplaysource == 1 && bonusmodearcade != 0, 0)) {
-                    Arcade = 1;
-                    Arcade_Points[0] = Arcade_Points[1] = 0;
-                }
-            }
-            break;
-    }
-    if (__builtin_expect(freeplaymode == 1, 1))
-        BigIconAlpha[0] = SeekLinearF(BigIconAlpha[0], 1.0f, FRAMETIME + FRAMETIME);
-    else
-        BigIconAlpha[0] = 0.0f;
-    if (freeplaymode == 1)
-        BigIconAlpha[1] = SeekLinearF(BigIconAlpha[1], 1.0f, FRAMETIME + FRAMETIME);
-    else
-        BigIconAlpha[1] = 0.0f;
-}
-
-static void Hub_FindSpecial(WORLDINFO_s *world, nuhspecial_s *special, const char *name) {
-    NuSpecialFind(world->current_gscn, special, const_cast<char *>(name), 1);
-}
-
-void Hub_Init(WORLDINFO_s *world) {
-    static NUVEC arcadelightpos = {-22.49f, 0.79f, -49.9975f};
-
-    Store_RestorePurchases();
-    Hub_LowEnd_IconsInsteadOfModels = 0;
-
-    if (BOTHTRUEJEDIGOLDBRICKS != 0) {
-        HUB_AREAPANELX = HUB_AREAPANELX_TWOTRUEJEDIGOLDBRICKS;
-    } else if (Store_IsPackUnlocked(8) == 0) {
-        HUB_AREAPANELX = HUB_AREAPANELX_1TRUEJEDIGB_NOCHALLENGE;
-    } else {
-        HUB_AREAPANELX = HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK;
-    }
-
-    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
-        info->door = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->door_name));
-        info->bonus_gizmo = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->bonus_gizmo_name));
-        info->bonus_gizmo_2 = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->bonus_gizmo_name_2));
-        info->area = Area_FindByName(const_cast<char *>(info->area_name), NULL);
-        Hub_FindSpecial(world, &info->lock, info->lock_name);
-    }
-
-    for (HUBEPISODEINFO_s *info = HubEpisodeInfo; info->episode != -1; ++info) {
-        info->data = info->episode >= 0 && info->episode < EPISODECOUNT ? &EDataList[info->episode] : NULL;
-        info->door = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>(info->door_name));
-        Hub_FindSpecial(world, &info->lock_on, info->lock_on_name);
-        Hub_FindSpecial(world, &info->lock_off, info->lock_off_name);
-    }
-
-    hub_minikitviewer_gizmo =
-        GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, const_cast<char *>("conveyor_test"));
-    hub_minikitviewer_camspl = NuSplineFind(world->current_gscn, const_cast<char *>("mini_cam_e1_1"));
-    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, const_cast<char *>("network_door"));
-    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, const_cast<char *>("DE7"));
-
-    static const char *const lock_names[] = {
-        "lock_4_off", "lock_4_on",    "lock_5_off",  "lock_5_on",    "lock_6_off",  "lock_6_on",    "lock_b_off",
-        "lock_b_on",  "lock_4_7_off", "lock_4_7_on", "lock_5_7_off", "lock_5_7_on", "lock_6_7_off", "lock_6_7_on",
-    };
-    for (i32 i = 0; i < 14; ++i) {
-        Hub_FindSpecial(world, &LevHSpecial[i], lock_names[i]);
-    }
-
-    if (NuSpecialFind(world->current_gscn, &LevHSpecial[15], const_cast<char *>("holo"), 1) != 0) {
-        NuSpecialSetVisibility(&LevHSpecial[15], 0);
-    }
-    if (NuSpecialFind(world->current_gscn, &LevHSpecial[16], const_cast<char *>("lock_7_on"), 1) != 0 &&
-        Store_IsPackUnlocked(6) == 0) {
-        NuSpecialSetVisibility(&LevHSpecial[16], 0);
-    }
-    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[20], const_cast<char *>("ps2_only_"), 32, 0);
-    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[52], const_cast<char *>("psp_only_"), 32, 0);
-    Hub_FindSpecial(world, &LevHSpecial[84], "fake_wall");
-
-    Hub_ResetPanel();
-    InitShop(world);
-    Hub_LockUnlockDoors(world);
-    Hub_InitMiniKits(world);
-    LevTime[0] = 3.0f;
-    LevTime[1] = 3.0f;
-    Hub_HologramAlpha = 0.0f;
-    Hub_HologramTargetAlpha = 0.0f;
-    Customiser_Init(CharacterCustomiser);
-    if (Hub_InitAIFn != NULL) {
-        Hub_InitAIFn(world);
-    }
-
-    hub_startoutsidebonusdoor_area = -1;
-    CutScenePlayer_Reset();
-    LevBuildIt[0] = GizBuildIt_Find(world, const_cast<char *>("fountain"));
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>("fountain"));
-    if (LevBuildIt[0] == NULL || LevGizmo[0] == NULL) {
-        LevBuildIt[0] = NULL;
-        LevGizmo[0] = NULL;
-    }
-    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, -1, const_cast<char *>("garageLever"));
-    Arcade = 0;
-    NuMtxSetRotationZ(&LevMtx, 0x4000);
-    NuMtxRotateY(&LevMtx, 0xf600);
-    NuMtxTranslate(&LevMtx, &arcadelightpos);
-    Store_HubInitFloorTargets(world);
-    hub_custodians_finished_loading = 0;
-}
-
-// The level callback carries the streaming-buffer arguments used by most
-// level loaders, but the original hub loader only forwards the world to the
-// persistent character customiser.
-void Hub_Load(WORLDINFO_s *world, variptr_u *, variptr_u *) {
-    Customiser_LoadAll(CharacterCustomiser, world);
-}
-
-void Hub_Reset(WORLDINFO_s *world) {
-    Customiser_Reset(CharacterCustomiser);
-    if (Hub_ResetAIFn != NULL) {
-        Hub_ResetAIFn(world);
-    }
-
-    for (i32 i = 20; i < 52; ++i) {
-        if (((LevHSpecialExists >> i) & 1) != 0) {
-            NuSpecialSetVisibility(&LevHSpecial[i], 1);
-        }
-        const i32 hidden = i + 32;
-        if (((LevHSpecialExists >> hidden) & 1) != 0) {
-            NuSpecialSetVisibility(&LevHSpecial[hidden], 0);
-        }
-    }
-
-    if (NuSpecialExistsFn(&LevHSpecial[84]) != 0) {
-        NuSpecialSetVisibility(&LevHSpecial[84], 0);
-    }
-
-    for (i32 i = 0; HubAreaInfo[i].area_name != NULL; ++i) {
-        if (HubAreaInfo[i].door == NULL) {
-            continue;
-        }
-        AREADATA_s *area = HubAreaInfo[i].area;
-        i32 open = Episode_CountOpenAreas(static_cast<i8>(area->episode_index), area->index, Game_AreaSave);
-        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(HubAreaInfo[i].door->object);
-        if (open != 0) {
-            obstacle->runtime_flags &= static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
-            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 1);
-        } else {
-            obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
-            NuSpecialSetVisibility(&HubAreaInfo[i].lock, 0);
-        }
-    }
-
-    for (i32 i = 0; static_cast<u16>(HubEpisodeInfo[i].episode) <= 8; ++i) {
-        if (HubEpisodeInfo[i].door == NULL) {
-            continue;
-        }
-        i32 open = Episode_CountOpenAreas(HubEpisodeInfo[i].episode, -1, Game_AreaSave);
-        if (open == 0) {
-            open = HubEpisodeInfo[i].force_open;
-        }
-        if (open == 0) {
-            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags |=
-                GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
-            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 0);
-        } else {
-            static_cast<GIZOBSTACLE_s *>(HubEpisodeInfo[i].door->object)->runtime_flags &=
-                static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
-            NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
-        }
-    }
-    if (Store_IsPackUnlocked(6) == 0) {
-        NuSpecialSetVisibility(&HubEpisodeInfo[8].lock_on, 0);
-    }
-
-    hub_jabbaawake = 0.0f;
-    buildits_reset = 0;
-    Hub_HologramAlpha = 0.0f;
-    Hub_HologramTargetAlpha = 0.0f;
-    Hub_PreventDropOutTime = 0.0f;
-}
-
-// Private hub menu and drawing helpers.
-
-extern i16 tARCADE_NAME, tARCADE_NEEDTWOPLAYERS;
-extern i32 Arcade_BothPlayersActive();
-struct ARCADE_LEVEL_s {
-    AREADATA **area;
-    i16 *character_id;
-};
-extern ARCADE_LEVEL_s ArcadeLevel[12];
-static void Hub_DrawArcadeStats(float alpha) {
-    const i32 menu_id = GetMenuID();
-    f32 alpha_scaled = alpha * 128.0f;
-    const i32 opacity = static_cast<i32>(alpha_scaled);
-    const f32 title_scale = HUB_EPISODESUBTITLESIZE;
-    SmartTextEx(TTab[tARCADE_NAME], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, title_scale, title_scale, title_scale, 0,
-                static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG), static_cast<u8>(HUB_EPISODEB), 1.7f, 1, 0,
-                0, opacity);
-
-    i32 complete_count = 0;
-    i32 area_count = 0;
-    if (Game_AreaSave != NULL) {
-        for (i32 i = 0; i < 12; ++i) {
-            AREADATA *area = *ArcadeLevel[i].area;
-            if ((area->flags & 0x800) != 0)
-                continue;
-            ++area_count;
-            AREASAVE_s *save = &Game_AreaSave[area->index];
-            if (save->area_complete ||
-                static_cast<f32>(static_cast<i32>(area->challenge_trial_time)) > save->challenge_trial_time)
-                ++complete_count;
-        }
-    }
-    Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, alpha, complete_count, area_count);
-
-    if (GetMenuID() == 16) {
-        return;
-    }
-    if (menu_id != -1 || Arcade_BothPlayersActive())
-        return;
-    i32 text_id = tARCADE_NEEDTWOPLAYERS;
-    if (text_id == -1)
-        return;
-    const f32 pulse = 0.75f + 0.25f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
-                                          NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f)));
-    SmartTextEx(TTab[text_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
-                HUB_EPISODETITLESIZE, 0, 255, 0, 0, 1.7f, 1, 0, 0, static_cast<i32>(pulse * alpha_scaled));
-}
-
-static void Hub_DrawMiniKitCount(f32 x, f32 y, i32 count, i32 total, f32 alpha) {
-    const i32 object = hub_drawminikitcount_charkit ? 207 : 206;
-    hub_drawminikitcount_charkit = 0;
-    char text[128];
-    if (total == 1)
-        NuStrCpy(text, count == 1 ? "$" : "X");
-    else
-        sprintf(text, "%i/%i", count, total);
-
-    Text3DEx(text, x, y, 1.0f, PANEL_MINIKITCOUNTSCALE * stats_xscale, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
-             0, 255, 0, 127, static_cast<u8>(static_cast<i32>(128.0f * alpha)));
-    const u16 rotation = (NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f;
-    const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_MINIKITSCALE;
-    const i16 tilt = 1820.0f * NuTrigTable[rotation & 0x7fff];
-    DrawPanel3DObjectNoAlpha(x, y + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 1.0f, scale, scale, scale, tilt, rotation, 0,
-                             &WORLD->lev_objs[object].special, 2);
-}
-
-static void Hub_MakeFreePlayList(i32 first_model, i32 second_model) {
-    fpcount = 0;
-    const i32 area = LDataList[hub_new_level].area_index;
-
-    if (hub_makefreeplaylist_addotherid != 0) {
-        if (second_model == -1) {
-            const i32 other_player = PlayerID[1];
-            if (other_player != -1 && other_player != PlayerID[0] && other_player != first_model) {
-                second_model = other_player;
-            }
-        }
-        hub_makefreeplaylist_addotherid = 0;
-    }
-
-    MakeFreePlayModelList(first_model, second_model, area, -1, 1);
-    if (area != -1 && (ADataList[area].flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
-                          (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) {
-        for (i32 index = 0; index < FreePlayModelCount; ++index) {
-            const i32 model = FreePlayModelList[index].model_id;
-            if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_MINIKIT) == 0 ||
-                InCollectList_Index(model, MiniKitCollection.list, MiniKitCollection.count_y) == -1 ||
-                PlayerList[0] == model || PlayerList[1] == model || Collection_Got(model) == 0) {
-                continue;
-            }
-            fplist[fpcount++] = FreePlayModelList[index];
-        }
-    } else {
-        const i32 selectable_count = FreePlayResidentCount + FreePlayBonusCount;
-        for (i32 offset = 0; offset < selectable_count; ++offset) {
-            const i32 index = offset + 2;
-            const i32 model = FreePlayModelList[index].model_id;
-            if (model == -1) {
-                break;
-            }
-            if (area != -1) {
-                if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0) {
-                    if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_VEHICLE) == 0) {
-                        continue;
-                    }
-                } else if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_VEHICLE) != 0) {
-                    continue;
-                }
-            }
-            if (Collection_Got(model) != 0) {
-                fplist[fpcount++] = FreePlayModelList[index];
-            }
-        }
-    }
-
-    fplist[fpcount].model_id = -1;
-    if (fpcount > 3) {
-        for (i32 shuffle = 0; shuffle < 64; ++shuffle) {
-            const i32 first_offset = qrand() / (0xffff / (fpcount - 2) + 1);
-            const i32 second_offset = qrand() / (0xffff / (fpcount - 3) + 1);
-            const i32 second_index = (second_offset + first_offset) % (fpcount - 2) + 2;
-            const i32 first_index = first_offset + 2;
-            const APICHARACTERMODELLIST_s saved = fplist[first_index];
-            fplist[first_index] = fplist[second_index];
-            fplist[second_index] = saved;
-        }
-    }
-}
-
-extern f32 MainRenderTime;
-
-static __used__ void Hub_UpdateSelectMode() {
-    i16 ids[HUB_VEHICLE_ID_CAPACITY];
-    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f) {
-        return;
-    }
-    MENU *menu = &GameMenu[GameMenuLevel];
-    const i32 area = static_cast<i8>(LDataList[hub_new_level].area_index);
-    const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
-    u16 freeplay_unlocked = FreePlayUnlocked();
-    if (freeplay_unlocked != 1 && area != -1) {
-        freeplay_unlocked =
-            static_cast<i8>(ADataList[area].episode_index) == -1 && (ADataList[area].flags & 0x4000) != 0;
-    }
-    switch (selectmodemode) {
-        case 1:
-            selectmodetime += FRAMETIME;
-            if (!(selectmodeduration <= selectmodetime)) {
-                return;
-            }
-            MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
-                                  static_cast<i8>(LDataList[hub_new_level].area_index), -1, 1);
-            makeplayerlist_freeplay = 2;
-            NextArea_FreePlay = 1;
-            FreePlay = 1;
-            NewLData = Area_FindNextPlayLevel(hub_new_level);
-            break;
-        case 2:
-            selectmodetime += FRAMETIME;
-            if (!(selectmodeduration <= selectmodetime) || NewLData != NULL) {
-                return;
-            }
-            NextArea_FreePlay = 0;
-            FreePlay = 0;
-            NewLData = &LDataList[hub_new_level];
-            break;
-        case 3:
-            selectmodetime += FRAMETIME;
-            if (selectmodeduration <= selectmodetime) {
-                WipeBackToHub();
-            }
-            return;
-        case 4:
-            selectmodetime += FRAMETIME;
-            if (selectmodeduration <= selectmodetime) {
-                NewLData = HUB_LDATA;
-                PlayTrailer = hub_selectmode;
-            }
-            return;
-        case 0: {
-            i32 last_choice = 0;
-            if (!lost_temple && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0) {
-                last_choice = 1;
-                if ((ADataList[area].flags & 0x10) != 0 && Store_IsPackUnlocked(8)) {
-                    last_choice = 2;
-                }
-            }
-            const u32 select_mask = GAMEPAD_MENUSELECT;
-            const u32 cancel_mask = GAMEPAD_MENUCANCEL;
-            const u32 up_mask = GAMEPAD_DUP;
-            const u32 down_mask = GAMEPAD_DDOWN;
-            i32 confirm = 0, cancel = 0, up = 0, down = 0;
-            for (i32 i = 0; i < 2; ++i) {
-                if (!MenuPacket.active_player[i])
-                    continue;
-                const u32 pressed = GamePad[i].buttons_pressed;
-                if ((pressed & select_mask) != 0) {
-                    confirm = true;
-                    break;
-                }
-                if ((pressed & cancel_mask) != 0) {
-                    cancel = true;
-                    break;
-                }
-                const u32 directions = pressed | GamePad[i].left_directions;
-                if ((directions & up_mask) != 0) {
-                    up = true;
-                } else if ((directions & down_mask) != 0) {
-                    down = true;
-                }
-            }
-            if (menu->input_activity != 0) {
-                if (menu->confirm_pressed != 0) {
-                    menu->confirm_pressed = 0;
-                    hub_selectmode = menu->selected_item;
-                    confirm = true;
-                } else if (menu->cancel_pressed != 0 && !confirm) {
-                    cancel = true;
-                }
-            }
-            if (confirm) {
-                if (!lost_temple) {
-                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                    if (hub_selectmode == 0) {
-                        selectmodetime = 0.0f;
-                        selectmodemode = 2;
-                        selectmodeduration = 0.6f;
-                        return;
-                    }
-                    if (hub_selectmode == 1 && Game.area_save[area].area_complete != 0 && freeplay_unlocked) {
-                        i32 first = -1, second = -1;
-                        if ((ADataList[area].flags & 1) != 0) {
-
-                            const i32 count =
-                                Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED,
-                                                     HUB_VEHICLE_COLLECTION_REQUIRED, ids, &first, &second, 0);
-                            if (count == 1) {
-                                selectmodetime = 0.0f;
-                                selectmodemode = 1;
-                                selectmodeduration = 0.6f;
-                                MenuPacket.player_model[0] = ids[0];
-                                MenuPacket.player_model[1] = ids[0];
-                                return;
-                            }
-                        }
-                        hub_freeplaysource = 0;
-                        Hub_InitFreePlaySelect(area, first, second);
-                        NewMenu(17, -1, -1);
-                        return;
-                    }
-                    if (hub_selectmode == 2 && Game.area_save[area].area_complete != 0 && Store_IsPackUnlocked(8)) {
-                        hub_freeplaysource = 0;
-                        Hub_InitFreePlaySelect(area, -1, -1);
-                        NewMenu(17, -1, -1);
-                        return;
-                    }
-                    if (hub_selectmode != 1 && hub_selectmode != 2) {
-                        return;
-                    }
-                }
-                GameAudio_PlaySfx(0x32, NULL, 0, 0);
-            } else if (cancel) {
-                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                selectmodetime = 0.0f;
-                selectmodemode = 3;
-                selectmodeduration = 0.6f;
-            } else {
-                const i32 previous = hub_selectmode;
-                if (up) {
-                    if (hub_selectmode > 0) {
-                        --hub_selectmode;
-                    }
-                } else if (down && hub_selectmode < last_choice) {
-                    ++hub_selectmode;
-                }
-                if (hub_selectmode != previous) {
-                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-                }
-            }
-            return;
-        }
-        default:
-            return;
-    }
-    loadareacharacters_no_backdrop_reset = 1;
-    const FADETYPE fade = {FADE_TYPE_STILL};
-    FadeSys.SetFade(fade, 0);
-    FinishLoop_On = 0;
-}
-
-// The original private draw helper shares EpisodeNumerals with the hub menus.
-static void DrawEpisodesMenu(i32 selected, f32 alpha) {
-    const i32 menu_level = GameMenuLevel;
-    MENU *menu = &GameMenu[menu_level];
-    if (episodesmode != 0) {
-        if (episodesmode == 1) {
-            if (hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1)
-                goto draw_clips;
-        } else if (episodesmode == 2) {
-            goto draw_clips;
-        } else if (episodesmode == 3) {
-            goto draw_play;
-        } else {
-            return;
-        }
-    }
-    {
-        NUVEC minimum, maximum;
-        NuSpecialGetBounds(&WORLD->lev_objs[167].special, &minimum, &maximum);
-        f32 dx = (maximum.x - minimum.x) * 0.35f;
-        f32 dy = -(maximum.y - minimum.y) * 0.35f;
-        dx /= PANEL3DMULX;
-        dy /= PANEL3DMULY;
-        f32 y = -dy * 0.5f;
-        const f32 first_x = -dx;
-        for (i32 row = 0; row < 2; ++row, y += dy) {
-            f32 x = first_x;
-            for (i32 column = 0; column < 3; ++column, x += dx) {
-                const i32 episode = row * 3 + column;
-                u32 red, green, blue;
-                if (selected && episode == i_episodes && TestForController()) {
-                    if (menu_pulsate > 0.0f) {
-                        red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
-                                               static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
-                        blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
-                                                static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
-                        green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
-                                                 static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
-                    } else {
-                        red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
-                        green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
-                        blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
-                    }
-                } else if (menu_pulse > 0.0f) {
-                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                           static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                             static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                            static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-                } else {
-                    red = MENUENTRYR;
-                    green = MENUENTRYG;
-                    blue = MENUENTRYB;
-                }
-                f32 opacity = 1.0f;
-                if (Game_AreaSave != NULL && Game_AreaSave[EDataList[episode].area_ids[0]].complete == 0)
-                    opacity = 0.375f;
-                opacity = opacity * alpha;
-                if (episodesmode != 1 && episodestime < episodesduration)
-                    opacity = opacity * (episodestime / episodesduration);
-                Text3DEx(EpisodeNumerals[episode], x, y, 1.0f, 0.95f, 0.95f, 0.95f, 0, red, green, blue,
-                         static_cast<i32>(128.0f * opacity));
-                DrawPanel3DObject(x, y, 1.0f, 0.35f, 0.35f, 0.35f, 0, 0, 0, &WORLD->lev_objs[167].special, 0, opacity);
-                menu->item_x[episode] = x;
-                menu->item_y[episode] = y;
-                menu->item_width[episode] = 0.175f;
-                menu->item_height[episode] = 0.0f;
-            }
-        }
-        memset(GameMenu[menu_level].item_width + 6, 0, 394 * sizeof(f32));
-        memset(GameMenu[menu_level].item_height + 6, 0, 394 * sizeof(f32));
-        return;
-    }
-draw_clips: {
-    COLLECTION_s collection = CharacterCollection;
-    i16 clips[128];
-    const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
-    collection.count_y = CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
-    collection.field_10 = 1.0f;
-    collection.count_x = 7;
-    if (episodesmode != 1 && episodestime < episodesduration)
-        alpha = (episodestime / episodesduration) * alpha;
-    CutScenePlayer_DrawGrid(&collection, clips, 0.0f, 0.05f, i_clip[i_episodes], alpha);
-    return;
-}
-draw_play: {
-    if (episodestime < episodesduration)
-        alpha = (episodestime / episodesduration) * alpha;
-    const f32 time = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
-    alpha = (0.15f * NU_SIN_LUT(static_cast<i32>((time + time) * 65536.0f)) + 0.85f) * alpha;
-    const u8 text_alpha = static_cast<i32>(128.0f * alpha);
-    Text3DEx(TTab[tPLAY], 0.0f, -0.15f, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-             0, 255, 255, 255, text_alpha);
-    DrawPanel3DObject(0.0f, 0.15f, 1.0f, 0.35f, 0.35f, 0.35f, 0, 0, 0, &WORLD->lev_objs[167].special, 0, alpha);
-    menu->item_x[0] = 0.0f;
-    menu->item_y[0] = 0.15f;
-    menu->item_width[0] = 0.175f;
-    menu->item_height[0] = 0.0f;
-    const f32 text_scale = 0.35f * 3.0f;
-    Text3DEx(">", 0.0105f, 0.15f, 1.0f, text_scale * 1.5f, text_scale, text_scale, 0, 255, 255, 255, text_alpha);
-    memset(GameMenu[menu_level].item_width + 1, 0, 399 * sizeof(f32));
-    memset(GameMenu[menu_level].item_height + 1, 0, 399 * sizeof(f32));
-}
-}
-
-void MenuInitEpisodes(MENU_s *) {
-    lastepisodesmode = -1;
-    episodestime = 0.0f;
-    episodesmode = 0;
-    episodesduration = 0.6f;
-    if (Game_AreaSave != NULL && Game_AreaSave[EDataList[i_episodes].area_ids[0]].complete == 0) {
-        i_episodes = 0;
-    }
-    if (hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1) {
-        episodesmode = 2;
-        if (HubStartDoor == NULL) {
-            i_episodes = LDataList[hub_new_level].episode_index;
-        }
-    } else if (HubStartDoor != NULL) {
-        episodesmode = 2;
-    }
-}
-
-extern f32 MainRenderTime;
-extern i16 tSELECT, tBACK, tSELECTING;
-extern "C" void MenuRepeat(i32 *, i32 *, f32 *, u8 *, f32, f32);
-void WipeBackToHub();
-
-void MenuUpdateEpisodes(MENU_s *) {
-    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f)
-        return;
-    const f32 elapsed = FRAMETIME;
-    episodestime = elapsed + episodestime;
-    MENU *menu = &GameMenu[GameMenuLevel];
-    i16 clips[128];
-    switch (episodesmode) {
-        case 0: {
-            i32 up = 0, down = 0, left = 0, right = 0, confirm = 0, cancel = 0;
-            for (i32 player = 0; player < 2; ++player) {
-                if (__builtin_expect(!MenuPacket.active_player[player], 0))
-                    continue;
-                const u32 pressed = GamePad[player].buttons_pressed;
-                if (__builtin_expect(!!(pressed & GAMEPAD_MENUSELECT), 0)) {
-                    confirm = 1;
-                    break;
-                }
-                if (pressed & GAMEPAD_MENUCANCEL) {
-                    cancel = 1;
-                    break;
-                }
-                const u32 directions = pressed | GamePad[player].left_directions;
-                if (directions & GAMEPAD_DUP)
-                    up = 1;
-                else if (directions & GAMEPAD_DDOWN)
-                    down = 1;
-                else if (directions & GAMEPAD_DLEFT)
-                    left = 1;
-                else if (directions & GAMEPAD_DRIGHT)
-                    right = 1;
-            }
-            if (menu->input_activity) {
-                if (menu->confirm_pressed) {
-                    if (menu->selected_item == i_episodes)
-                        confirm = 1;
-                    else
-                        i_episodes = menu->selected_item;
-                }
-                if (__builtin_expect(!!(menu->cancel_pressed), 0))
-                    cancel = 1;
-            }
-            if (confirm) {
-                if (Game_AreaSave != NULL && Game_AreaSave[EDataList[i_episodes].area_ids[0]].complete) {
-                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                    episodestime = 0.0f;
-                    lastepisodesmode = episodesmode;
-                    episodesmode = 2;
-                    episodesduration = 0.6f;
-                } else {
-                    GameAudio_PlaySfx(0x32, NULL, 0, 0);
-                }
-            } else if (cancel) {
-                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                episodestime = 0.0f;
-                lastepisodesmode = episodesmode;
-                episodesmode = 1;
-                episodesduration = 0.6f;
-            } else {
-                const i8 previous = i_episodes;
-                if (up && previous >= 3)
-                    i_episodes -= 3;
-                else if (down && previous < 3)
-                    i_episodes += 3;
-                else if (left && previous % 3 > 0)
-                    --i_episodes;
-                else if (right && previous % 3 != 2)
-                    ++i_episodes;
-                if (previous != i_episodes)
-                    GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-            }
-            break;
-        }
-        case 1:
-            episodestime = episodestime + elapsed;
-            if (episodestime < episodesduration)
-                return;
-            WipeBackToHub();
-            break;
-        case 2: {
-            const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
-            const u16 count = CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
-            if (__builtin_expect(i_clip[i_episodes] >= count, 1))
-                i_clip[i_episodes] = count - 1;
-            const i32 previous = i_clip[i_episodes];
-            bool confirm = false, cancel = false;
-            if (MenuPacket.active_player[0]) {
-                if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT) {
-                    confirm = true;
-                } else if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL) {
-                    cancel = true;
-                } else {
-                    const u32 held = GamePad[0].buttons_held | GamePad[0].buttons_released;
-                    const u32 pressed = GamePad[0].buttons_pressed | GamePad[0].left_directions;
-                    i32 up = pressed & GAMEPAD_DUP, down = pressed & GAMEPAD_DDOWN;
-                    i32 left = pressed & GAMEPAD_DLEFT, right = pressed & GAMEPAD_DRIGHT;
-                    i32 up_held = held & GAMEPAD_DUP, down_held = held & GAMEPAD_DDOWN;
-                    i32 left_held = held & GAMEPAD_DLEFT, right_held = held & GAMEPAD_DRIGHT;
-                    if (down && up)
-                        down = up = 0;
-                    if (right && left)
-                        right = left = 0;
-                    if (down_held && up_held)
-                        down_held = up_held = 0;
-                    if (right_held && left_held)
-                        right_held = left_held = 0;
-                    MenuRepeat(&up_held, &up, uprepeattime, uprepeatcount, 0.1f, FRAMETIME);
-                    MenuRepeat(&down_held, &down, downrepeattime, downrepeatcount, 0.1f, FRAMETIME);
-                    MenuRepeat(&left_held, &left, leftrepeattime, leftrepeatcount, 0.1f, FRAMETIME);
-                    MenuRepeat(&right_held, &right, rightrepeattime, rightrepeatcount, 0.1f, FRAMETIME);
-                    if (__builtin_expect(!up, 0)) {
-                        if (down) {
-                            i32 next = previous + 7;
-                            if (next >= count) {
-                                const i32 rows = count / 7 + 1;
-                                next = (next < rows * 7 ? previous + 14 : next) - rows * 7;
-                            }
-                            i_clip[i_episodes] = next;
-                        } else if (__builtin_expect(!!(left), 0)) {
-                            i32 column = previous % 7 - 1;
-                            if (column < 0)
-                                column += 7;
-                            i32 next = column + previous / 7 * 7;
-                            if (next >= count)
-                                next = count - 1;
-                            i_clip[i_episodes] = next;
-                        } else if (right) {
-                            i32 column = previous % 7 + 1;
-                            if (column == 7)
-                                column -= 7;
-                            const i32 row = previous / 7 * 7;
-                            const i32 next = row + column;
-                            if (next < count) {
-                                i_clip[i_episodes] = next;
-                            } else {
-                                i_clip[i_episodes] = row;
-                            }
-                        }
-                    } else {
-                        i32 next = previous - 7;
-                        if (__builtin_expect(next < 0, 0)) {
-                            next += (count / 7 + 1) * 7;
-                            if (next >= count)
-                                next -= 7;
-                        }
-                        i_clip[i_episodes] = next;
-                    }
-                }
-            }
-            if (menu->input_activity && menu->confirm_pressed) {
-                if (__builtin_expect(menu->selected_item == i_clip[i_episodes], 0))
-                    confirm = true;
-                else
-                    i_clip[i_episodes] = menu->selected_item;
-            }
-            if (confirm) {
-                if (CutScenePlayer_CanStart(clips[i_clip[i_episodes]])) {
-                    GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                    episodestime = 0.0f;
-                    lastepisodesmode = episodesmode;
-                    episodesmode = 3;
-                    episodesduration = 0.6f;
-                } else {
-                    GameAudio_PlaySfx(0x32, NULL, 0, 0);
-                }
-            } else if (menu->cancel_pressed || cancel) {
-                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                episodestime = 0.0f;
-                lastepisodesmode = episodesmode;
-                episodesmode = 0;
-                episodesduration = 0.6f;
-                if (__builtin_expect(hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1, 0))
-                    episodesmode = 1;
-            } else if (previous != i_clip[i_episodes]) {
-                GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-            }
-            break;
-        }
-        case 3: {
-            const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
-            CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
-            i32 confirm = 0, cancel = 0;
-            if (MenuPacket.active_player[0]) {
-                if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUSELECT)
-                    confirm = 1;
-                else if (GamePad[0].pad->digital_buttons_pressed & GAMEPAD_MENUCANCEL)
-                    cancel = 1;
-            }
-            if (confirm || menu->confirm_pressed) {
-                const i16 clip = clips[i_clip[i_episodes]];
-                GameAudio_PlaySfx(0x30, NULL, 0, 0);
-                CutScenePlayer_Start(clip, hub_new_level);
-                hub_goto_clipsmenu_episode = 99;
-            } else if (menu->cancel_pressed || cancel) {
-                GameAudio_PlaySfx(0x31, NULL, 0, 0);
-                lastepisodesmode = episodesmode;
-                episodestime = 0.0f;
-                episodesmode = 2;
-                episodesduration = 0.6f;
-            }
-            break;
-        }
-    }
-}
-
-void MenuDrawEpisodes(MENU_s *) {
-    if (FadeSys.fade > 0.0f)
-        return;
-    f32 alpha = 1.0f;
-    if (episodesmode == 1) {
-        if (!(episodestime < 0.5f))
-            return;
-        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((episodestime + episodestime) * 16384.0f));
-        if (!(alpha > 0.0f))
-            return;
-    }
-    Hub_DrawAreaStats(alpha, last_hub_area, 18);
-    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
-    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
-    if (MainRenderTime <= 0.0f) {
-        DrawEpisodesMenu(1, alpha);
-    } else if (MainRenderTime < 1.0f) {
-        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
-        DrawEpisodesMenu(0, menu_alpha * alpha);
-    }
-    if (MainRenderTime <= 0.0f && alpha == 1.0f)
-        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
-                              MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
-}
-
-void MenuInitSelectMode(MENU_s *) {
-    const i32 area = LDataList[hub_new_level].area_index;
-    if (LOSTTEMPLE_ADATA != NULL && LOSTTEMPLE_ADATA->index == area) {
-        hub_selectmode = 0;
-    } else {
-        bool unlocked = FreePlayUnlocked();
-        if (unlocked != 1 && area != -1)
-            unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
-        if (unlocked && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0 && Game.area_save[area].area_complete != 0)
-            hub_selectmode = 1;
-        else
-            hub_selectmode = 0;
-    }
-    selectmodemode = 0;
-}
-
-void MenuUpdateSelectMode(MENU_s *) {
-    Hub_UpdateSelectMode();
-}
-
-extern f32 MainRenderTime;
-extern i16 tSELECT, tBACK, tSELECTING;
-static void Hub_DrawSelectModeMenu(i32 selected, f32 alpha);
-
-void MenuDrawSelectMode(MENU_s *) {
-    if (__builtin_expect(MenuStopDraw, 1))
-        return;
-    if (__builtin_expect(selectmodemode >= 1 && selectmodemode <= 3, 0)) {
-        if (FadeSys.fade > 0.0f)
-            return;
-    } else if (selectmodemode == 4) {
-        if (pFadeInfo->fade > 0.0f)
-            return;
-    }
-    f32 alpha = 1.0f;
-    switch (selectmodemode) {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-            if (!(selectmodetime < 0.5f))
-                return;
-            alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((selectmodetime / selectmodeduration) * 16384.0f));
-            if (!(alpha > 0.0f))
-                return;
-            break;
-    }
-    AREADATA *area = &ADataList[last_hub_area];
-    if (area->flags & 0x100)
-        Hub_DrawSuperBonusStats(area, alpha);
-    else if (area->flags & 4)
-        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
-    else
-        Hub_DrawAreaStats(alpha, last_hub_area, hub_selectmode);
-
-    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
-    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
-    if (MainRenderTime <= 0.0f) {
-        Hub_DrawSelectModeMenu(1, alpha);
-    } else if (MainRenderTime < 1.0f) {
-        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
-        Hub_DrawSelectModeMenu(0, menu_alpha * alpha);
-    }
-    if (MainRenderTime > 0.0f)
-        return;
-    if (selectmodemode == 0 && alpha == 1.0f)
-        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
-                              MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
-}
-
-extern AREADATA *E1CHARACTER_ADATA, *E2CHARACTER_ADATA, *E3CHARACTER_ADATA, *E4CHARACTER_ADATA, *E5CHARACTER_ADATA,
-    *E6CHARACTER_ADATA, *UTAPAU_ADATA, *HOTH_ADATA;
-extern i16 id_PALPATINE, id_LAMASU, id_WOOKIEE, id_RANCOR, id_JAWA, id_WAMPA, id_BAT, id_HANINCARBONITE, id_EWOK;
-ARCADE_LEVEL_s ArcadeLevel[12] = {{&E1CHARACTER_ADATA, &id_GUNGAN},
-                                  {&SENATE_ADATA, &id_PALPATINE},
-                                  {&BONUSKAMINO_ADATA, &id_LAMASU},
-                                  {&E2CHARACTER_ADATA, &id_GEONOSIAN},
-                                  {&UTAPAU_ADATA, &id_GRIEVOUS},
-                                  {&BONUSKASHYYYK_ADATA, &id_WOOKIEE},
-                                  {&E3CHARACTER_ADATA, &id_RANCOR},
-                                  {&E4CHARACTER_ADATA, &id_JAWA},
-                                  {&HOTH_ADATA, &id_WAMPA},
-                                  {&BONUSDAGOBAH_ADATA, &id_BAT},
-                                  {&E5CHARACTER_ADATA, &id_HANINCARBONITE},
-                                  {&E6CHARACTER_ADATA, &id_EWOK}};
-extern i16 tSUPERSTORY, tCHARACTERBONUS, tVEHICLEBONUS;
-i32 hub_bonusmode = 0;
-extern f32 text3d_width, text3d_height;
-f32 BlipL[2] = {};
-f32 BlipR[2] = {};
-f32 BlipU[2] = {};
-f32 BlipD[2] = {};
-void MenuInitBonusMode(MENU_s *) {
-    bonusmodemode = 0;
-    hub_bonusmode = 0;
-    hub_bonusarea = LDataList[hub_new_level].area_index;
-    hub_bonusepisode = static_cast<i8>(ADataList[hub_bonusarea].episode_index);
-    bonusmodearcade = SENATE_ADATA != NULL && hub_bonusarea == SENATE_ADATA->index;
-}
-void MenuUpdateBonusMode(MENU_s *) {
-    MENU *menu = &GameMenu[GameMenuLevel];
-    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f)
-        return;
-
-    const f32 blip_frame_time = *reinterpret_cast<volatile const f32 *>(&FRAMETIME);
-    if (BlipL[0] > 0.0f)
-        BlipL[0] -= blip_frame_time;
-    if (BlipR[0] > 0.0f)
-        BlipR[0] -= blip_frame_time;
-    if (BlipU[0] > 0.0f)
-        BlipU[0] -= blip_frame_time;
-    if (BlipD[0] > 0.0f)
-        BlipD[0] -= blip_frame_time;
-    i32 player_up[2] = {}, player_down[2] = {};
-    if (BlipL[1] > 0.0f)
-        BlipL[1] -= blip_frame_time;
-    if (BlipR[1] > 0.0f)
-        BlipR[1] -= blip_frame_time;
-    if (BlipU[1] > 0.0f)
-        BlipU[1] -= blip_frame_time;
-    if (BlipD[1] > 0.0f)
-        BlipD[1] -= blip_frame_time;
-    i32 player_left[2] = {}, player_right[2] = {};
-
-    switch (bonusmodemode) {
-        case 1:
-            bonusmodetime += FRAMETIME;
-            if (bonusmodetime < bonusmodeduration)
-                return;
-            InitSuperStory(SuperStoryEpisode);
-            NewLData = &LDataList[hub_new_level];
-            FadeSys.fade = 1.0f;
-            FinishLoop_On = 0;
-            loadareacharacters_no_backdrop_reset = 1;
-            return;
-        case 2:
-        case 3:
-            bonusmodetime += FRAMETIME;
-            if (bonusmodetime < bonusmodeduration)
-                return;
-            MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
-                                  LDataList[hub_new_level].area_index, -1, 1);
-            makeplayerlist_freeplay = 2;
-            NextArea_FreePlay = 1;
-            FreePlay = 1;
-            NewLData = &LDataList[hub_new_level];
-            FadeSys.fade = 1.0f;
-            FinishLoop_On = 0;
-            loadareacharacters_no_backdrop_reset = 1;
-            return;
-        case 4:
-            bonusmodetime += FRAMETIME;
-            if (bonusmodetime >= bonusmodeduration)
-                WipeBackToHub();
-            return;
-        case 0:
-            break;
-        default:
-            return;
-    }
-
-    i32 confirm = 0, cancel = 0, up = 0, down = 0, left = 0, right = 0;
-    for (i32 i = 0; i < 2; ++i) {
-        if (!MenuPacket.active_player[i])
-            continue;
-        const u32 pressed = GamePad[i].buttons_pressed;
-        if (pressed & GAMEPAD_MENUSELECT) {
-            confirm = 1;
-            break;
-        } else if (pressed & GAMEPAD_MENUCANCEL) {
-            cancel = 1;
-            break;
-        } else {
-            const u32 direction = pressed | GamePad[i].left_directions;
-            if (direction & GAMEPAD_DUP)
-                up = player_up[i] = 1;
-            else if (direction & GAMEPAD_DDOWN)
-                down = player_down[i] = 1;
-            else if (direction & GAMEPAD_DLEFT)
-                left = player_left[i] = 1;
-            else if (direction & GAMEPAD_DRIGHT)
-                right = player_right[i] = 1;
-        }
-    }
-
-    if (menu->input_activity) {
-        if (!bonusmodearcade) {
-            if (menu->confirm_pressed) {
-                hub_bonusmode = menu->selected_item;
-                confirm = 1;
-            }
-        } else {
-            const i32 item = menu->selected_item;
-            const u8 choices = reinterpret_cast<u8 *>(&ArcadeItem)[item * 8 + 5];
-            if (menu->left_pressed && choices >= 2)
-                right = 1;
-            if (menu->right_pressed && choices >= 2)
-                left = 1;
-            if (menu->confirm_pressed) {
-                if (choices == 1) {
-                    hub_bonusmode = item;
-                    confirm = 1;
-                } else if (item == hub_bonusmode) {
-                    right = 1;
-                } else {
-                    hub_bonusmode = item;
-                    menu->confirm_pressed = 0;
-                }
-            }
-        }
-        if (menu->cancel_pressed)
-            cancel = 1;
-    }
-
-    if (player_up[0])
-        BlipU[0] = 0.1f;
-    if (player_down[0])
-        BlipD[0] = 0.1f;
-    if (player_left[0])
-        BlipL[0] = 0.1f;
-    if (player_right[0])
-        BlipR[0] = 0.1f;
-    if (player_up[1])
-        BlipU[1] = 0.1f;
-    if (player_down[1])
-        BlipD[1] = 0.1f;
-    if (player_left[1])
-        BlipL[1] = 0.1f;
-    if (player_right[1])
-        BlipR[1] = 0.1f;
-
-    if (bonusmodearcade) {
-        if (confirm) {
-            if (hub_bonusmode != 2)
-                return;
-            AREADATA *area = *ArcadeLevel[ArcadeItem.level].area;
-            if (area == NULL) {
-                GameAudio_PlaySfx(0x32, NULL, 0, 0);
-                return;
-            }
-            GameAudio_PlaySfx(0x30, NULL, 0, 0);
-            hub_freeplaysource = 1;
-            hub_new_level = area->levels[0];
-            Hub_InitFreePlaySelect(area->index, -1, -1);
-            NewMenu(17, -1, -1);
-            return;
-        }
-    } else if (confirm) {
-        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-        if (hub_new_level == -1)
-            return;
-        const i8 area = LDataList[hub_new_level].area_index;
-        if (area == -1 || (ADataList[area].flags & 0x100) == 0)
-            return;
-        hub_freeplaysource = 1;
-        Hub_InitFreePlaySelect(area, -1, -1);
-        NewMenu(17, -1, -1);
-        return;
-    }
-
-    if (cancel) {
-        GameAudio_PlaySfx(0x31, NULL, 0, 0);
-        bonusmodemode = 4;
-        bonusmodetime = 0.0f;
-        bonusmodeduration = 0.6f;
-        return;
-    }
-
-    if (!bonusmodearcade) {
-        if (hub_bonusepisode == -1 || !up || hub_bonusmode <= 0)
-            return;
-        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-        --hub_bonusmode;
-        return;
-    }
-
-    if (up) {
-        if (hub_bonusmode <= 0)
-            return;
-        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-        --hub_bonusmode;
-        return;
-    }
-    if (down) {
-        if (hub_bonusmode >= 2)
-            return;
-        GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-        ++hub_bonusmode;
-        return;
-    }
-    i8 *entries = reinterpret_cast<i8 *>(&ArcadeItem);
-    const i32 count = static_cast<u8>(entries[hub_bonusmode * 8 + 5]);
-    if (count > 1) {
-        if (!left) {
-            if (right) {
-                GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-                if (++entries[hub_bonusmode * 8 + 4] >= count)
-                    entries[hub_bonusmode * 8 + 4] = 0;
-            }
-        } else {
-            GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-            if (--entries[hub_bonusmode * 8 + 4] < 0)
-                entries[hub_bonusmode * 8 + 4] = count - 1;
-        }
-    }
-}
-static void Hub_DrawBonusModeMenu(i32 selected, f32 alpha);
-void MenuDrawBonusMode(MENU_s *) {
-    if (MenuStopDraw)
-        return;
-    if (bonusmodemode >= 1 && bonusmodemode <= 4 && FadeSys.fade > 0.0f)
-        return;
-
-    f32 alpha = 1.0f;
-    if (bonusmodemode >= 1 && bonusmodemode <= 4) {
-        if (!(bonusmodetime < 0.5f))
-            return;
-        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((bonusmodetime / bonusmodeduration) * 16384.0f));
-        if (!(alpha > 0.0f))
-            return;
-    }
-
-    if (bonusmodearcade)
-        Hub_DrawArcadeStats(alpha);
-    else if (hub_bonusepisode != -1)
-        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode);
-    else
-        Hub_DrawSuperBonusStats(hub_bonusarea == -1 ? NULL : &ADataList[hub_bonusarea], alpha);
-
-    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
-    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
-
-    if (MainRenderTime <= 0.0f) {
-        Hub_DrawBonusModeMenu(1, alpha);
-    } else if (MainRenderTime < 1.0f) {
-        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
-        Hub_DrawBonusModeMenu(0, menu_alpha * alpha);
-    }
-
-    if (MainRenderTime > 0.0f)
-        return;
-    if (bonusmodemode == 0 && alpha == 1.0f) {
-        f32 prompt_alpha = 0.333f;
-        if (bonusmodearcade && hub_bonusmode == 2 && *ArcadeLevel[ArcadeItem.level].area != NULL)
-            prompt_alpha = alpha;
-        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, prompt_alpha, -1, tBACK, -1, -1,
-                              MenuPacket.active_player[1], tSELECT, prompt_alpha, -1, tBACK, -1, -1);
-    }
-}
-static void Hub_DrawBonusModeMenu(int selected, float alpha) {
-    char text[3][128];
-    if (__builtin_expect(bonusmodearcade, 0)) {
-        const i32 full_opacity = static_cast<i32>(alpha * 128.0f);
-        f32 y = 0.3062499761581421f;
-        MENU *menu = &GameMenu[GameMenuLevel];
-        AREADATA *area;
-        for (i32 i = 0; i < 3; ++i) {
-            i16 *label;
-            memcpy(&label, reinterpret_cast<const u8 *>(&ArcadeItem) + i * 8, sizeof(label));
-            if (__builtin_expect(!!(label), 0))
-                NuStrCpy(text[0], TTab[*label]);
-            else
-                text[0][0] = 0;
-            i32 opacity = full_opacity;
-            if (i != 1 && i != 2) {
-                if (text[0][0])
-                    NuStrCat(text[0], ": ");
-                area = *ArcadeLevel[ArcadeItem.level].area;
-                if (area && area->name_id != 0 && TTab[area->name_id])
-                    NuStrCat(text[0], TTab[area->name_id]);
-                else
-                    NuStrCat(text[0], "?");
-            } else if (i == 1) {
-                if (text[0][0])
-                    NuStrCat(text[0], ": ");
-                char *mode_text = TTab[*Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].text];
-                NuStrCat(text[0], mode_text ? mode_text : "?");
-                if (__builtin_expect(area && Game_LevelSave && area->levels[0] != -1, 0)) {
-                    const i32 level = area->levels[0];
-                    if ((reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave)[level].arcade_flags &
-                         (1u << (static_cast<i8>(ArcadeItem.field_c_0xc) & 31))) != 0)
-                        NuStrCat(text[0], " ~2$");
-                    if ((reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave)[level].arcade_flags & 7) == 7) {
-                        const f32 scale = NU_SIN_LUT(static_cast<i32>(alpha * 16384.0f)) * PANEL_REDBRICKSCALE;
-                        const i32 rotation =
-                            static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f) & 0xffff;
-                        const u16 tilt = static_cast<i32>(1820.0f * NuTrigTable[rotation & 0x7fff]) - 0x1555;
-                        DrawPanel3DObjectNoAlpha(0.0f, y + 0.35f, 1.0f, scale, scale, scale, tilt, rotation, 0,
-                                                 &WORLD->lev_objs[211].special, 2);
-                    }
-                }
-            } else if (*ArcadeLevel[ArcadeItem.level].area == NULL)
-                opacity = full_opacity / 3;
-            i32 red, green, blue;
-            if (selected && i == hub_bonusmode && TestForController()) {
-                if (menu_pulsate > 0.0f) {
-                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
-                                           static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
-                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
-                                             static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
-                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
-                                            static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
-                } else {
-                    red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
-                    green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
-                    blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
-                }
-            } else if (menu_pulse > 0.0f) {
-                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                       static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                         static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                        static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-            } else {
-                red = MENUENTRYR;
-                blue = MENUENTRYB;
-                green = MENUENTRYG;
-            }
-
-            smarttextex_drawmessagebox = 1;
-            SmartTextEx(text[0], 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
-                        static_cast<u8>(blue), 1.7f, 1, 0, 0, opacity);
-            menu->item_x[i] = 0.0f;
-            menu->item_y[i] = y;
-            menu->item_width[i] = text3d_width;
-            menu->item_height[i] = text3d_height;
-            menu->item_column[i] = 0;
-            menu->item_row[i] = i;
-
-            y -= 0.175f;
-        }
-        return;
-    }
-    const i32 menu_level = GameMenuLevel;
-    if (hub_new_level == -1 || LDataList[hub_new_level].area_index == -1 ||
-        (ADataList[LDataList[hub_new_level].area_index].flags & 0x100) == 0)
-        return;
-    i32 count;
-    if (hub_bonusepisode != -1) {
-        NuStrCpy(text[0], TTab[tSUPERSTORY]);
-        NuStrCpy(text[1], TTab[tCHARACTERBONUS]);
-        NuStrCpy(text[2], TTab[tVEHICLEBONUS]);
-        const i32 character_area = Episode_FindAreaFromFlags(&EDataList[hub_bonusepisode], 5, 4);
-        const i32 vehicle_area = Episode_FindAreaFromFlags(&EDataList[hub_bonusepisode], 5, 5);
-        if (character_area != -1 && ADataList[character_area].name_id != -1 &&
-            TTab[ADataList[character_area].name_id]) {
-            const i32 name = ADataList[character_area].name_id;
-            NuStrCat(text[1], " (");
-            NuStrCat(text[1], TTab[name]);
-            NuStrCat(text[1], ")");
-        }
-        if (vehicle_area != -1 && ADataList[vehicle_area].name_id != -1 && TTab[ADataList[vehicle_area].name_id]) {
-            const i32 name = ADataList[vehicle_area].name_id;
-            NuStrCat(text[2], " (");
-            NuStrCat(text[2], TTab[name]);
-            NuStrCat(text[2], ")");
-        }
-        count = 3;
-    } else {
-        NuStrCpy(text[0], TTab[hub_bonusarea != -1 ? ADataList[hub_bonusarea].name_id : -1]);
-        count = 1;
-    }
-    f32 y = (count - 1) * 0.1f + 0.125f;
-    const i32 full_opacity = static_cast<i32>(alpha * 128.0f);
-    MENU *menu = &GameMenu[menu_level];
-    for (i32 i = 0; i < count; ++i) {
-        i32 red, green, blue;
-        if (selected && i == hub_bonusmode && TestForController()) {
-            if (menu_pulsate > 0.0f) {
-                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
-                                       static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
-                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
-                                         static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
-                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
-                                        static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
-            } else {
-                red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
-                green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
-                blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
-            }
-        } else if (menu_pulse > 0.0f) {
-            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-        } else {
-            red = MENUENTRYR;
-            green = MENUENTRYG;
-            blue = MENUENTRYB;
-        }
-
-        i32 opacity = full_opacity;
-        if (i == 2 && Collection_GetIDList(&MiniKitCollection, 0x4000000, 0x4000000, NULL, NULL, NULL, 0) <= 0)
-            opacity = full_opacity / 4;
-        smarttextex_drawmessagebox = 1;
-        SmartTextEx(text[i], 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
-                    static_cast<u8>(blue), 1.7f, 1, 0, 0, opacity);
-        menu->item_x[i] = 0.0f;
-        menu->item_y[i] = y;
-        menu->item_width[i] = text3d_width;
-        menu->item_height[i] = text3d_height;
-        menu->item_column[i] = 0;
-        menu->item_row[i] = i;
-
-        y -= 0.2f;
-    }
-}
-
-void Hint_SetHintFromId(i32, i32, i32);
-void Hint_Draw(i32);
-extern f32 text3d_width, text3d_height;
-extern i16 tCHALLENGE, tLOCKED;
-static void Hub_DrawSelectModeMenu(int selected, float alpha) {
-    const i32 area = LDataList[hub_new_level].area_index;
-    const i32 complete = Game.area_save[area].area_complete;
-    const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
-    i32 unlocked = FreePlayUnlocked();
-    if (unlocked != 1 && area != -1) {
-        unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
-    }
-    i32 opacity[10];
-    i32 text_ids[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-    i32 count = 0;
-    if (!lost_temple) {
-        text_ids[count] = complete ? tREPLAYSTORY : tSTORY;
-        opacity[count++] = 128;
-        if ((ADataList[area].flags & 0x1000) == 0) {
-            text_ids[count] = tFREEPLAY;
-            opacity[count++] = complete && unlocked ? 128 : 48;
-            if ((ADataList[area].flags & 0x10) != 0 && Store_IsPackUnlocked(8)) {
-                text_ids[count] = tCHALLENGE;
-                opacity[count++] = complete && Store_IsPackUnlocked(8) ? 128 : 48;
-            }
-        }
-    }
-    f32 y = (count - 1) * 0.1f + 0.125f;
-    if (text_ids[1] == tFREEPLAY && !unlocked)
-        y += 0.2f;
-    MENU *menu = &GameMenu[GameMenuLevel];
-    for (i32 i = 0; i < count; ++i) {
-        i32 red, green, blue;
-        if (selected && i == hub_selectmode && TestForController()) {
-            if (menu_pulsate > 0.0f) {
-                red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
-                                       static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
-                green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
-                                         static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate));
-                blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
-                                        static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate));
-            } else {
-                red = menu_flash ? MENUFLASH0R : MENUFLASH1R;
-                green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
-                blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
-            }
-        } else if (menu_pulse > 0.0f) {
-            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-        } else {
-            red = MENUENTRYR;
-            green = MENUENTRYG;
-            blue = MENUENTRYB;
-        }
-        const i32 text_id = text_ids[i];
-        char *text = TTab[text_id];
-        char buffer[128];
-        if (!unlocked) {
-            if (alpha == 1.0f) {
-                Hint_SetHintFromId(0x164, 0, 1);
-                Hint_Draw(-1);
-            } else {
-                Hint_CancelCurrent();
-            }
-            if (text_id == tFREEPLAY) {
-                sprintf(buffer, "%s (%s)", text, TTab[tLOCKED]);
-                text = buffer;
-            }
-        }
-        smarttextex_drawmessagebox = 1;
-        SmartTextEx(text, 0.0f, y, 1.0f, 0.7f, 0.7f, 0.7f, 0, static_cast<u8>(red), static_cast<u8>(green),
-                    static_cast<u8>(blue), 1.7f, 1, 0, 0, static_cast<i32>(opacity[i] * alpha));
-        menu->item_x[i] = 0.0f;
-        menu->item_y[i] = y;
-        menu->item_width[i] = text3d_width;
-        menu->item_height[i] = text3d_height;
-        menu->item_column[i] = 0;
-        menu->item_row[i] = i;
-        y -= 0.2f;
-    }
-}
-
-extern i16 tBESTTIME;
-static void Hub_DrawSuperBonusStats(AREADATA_s *area, float alpha) {
-    const i32 opacity = static_cast<i32>(alpha * 128.0f);
-    char *title = "?";
-    if (area)
-        title = TTab[area->name_id];
-    SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-                HUB_EPISODESUBTITLESIZE, 0, static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG),
-                static_cast<u8>(HUB_EPISODEB), 1.7f, 1, NULL, 0, opacity);
-    if (area && Game.area_save[area->index].area_complete) {
-        char text[64];
-        SmartTextEx(TTab[tBESTTIME], 0.0f, HUB_EPISODETITLEY + 0.125f, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
-                    HUB_EPISODETITLESIZE, 0, 191, 0, 127, 0.7f, 1, NULL, 0, opacity);
-        Text_MakeTime(Game.area_save[area->index].challenge_trial_time, 1, 1, 1, text);
-        Text3DEx(text, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
-                 HUB_EPISODESUBTITLESIZE, 0, 255, 255, 255, static_cast<u8>(opacity));
-        if (GOLDBRICKFORSUPERBONUS)
-            Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY + 0.125f, alpha, -1, -1);
-    }
-}
-
-void WipeBackToHub() {
-    NewMenu(-1, -1, -1);
-    ResetTimer(&JoinInTimer, 0.0f);
-    NuStrCpy(Door_ExitName, Door_Last->name);
-    StartDoorPositions();
-    NewGameMode();
-    bonusmodearcade = 0;
-    HubMainRenderTimeHack = 1;
-}

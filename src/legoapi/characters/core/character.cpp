@@ -2,27 +2,12 @@
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 
-i32 CanPullLevers(i32 character_id) {
-    u32 flags = CDataList[character_id].model_flags;
-    if ((flags & 0x01000010) == 0x01000010) {
-        return 0;
-    }
-    return (flags & 0x00040088) != 0;
-}
-
 #include "legoapi/characters/core/CharacterObjectInterface.h"
 #include "legoapi/characters/core/players.h"
-#include "legoapi/audio/sfx.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/world/area.h"
-#include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuhgobj.h"
-#include "nu2api/nucore/nuptrblock.h"
-#include "nu2api/nufile/nufpar.h"
-#include "nu2api/nufile/nufilepak.h"
 #include "nu2api/nu3d/nucamera.h"
-#include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numusic/sfx.h"
 
@@ -31,7 +16,6 @@ struct numtx_s;
 struct APICHARACTERMODELLIST_s;
 struct EXTRAMODEL;
 
-// Forward declarations for local (static) character/gameplay helper stubs.
 struct nuvec_s;
 struct EDCREATURE_s;
 struct APIOBJECT_s;
@@ -105,7 +89,6 @@ extern "C" {
     i16 id_GEONOSIAN = -1;
     i16 id_BOB = -1;
     i16 id_WATTO = -1;
-    i16 id_CHEWBACCA = -1;
     i16 id_WOOKIEE = -1;
     i16 id_ATST = -1;
     i16 id_ATST_LOWRES = -1;
@@ -480,7 +463,6 @@ extern "C" {
 }
 
 i32 CHARCOUNT = 0;
-CHARACTERDATA *CDataList = NULL;
 GAMECHARACTERDATA *GCDataList = NULL;
 // Original 0x120-byte data record @0x00666960. FixUpCharacters copies this
 // canonical prefix into every character before character-specific overrides.
@@ -568,57 +550,3 @@ GAMECHARACTERDATA GCDATA_DEFAULT = {
 
 i32 g_loadingCharacterInHub;
 
-CharacterObjectInterface::CharacterObjectInterface(GameObject_s &value) : object(&value) {
-    object->mech_object_interface = this;
-}
-
-f32 CharacterObjectInterface::GetHeight() const {
-    return object->apiobj.scaled_height;
-}
-
-void CharacterObjectInterface::GetPos(VuVec &position, i32) const {
-    position = VuVec(object->apiobj.collision_position.x, object->apiobj.collision_position.y,
-                     object->apiobj.collision_position.z, 1.0f);
-}
-
-f32 CharacterObjectInterface::GetRadius() const {
-    return object->field_0x1008;
-}
-
-const char *CharacterObjectInterface::GetTargetName() const {
-    return "Character";
-}
-
-bool CharacterObjectInterface::IsDead() {
-    if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001)
-        return 1;
-    return object->apiobj.field_0x287 != 0;
-}
-
-void CharacterObjectInterface::TargetedFlash() {
-    object->targeted_flash = 1.0f;
-}
-
-CharacterObjectInterface::~CharacterObjectInterface() {
-    object->mech_object_interface = NULL;
-}
-
-static __used__ void ExtraDieSfx_LSW(GameObject_s *object) {
-    if (object->id == id_CHEWBACCA && Cheat[4].enabled != 0) {
-        PlaySfx("C3_Death", &object->apiobj.collision_position);
-    }
-}
-
-static __used__ void ExtraHurtSfx_LSW(GameObject_s *object) {
-    if (object->id == id_CHEWBACCA && Cheat[4].enabled != 0) {
-        PlaySfx("C3_Death", &object->apiobj.collision_position);
-    }
-}
-
-extern AREADATA *DAGOBAH_ADATA;
-extern AREADATA *DEATHSTARESCAPE_ADATA;
-extern AREADATA *DEATHSTARRESCUE_ADATA;
-extern AREADATA *HOTHESCAPE_ADATA;
-extern AREADATA *JABBASPALACE_ADATA;
-
-extern "C" {} // extern "C"

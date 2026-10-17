@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "decomp.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
@@ -21,11 +24,269 @@
 #include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/levels.h"
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
+#include "legoapi/audio/audio.h"
+#include "legoapi/core/input/qrand.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/world/world.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/render/fx.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nucore/nustring.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/ai/core/legoai.h"
+#include "legoapi/items/objects/objectsall.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/actions/movement/carrying.h"
+#include "legoapi/actions/combat/hits.h"
+#include "legoapi/actions/character/streaks.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
+#include "legoapi/render/core/rtl.h"
+#include "legoapi/gizmos/transport/grapples.h"
+#include "legoapi/gizmos/transport/gizportal.h"
+#include "legoapi/gizmos/door/zipups.h"
+#include "legoapi/menus/screens/arcade.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/light/lighting.h"
+#include "legoapi/render/light/shadow.h"
+#include "legoapi/render/fx/parts.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/nucore/nupad.h"
+#include "legoapi/ai/core/ai_sys_stubs.h"
+#include "legoapi/props/objects/techno.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/core/charconfig.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/gizmos/object/gizobstacles.h"
+#include "legoapi/gizmos/trigger/gizspecial.h"
+#include "legoapi/gizmos/traps/gizforce.h"
+#include "legoapi/gizmos/door/spinner.h"
+#include "legoapi/menus/screens/shop.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/core/input/timing.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuqfnt.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "legoapi/audio/sfx.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nulgtlaser.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include <stdio.h>
+#include <string.h>
+#include "legoapi/items/objects/gameobjects_types.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/actions/character/suit.h"
+#include "legoapi/items/base/apiobject.h"
+#include <new>
+#include "nu2api/numath/nuang.h"
+#include "legoapi/menus/screens/gamemenuall.h"
+#include "legoapi/gizmos/object/newblowup.h"
+#include <stdlib.h>
+#include "legoapi/cutscenes/minicamcut.h"
+#include "nu2api/nucore/nukeyboard.h"
+#include "nu2api/nucore/numouse.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "legoapi/characters/motion/camera_types.h"
+#include "gameapi/edtools/edbri_internal.h"
+#include "gameapi/edtools/edstubs.h"
+#include "legoapi/actions/character/transform.h"
+#include "legoapi/actions/character/snake.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/android/nuportal_android.h"
+#include "nu2api/nu3d/nuvport.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/world/levels/episode.h"
+#include "nu2api/nu3d/nutexanm.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nuprim_internal.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nu3d/android/nurndr_android.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuptrblock.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/numath.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "legogame/game.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/characters/core/players_types.h"
+#include "nu2api/nufile/nufilepak.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/menus/screens/gamestructure.h"
+#include "legoapi/gizmos/object/lever.h"
+#include "legoapi/gizmo/base/gizmessage.h"
+#include "legoapi/props/objects/tightrope.h"
+#include "legoapi/gizmos/trigger/minicut.h"
+#include "legoapi/gizmos/transport/tubes.h"
+#include "legoapi/gizmos/traps/gizturrets.h"
+#include "legoapi/gizmos/trigger/ai.h"
+#include "legoapi/gizmos/trigger/giztimer.h"
+#include "legoapi/gizmos/trigger/gizrandom.h"
+#include "legoapi/gizmos/door/plugs.h"
+#include "legoapi/gizmos/door/push.h"
+#include "legoapi/gizmos/fx/edgizshadowmachine.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/actions/character/specialmoves.h"
+#include "legoapi/characters/core/customiser.h"
+#include "nu2api/numusic/numusic.h"
+#include "legoapi/characters/core/characters_types.h"
+#include "gameapi/gui/apimenu_internal.h"
+#include "legoapi/core/config/fileselect.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "batman.h"
+#include "gamelib/crc/crc.h"
+#include "legoapi/render/light/fade.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "legoapi/misc/androidbatman.h"
+#include "legoapi/items/collect/spacelevel.h"
+#include "nu2api/nucore/NuInputDevice.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "nu2api/nu3d/nushader_plain.h"
+#include "legoapi/actions/movement/jumping.h"
+#include "gameapi/edtools/edpart_internal.h"
+#include "gameapi/edtools/edcam.h"
+#include "legoapi/render/core/terrain_internal.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "gameapi/edtools/edpp_internal.h"
+#include "nu2api/numath/numtx_inline.h"
+#include "nu2api/numath/nurand.h"
+#include "nu2api/nu3d/android/nurain_android.h"
+#include "nu2api/nu3d/android/nuptl_android.h"
+#include <stddef.h>
+#include "legoapi/render/core/terrain_stubs_types.h"
+#include "legoapi/gizmo/object/gizmopickup.h"
+#include "legoapi/gizmo/object/giztorpedo.h"
+#include <float.h>
+#include "gameapi/edtools/edanim_internal.h"
+#include "gameapi/edtools/edgra.h"
+#include "gameapi/edtools/edui_colour.h"
+#include "gameapi/edtools/edrender.h"
+#include "gameapi/edtools/edgra_internal.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "gameapi/edtools/edtools_types.h"
+#include "legoapi/misc/utilities.h"
+#include "nu2api/nucore/NuDynamicLight.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuvec4.h"
+#include "nu2api/nucore/nuonline.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nucore/numem.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "java/android.h"
+#include "java/java.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nucore/NuInputManager.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nupostresources.h"
+#include "nu2api/nu3d/nuocclusion.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "nu2api/nu3d/nuscreen.hpp"
+#include "nu2api/numath/nuquat.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/actions/character/speederchase_types.h"
+#include "editor/edpath.h"
+#include "editor/antinode_editor_private.h"
+#include "nu2api/nucore/nulist.h"
+#include "editor/edtoolsall_types.h"
+#include "legoapi/items/base/animpacket.h"
+#include "legoapi/render/light/surfaces.h"
+#include "legoapi/gizmos/object/hatmachine.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/gizmos/traps/attracto.h"
+#include "legoapi/props/objects/signal.h"
+#include "legoapi/gizmos/door/securitydoors.h"
+#include "legoapi/gizmos/object/gizpanel.h"
+#include "legoapi/menus/core/gamemessage.h"
+#include "legoapi/characters/motion/move_types.h"
+#include "legoapi/characters/motion/gameanim_types.h"
+#include "gameapi/ai/aisys/aipath.h"
+#include "legoapi/ai/game/creature.h"
+#include "legoapi/gizmos/traps/gizbombgen.h"
+#include "nu2api/nucore/numechptr.hpp"
+#include "legoapi/world/levels/episodeV_types.h"
+#include "legoapi/actions/combat/fighting.h"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/characters/core/playeritems.h"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "legoapi/items/collect/bolts.h"
+#include "legoapi/gizmos/fx/guidelines.h"
+#include "legoapi/gizmos/transport/ledges.h"
+#include "legoapi/gizmos/traps/shards.h"
+#include "nu2api/nu3d/nuhspecial.h"
+#include "legoapi/world/levels/episodeII_types.h"
+#include "legoapi/misc.h"
+#include "legoapi/world/levels/podrace.h"
+#include "legoapi/world/levels/episodeI_types.h"
+#include "legoapi/ai/core/gameai_types.h"
+#include "legoapi/ai/game/creature_types.h"
+#include <stdint.h>
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include "legoapi/actions/character/simpletons_types.h"
+#include "legoapi/ai/core/ai_pathgeometry.h"
+#include "legoapi/gizmo/object/takeoverobjects.h"
+#include "nu2api/nucore/nurdp.h"
+#include "legoapi/ai/core/aisysall_types.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/path_connections.h"
+#include "editor/edpath_types.h"
+#include "legoapi/ai/game/gameantinode.h"
+#include "legoapi/actions/movement/jumping_types.h"
+#include <ctype.h>
+#include "legoapi/world/levels/episode_types.h"
+#include "legoapi/items/collect/batarang.h"
+#include "legoapi/gizmo/object/gizmoblowups_types.h"
+#include "legoapi/misc/supportall.h"
+#include "legoapi/render/core/screen.h"
+#include <limits.h>
+#include "legoapi/gizmo/base/gizflow.h"
+#include "legoapi/misc/supportall_types.h"
+#include "gameapi/ai/aisys/gameaiscript.h"
+#include "legoapi/characters/motion/camera.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/menus/core/hint.h"
+#include "legoapi/world/levels/episodeV.h"
 
 i32 only_process_this_hint_id = -1;
 f32 ICONXPOS_VIRTUALS = -0.61500001f;
@@ -39,632 +300,1065 @@ HintVectorTransition hintIconPos;
 HintScalarTransition hintIconScale;
 HintScalarTransition hintYPop;
 f32 ICONXPOS_TOUCHYFEELY = -ICONX;
-static __used__ i32 Attack_UpdateHint(HINT_s *) {
-    if (player == NULL || player->field_0x7a5 != 0xff || VehicleArea != 0)
-        return 0;
-    const u32 flags = player->apiobj.character_data->model_flags;
-    if ((flags & 0x2010) != 0 || (flags & 0x88) == 0)
-        return 0;
-    return player->ai.opponent != NULL;
-}
-
-u8 show_unlock_shop_hint = 0;
-u8 show_unlock_customiser_hint = 0;
-u8 show_unlock_minikitviewer_hint = 0;
-
-i32 HINT_COMPLETE(i32 hint_id) {
-    if (hint_id < 0) {
-        return 0;
-    }
-
-    i32 word = hint_id >> 5;
-    if (word > 2) {
-        return 0;
-    }
-    if (MechInputTouchSystem::s_baseControlMode != 0) {
-        word += 3;
-    }
-    return Game.hint_completion_bits[word] & (1U << (hint_id & 0x1f));
-}
-
 i32 Tilt_UpdateHint(HINT_s *) {
     return 0;
 }
 
-f32 CurrentHintAlpha() {
-    if (hintsys.active_hint == NULL)
-        return 0.0f;
-    f32 alpha = 1.0f;
-    f32 duration = hintsys.active_hint->display_duration;
-    f32 fade_start = duration - 0.5f;
-    if (duration > 0.0f && hintsys.display_elapsed >= fade_start) {
-        alpha = 1.0f - (hintsys.display_elapsed - fade_start) / (duration - fade_start);
-        if (alpha <= 0.0f)
-            alpha = 0.0f;
-    }
-    return alpha * hintsys.alpha;
+// Each control mode retains its own requested and interpolated hint row.
+
+HINTUIBUTTON_s *hintUIButton = NULL;
+f32 (*Hint_AlphaTargetFn)();
+i32 (*Hub_PanelBusyFn)();
+
+#include "legoapi/menus/core/gamehint_types.h"
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
 }
 
-// Retail keeps this body as GCC's split-out clone; the inline head stays in
-// the caller.
-static __attribute__((noinline, noclone)) void DrawHint_LSWBody(HINT_s *hint, i32 max_lines)
-    __asm__("_Z12DrawHint_LSWP6HINT_si.part.19");
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
 
-static void DrawHint_LSWBody(HINT_s *hint, i32 max_lines) {
-    const f32 alpha = CurrentHintAlpha();
-    if (!(alpha > 0.0f))
-        return;
-    if (alpha == 1.0f)
-        hint->flags |= 0x40;
+extern i32 LevFlag[4];
 
-    f32 text_y = 0.0f;
-    if ((WORLD->current_level->flags & LEVEL_STATUS) == 0)
-        text_y = hint->control_mode_ids[0] == 0x164 ? -0.1f : -0.7f;
+struct HINT_s;
+struct TouchHolder;
+struct nuhspecial_s;
 
-    f32 text_x;
-    i32 justify;
-    if ((hint->flags & 0x04) != 0) {
-        text_x = 0.0f;
-        justify = 0;
-    } else {
-        text_x = 0.09f - ICONX;
-        justify = 2;
-    }
-    f32 icon_x = -ICONX;
+#if defined(__i386__)
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
+#else
+#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
+#endif
 
-    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
-    char *hint_text = TTab[hint->control_mode_ids[control_mode]];
-    if (hint_text != NULL) {
-        char expanded[1024];
-        Text_ExpandAllButtonStrings(hint_text, expanded);
+struct MechTouchUIElement;
 
-        const u16 pulse_angle = static_cast<u16>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
-        const f32 colour_pulse = NU_SIN_LUT(pulse_angle) * 0.5f + 0.5f;
-        i32 colour_index = static_cast<i8>(hint->pad_0x05[0]);
-        if (static_cast<i8>(hint->pad_0x05[0]) == -1)
-            colour_index = hintsys.state;
-        i32 colours[3];
-        for (i32 channel = 0; channel < 3; ++channel) {
-            const f32 base = static_cast<f32>(HintRGB[colour_index][channel]);
-            colours[channel] = static_cast<i32>(((base + 255.0f) * 0.5f - base) * colour_pulse + base);
-        }
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
 
-        const i32 text_lines = max_lines == -1 ? 3 : max_lines;
-        g_buttonFontScalePulse = CurrentHintButtonScale();
-        const u8 text_alpha = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
-        const f32 max_width = justify != 0 ? 2.0f - (1.0f + text_x) - 0.15f : 1.4f;
-        SmartTextEx(expanded, text_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, justify, colours[0], colours[1], colours[2],
-                    max_width, text_lines, NULL, 0, text_alpha);
-        if (justify == 0)
-            icon_x = -0.5f * smarttextex_longestwidth - 0.075f;
-        g_buttonFontScalePulse = 1.0f;
-    }
+namespace {
 
-    LEVEL_OBJECT_RUNTIME *icon = &WORLD->lev_objs[0xd4];
-    if (icon->active == 0)
-        return;
+} // namespace
 
-    const i32 slide_angle = static_cast<i32>(alpha * 16384.0f);
-    const f32 wave_x = (icon_x + 1.1f) * NU_SIN_LUT(slide_angle) - 1.1f;
-    if (hintIconPos.duration < 0.0f || hintIconPos.elapsed >= hintIconPos.duration + hintIconPos.delay)
-        hintIconPos.value.x = wave_x;
+struct EDCREATURE_s;
 
-    if ((hint->flags & HINT_DIRECT_DISPLAY) != 0) {
-        const u16 rotation = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
-        DrawPanel3DObjectNoAlpha(wave_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, rotation, 0, &icon->special, 2);
-    } else {
-        const f32 bounce_scale = TouchHacks::TouchControlsActive ? 0.2f : 0.8f;
-        const u16 rotation = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
-        const f32 bounce = NU_SIN_LUT(static_cast<i32>(hintYPop.value));
-        const f32 scale = hintIconScale.value;
-        DrawPanel3DObjectNoAlpha(hintIconPos.value.x, hintIconPos.value.y + bounce_scale * bounce, hintIconPos.value.z,
-                                 scale, scale, scale, 0, rotation, 0, &icon->special, 2);
-    }
-    if (justify == 0) {
-        const u16 mirrored_rotation = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
-        DrawPanel3DObjectNoAlpha(-wave_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, mirrored_rotation, 0, &icon->special, 2);
-    }
+struct AISYS_s;
+
+extern f32 HUB_EPISODETITLEY;
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
 }
 
-void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
-    if (hint == NULL || __builtin_expect(FadeSys.fade != 0.0f, 0))
-        return;
-    DrawHint_LSWBody(hint, max_lines);
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
-i32 Dodge_UpdateHint(HINT_s *hint) {
-    if (WORLD->area != NULL && WORLD->area == HUB_ADATA)
-        return 0;
-#define CHECK_DODGE_HINT_PLAYER(index)                                                                                 \
-    do {                                                                                                               \
-        GameObject *object = Player[index];                                                                            \
-        if (object == NULL) {                                                                                          \
-            break;                                                                                                     \
-        }                                                                                                              \
-        const u32 flags = object->apiobj.character_data->model_flags;                                                  \
-        if ((flags & 0x2000) != 0) {                                                                                   \
-            return 0;                                                                                                  \
-        }                                                                                                              \
-        if (object->apiobj.player_controlled && object->incoming_bolt != NULL) {                                       \
-            if (hint->control_mode_ids[0] == 0x265) {                                                                  \
-                if ((flags & 8) == 0 && (object->apiobj.character_model->model_data_b[0x4f] != NULL ||                 \
-                                         object->apiobj.character_model->model_data_b[0x26] != NULL)) {                \
-                    return 1;                                                                                          \
-                }                                                                                                      \
-            } else if (hint->control_mode_ids[0] == 0x5dd && (flags & 8) != 0) {                                       \
-                return 1;                                                                                              \
-            }                                                                                                          \
-        }                                                                                                              \
-    } while (0)
-    CHECK_DODGE_HINT_PLAYER(0);
-    CHECK_DODGE_HINT_PLAYER(1);
-    CHECK_DODGE_HINT_PLAYER(2);
-    CHECK_DODGE_HINT_PLAYER(3);
-    CHECK_DODGE_HINT_PLAYER(4);
-    CHECK_DODGE_HINT_PLAYER(5);
-    CHECK_DODGE_HINT_PLAYER(6);
-    CHECK_DODGE_HINT_PLAYER(7);
-#undef CHECK_DODGE_HINT_PLAYER
-    return 0;
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
 }
 
-void SET_HINT_COMPLETE(i32 hint_id) {
-    if (hint_id < 0) {
-        return;
-    }
-
-    i32 word = hint_id >> 5;
-    if (word > 2) {
-        return;
-    }
-    if (MechInputTouchSystem::s_baseControlMode != 0) {
-        word += 3;
-    }
-    Game.hint_completion_bits[word] |= 1U << (hint_id & 0x1f);
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
 }
 
-void CLEAR_HINT_COMPLETE(i32 hint_id) {
-    if (hint_id < 0) {
-        return;
-    }
-
-    i32 word = hint_id >> 5;
-    if (word > 2) {
-        return;
-    }
-    if (MechInputTouchSystem::s_baseControlMode != 0) {
-        word += 3;
-    }
-    Game.hint_completion_bits[word] &= ~(1U << (hint_id & 0x1f));
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
 }
 
-i32 DragBomb_UpdateHint(HINT_s *hint) {
-    if (VehicleArea == 0 || player == NULL)
-        return 0;
-    if ((player->apiobj.character_data->player_config->flags_090 & 0x400) == 0 ||
-        player->force_glow_candidate_kind == 0 || player->force_glow_candidate == NULL || !(player->field_0xd80 > 0.0f))
-        return 0;
-    const i32 id = static_cast<GameObject_s *>(player->force_glow_candidate)->id;
-    if (hint->control_mode_ids[0] != 0x5ee) {
-        if (hint->control_mode_ids[0] == 0x28e) {
-            if (id != id_DRAGBOMB)
-                return 1;
-        }
-    } else {
-        if (id == id_DRAGBOMB)
-            return 1;
-    }
-    return 0;
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
 }
 
-// Original local callbacks referenced by Hints_LSW.
-extern u8 show_lever_hint;
-extern i32 show_autojump_hint;
-extern AREADATA_s *PODRACE_ADATA, *PODSPRINT_ADATA, *BONUS_GUNSHIP_ADATA;
-extern FadeSystem FadeSys;
-
-static __used__ i32 Jump_UpdateHint(HINT_s *hint) {
-    if (player == NULL || player->field_0x7a5 != 0xff || VehicleArea != 0)
-        return 0;
-    const CHARACTERDATA *data = player->apiobj.character_data;
-    const u32 flags = data->model_flags;
-    if ((flags & 0x2010) != 0 || (data->player_config->flags_094 & 4) != 0)
-        return 0;
-    switch (hint->control_mode_ids[0]) {
-        case 0x604:
-            return 1;
-        case 0x629:
-            if (MechInputTouchSystem::s_baseControlMode == 0)
-                return 0;
-            // This hint shares the double-jump eligibility check below.
-        case 0x606:
-            if ((flags & 8) != 0 || (data->player_config->flags_090 & 0x400000) != 0)
-                return 1;
-            break;
-        case 0x26b:
-        case 0x608:
-            if ((flags & 8) != 0)
-                return 1;
-            break;
-    }
-    return 0;
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
 }
 
-static __used__ i32 Move_UpdateHint(HINT_s *hint) {
-    if (MechInputTouchSystem::s_baseControlMode == 0 || player == NULL || player->apiobj.field_0x27d == 0 ||
-        player->field_0x7a5 != 0xff || VehicleArea != 0 || !TouchHacks::TouchControlsActive)
-        return 0;
-    switch (hint->control_mode_ids[0]) {
-        case 0x5f1:
-        case 0x5f2:
-            return MechInputTouchSystem::s_actualTouchMode == 2;
-        case 0x5f3:
-            return 1;
-    }
-    return 0;
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
 }
 
-static __used__ i32 Lever_UpdateHint(HINT_s *) {
-    if (show_lever_hint != 0) {
-        show_lever_hint = 0;
-        return true;
-    }
-    return false;
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
 }
 
-static __used__ i32 AutoJump_UpdateHint(HINT_s *hint) {
-    if (hint->control_mode_ids[0] != show_autojump_hint)
-        return false;
-    if (SuperOptions.touch_controls == 0 || TestForController()) {
-        show_autojump_hint = 0;
-        return false;
-    }
-    return true;
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
 }
 
-static __used__ i32 VehicleStuff_UpdateHint(HINT_s *hint) {
-    if (VehicleArea == 0)
-        return 0;
-    AREADATA_s *area = WORLD->area;
-    if (area == NULL || (area->flags & 4) != 0 || player == NULL || player->field_0x7a5 != 0xff)
-        return 0;
-    if (hint->control_mode_ids[0] != 0x617 || area == PODRACE_ADATA || area == PODSPRINT_ADATA ||
-        area == BONUS_GUNSHIP_ADATA)
-        return 0;
-    const GAMECHARACTERDATA *data = player->apiobj.character_data->game_character;
-    if (data->field_0x88 > 0.0f)
-        return (data->flags_090 & 0x10000) == 0;
-    return 0;
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
 }
 
-static __used__ i32 HoldTag_UpdateHint(HINT_s *) {
-    if (MechInputTouchSystem::s_baseControlMode == 0 || WORLD == NULL || WORLD->area == HUB_ADATA) {
-        return 0;
-    }
-    return VehicleArea == 0;
+inline EdSubSystem::~EdSubSystem() {
 }
 
-u8 show_hatmachine_hint;
-
-static __used__ i32 HatMachine_UpdateHint(HINT_s *hint) {
-    if (show_hatmachine_hint == 5 && hint->control_mode_ids[0] == 0x627) {
-        show_hatmachine_hint = 0;
-        return TTab[0x627] != NULL;
-    }
-    if (show_hatmachine_hint == 6 && hint->control_mode_ids[0] == 0x628) {
-        show_hatmachine_hint = 0;
-        return TTab[0x628] != NULL;
-    }
-    return 0;
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
 }
 
-extern HINTUIBUTTON_s *hintUIButton;
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#include "nu2api/nucore/nucore_plain_types.h"
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+struct nupad_s;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
+                                                             char *scene_data)
+    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct FLOWBOX_s;
+
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+}
+
+struct JEDIBNETPACKET_s;
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+extern "C" {
+#include "legoapi/ai/core/ai_sys_stubs_types.h"
+} // extern "C"
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+#include "legoapi/gizmo/gizmos/gizmos_gizactions_types.h"
+
+} // namespace
+
+struct AIPACKET_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+// Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
+extern "C" {
+extern u32 flagremaptab[32][2];
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
 
 void *GetHintFromUIButton() {
     return hintUIButton != NULL ? hintUIButton->field_0x78 : NULL;
 }
 
-extern HINT_s Hints_LSW[55];
-void RegisterWithHintSys(void (*)(HINT_s *, i32), HINT_s *, u32 *, i32);
-i32 id_HINT_LSW_AUTOJUMP = -1;
-i32 id_HINT_LSW_AUTOJUMP_FAIL = -1;
+void Hint_ExpandButtons(char *input, char *output) {
+    char token[256];
+    char expanded[64];
 
-void initGameHintSys_LSW() {
-    RegisterWithHintSys(DrawHint_LSW, Hints_LSW, Game.hint_completion_bits, 3);
-    LSW_HintConditions.force_used = 0;
-    LSW_HintConditions.tc14_present = 0;
-    LSW_HintConditions.panel_used = 0;
-    id_HINT_LSW_AUTOJUMP = 0x620;
-    id_HINT_LSW_AUTOJUMP_FAIL = 0x621;
-}
+    *output = '\0';
+    while (*input != '\0') {
+        if (*input != '[') {
+            *output = *input;
+            output[1] = '\0';
+            ++input;
+            ++output;
+            continue;
+        }
 
-i32 SmartBomb_UpdateHint(HINT_s *) {
-    if (VehicleArea == 0 || BonusArea != 0)
-        return 0;
-    if (!Cheat_IsOn(0x14))
-        return 0;
-    if (player == NULL)
-        return 0;
-    return player->field_0x7a5 == 0xff;
-}
+        token[0] = '[';
+        i32 token_length = 1;
+        while (input[token_length] != ']' && input[token_length] != '\0') {
+            token[token_length] = input[token_length];
+            ++token_length;
+        }
 
-extern AREADATA *JABBASPALACE_ADATA;
-
-i32 ShinyMetal_UpdateHint(HINT_s *hint) {
-    if (player == NULL)
-        return 0;
-    if (hint->control_mode_ids[0] == 0x283 && JABBASPALACE_ADATA != NULL &&
-        WORLD->current_level == JABBASPALACEB_LDATA && Game.area_save[JABBASPALACE_ADATA->index].area_complete == 0 &&
-        Mission_Active(NULL) == NULL && (LevGizObst[0] == NULL || LevGizObst[0]->anim_set->state != 0) &&
-        LevBlowUp[0] != NULL && (LevBlowUp[0]->status_flags & 1) == 0) {
-        if (player != NULL &&
-            NuVecDistSqr(&player->apiobj.collision_position, &LevBlowUp[0]->mid_position, NULL) < 25.0f)
-            return 1;
-        if (player2 != NULL &&
-            NuVecDistSqr(&player2->apiobj.collision_position, &LevBlowUp[0]->mid_position, NULL) < 25.0f)
-            return 1;
-    }
-    if (FreePlay == 0) {
-        if (hint->control_mode_ids[0] != 0x2b8) {
-            if (hint->control_mode_ids[0] != 0x283 || AvailableToPlayer(0x1000000, -1, 6, 1) == 0) {
-                return 0;
+        char literal = '[';
+        if (input[token_length] != '\0') {
+            token[token_length] = ']';
+            token[token_length + 1] = '\0';
+            token_length = NuStrLen(token);
+            if (token_length > 0 && Text_ExpandButtonString(token, expanded) != 0) {
+                char *character = expanded;
+                while (*character != '\0') {
+                    *output = *character;
+                    output[1] = '\0';
+                    ++character;
+                    ++output;
+                }
+                NuStrCat(output, expanded);
+                input += token_length;
+                continue;
             }
-        } else {
-            if ((player->apiobj.character_data->model_flags & 0x1000000) == 0 && player->field_0x108e != 6)
-                return 0;
+            literal = *input;
         }
+
+        *output = literal;
+        output[1] = '\0';
+        ++input;
+        ++output;
     }
-    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
-    if (blowup == NULL)
+    *output = '\0';
+}
+
+i32 Hint_CurrentId() {
+    HINT_s *hint = hintsys.active_hint;
+    if (hint == NULL) {
+        return -1;
+    }
+    return hint->control_mode_ids[MechInputTouchSystem::s_baseControlMode];
+}
+
+HINT_s *Hint_FindHint(i32 hint_id) {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return NULL;
+    }
+
+    while (hint->control_mode_ids[0] != -1) {
+        if (hint->control_mode_ids[0] == hint_id || hint->control_mode_ids[1] == hint_id) {
+            return hint;
+        }
+        ++hint;
+    }
+    return NULL;
+}
+
+i32 Hint_isAvailable(i32 hint_id) {
+    HINT_s *active_hint = hintsys.active_hint;
+    if (active_hint != NULL && active_hint->control_mode_ids[MechInputTouchSystem::s_baseControlMode] == hint_id) {
         return 0;
-    i32 count = WORLD->gizmo_blowup_count;
-    for (i32 i = 0; i < count; ++i, ++blowup) {
-        if ((blowup->draw_flags & 2) == 0 || (blowup->status_flags & 0x804001) != 0x804000)
-            continue;
-        if (NuVecDistSqr(&player->apiobj.position, &blowup->mid_position, NULL) < 4.0f) {
-            if ((player->apiobj.character_data->model_flags & 0x1000000) != 0 || player->field_0x108e == 6)
-                return hint->control_mode_ids[0] == 0x2b8;
-            if (AvailableToPlayer(0x1000000, -1, FreePlay == 0 ? 6 : 0, 1) != 0)
-                return hint->control_mode_ids[0] == 0x283;
-            return hint->control_mode_ids[0] == 0x61d;
-        }
-        count = WORLD->gizmo_blowup_count;
     }
-    return 0;
+    if (hint_id < 0 || TTab[hint_id] == NULL) {
+        return 0;
+    }
+
+    HINT_s *hint = Hint_FindHint(hint_id);
+    if (hint == NULL || hint->completion_flags[MechInputTouchSystem::s_baseControlMode] != 0) {
+        return 0;
+    }
+    return !(hint->field_0x20 > 0.0f);
 }
 
-f32 CurrentHintButtonScale() {
-    return __builtin_fabsf(NuSinf(GlobalTimer.time_elapsed * 3.0f)) * 0.45f + 1.0f;
+i32 Hint_isComplete(i32 hint_id) {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return 0;
+    }
+
+    hint = Hint_FindHint(hint_id);
+    if (hint == NULL) {
+        return 0;
+    }
+    return hint->completion_flags[MechInputTouchSystem::s_baseControlMode];
 }
 
-void initGameHintSys_Batman() {
+i32 Hint_isComplete(HINT_s *hint) {
+    return hint->completion_flags[MechInputTouchSystem::s_baseControlMode];
 }
 
-i32 IndyUnlocked_UpdateHint(HINT_s *hint) {
+void initHintSys() {
+    hintsys.current_hint = 0;
+    hintsys.state = 2;
+    hintsys.active_hint = NULL;
+    MechHintUIButton *button = new MechHintUIButton();
+    button->UpdateTexture(MechInputTouchVirtualConsoleController::s_textures[3]);
+    button->alpha = 0.0f;
+    button->alpha_to = 0.0f;
+    button->slide = -1.5f;
+    button->visible = 0;
+    button->slide_to = -1.5f;
+    button->pulse_active = 0;
+    button->slide_elapsed = button->slide_duration;
+    hintUIButton = reinterpret_cast<HINTUIBUTTON_s *>(button);
+    button->alpha_elapsed = button->alpha_duration;
+    MechSystems::Get()->TouchUI().AddUIElement(*button);
+}
+
+void RegisterWithHintSys(void (*update_fn)(HINT_s *, i32), HINT_s *hints, u32 *save_bits, i32 save_bit_count) {
+    hintsys.update_fn = update_fn;
+    hintsys.hints = hints;
+    hintsys.save_bits = save_bits;
+    hintsys.save_bit_count = save_bit_count;
+    initHintSys();
+}
+
+void Hint_CancelCurrent() {
+    HINT_s *hint = hintsys.active_hint;
+    if (hint != NULL) {
+        if (hint->display_duration != 0.0f && hint->display_duration - 0.5f > hintsys.display_elapsed)
+            hintsys.display_elapsed = hint->display_duration - 0.5f;
+        hint->field_0x20 = 0.0f;
+    }
+    HINTUIBUTTON_s *button = hintUIButton;
+    if (button->field_0x78 != NULL) {
+        const f32 blend_time = AlphaBlendTime;
+        button->field_0x7c = NULL;
+        const f32 position = *button->field_0x84;
+        f32 *alpha = button->field_0x40;
+        button->field_0x8c = -1.5f;
+        button->field_0x90 = 0.0f;
+        button->field_0x98 = 0.0f;
+        button->field_0x88 = position;
+        button->field_0x78 = NULL;
+        button->field_0x94 = blend_time;
+        const f32 alpha_value = *alpha;
+        button->field_0xa0 = 0;
+        button->field_0x48 = 0.0f;
+        button->field_0x4c = 0.0f;
+        button->field_0x54 = 0.0f;
+        button->field_0x44 = alpha_value;
+        button->field_0x50 = blend_time;
+    }
+}
+
+void Hint_Reset() {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return;
+    }
+
+    while (hint->control_mode_ids[0] != -1) {
+        hint->field_0x20 = 0;
+        hint++;
+    }
+
+    hintsys.state = 2;
+    hintsys.current_hint = 0;
+
+    HINTUIBUTTON_s *button = hintUIButton;
+    if (button->field_0x78 != NULL) {
+        f32 alpha_blend_time = AlphaBlendTime;
+        button->field_0x7c = 0;
+        f32 field_0x84 = *button->field_0x84;
+        f32 *field_0x40 = button->field_0x40;
+        button->field_0x8c = -1.5f;
+        button->field_0x90 = 0.0f;
+        button->field_0x98 = 0.0f;
+        button->field_0x88 = field_0x84;
+        button->field_0x78 = NULL;
+        button->field_0x94 = alpha_blend_time;
+        f32 field_0x40_value = *field_0x40;
+        button->field_0xa0 = 0;
+        button->field_0x48 = 0.0f;
+        button->field_0x4c = 0.0f;
+        button->field_0x54 = 0.0f;
+        button->field_0x44 = field_0x40_value;
+        button->field_0x50 = alpha_blend_time;
+    }
+
+    hintsys.field_0x1c = 0;
+}
+
+void Hint_ResetHint(i32 hint_id, i32 reset_completed) {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL || hint->control_mode_ids[0] == -1) {
+        return;
+    }
+
     i32 control_mode = MechInputTouchSystem::s_baseControlMode;
-    if (hint->completion_flags[control_mode] != 0 || WORLD->current_level != HUB_LDATA)
-        return 0;
-    if (FadeSys.fade != 0.0f || Game.indy_unlocked == 0)
-        return 0;
-    hint->pad_0x05[0] = 4;
-    return 1;
-}
-
-static __used__ i32 Sith_UpdateHint(HINT_s *) {
-    if (FreePlay == 0 || (WORLD->area != NULL && WORLD->area == HUB_ADATA) || player == NULL ||
-        player->field_0x7a5 != 0xff)
-        return 0;
-    if (WORLD->giz_force_sys == NULL || WORLD->giz_force_sys->visible_force_count == 0 ||
-        AvailableToPlayer(0xc, -1, 0, 1) != 0)
-        return 0;
-    for (i32 i = 0; i < WORLD->giz_force_sys->visible_force_count; ++i) {
-        GIZFORCE_s *force = WORLD->giz_force_sys->visible_forces[i];
-        if ((force->config_flags & 0x10) != 0 && NuVecDistSqr(&player->apiobj.position, &force->position, NULL) < 6.25f)
-            return 1;
-    }
-    return 0;
-}
-
-static __used__ void PlayerButton_PlayHint(HINT_s *) {
-    const VuVec &position = MechSystems::Get()->PlayerButton().position;
-    MechSystems::Get()->NewRadarPulse(position, false);
-}
-
-static __used__ i32 UnlockHubStuff_UpdateHint(HINT_s *hint) {
-    if (WORLD == NULL || WORLD->current_level != HUB_LDATA)
-        return 0;
-    switch (hint->control_mode_ids[0]) {
-        case 0x619:
-            if (show_unlock_shop_hint != 0)
-                return 1;
-            break;
-        case 0x61a:
-            if (show_unlock_customiser_hint != 0)
-                return 1;
-            break;
-        case 0x61b:
-            if (show_unlock_minikitviewer_hint != 0)
-                return 1;
-            break;
-    }
-    return 0;
-}
-
-static __used__ i32 PlayerButton_UpdateHint(HINT_s *hint) {
-    if (WORLD == NULL || WORLD->area == HUB_ADATA || VehicleArea != 0)
-        return 0;
-    if (hint->control_mode_ids[0] == 0x5f4) {
-        if (FreePlay == 0)
-            return 1;
-    } else if (hint->control_mode_ids[0] == 0x5f5) {
-        if (FreePlay != 0)
-            return 1;
-    }
-    return 0;
-}
-
-i32 GizForce_UpdateHint(HINT_s *);
-i32 ZipUps_UpdateHint(HINT_s *);
-i32 Push_UpdateHints(HINT_s *);
-i32 GizPanel_UpdateHint(HINT_s *);
-i32 Shop_UpdateHint(HINT_s *);
-HINT_s Hints_LSW[55] = {
-    {{356, 356}, 12, {255, 0, 0}, 0, 6.0f, 2.0f, {NULL}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{601, 375}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizForce_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1548, 1549}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Lever_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1568, 1568}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {AutoJump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1569, 1569}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {AutoJump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{604, 374}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizBuildIts_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{631, 1553}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Attack_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{613, 1500}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Dodge_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1501, 1502}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Dodge_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{610, 1503}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {ZipUps_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{602, -1}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{615, 615}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Push_UpdateHints}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{616, 1507}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Teleport_UpdateHints}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{617, 617}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{618, 618}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{605, 1508}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{606, 379}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{611, 1509}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{650, 377}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{651, 378}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{643, 643}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {ShinyMetal_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1505, 1506}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {SmartBomb_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{607, 1510}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{608, 1511}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{609, 1512}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1516, 1516}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {Shop_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1515, 1515}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {Shop_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1514, 1514}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {Shop_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1518, 1519}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {DragBomb_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{654, 1520}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {DragBomb_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1521, 1521}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {Move_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1523, 1523}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {Move_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1540, 1541}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Jump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1522, 1522}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {Move_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1542, 1543}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Jump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1524, 1524}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {PlayerButton_UpdateHint}, PlayerButton_PlayHint, {0, 0, 0, 0}, 0.0f},
-    {{1525, 1525}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {PlayerButton_UpdateHint}, PlayerButton_PlayHint, {0, 0, 0, 0}, 0.0f},
-    {{1544, 1545}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Jump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1546, 1547}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Jump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1526, 1526}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {HoldTag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1561, 1561}, 8, {255, 0, 0}, 0, 6.0f, 2.0f, {UnlockHubStuff_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1562, 1562}, 8, {255, 0, 0}, 0, 6.0f, 2.0f, {UnlockHubStuff_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1563, 1563}, 8, {255, 0, 0}, 0, 6.0f, 2.0f, {UnlockHubStuff_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{649, 1558}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {Tag_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1559, 1560}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {VehicleStuff_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1565, 1565}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {ShinyMetal_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{696, 1566}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {ShinyMetal_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1570, 1570}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {Teleport_UpdateHints}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1571, 1571}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {Sith_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1572, 1572}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1573, 1573}, 32, {255, 0, 0}, 0, 6.0f, 2.0f, {GizPanel_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1575, 1575}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {HatMachine_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1576, 1576}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {HatMachine_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{1577, 1577}, 16, {255, 0, 0}, 0, 6.0f, 2.0f, {Jump_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
-    {{-1, -1}, 0, {255, 0, 0}, 1000, 1.0f, 1.0f, {NULL}, NULL, {0, 0, 0, 0}, 0.0f},
-};
-
-// Each control mode retains its own requested and interpolated hint row.
-static i32 updatehints_target_y[2];
-static f32 updatehints_current_y[2];
-
-void MenuUpdateHints(MENU_s *menu) {
-    if (menu->input_activity != 0 && menu->confirm_pressed != 0) {
-        if (menu->selected_item == 0)
-            menu->up_pressed = 1;
-        else
-            menu->down_pressed = 1;
-    }
-    if (menu->cancel_pressed != 0) {
-        BackupMenu();
-    } else if (menu->up_pressed != 0) {
-        if (updatehints_target_y[MechInputTouchSystem::s_baseControlMode] > 0)
-            --updatehints_target_y[MechInputTouchSystem::s_baseControlMode];
-    } else if (menu->down_pressed != 0) {
-        i32 &target = updatehints_target_y[MechInputTouchSystem::s_baseControlMode];
-        target = static_cast<i32>(static_cast<u32>(target) + 1U);
-    }
-
-    const i32 mode = MechInputTouchSystem::s_baseControlMode;
-    i32 count = 0;
-    for (HINT_s *hint = Hints_LSW; hint->control_mode_ids[0] != -1; ++hint) {
-        if ((hint->flags & 0x2c) == 0 &&
-            (mode == 0 ? (hint->flags & 0x10) == 0 : hint->control_mode_ids[1] != -1) &&
-            TTab[hint->control_mode_ids[mode]] != NULL)
-            ++count;
-    }
-    if (count <= updatehints_target_y[mode])
-        updatehints_target_y[mode] = count - 1;
-    updatehints_current_y[mode] =
-        SeekValF(updatehints_current_y[mode], static_cast<f32>(updatehints_target_y[mode]), 5.0f);
-}
-
-void MenuDrawHints(MENU_s *menu) {
-    const f32 text_x = 0.09f - ICONX;
-    f32 icon_x = -ICONX;
-    const u16 pulse_angle =
-        static_cast<u16>(static_cast<i32>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f));
-    const f32 pulse = NU_SIN_LUT(pulse_angle) * 0.5f + 0.5f;
-    const u8 red =
-        static_cast<u8>(static_cast<i32>(HintRGB[2][0] + ((HintRGB[2][0] + 255.0f) * 0.5f - HintRGB[2][0]) * pulse));
-    const u8 green =
-        static_cast<u8>(static_cast<i32>(HintRGB[2][1] + ((HintRGB[2][1] + 255.0f) * 0.5f - HintRGB[2][1]) * pulse));
-    const u8 blue =
-        static_cast<u8>(static_cast<i32>(HintRGB[2][2] + ((HintRGB[2][2] + 255.0f) * 0.5f - HintRGB[2][2]) * pulse));
-    if (MenuAlpha < 1.0f) {
-        const f32 start_x = -1.0f - (1.0f - __builtin_fabsf(icon_x));
-        icon_x = start_x + (icon_x - start_x) * NU_SIN_LUT(static_cast<i32>(MenuAlpha * 16384.0f));
-    }
-    f32 y = -0.15f - -0.35f * updatehints_current_y[MechInputTouchSystem::s_baseControlMode];
-    const f32 height = 0.15f / GetAspectRatio();
-    Text3D(ASCII_UP, 0.85f, 0.15f, 1.0f, 1.2f, 1.2f, 1.2f, 0, red, green, blue);
-    menu->item_column[0] = 0;
-    menu->item_row[0] = 0;
-    menu->item_x[0] = 0.85f;
-    menu->item_y[0] = 0.15f;
-    menu->item_width[0] = 0.15f;
-    menu->item_height[0] = height;
-    Text3D(ASCII_DOWN, 0.85f, -0.55f, 1.0f, 1.2f, 1.2f, 1.2f, 0, red, green, blue);
-    menu->item_column[1] = 0;
-    menu->item_row[1] = 1;
-    menu->item_x[1] = 0.85f;
-    menu->item_y[1] = -0.55f;
-    menu->item_width[1] = 0.15f;
-    menu->item_height[1] = height;
-
-    i32 row = 0;
-    for (HINT_s *hint = Hints_LSW; hint->control_mode_ids[0] != -1; ++hint) {
-        if ((hint->flags & 0x2c) != 0)
-            continue;
-        const i32 mode = MechInputTouchSystem::s_baseControlMode;
-        if ((hint->flags & 0x10) != 0 && mode == 0)
-            continue;
-        if (hint->control_mode_ids[1] == -1 && mode != 0)
-            continue;
-        const i32 text_id = hint->control_mode_ids[mode];
-        if (TTab[text_id] == NULL)
-            continue;
-        if (y <= 0.3f) {
-            f32 fade = 1.0f;
-            if (y > 0.2f)
-                fade = 1.0f - (y - 0.2f) / 0.1f;
-            g_buttonFontScalePulse = CurrentHintButtonScale();
-            char text[1024];
-            Text_ExpandAllButtonStrings(TTab[text_id], text);
-            SmartTextEx(text, text_x, y, 1.0f, 0.5f, 0.5f, 0.5f, 2, red, green, blue, 1.9f - (1.0f + text_x) - 0.15f, 3,
-                        NULL, 0, static_cast<i32>(static_cast<f32>(MenuA) * fade));
-            g_buttonFontScalePulse = 1.0f;
-            const f32 scale = 0.5f * fade;
-            nuhspecial_s *special = &WORLD->lev_objs[0xd4].special;
-            const u16 rotation = static_cast<u16>(
-                static_cast<i32>(NuFmod(GlobalTimer.time_elapsed, 2.5f) / 2.5f * 65536.0f) + row * 0x1555);
-            DrawPanel3DObjectNoAlpha(icon_x, y, 1.0f, scale, scale, scale, 0, rotation, 0, special, 2);
+    while (hint->control_mode_ids[control_mode] != hint_id) {
+        hint++;
+        if (hint->control_mode_ids[0] == -1) {
+            return;
         }
-        y -= 0.35f;
-        if (y <= -1.5f)
-            break;
-        ++row;
+    }
+
+    if (reset_completed == 1) {
+        hint->completion_flags[control_mode] = 0;
+    }
+    hintsys.current_hint = 0;
+}
+
+void Hint_ClearHintsAndDoneFlags() {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL || hint->control_mode_ids[0] == -1) {
+        return;
+    }
+
+    i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    do {
+        hint->completion_flags[control_mode] = 0;
+        hint->flags &= ~0x42;
+        hint++;
+    } while (hint->control_mode_ids[0] != -1);
+}
+
+void Hint_SaveBits(i32 hint_id, i32 complete) {
+    if (complete != 0) {
+        SET_HINT_COMPLETE(hint_id);
+        return;
+    }
+    CLEAR_HINT_COMPLETE(hint_id);
+}
+
+void Hint_SaveGameState(HINT_s *hint) {
+    HINT_s *candidate = hintsys.hints;
+    if (candidate == NULL) {
+        return;
+    }
+    if (hintsys.save_bits == NULL) {
+        return;
+    }
+    if (candidate->control_mode_ids[0] == -1) {
+        return;
+    }
+
+    const u16 hint_id = static_cast<u16>(hint->control_mode_ids[0]);
+    i32 index = 0;
+    u16 candidate_id = static_cast<u16>(candidate->control_mode_ids[0]);
+    if (candidate_id == hint_id) {
+        goto found;
+    }
+    do {
+        ++candidate;
+        ++index;
+        candidate_id = static_cast<u16>(candidate->control_mode_ids[0]);
+        if (candidate_id == 0xffff) {
+            return;
+        }
+    } while (candidate_id != hint_id);
+
+found:
+    Hint_SaveBits(index, 1);
+}
+
+void Hint_SetComplete(HINT_s *hint) {
+    if (hint == NULL) {
+        return;
+    }
+
+    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    if (hint->completion_flags[control_mode] == 0) {
+        hint->completion_flags[control_mode] = 1;
+        Hint_SaveGameState(hint);
     }
 }
+
+void Hint_SetComplete(i32 hint_id) {
+    if (hint_id == -1) {
+        return;
+    }
+
+    HINT_s *hint = Hint_FindHint(hint_id);
+    if (hint == NULL || (hint->flags & 0x40) == 0) {
+        return;
+    }
+
+    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    if (hint->completion_flags[control_mode] == 0) {
+        hint->completion_flags[control_mode] = 1;
+        Hint_SaveGameState(hint);
+    }
+}
+
+void Hint_SetHint(HINT_s *hint, i32 force, i32 allow_completed) {
+    if (hintsys.active_hint != NULL && hintsys.active_hint == hint)
+        return;
+    HINTUIBUTTON_s *button = hintUIButton;
+    if (button->field_0x78 != NULL && button->field_0x78 == hint)
+        return;
+    if (hint == NULL) {
+        hintsys.active_hint = NULL;
+        if (button->field_0x78 != NULL) {
+            const f32 blend_time = AlphaBlendTime;
+            button->field_0x7c = NULL;
+            const f32 position = *button->field_0x84;
+            f32 *alpha = button->field_0x40;
+            button->field_0x8c = -1.5f;
+            button->field_0x90 = 0.0f;
+            button->field_0x98 = 0.0f;
+            button->field_0x88 = position;
+            button->field_0x78 = NULL;
+            button->field_0x94 = blend_time;
+            const f32 alpha_value = *alpha;
+            button->field_0xa0 = 0;
+            button->field_0x48 = 0.0f;
+            button->field_0x4c = 0.0f;
+            button->field_0x54 = 0.0f;
+            button->field_0x50 = blend_time;
+            button->field_0x44 = alpha_value;
+        }
+        return;
+    }
+    if (force == 0) {
+        if (hint->completion_flags[MechInputTouchSystem::s_baseControlMode] != 0 && allow_completed == 0)
+            return;
+        if (hint->field_0x20 > 0.0f)
+            return;
+    }
+    if ((hint->flags & 8) == 0) {
+        if (button->field_0x78 != hint) {
+            const f32 blend_time = AlphaBlendTime;
+            button->field_0x7c = hint;
+            const f32 position = *button->field_0x84;
+            f32 *alpha = button->field_0x40;
+            button->field_0x8c = -1.5f;
+            button->field_0x90 = 0.0f;
+            button->field_0x98 = 0.0f;
+            button->field_0x88 = position;
+            button->field_0x94 = blend_time;
+            const f32 alpha_value = *alpha;
+            button->field_0xa0 = 0;
+            button->field_0x48 = 0.0f;
+            button->field_0x4c = 0.0f;
+            button->field_0x54 = 0.0f;
+            button->field_0x44 = alpha_value;
+            button->field_0x50 = blend_time;
+        }
+    } else {
+        if (button->field_0x78 != NULL) {
+            const f32 blend_time = AlphaBlendTime;
+            button->field_0x7c = NULL;
+            const f32 position = *button->field_0x84;
+            f32 *alpha = button->field_0x40;
+            button->field_0x8c = -1.5f;
+            button->field_0x90 = 0.0f;
+            button->field_0x98 = 0.0f;
+            button->field_0x88 = position;
+            button->field_0x78 = NULL;
+            button->field_0x94 = blend_time;
+            const f32 alpha_value = *alpha;
+            button->field_0xa0 = 0;
+            button->field_0x48 = 0.0f;
+            button->field_0x4c = 0.0f;
+            button->field_0x54 = 0.0f;
+            button->field_0x44 = alpha_value;
+            button->field_0x50 = blend_time;
+        }
+        hintsys.active_hint = hint;
+        if (hint->on_display != NULL)
+            hint->on_display(hint);
+    }
+    hintsys.current_hint = 0;
+    hintsys.field_0x1c = 0;
+    if (force == 0 && (hint->flags & 1) != 0) {
+        hint->completion_flags[MechInputTouchSystem::s_baseControlMode] = 1;
+        Hint_SaveGameState(hint);
+    }
+    i32 state;
+    do {
+        state = qrand() / 16384;
+    } while (state == hintsys.state);
+    hintsys.state = static_cast<u8>(state);
+    hint->field_0x20 = hint->repeat_delay;
+    hintsys.field_0x1c = 0;
+}
+
+void Hint_SetHintFromId(i32 hint_id, i32 force, i32 allow_completed) {
+    if (hintsys.active_hint != NULL &&
+        hintsys.active_hint->control_mode_ids[MechInputTouchSystem::s_baseControlMode] == hint_id)
+        return;
+    if (hint_id < 0 || TTab[hint_id] == NULL) {
+        HINTUIBUTTON_s *button = hintUIButton;
+        if (button->field_0x78 != NULL) {
+            const f32 blend_time = AlphaBlendTime;
+            button->field_0x7c = NULL;
+            const f32 position = *button->field_0x84;
+            f32 *alpha = button->field_0x40;
+            button->field_0x8c = -1.5f;
+            button->field_0x90 = 0.0f;
+            button->field_0x98 = 0.0f;
+            button->field_0x88 = position;
+            button->field_0x78 = NULL;
+            button->field_0x94 = blend_time;
+            const f32 alpha_value = *alpha;
+            button->field_0xa0 = 0;
+            button->field_0x48 = 0.0f;
+            button->field_0x4c = 0.0f;
+            button->field_0x54 = 0.0f;
+            button->field_0x44 = alpha_value;
+            button->field_0x50 = blend_time;
+        }
+        return;
+    }
+    HINT_s *hint = Hint_FindHint(hint_id);
+    if (hint != NULL)
+        Hint_SetHint(hint, force, allow_completed);
+}
+
+void Hint_SaveAllGameState() {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return;
+    }
+    u32 *save_bits = hintsys.save_bits;
+    if (save_bits == NULL || hint->control_mode_ids[0] == -1) {
+        return;
+    }
+
+    i32 index = 0;
+    const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+    do {
+        if (hint->completion_flags[control_mode] != 0) {
+            Hint_SaveBits(index, 1);
+        } else {
+            Hint_SaveBits(index, 0);
+        }
+        ++hint;
+        ++index;
+    } while (hint->control_mode_ids[0] != -1);
+}
+
+void Hint_LoadAllGameState() {
+    HINTSYS_s *system = &hintsys;
+    HINT_s *hint = system->hints;
+    if (hint == NULL || system->save_bits == NULL || hint->control_mode_ids[0] == -1) {
+        return;
+    }
+
+    for (i32 index = 0; (index >> 5) < system->save_bit_count; ++index) {
+        if (HINT_COMPLETE(index) == 0) {
+            hint->completion_flags[MechInputTouchSystem::s_baseControlMode] = 0;
+        } else {
+            hint->completion_flags[MechInputTouchSystem::s_baseControlMode] = 1;
+        }
+        ++hint;
+        if (hint->control_mode_ids[0] == -1) {
+            return;
+        }
+    }
+}
+
+void Hint_Process(float elapsed) {
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    const i32 only_hint = only_process_this_hint_id;
+    only_process_this_hint_id = -1;
+    hintIconPos.Update(elapsed);
+    hintIconScale.Update(elapsed);
+    hintYPop.Update(elapsed);
+    if (hintsys.hints == NULL)
+        return;
+
+    i32 available =
+        HINTS_ON != 0 && CUTSTOPGAME == 0 && MiniCutCam != 1 && MiniCutCam != 2 && MiniCutCam != 3 && SuperStory == 0 &&
+        BonusArea == 0 && (world->current_level->flags & 0x200) == 0 &&
+        (world->area == NULL || (world->area->flags & 0x124) == 0) && GetMenuID() == -1 && FadeSys.fade == 0.0f &&
+        (world->area == NULL || world->area != HUB_ADATA || Hub_PanelBusyFn == NULL || Hub_PanelBusyFn() == 0);
+    if (ChallengeMode != 0)
+        available = false;
+    else if (Mission_Active(NULL) != NULL)
+        available = false;
+    if (hintUIButton->field_0x78 != NULL || hintUIButton->field_0x7c != NULL)
+        available = false;
+
+    for (HINT_s *hint = hintsys.hints; hint->control_mode_ids[0] != -1; ++hint) {
+        if (hintsys.active_hint != hint && hint->field_0x20 > 0.0f)
+            hint->field_0x20 -= elapsed;
+        if (only_hint != -1 && hint->control_mode_ids[0] != only_hint)
+            continue;
+        const i32 control_mode = MechInputTouchSystem::s_baseControlMode;
+        const i32 id = hint->control_mode_ids[control_mode];
+        if (id == -1 || TTab[id] == NULL || !available || hintUIButton->field_0x78 != NULL ||
+            hintUIButton->field_0x7c != NULL || hintsys.active_hint != NULL ||
+            hint->completion_flags[control_mode] != 0 || hint->availability_fn == NULL)
+            continue;
+        if (hint->availability_fn(hint) == 0 || hint->field_0x20 > 0.0f ||
+            hint->completion_flags[MechInputTouchSystem::s_baseControlMode] == 1)
+            continue;
+        Hint_SetHint(hint, 0, 0);
+    }
+
+    const f32 target = Hint_AlphaTargetFn != NULL ? Hint_AlphaTargetFn() : 1.0f;
+    hintsys.alpha = SeekLinearF(hintsys.alpha, target, 3.0f * FRAMETIME);
+    HINT_s *hint = hintsys.active_hint;
+    if (hint != NULL) {
+        hintsys.display_elapsed += elapsed;
+        if ((hint->display_duration > 0.0f && hintsys.display_elapsed >= hint->display_duration) ||
+            MechSystems::Get()->PlayerButton().selector != NULL)
+            hintsys.active_hint = NULL;
+    }
+}
+
+void Hint_Draw(i32 viewport) {
+    if (hintsys.active_hint != NULL && hintsys.update_fn != NULL)
+        hintsys.update_fn(hintsys.active_hint, viewport);
+}
+
+// GameThingManager D1 dtor @0x4e8a80 clears the global before destruction.
+GameThingManager::~GameThingManager() {
+    theGameThings = NULL;
+}
+
+// GameThingManager::GameThingManager @0x4e8b00: stores the object in
+// theGameThings (the vptr switch to the derived vtable is compiler-generated).
+GameThingManager::GameThingManager(i32 max_things) : ThingManager(max_things) {
+    theGameThings = this;
+}
+

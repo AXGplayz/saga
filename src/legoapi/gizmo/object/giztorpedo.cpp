@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/gizmo/object/giztorpedo.h"
 
 #include "batman.h"
@@ -5,7 +8,6 @@
 #include "gameapi/edtools/edfile.h"
 #include "globals.h"
 #include "legoapi/core/input/timer.h"
-#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/world/level.h"
@@ -274,3 +276,4 @@ ADDGIZMOTYPE *GizTorpMachine_RegisterGizmo(i32 type_id) {
 
     return &addtype;
 }
+

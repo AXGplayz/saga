@@ -1,6 +1,34 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/world/world.h"
 #include "legoapi/legoapi_types.h"
+#include "decomp.h"
+#include "gameapi/edtools/edfile.h"
+#include "globals.h"
+#include "legoapi/actions/combat/shovesys.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
+#include "legoapi/gizmo/object/gizmopickup.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/collect/bolts.h"
+#include "legoapi/misc/utilities.h"
+#include "legoapi/menus/core/gamemessage.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/numusic/sfx.h"
 
 u32 GizObstacles_TotalScore(void *world) {
     GIZOBSTACLESYS_s *system = static_cast<WORLDINFO_s *>(world)->giz_obstacle_sys;
@@ -15,61 +43,9 @@ u32 GizObstacles_TotalScore(void *world) {
     return total;
 }
 
-#include "decomp.h"
-#include "gameapi/edtools/edfile.h"
-#include "globals.h"
-#include "legoapi/actions/combat/shovesys.h"
-#include "legoapi/audio/sfx.h"
-#include "legoapi/characters/motion/gameanim.h"
-#include "legoapi/characters/motion.h"
-#include "legoapi/characters/core/character.h"
-#include "legoapi/characters/core/players.h"
-#include "legoapi/core/input/gamepads.h"
-#include "legoapi/core/config/cheat.h"
-#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
-#include "legoapi/gizmo/object/gizmoblowups.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmo/object/gizmopickup.h"
-#include "legoapi/items/objects/gameobjects.h"
-#include "legoapi/items/base/apiobject.h"
-#include "legoapi/items/collect/bolts.h"
-#include "legoapi/misc/utilities.h"
-#include "legoapi/legoapi_types.h"
-#include "legoapi/menus/core/gamemessage.h"
-#include "legoapi/render/core/terrain.h"
-#include "legoapi/world/area.h"
-#include "legoapi/world/level.h"
-#include "legoapi/world/world.h"
-#include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nuportal.h"
-#include "nu2api/nucore/nustring.h"
-#include "nu2api/numath/nutrig.h"
-#include "nu2api/numath/nuvec.h"
-#include "nu2api/numusic/sfx.h"
-
 namespace {
 
-    enum : i32 {
-        GIZOBSTACLE_PROGRESS_CAPACITY = 128,
-        GIZOBSTACLE_PROGRESS_WORDS = GIZOBSTACLE_PROGRESS_CAPACITY / 32,
-    };
-
-    enum GIZOBSTACLE_ACTIVATE_REVERSE_FLAGS : u32 {
-        GIZOBSTACLE_ACTIVATE_REVERSE_VALIDATE = 0x01,
-        GIZOBSTACLE_ACTIVATE_REVERSE_ALLOW_MATCHING_STATE = 0x04,
-    };
-
-    struct GIZOBSTACLEPROGRESS_s {
-        u32 progress_flag_0[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 progress_flag_1[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 runtime_flag_0[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 runtime_flag_2[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 runtime_flag_3[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 runtime_flag_6[GIZOBSTACLE_PROGRESS_WORDS];
-        u32 runtime_flag_7[GIZOBSTACLE_PROGRESS_WORDS];
-    };
-
-    DECOMP_ASSERT(sizeof(GIZOBSTACLEPROGRESS_s) == 0x70, "GIZOBSTACLE progress ABI");
+#include "legoapi/gizmos/object/gizobstacle_types.h"
 
     static void ClearObstacleProgress(GIZOBSTACLEPROGRESS_s *progress) {
         if (progress == NULL) {
@@ -90,7 +66,6 @@ namespace {
 } // namespace
 
 static void Gizobstacle_ReadAnimSetData(GAMEANIMOBJ_s *object, unsigned char version);
-
 static NUVEC *gizobstacletriggers[16];
 static i32 ngizobstacletriggers;
 
@@ -1002,12 +977,6 @@ ADDGIZMOTYPE *GizObstacles_RegisterGizmo(i32 type_id) {
 
 namespace {
 
-    struct OBSTACLE_CHARACTER_DATA_FLAGS_s {
-        u32 flags_0x00;
-        u8 flags_0x04;
-        u8 flags_0x05;
-    };
-
 // Box-trigger and character-flag tests are expanded in place, as in the reference.
 #define OBSTACLE_USES_BOX_TRIGGER(obstacle) ((obstacle)->mode == 5 || (obstacle)->mode == 6)
 #define OBSTACLE_CHARACTER_FLAGS(object)                                                                               \
@@ -1180,12 +1149,6 @@ void GizObstacle_SetPushControlled(GIZOBSTACLE_s *obstacle, GameObject_s *object
     obstacle->progress_push_control = 1;
     obstacle->triggering_object = object;
     obstacle->animation_speed = speed;
-}
-
-void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *obstacle) {
-    if (obstacle->mode == 2 && obstacle->trigger_radius < 0.25f) {
-        obstacle->start_sfx_id = static_cast<i16>(GetSfxId("SwPPad"));
-    }
 }
 
 void GizObstacle_SetTechnoControlled(GIZOBSTACLE_s *obstacle, float speed) {

@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/actions/combat/hits.h"
 #include "decomp.h"
@@ -15,70 +18,110 @@
 #include "legoapi/gizmo/base/TeleportObjectInterface.h"
 #include "legoapi/gizmos/trigger/ai.h"
 #include "legoapi/props/doors/door.h"
-#include "legoapi/gizmos/fx/edgizshadowmachine.h"
-#include "legoapi/gizmo/base/gizmessage.h"
-#include "legoapi/gizmos/traps/gizbombgen.h"
-#include "legoapi/gizmos/object/gizbuildits.h"
-#include "legoapi/gizmos/traps/gizforce.h"
-#include "legoapi/gizmos/fx/gizmopickups.h"
-#include "legoapi/gizmos/object/gizobstacles.h"
-#include "legoapi/gizmos/object/gizpanel.h"
-#include "legoapi/gizmos/transport/gizportal.h"
-#include "legoapi/gizmos/trigger/gizrandom.h"
 #include "legoapi/gizmos/trigger/gizspecial.h"
-#include "legoapi/gizmos/trigger/giztimer.h"
-#include "legoapi/gizmo/object/giztorpedo.h"
-#include "legoapi/gizmos/traps/gizturrets.h"
-#include "legoapi/gizmos/transport/grapples.h"
-#include "legoapi/gizmos/object/hatmachine.h"
-#include "legoapi/gizmos/object/lever.h"
-#include "legoapi/gizmos/trigger/minicut.h"
-#include "legoapi/gizmos/object/newblowup.h"
-#include "legoapi/gizmos/door/plugs.h"
-#include "legoapi/gizmos/door/push.h"
-#include "legoapi/gizmos/door/spinner.h"
-#include "legoapi/props/objects/techno.h"
-#include "legoapi/gizmos/transport/teleport.h"
-#include "legoapi/gizmos/transport/tubes.h"
-#include "legoapi/gizmos/door/zipups.h"
-#include "legoapi/core/input/gamepads.h"
-#include "legoapi/core/input/qrand.h"
 #include "legoapi/audio/sfx.h"
-#include "legoapi/items/collect/bolts.h"
-#include "legoapi/gizmos/object/gizpanel.h"
-#include "legoapi/world/levels/levels.h"
 #include "legoapi/gizmos/door/securitydoors.h"
-#include "legoapi/gizmos/fx/guidelines.h"
-#include "legoapi/gizmos/transport/ledges.h"
-#include "legoapi/gizmos/traps/attracto.h"
-#include "legoapi/gizmos/traps/shards.h"
-#include "legoapi/props/objects/signal.h"
-#include "legoapi/props/objects/tightrope.h"
 #include "gameapi/edtools/edfile.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nuspecial.h"
 
 #include <stdio.h>
 #include <string.h>
+#include "legoapi/world/world_shared.h"
+#include "legoapi/gizmo/base/gizflow.h"
+#include "legoapi/characters/core/character.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameframework/saveload.h"
+#include "legoapi/legoapi_types.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nufile/nufile.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/props/system/socksys.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nusound/nusound.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nucore/nuvideo.h"
+#include "nu2api/nufile/nufpar.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edui.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/nu3d/nuportal.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <math.h>
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include <new>
+#include <stdlib.h>
+#include <stdint.h>
+#include "nu2api/nucore/nulist.h"
+#include "gameapi/ai/aisys/aiscript_types.h"
+#include <float.h>
+#include "editor/edpath.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nuang.h"
+#include "nu2api/nucore/common.h"
+#include "editor/aieditor_state.h"
+#include "nu2api/numath/nuplane.h"
+#include "editor/aieditor_settings.h"
+#include "editor/edpath_types.h"
+#include "legoapi/characters/motion/action_info.h"
+#include "legoapi/characters/motion/contexts.h"
+#include "legoapi/render/fx/game_deb.h"
+#include <stddef.h>
+#include "gameapi/edtools/edgra.h"
+#include "nu2api/nu3d/android/nuobject_android.h"
+#include <cstdio>
+#include "nu2api/numath/nuvec4.h"
+#include <stdarg.h>
+#include <GLES2/gl2.h>
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nuspecial_internal.h"
+#include "nu2api/nu3d/nurendercontext.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/core/startup/main.h"
+#include "legoapi/menus/screens/movies.h"
+#include "legoapi/misc/androidbatman.h"
+#include <limits.h>
+#include "legoapi/render/fx/particles.h"
+#include <cfloat>
 struct FLOWBOX_s;
 
-DECOMP_ASSERT(sizeof(GIZMOTYPES) == 0xc, "Gizmo type-table header ABI");
-DECOMP_ASSERT(offsetof(GIZMOTYPES, types) == 8, "Gizmo type-table pointer offset");
-
-i32 GizObstacle_CheckExcludeFlagsFn_LSW(GIZOBSTACLE_s *, GameObject_s *);
-void Bolt_PlayHitSfx(BOLT_s *);
-
-static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32) {
-    return 0;
-}
-
-static char *DefaultGizmo_GetOutputName(GIZMO *, i32) {
-    return "default";
-}
-
-static i32 DefaultGizmo_GetNumOutputs(GIZMO *) {
-    return 1;
-}
+static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32);
+static char *DefaultGizmo_GetOutputName(GIZMO *, i32);
+static i32 DefaultGizmo_GetNumOutputs(GIZMO *);
 
 ADDGIZMOTYPE Default_ADDGIZMOTYPE = {
     NULL,                       // name
@@ -117,6 +160,700 @@ ADDGIZMOTYPE Default_ADDGIZMOTYPE = {
 };
 
 GIZMOTYPES *gizmotypes;
+
+static void GizmoAppendSpecialError(GIZMOSYS *gizmo_sys, const char *text) {
+    if (text == NULL || gizmo_sys->error_log == NULL) {
+        return;
+    }
+
+    if (NuStrLen(gizmo_sys->error_log) + NuStrLen(text) <= gizmoerrorlogsize) {
+        NuStrNCat(gizmo_sys->error_log, text, gizmoerrorlogsize);
+    } else {
+        gizmo_sys->flags |= GIZMOSYS_FLAG_ERROR_LOG_OVERFLOW;
+    }
+}
+
+i32 gizmoerrorlogsize = 0x800;
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+    static_assert(sizeof(lego_aiconditiondefs) / sizeof(lego_aiconditiondefs[0]) == 178,
+                  "complete game AI condition registry");
+
+}
+
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct nuhspecial_s;
+
+struct GameObject_s;
+struct nuvec_s;
+struct WORLDINFO_s;
+struct BOLT_s;
+
+struct EDCREATURE_s;
+
+struct GIZMOPICKUP_s;
+struct PART_s;
+
+typedef isize __attribute__((may_alias)) NuGCutWord;
+
+struct instNUGCUTSCENE_s;
+
+extern AIACTIONDEF api_aiactiondefs[55];
+extern AICONDITIONDEF api_aiconditiondefs[50];
+
+DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
+
+DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
+
+struct nupad_s;
+
+struct EDAISHAREDPATHNODE_s;
+struct eduimenu_s;
+struct eduiitem_s;
+
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
+static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
+static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
+    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
+
+static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
+
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CREATURE_EDITOR_REGPARM1
+#endif
+static __used__
+    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
+                                                                                           eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
+                                                                                          eduiitem_s *, unsigned int);
+
+static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
+                                                                                         unsigned int);
+
+extern "C" {
+    struct EDCREATURE_s;
+}
+
+#if defined(__i386__)
+static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
+static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#else
+static void DestroyLocator(EDLOCATOR_s *);
+static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
+#endif
+static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
+
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void
+locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+namespace {
+
+} // namespace
+
+struct AIPACKET_s;
+struct AISYS_s;
+
+static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
+static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
+static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
+
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
+                                                                                int alignment, char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz");
+static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+
+static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
+                                                                  char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
+
+static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
+                                                                    char *format, ...)
+    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
+
+#if defined(__clang__)
+static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
+    __asm__("eduiFntPrintExFormatted");
+#else
+static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
+                                                                 char *format, ...) {
+    if (__builtin_constant_p(alignment) && alignment == 16)
+        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else if (__builtin_constant_p(alignment) && alignment == 64)
+        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
+    else
+        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
+}
+#endif
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
+static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
+
+extern EdInputContext * Input;
+
+inline EdMatrixControl::~EdMatrixControl() {
+    Destroy();
+}
+
+inline void EdMatrixControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdMatrixControl));
+}
+
+inline void EdStringControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdStringControl));
+}
+
+template <> inline void EdValueControl<f32>::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
+}
+
+inline void EdFloatControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdFloatControl));
+}
+
+inline EdVectorControl::~EdVectorControl() {
+    Destroy();
+}
+
+inline void EdVectorControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
+}
+
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
+}
+
+inline void EdClassObjectNameControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdClassObjectNameControl));
+}
+
+inline EdSubSystem::~EdSubSystem() {
+}
+
+inline void EdControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdControl));
+}
+
+// Match each control's allocation type, rather than inheriting the base size.
+inline void EdEnumControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdEnumControl));
+}
+
+inline void EdBitControl::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(EdBitControl));
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
+} // extern "C"
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+namespace {
+
+} // namespace
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
+static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
+static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
+static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
+static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
+static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
+static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
+static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
+static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
+static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
+static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
+static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
+static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
+static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
+static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
+__attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
+static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
+                                           i32 selected);
+static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
+                                                      i32);
+static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
+static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
+static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+// ThingManager objects return to the theMemoryManager pool (D0 @0x425a50).
+inline void ThingManager::operator delete(void *thing, usize size) {
+    theMemoryManager.FreePool(thing, size);
+}
+
+extern "C" {
+extern AICONDITIONDEF lego_aiconditiondefs[178];
+
+}
+
+extern "C" {
+    extern "C++" {
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessSkin(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry, NUDISPLAYLISTITEM **first_and_last,
+                               NUMTX *world_matrix, void **transform_packet, NUMTX *skin_matrices,
+                               DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster)
+            __asm__("_ZL22DisplayListProcessSkinP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvS7_P22deformerweightsarray_si.isra.36");
+
+        static __attribute__((noinline, noclone)) void
+        DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                                      NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                                      f32 alpha)
+            __asm__("_ZL29DisplayListProcessLightmappedP7numtl_sP15nudisplaylist_sP19nudisplaylistitem_sPS4_P7numtx_"
+                    "sPPvf.isra.34");
+    }
+} // extern "C"
+
+static __attribute__((noinline, noclone)) i32 Bolt_HitPlat(BOLT_s *bolt, u8 *hit_flags)
+    __asm__("_ZL12Bolt_HitPlatP6BOLT_sPhP11WORLDINFO_s.isra.38");
+
+// The original caller appears to treat this u16-returning function as i32;
+// correcting this declaration lowers its match.
+
+namespace {
+
+} // namespace
+
+namespace {
+
+} // namespace
+
+// Game-specific pre-load limits. These must be applied before WorldInfo
+// reserves each level's fixed-size gameplay systems.
+
+static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32) {
+    return 0;
+}
+
+static char *DefaultGizmo_GetOutputName(GIZMO *, i32) {
+    return "default";
+}
+
+static i32 DefaultGizmo_GetNumOutputs(GIZMO *) {
+    return 1;
+}
+
+i32 GizmoFileReadName(char *name) {
+    i32 name_length = EdFileReadChar();
+    if (name_length == 0) {
+        return 0;
+    }
+
+    EdFileRead(name, name_length);
+    return 1;
+}
 
 VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, i32 size) {
     VARIPTR *ptr = NULL;
@@ -234,113 +971,126 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
     }
 }
 
-GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, i32 type_id, char *name, void *object) {
-    if (gizmotypes == NULL || gizmo_sys == NULL) {
-        return NULL;
-    }
+GIZMOSYS *CreateGizmoSys(void *world, VARIPTR *buf, VARIPTR *buf_end) {
+    GIZMOSYS *gizmo_sys = NULL;
 
-    if (name != NULL) {
-        type_id = GizmoGetTypeIDByName(gizmo_sys, name);
-    }
+    if (gizmotypes != NULL) {
+        gizmo_sys = reinterpret_cast<GIZMOSYS *>(GizmoBufferAlloc(buf, buf_end, sizeof(GIZMOSYS)));
+        if (gizmo_sys != NULL) {
+            gizmo_sys->sets = reinterpret_cast<GIZMOSET *>(
+                GizmoBufferAlloc(buf, buf_end, gizmotypes->count * static_cast<i32>(sizeof(GIZMOSET))));
 
-    if (type_id > -1 && gizmotypes->count > type_id) {
-        GIZMOSET *set = &gizmo_sys->sets[type_id];
-        if (set->count < set->max_count) {
-            GIZMO *gizmo = &set->gizmos[set->count];
-            if (gizmo != NULL) {
-                if (object != NULL) {
-                    gizmo->object = object;
+            if (gizmo_sys->sets != NULL) {
+                GIZMOSET *set = gizmo_sys->sets;
+                GIZMOTYPE *type = gizmotypes->types;
+                for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++set, ++type) {
+                    set->type = type;
+
+                    if (type->fns.get_max_gizmos_fn != NULL) {
+                        set->max_count = type->fns.get_max_gizmos_fn(world);
+                    }
+                    if (set->max_count != 0) {
+                        set->gizmos = reinterpret_cast<GIZMO *>(
+                            GizmoBufferAlloc(buf, buf_end, set->max_count * static_cast<i32>(sizeof(GIZMO))));
+                    }
+                    if (type->fns.reserve_buffer_space_fn != NULL) {
+                        set->unknown = type->fns.reserve_buffer_space_fn(world);
+                    }
                 }
+            }
 
-                gizmo->unknown = 0;
-                gizmo->type_id = (u8)type_id;
-                set->count++;
-
-                return gizmo;
+            if (gizmoerrorlogsize != 0) {
+                gizmo_sys->error_log = reinterpret_cast<char *>(GizmoBufferAlloc(buf, buf_end, gizmoerrorlogsize));
             }
         }
     }
 
-    return NULL;
+    return gizmo_sys;
 }
 
-i32 GizmoGetTypeIDByName(GIZMOSYS_s *gizmo_sys, char *name) {
-    if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL || gizmotypes->count <= 0) {
-        return -1;
+i32 SaveGizmoSys(GIZMOSYS_s *, char *, char *) {
+    return 0;
+}
+
+void AddLevelSfxGizmoSys(GIZMOSYS_s *gizmo_sys, void *world_info, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count) {
+    if (gizmotypes == NULL || gizmo_sys == NULL) {
+        return;
     }
 
-    for (i32 i = 0; i < gizmotypes->count; i++) {
-        if (NuStrCmp(gizmotypes->types[i].name, name) == 0) {
-            return i;
+    GIZMOSET *set = gizmo_sys->sets;
+    GIZMOTYPE *type = gizmotypes->types;
+    i32 i = 0;
+    while (i < gizmotypes->count) {
+        if (type->fns.add_level_sfx_fn != NULL) {
+            type->fns.add_level_sfx_fn(world_info, set->unknown, sfx_ids, sfx_count, max_sfx_count);
+        }
+        ++i;
+        ++set;
+        ++type;
+    }
+}
+
+void GizmoSysClearLevelProgress(void *unknown, i32 type_id) {
+    GIZMOTYPE *type = gizmotypes->types;
+    if (gizmotypes == NULL || gizmotypes->count <= 0) {
+        return;
+    }
+
+    if (type_id < 0) {
+        for (i32 i = 0; i < gizmotypes->count; i++, type++) {
+            if (type->fns.clear_progress_fn != NULL) {
+                type->fns.clear_progress_fn(unknown, NULL);
+            }
+        }
+    } else {
+        for (i32 i = 0; i < gizmotypes->count; i++, type++) {
+            if (type->fns.clear_progress_fn != NULL) {
+                void *progress = NULL;
+                if (type->buffer != NULL && type_id < gizmotypes->unknown) {
+                    progress = type->buffer[type_id].void_ptr;
+                }
+
+                type->fns.clear_progress_fn(unknown, progress);
+            }
         }
     }
-
-    return -1;
 }
 
-void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
-        gizmotypes->types[gizmo->type_id].fns.set_visibility_fn == NULL) {
+void GizmoSysStoreProgress(GIZMOSYS_s *system, void *world, i32 progress_index) {
+    GizmoSysClearLevelProgress(world, progress_index);
+    if (gizmotypes == NULL || system == NULL)
         return;
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = system->sets;
+    for (i32 i = 0; i < gizmotypes->count; ++i, ++type, ++set) {
+        if (type->fns.store_progress_fn != NULL) {
+            if (progress_index >= 0 && type->buffer != NULL)
+                type->fns.store_progress_fn(world, set->unknown, type->buffer[progress_index].void_ptr);
+            else
+                type->fns.store_progress_fn(world, set->unknown, NULL);
+        }
     }
-
-    if (visibility == 0 && gizmotypes->types[gizmo->type_id].fns.activate_fn != NULL) {
-        gizmotypes->types[gizmo->type_id].fns.activate_fn(gizmo, 0);
-    }
-
-    gizmotypes->types[gizmo->type_id].fns.set_visibility_fn(gizmo, visibility);
 }
 
-i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
+void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {
+    if (gizmotypes != NULL && gizmo_sys != NULL) {
+        GIZMOTYPE *type = gizmotypes->types;
+        GIZMOSET *set = gizmo_sys->sets;
 
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
-        gizmotypes->types[gizmo->type_id].fns.get_visibility_fn == NULL) {
-        return 0;
+        for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++set, ++type) {
+            if (type->fns.reset_fn != NULL) {
+                if (progress_index >= 0) {
+                    if (__builtin_expect(type->buffer != NULL, 1)) {
+                        type->fns.reset_fn(world, set->unknown, type->buffer[progress_index].void_ptr);
+                    } else {
+                        type->fns.reset_fn(world, set->unknown, NULL);
+                    }
+                } else {
+                    type->fns.reset_fn(world, set->unknown, NULL);
+                }
+            }
+        }
     }
-
-    return gizmotypes->types[gizmo->type_id].fns.get_visibility_fn(gizmo);
-}
-
-char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
-        return NULL;
-    }
-
-    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_output_name_fn == NULL) {
-        return "default";
-    }
-
-    return gizmotypes->types[gizmo->type_id].fns.get_output_name_fn(gizmo, output_index);
-}
-
-i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
-        return 0;
-    }
-
-    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_output_fn == NULL) {
-        return 0;
-    }
-
-    return gizmotypes->types[gizmo->type_id].fns.get_output_fn(gizmo, unknown1, unknown2);
-}
-
-void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count) {
-        return;
-    }
-
-    GIZMOTYPE *type = &gizmotypes->types[gizmo->type_id];
-    if (type->fns.activate_fn == NULL) {
-        return;
-    }
-
-    if (unknown1 != 0 && type->fns.set_visibility_fn != NULL) {
-        type->fns.set_visibility_fn(gizmo, 1);
-    }
-
-    type->fns.activate_fn(gizmo, unknown1);
-    LOG_INFO("gizmo activate type=%s gizmo=%p active=%d", type->name, (void *)gizmo, unknown1);
 }
 
 void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) {
@@ -399,58 +1149,102 @@ void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) 
     }
 }
 
-i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown) {
-    if (gizmotypes == NULL || bolt == NULL || gizmo_sys == NULL) {
-        return 0;
+i32 GizmoGetTypeIDByName(GIZMOSYS_s *gizmo_sys, char *name) {
+    if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL || gizmotypes->count <= 0) {
+        return -1;
     }
 
-    GIZMOTYPE *type = gizmotypes->types;
-    GIZMOSET *set = gizmo_sys->sets;
-    for (i32 i = 0; i < gizmotypes->count; i++, set++, type++) {
-        if (type->fns.bolt_hit_plat_fn != NULL) {
-            i32 result = type->fns.bolt_hit_plat_fn(world_info, set->unknown, bolt, unknown);
-            if (result != 0) {
-                return 1;
-            }
+    for (i32 i = 0; i < gizmotypes->count; i++) {
+        if (NuStrCmp(gizmotypes->types[i].name, name) == 0) {
+            return i;
         }
     }
 
-    return 0;
+    return -1;
 }
 
-static void GizmoAppendSpecialError(GIZMOSYS *gizmo_sys, const char *text) {
-    if (text == NULL || gizmo_sys->error_log == NULL) {
+void GizmoTypeStoreProgress(GIZMOSYS_s *system, void *world, i32 progress_index, i32 type_id, char *name) {
+    if (name != NULL && type_id == -1)
+        type_id = GizmoGetTypeIDByName(system, name);
+    if (type_id == -1)
         return;
-    }
-
-    if (NuStrLen(gizmo_sys->error_log) + NuStrLen(text) <= gizmoerrorlogsize) {
-        NuStrNCat(gizmo_sys->error_log, text, gizmoerrorlogsize);
-    } else {
-        gizmo_sys->flags |= GIZMOSYS_FLAG_ERROR_LOG_OVERFLOW;
-    }
+    GIZMOTYPE *type = &gizmotypes->types[type_id];
+    GIZMOSET *set = &system->sets[type_id];
+    void *progress = NULL;
+    if (type->buffer != NULL && progress_index >= 0 && progress_index < gizmotypes->unknown)
+        progress = type->buffer[progress_index].void_ptr;
+    if (type->fns.clear_progress_fn != NULL)
+        type->fns.clear_progress_fn(world, progress);
+    if (type->fns.store_progress_fn != NULL)
+        type->fns.store_progress_fn(world, set->unknown, progress);
 }
 
-i32 Gizmo_FindNuSpecial(nugscn_s *scene, nuhspecial_s *special, char *name, i32 flags, GIZMOSYS *gizmo_sys,
-                        char *prefix, char *suffix) {
-    if (NuSpecialFind(scene, special, name, flags) != 0) {
-        return 1;
-    }
-
-    if (gizmo_sys == NULL || gizmo_sys->error_log == NULL || (gizmo_sys->flags & GIZMOSYS_FLAG_LOADING) == 0) {
+i32 GizmoTypeGetProgress(GIZMOSYS_s *system, void *, i32 progress_index, i32 type_id, char *name, void **result) {
+    if (name != NULL && type_id == -1)
+        type_id = GizmoGetTypeIDByName(system, name);
+    if (type_id == -1)
         return 0;
-    }
+    GIZMOTYPE *type = &gizmotypes->types[type_id];
+    void *progress = NULL;
+    if (type->buffer != NULL && progress_index >= 0 && progress_index < gizmotypes->unknown)
+        progress = type->buffer[progress_index].void_ptr;
+    *result = progress;
+    return type->fns.unknown1 != -1 ? type->fns.unknown1 : 0;
+}
 
-    GizmoAppendSpecialError(gizmo_sys, name);
-    if (prefix != NULL) {
-        GizmoAppendSpecialError(gizmo_sys, "\t\t");
-        GizmoAppendSpecialError(gizmo_sys, prefix);
+void LoadGizmoSys(GIZMOSYS_s *gizmo_sys, void *world, char *config_file) {
+    if (gizmo_sys != NULL) {
+        gizmo_sys->flags |= GIZMOSYS_FLAG_LOADING;
+        if (gizmo_sys->error_log != NULL) {
+            memset(gizmo_sys->error_log, 0, gizmoerrorlogsize);
+        }
+        gizmo_sys->flags &= ~3;
+
+        if (gizmotypes != NULL) {
+            char gizmo_name[32];
+            char path[256];
+            sprintf(path, "%s.giz", config_file);
+
+            EdFileSetMedia(1);
+            if (EdFileOpen(path, NUFILE_READ) != 0) {
+                EdFileReadInt();
+                i32 name_length = EdFileReadInt();
+                while (name_length != 0) {
+                    memset(gizmo_name, 0, sizeof(gizmo_name));
+                    EdFileRead(gizmo_name, name_length);
+
+                    i32 data_length = EdFileReadInt();
+                    i32 type_id = GizmoGetTypeIDByName(gizmo_sys, gizmo_name);
+                    if (data_length > 0 && type_id >= 0 && type_id < gizmotypes->count &&
+                        gizmotypes->types[type_id].fns.load_fn != NULL &&
+                        gizmotypes->types[type_id].fns.load_fn(world, gizmo_sys->sets[type_id].unknown) != 0) {
+                        name_length = EdFileReadInt();
+                        continue;
+                    }
+
+                    while (data_length != 0) {
+                        EdFileReadChar();
+                        --data_length;
+                    }
+                    name_length = EdFileReadInt();
+                }
+                EdFileClose();
+            }
+
+            // File callbacks may replace or clear the registry before post-load dispatch.
+            if (gizmotypes != NULL) {
+                GIZMOSET *set = gizmo_sys->sets;
+                GIZMOTYPE *type = gizmotypes->types;
+                for (i32 type_id = 0; type_id < gizmotypes->count; ++type_id, ++type, ++set) {
+                    if (type->fns.post_load_fn != NULL) {
+                        type->fns.post_load_fn(world, set->unknown);
+                    }
+                }
+            }
+        }
+
+        gizmo_sys->flags &= ~GIZMOSYS_FLAG_LOADING;
     }
-    if (suffix != NULL) {
-        GizmoAppendSpecialError(gizmo_sys, "\t\t");
-        GizmoAppendSpecialError(gizmo_sys, suffix);
-    }
-    GizmoAppendSpecialError(gizmo_sys, "\n");
-    return 0;
 }
 
 i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
@@ -468,468 +1262,45 @@ i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
     return 1;
 }
 
-void GizmoSysClearLevelProgress(void *unknown, i32 type_id) {
-    GIZMOTYPE *type = gizmotypes->types;
-    if (gizmotypes == NULL || gizmotypes->count <= 0) {
-        return;
-    }
-
-    if (type_id < 0) {
-        for (i32 i = 0; i < gizmotypes->count; i++, type++) {
-            if (type->fns.clear_progress_fn != NULL) {
-                type->fns.clear_progress_fn(unknown, NULL);
-            }
-        }
-    } else {
-        for (i32 i = 0; i < gizmotypes->count; i++, type++) {
-            if (type->fns.clear_progress_fn != NULL) {
-                void *progress = NULL;
-                if (type->buffer != NULL && type_id < gizmotypes->unknown) {
-                    progress = type->buffer[type_id].void_ptr;
-                }
-
-                type->fns.clear_progress_fn(unknown, progress);
-            }
-        }
-    }
-}
-
-extern "C" {
-    extern f32 hackFlashTimer;
-    extern GAMEANIMSET_s *hackFlashingGameAnimSet;
-    nuhspecial_s *hackFlashingSpecial;
-}
-
-void GizForceObjectInterface::GetPos(VuVec &result, i32) const {
-    if (selected_object != NULL) {
-        NUVEC *position = NuSpecialGetDrawPos(&selected_object->special);
-        result = VuVec(position->x, position->y, position->z, 1.0f);
-    } else {
-        result = VuVec(force.position.x, force.position.y, force.position.z, 1.0f);
-    }
-}
-
-f32 GizForceObjectInterface::GetRadius() const {
-    if (selected_object != NULL)
-        return NuSpecialGetOriginRadius(&selected_object->special);
-    return force.radius;
-}
-
-const char *GizForceObjectInterface::GetTargetName() const {
-    return force.name;
-}
-
-void *GizForceObjectInterface::GetTgtVoidPtr() {
-    if (selected_object != NULL)
-        return selected_object;
-    return &force;
-}
-
-GizForceObjectInterface::GizForceObjectInterface(GIZFORCE_s &value) : force(value) {
-    force.mech_object_interface = this;
-}
-
-void GizForceObjectInterface::TargetedFlash() {
-    if (!(force.field_0xaa & 0x40)) {
-        hackFlashTimer = 1.0f;
-        if (selected_object != NULL) {
-            hackFlashingSpecial = &selected_object->special;
-            hackFlashingGameAnimSet = NULL;
-        } else {
-            hackFlashingSpecial = NULL;
-            hackFlashingGameAnimSet = force.anim_set;
-        }
-    }
-}
-
-GizForceObjectInterface::~GizForceObjectInterface() {
-    force.mech_object_interface = NULL;
-}
-
-void MechObjectInterface::GetFloorTargetPos(VuVec &position, i32 mode) const {
-    GetPos(position, mode);
-}
-
-void MechTempPosInterface::GetFloorTargetPos(VuVec &result, i32 mode) const {
-    GetPos(result, mode);
-}
-
-MechTempPosInterface::MechTempPosInterface(VuVec const &value) {
-    position.x = value.x;
-    position.y = value.y;
-    position.z = value.z;
-    position.w = value.w;
-    radius = 0.2f;
-}
-
-MechTempPosInterface::MechTempPosInterface(nuvec_s const &value) {
-    position.xyz = value;
-    radius = 0.2f;
-}
-
-void GizLeverObjectInterface::GetPos(VuVec &position, i32) const {
-    position = VuVec(lever.position.x, lever.position.y, lever.position.z, 1.0f);
-}
-
-f32 GizLeverObjectInterface::GetRadius() const {
-    return 0.1f;
-}
-
-const char *GizLeverObjectInterface::GetTargetName() const {
-    return lever.name;
-}
-
-GizLeverObjectInterface::GizLeverObjectInterface(LEVER_s &value) : lever(value) {
-    lever.mech_object = this;
-}
-
-void GizLeverObjectInterface::TargetedFlash() {
-    lever.flash_timer = 1.0f;
-}
-
-GizLeverObjectInterface::~GizLeverObjectInterface() {
-    lever.mech_object = NULL;
-}
-
-void GizPanelObjectInterface::GetFloorTargetPos(VuVec &position, i32) const {
-    position = VuVec(panel.position.x, panel.position.y, panel.position.z, 1.0f);
-}
-
-void GizPanelObjectInterface::GetPos(VuVec &position, i32) const {
-    GizPanel_GetAbsTargetPos(&panel, &position.xyz, 1);
-}
-
-f32 GizPanelObjectInterface::GetRadius() const {
-    return 0.1f;
-}
-
-const char *GizPanelObjectInterface::GetTargetName() const {
-    return panel.name;
-}
-
-GizPanelObjectInterface::GizPanelObjectInterface(GIZPANEL_s &value) : panel(value) {
-    panel.mech_object_interface = this;
-}
-
-void GizPanelObjectInterface::TargetedFlash() {
-    panel.flash_timer = 1.0f;
-}
-
-GizPanelObjectInterface::~GizPanelObjectInterface() {
-    panel.mech_object_interface = NULL;
-}
-
-void TeleportObjectInterface::GetPos(VuVec &position, i32 direction) const {
-    NUVEC *point;
-    if (direction == -1) {
-        if (index > 0 && (teleport.flags & 1) == 0) {
-            point = &teleport.path->pts[teleport.path->length - 1];
-        } else {
-            point = teleport.path->pts;
-        }
-    } else {
-        point = teleport.path->pts;
-    }
-    position = VuVec(point->x, point->y, point->z, 1.0f);
-}
-
-f32 TeleportObjectInterface::GetRadius() const {
-    return 0.1f;
-}
-
-const char *TeleportObjectInterface::GetTargetName() const {
-    return teleport.name;
-}
-
-void TeleportObjectInterface::TargetedFlash() {
-    hackFlashTimer = 1.0f;
-    hackFlashingSpecial = index > 0 ? &teleport.flap2_special : &teleport.flap1_special;
-}
-
-TeleportObjectInterface::TeleportObjectInterface(TELEPORT_s &value, i32 teleport_index)
-    : teleport(value), index(teleport_index) {
-    value.mech_object_interface = this;
-}
-
-TeleportObjectInterface::~TeleportObjectInterface() {
-    teleport.mech_object_interface = NULL;
-}
-
-// Original 0x447180..0x447fb0: this interface belongs to the shared gizmo
-// interface family; PART_s owns only the lazy allocation/deletion entry points.
-void PartObjectInterface::GetPos(VuVec &position, i32) const {
-    position = VuVec(part.position.x, part.position.y, part.position.z, 1.0f);
-}
-
-f32 PartObjectInterface::GetRadius() const {
-    return part.radius;
-}
-
-const char *PartObjectInterface::GetTargetName() const {
-    return "Part";
-}
-
-PartObjectInterface::PartObjectInterface(PART_s &value) : part(value) {
-    part.mech_object_interface = this;
-}
-
-PartObjectInterface::~PartObjectInterface() {
-    part.mech_object_interface = NULL;
-}
-
-void GizBlowupObjectInterface::GetPos(VuVec &position, i32) const {
-    if (blowup->field_0x120 != NULL) {
-        NUVEC *origin = static_cast<NUVEC *>(blowup->field_0x120);
-        position = VuVec(origin->x, origin->y, origin->z, 1.0f);
-    } else {
-        position.x = blowup->position.x;
-        position.y = blowup->position.y;
-        position.z = blowup->position.z;
-    }
-}
-
-f32 GizBlowupObjectInterface::GetRadius() const {
-    return blowup->target_scale;
-}
-
-const char *GizBlowupObjectInterface::GetTargetName() const {
-    return blowup->name;
-}
-
-GizBlowupObjectInterface::GizBlowupObjectInterface(GIZMOBLOWUP_s &object) : blowup(&object) {
-    object.mech_object_interface = this;
-}
-
-bool GizBlowupObjectInterface::IsDead() {
-    return (blowup->state_flags & 0x80) == 0;
-}
-
-void GizBlowupObjectInterface::TargetedFlash() {
-    blowup->flicker_timer = 1.0f;
-}
-
-GizBlowupObjectInterface::~GizBlowupObjectInterface() {
-    blowup->mech_object_interface = NULL;
-}
-
-void GizTurretObjectInterface::GetPos(VuVec &position, i32) const {
-    position = VuVec(turret.field_0x3c.x, turret.field_0x3c.y, turret.field_0x3c.z, 1.0f);
-}
-
-f32 GizTurretObjectInterface::GetRadius() const {
-    return 0.1f;
-}
-
-const char *GizTurretObjectInterface::GetTargetName() const {
-    return turret.name;
-}
-
-GizTurretObjectInterface::GizTurretObjectInterface(GIZTURRET_s &value) : turret(value) {
-    turret.mech_object_interface = this;
-}
-
-void GizTurretObjectInterface::TargetedFlash() {
-    hackFlashTimer = 1.0f;
-    hackFlashingGameAnimSet = turret.anim_set;
-}
-
-GizTurretObjectInterface::~GizTurretObjectInterface() {
-    turret.mech_object_interface = NULL;
-}
-
-f32 hackFlashTimer;
-GAMEANIMSET_s *hackFlashingGameAnimSet;
-
-void GizBuildItObjectInterface::GetPos(VuVec &position, i32) const {
-    f32 radius;
-    CalcAveragePosAndRad(*buildit, position, radius, true);
-}
-
-f32 GizBuildItObjectInterface::GetRadius() const {
-    f32 radius;
-    VuVec position;
-    CalcAveragePosAndRad(*buildit, position, radius, true);
-    return radius;
-}
-
-const char *GizBuildItObjectInterface::GetTargetName() const {
-    return buildit->name;
-}
-
-GizBuildItObjectInterface::GizBuildItObjectInterface(GIZBUILDIT_s &object) : buildit(&object) {
-    object.mech_object_interface = this;
-}
-
-void GizBuildItObjectInterface::TargetedFlash() {
-    hackFlashTimer = 1.0f;
-    hackFlashingGameAnimSet = buildit->anim_set;
-}
-
-GizBuildItObjectInterface::~GizBuildItObjectInterface() {
-    buildit->mech_object_interface = NULL;
-}
-
-void HatMachineObjectInterface::GetPos(VuVec &position, i32) const {
-    position = VuVec(machine.position.x, machine.position.y, machine.position.z, 1.0f);
-}
-
-f32 HatMachineObjectInterface::GetRadius() const {
-    return 0.1f;
-}
-
-const char *HatMachineObjectInterface::GetTargetName() const {
-    return machine.name;
-}
-
-HatMachineObjectInterface::HatMachineObjectInterface(HATMACHINE_s &value) : machine(value) {
-    machine.mech_object_interface = this;
-}
-
-void HatMachineObjectInterface::TargetedFlash() {
-    machine.flash_timer = 1.0f;
-}
-
-HatMachineObjectInterface::~HatMachineObjectInterface() {
-    machine.mech_object_interface = NULL;
-}
-
-void GizObstacleObjectInterface::GetPos(VuVec &result, i32) const {
-    result = VuVec(obstacle.evaluated_position.x, obstacle.evaluated_position.y, obstacle.evaluated_position.z, 1.0f);
-}
-
-f32 GizObstacleObjectInterface::GetRadius() const {
-    return obstacle.field_0x58;
-}
-
-const char *GizObstacleObjectInterface::GetTargetName() const {
-    return obstacle.name;
-}
-
-GizObstacleObjectInterface::GizObstacleObjectInterface(GIZOBSTACLE_s &value) : obstacle(value) {
-    obstacle.mech_object_interface = this;
-}
-
-bool GizObstacleObjectInterface::IsDead() {
-    return !(obstacle.progress_flags & 1);
-}
-
-void GizObstacleObjectInterface::TargetedFlash() {
-    hackFlashTimer = 1.0f;
-    hackFlashingGameAnimSet = obstacle.anim_set;
-}
-
-GizObstacleObjectInterface::~GizObstacleObjectInterface() {
-    obstacle.mech_object_interface = NULL;
-}
-
-// Original: 43 bytes.
-i32 TwistLevel(LEVELDATA_s *level) {
-    return DOGFIGHTA_LDATA != NULL && level == DOGFIGHTA_LDATA;
-}
-
-NUVEC *GizmoGetPos(GIZMOSYS_s *, GIZMO_s *gizmo) {
-    if (gizmotypes != NULL && gizmo != NULL) {
-        GIZMOGETPOSFN get_pos = gizmotypes->types[gizmo->type_id].fns.get_pos_fn;
-        if (get_pos != NULL) {
-            return get_pos(gizmo);
-        }
-    }
-
-    return NULL;
-}
-
-i32 GizmoGetGizmosUsingSpecial(GIZMOSYS *gizmo_sys, void *world, GIZMO **result, i32 result_capacity, char *name) {
-    if (gizmo_sys == NULL || gizmotypes == NULL || result == NULL || gizmotypes->count <= 0 || result_capacity <= 0) {
-        return 0;
-    }
-
-    i32 type_index = 0;
-    i32 result_count = 0;
-    for (; type_index < gizmotypes->count && result_count < result_capacity; ++type_index) {
-        GIZMOUSINGSPECIALFN using_special = gizmotypes->types[type_index].fns.using_special_fn;
-        if (using_special != NULL) {
-            const i32 added = using_special(result + result_count, world, result_capacity - result_count, name);
-            if (added == -1) {
-                return result_capacity;
-            }
-            result_count += added;
-            if (result_count > result_capacity) {
-                return result_capacity;
-            }
-        }
-    }
-    return result_count;
-}
-
-i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
-    return -1;
-}
-
-char *GizmoGetName(GIZMO *gizmo) {
-    GIZMOTYPES *types = gizmotypes;
-    if (types == NULL || gizmo == NULL || gizmo->type_id >= types->count) {
-        return NULL;
-    }
-
-    GIZMOGETGIZMONAMEFN get_name = types->types[gizmo->type_id].fns.get_gizmo_name_fn;
-    if (get_name == NULL) {
-        return NULL;
-    }
-    return get_name(gizmo);
-}
-
-void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {
+void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world) {
     if (gizmotypes != NULL && gizmo_sys != NULL) {
         GIZMOTYPE *type = gizmotypes->types;
         GIZMOSET *set = gizmo_sys->sets;
-
-        for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++set, ++type) {
-            if (type->fns.reset_fn != NULL) {
-                if (progress_index >= 0) {
-                    if (__builtin_expect(type->buffer != NULL, 1)) {
-                        type->fns.reset_fn(world, set->unknown, type->buffer[progress_index].void_ptr);
-                    } else {
-                        type->fns.reset_fn(world, set->unknown, NULL);
-                    }
-                } else {
-                    type->fns.reset_fn(world, set->unknown, NULL);
-                }
+        for (i32 type_id = 0; type_id < gizmotypes->count; ++type_id, ++set, ++type) {
+            ResetGizmoType(gizmo_sys, type_id, NULL);
+            if (type->fns.add_gizmos_fn != NULL) {
+                type->fns.add_gizmos_fn(gizmo_sys, type_id, world, set->unknown);
             }
         }
+    }
+
+    if (giz_flow != NULL && giz_flow->pointers_need_reset != 0) {
+        ResetGizFlowPointers(giz_flow);
     }
 }
 
-GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
-    if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL) {
+GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, i32 type_id, char *name, void *object) {
+    if (gizmotypes == NULL || gizmo_sys == NULL) {
         return NULL;
     }
 
-    if (type_id >= 0 && type_id <= gizmotypes->count) {
-        GIZMOTYPE &type = gizmotypes->types[type_id];
-        GIZMOSET &set = gizmo_sys->sets[type_id];
-        if (type.fns.get_gizmo_name_fn == NULL) {
-            return NULL;
-        }
-
-        GIZMO *gizmo = set.gizmos;
-        for (i32 i = 0; i < set.count; ++i, ++gizmo) {
-            if (NuStrICmp(type.fns.get_gizmo_name_fn(gizmo), name) == 0) {
-                return gizmo;
-            }
-        }
-        return NULL;
+    if (name != NULL) {
+        type_id = GizmoGetTypeIDByName(gizmo_sys, name);
     }
 
-    GIZMOTYPE *type = gizmotypes->types;
-    GIZMOSET *set = gizmo_sys->sets;
-    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
-        if (type->fns.get_gizmo_name_fn == NULL) {
-            continue;
-        }
+    if (type_id > -1 && gizmotypes->count > type_id) {
+        GIZMOSET *set = &gizmo_sys->sets[type_id];
+        if (set->count < set->max_count) {
+            GIZMO *gizmo = &set->gizmos[set->count];
+            if (gizmo != NULL) {
+                if (object != NULL) {
+                    gizmo->object = object;
+                }
 
-        GIZMO *gizmo = set->gizmos;
-        for (i32 gizmo_index = 0; gizmo_index < set->count; ++gizmo_index, ++gizmo) {
-            if (NuStrICmp(type->fns.get_gizmo_name_fn(gizmo), name) == 0) {
+                gizmo->unknown = 0;
+                gizmo->type_id = (u8)type_id;
+                set->count++;
+
                 return gizmo;
             }
         }
@@ -974,174 +1345,25 @@ GIZMO *GizmoFindByData(GIZMOSYS *gizmo_sys, i32 type_id, void *data) {
     return NULL;
 }
 
-i32 PAINTPUZZLESTAGE;
-i32 played_sound;
-i32 paintmixed;
-i32 painttarget;
-i32 painttry;
-i32 randpaints[3];
-i32 paintsused[2];
-GIZMO *forcetube;
-GIZMO *paintobst[6];
-GIZMO *paintpanel[3];
-nuhspecial_s green_light;
-nuhspecial_s painttargetcolour[3];
-nuhspecial_s paintlights[3];
+GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
+    if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL) {
+        return NULL;
+    }
 
-char *paint_light_name[3] = {"off_purple", "off_green", "off_orange"};
-char *paint_target_colour[3] = {"but_orange", "but_green", "but_purple"};
-char *paint_panel_name[3] = {"redp", "yellp", "bluep"};
-char *paint_name[6] = {"red_juice", "yellow_juice", "blue_juice", "orange_juice", "green_juice", "purple_juice"};
-
-void ResetPaintPuzzle(WORLDINFO_s *) {
-    for (i32 index = 0; index < 6; ++index) {
-        GizObstacle_JumpToStart(static_cast<GIZOBSTACLE_s *>(paintobst[index]->object));
-    }
-    painttry = 0;
-    PAINTPUZZLESTAGE = 1;
-    randpaints[0] = qrand() / 21846;
-    do {
-        randpaints[1] = qrand() / 21846;
-    } while (randpaints[1] == randpaints[0]);
-    randpaints[2] = 3 - (randpaints[0] + randpaints[1]);
-}
-
-void InitPaintPuzzle(WORLDINFO_s *world) {
-    reinterpret_cast<u8 *>(factoryb_netpacket)[2] = 0;
-    for (i32 index = 0; index < 6; ++index) {
-        paintobst[index] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, paint_name[index]);
-    }
-    for (i32 index = 0; index < 3; ++index) {
-        paintpanel[index] = GizmoFindByName(world->gizmo_sys, gizpanel_gizmotype_id, paint_panel_name[index]);
-    }
-    for (i32 index = 0; index < 3; ++index) {
-        NuSpecialFind(world->current_gscn, &painttargetcolour[index], paint_target_colour[index], 0);
-    }
-    for (i32 index = 0; index < 3; ++index) {
-        NuSpecialFind(world->current_gscn, &paintlights[index], paint_light_name[index], 0);
-    }
-    forcetube = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "FORCE_TUBE");
-    NuSpecialFind(world->current_gscn, &green_light, "green_light_on1", 1);
-    ResetPaintPuzzle(world);
-}
-
-void UpdatePaintPuzzle(WORLDINFO_s *world) {
-    switch (PAINTPUZZLESTAGE) {
-        case 0:
-            GizObstacle_PlayBackwards(static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object));
-            for (i32 index = 0; index < 3; ++index) {
-                GizPanel_Reset(static_cast<GIZPANEL_s *>(paintpanel[index]->object));
-            }
-            PAINTPUZZLESTAGE = 1;
-            break;
-        case 1:
-            if (paintmixed != 0 &&
-                (static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object)->anim_set->flags & 1) != 0) {
-                break;
-            }
-            paintmixed = 0;
-            PAINTPUZZLESTAGE = 2;
-            painttarget = randpaints[painttry] + 3;
-            break;
-        case 2: {
-            i32 used = 0;
-            for (i32 index = 0; index < 3; ++index) {
-                GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(paintobst[index]->object);
-                if (obstacle->anim_set->state == GAMEANIMSET_STATE_AT_END) {
-                    paintsused[used++] = index;
-                }
-            }
-            if (used == 2) {
-                if ((paintsused[1] == 1 && paintsused[0] == 0) || (paintsused[1] == 0 && paintsused[0] == 1)) {
-                    paintmixed = 3;
-                } else if ((paintsused[0] == 2 && paintsused[1] == 1) || (paintsused[1] == 2 && paintsused[0] == 1)) {
-                    paintmixed = 4;
-                } else if ((paintsused[1] == 2 && paintsused[0] == 0) || (paintsused[0] == 2 && paintsused[1] == 0)) {
-                    paintmixed = 5;
-                } else {
-                    paintmixed = -1;
-                }
-                PAINTPUZZLESTAGE = 3;
-            } else {
-                for (i32 index = 0; index < 3; ++index) {
-                    if (GizmoGetOutput(world->gizmo_sys, paintpanel[index], 0, 0) &&
-                        static_cast<GIZOBSTACLE_s *>(paintobst[index]->object)->anim_set->state ==
-                            GAMEANIMSET_STATE_AT_START) {
-                        GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(paintobst[index]->object));
-                    }
-                }
-            }
-            break;
+    if (type_id >= 0 && type_id <= gizmotypes->count) {
+        GIZMOTYPE &type = gizmotypes->types[type_id];
+        GIZMOSET &set = gizmo_sys->sets[type_id];
+        if (type.fns.get_gizmo_name_fn == NULL) {
+            return NULL;
         }
-        case 3: {
-            GIZOBSTACLE_s *first = static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[0]]->object);
-            if (!(first->anim_set->state == GAMEANIMSET_STATE_AT_END &&
-                  static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[1]]->object)->anim_set->state ==
-                      GAMEANIMSET_STATE_AT_END)) {
-                if (static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object)->anim_set->state ==
-                    GAMEANIMSET_STATE_AT_END) {
-                    if (paintmixed == painttarget) {
-                        ++painttry;
-                        if (painttry != 3) {
-                            PAINTPUZZLESTAGE = 0;
-                        } else {
-                            PAINTPUZZLESTAGE = 4;
-                        }
-                    } else {
-                        randpaints[0] = qrand() / 21846;
-                        do {
-                            randpaints[1] = qrand() / 21846;
-                        } while (randpaints[1] == randpaints[0]);
-                        randpaints[2] = 3 - randpaints[0] - randpaints[1];
-                        PAINTPUZZLESTAGE = 0;
-                        painttry = 0;
-                    }
-                }
-            } else {
-                GizObstacle_PlayBackwards(first);
-                GizObstacle_PlayBackwards(static_cast<GIZOBSTACLE_s *>(paintobst[paintsused[1]]->object));
-                GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(paintobst[paintmixed]->object));
+
+        GIZMO *gizmo = set.gizmos;
+        for (i32 i = 0; i < set.count; ++i, ++gizmo) {
+            if (NuStrICmp(type.fns.get_gizmo_name_fn(gizmo), name) == 0) {
+                return gizmo;
             }
-            break;
         }
-        case 4:
-            GizObstacle_PlayForwards(static_cast<GIZOBSTACLE_s *>(forcetube->object));
-            reinterpret_cast<u8 *>(factoryb_netpacket)[2] = 1;
-            break;
-    }
-    u8 tries = static_cast<u8>(painttry);
-    i32 target = painttarget;
-    u8 *packet = reinterpret_cast<u8 *>(factoryb_netpacket);
-    if (packet[2] == 1) {
-        packet[0] = 0;
-        packet[1] = tries;
-        packet[3] = static_cast<u8>(target);
-    } else {
-        packet[0] = 0;
-        packet[1] = tries;
-        packet[3] = static_cast<u8>(target);
-    }
-    if (packet[2] == 1 && played_sound == 0) {
-        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(forcetube->object);
-        NUMTX *matrix = NuSpecialGetMtx(&obstacle->anim_set->objects->special);
-        PlaySfx("Fac_BonusCylUp", reinterpret_cast<NUVEC *>(reinterpret_cast<u8 *>(matrix) + 0x30));
-        played_sound = 1;
-    }
-}
-
-i32 GizmoFileReadName(char *name) {
-    i32 name_length = EdFileReadChar();
-    if (name_length == 0) {
-        return 0;
-    }
-
-    EdFileRead(name, name_length);
-    return 1;
-}
-
-i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
-    if (name == NULL || gizmo_sys == NULL) {
-        return 1;
+        return NULL;
     }
 
     GIZMOTYPE *type = gizmotypes->types;
@@ -1153,13 +1375,156 @@ i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
 
         GIZMO *gizmo = set->gizmos;
         for (i32 gizmo_index = 0; gizmo_index < set->count; ++gizmo_index, ++gizmo) {
-            if (NuStrICmp(name, type->fns.get_gizmo_name_fn(gizmo)) == 0) {
-                return 0;
+            if (NuStrICmp(type->fns.get_gizmo_name_fn(gizmo), name) == 0) {
+                return gizmo;
             }
         }
     }
 
-    return 1;
+    return NULL;
+}
+
+char *GizmoGetName(GIZMO *gizmo) {
+    GIZMOTYPES *types = gizmotypes;
+    if (types == NULL || gizmo == NULL || gizmo->type_id >= types->count) {
+        return NULL;
+    }
+
+    GIZMOGETGIZMONAMEFN get_name = types->types[gizmo->type_id].fns.get_gizmo_name_fn;
+    if (get_name == NULL) {
+        return NULL;
+    }
+    return get_name(gizmo);
+}
+
+i32 GizmoGetNumOutputs(GIZMOSYS_s *gizmo_sys, GIZMO_s *gizmo) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
+        return 0;
+    }
+    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_num_outputs_fn == NULL) {
+        return 1;
+    }
+    return gizmotypes->types[gizmo->type_id].fns.get_num_outputs_fn(gizmo);
+}
+
+i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
+        return 0;
+    }
+
+    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_output_fn == NULL) {
+        return 0;
+    }
+
+    return gizmotypes->types[gizmo->type_id].fns.get_output_fn(gizmo, unknown1, unknown2);
+}
+
+char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
+        return NULL;
+    }
+
+    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_output_name_fn == NULL) {
+        return "default";
+    }
+
+    return gizmotypes->types[gizmo->type_id].fns.get_output_name_fn(gizmo, output_index);
+}
+
+void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count) {
+        return;
+    }
+
+    GIZMOTYPE *type = &gizmotypes->types[gizmo->type_id];
+    if (type->fns.activate_fn == NULL) {
+        return;
+    }
+
+    if (unknown1 != 0 && type->fns.set_visibility_fn != NULL) {
+        type->fns.set_visibility_fn(gizmo, 1);
+    }
+
+    type->fns.activate_fn(gizmo, unknown1);
+    LOG_INFO("gizmo activate type=%s gizmo=%p active=%d", type->name, (void *)gizmo, unknown1);
+}
+
+void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown) {
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
+        gizmotypes->types[gizmo->type_id].fns.set_visibility_fn == NULL) {
+        return;
+    }
+
+    if (visibility == 0 && gizmotypes->types[gizmo->type_id].fns.activate_fn != NULL) {
+        gizmotypes->types[gizmo->type_id].fns.activate_fn(gizmo, 0);
+    }
+
+    gizmotypes->types[gizmo->type_id].fns.set_visibility_fn(gizmo, visibility);
+}
+
+void GizmoActivateReverse(GIZMOSYS_s *system, GIZMO_s *gizmo, i32 reverse, i32 visibility, i32) {
+    const i32 command = visibility == 0 ? 2 : 6;
+    const i32 query = visibility == 0 ? 3 : 7;
+    if (gizmo == NULL || gizmotypes == NULL || gizmotypes->types[gizmo->type_id].fns.activate_rev_fn == NULL) {
+        return;
+    }
+    if (gizmotypes->types[gizmo->type_id].fns.activate_rev_fn(gizmo, reverse, query) == 0) {
+        return;
+    }
+    gizmotypes->types[gizmo->type_id].fns.activate_rev_fn(gizmo, reverse, command);
+    LOG_INFO("gizmo reverse activation type=%s gizmo=%p reverse=%d visibility=%d",
+             gizmotypes->types[gizmo->type_id].name, (void *)gizmo, reverse, visibility);
+    if (visibility != 0) {
+        GizmoSetVisibility(system, gizmo, reverse == 0, 1);
+    }
+}
+
+i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
+
+    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
+        gizmotypes->types[gizmo->type_id].fns.get_visibility_fn == NULL) {
+        return 0;
+    }
+
+    return gizmotypes->types[gizmo->type_id].fns.get_visibility_fn(gizmo);
+}
+
+NUVEC *GizmoGetPos(GIZMOSYS_s *, GIZMO_s *gizmo) {
+    if (gizmotypes != NULL && gizmo != NULL) {
+        GIZMOGETPOSFN get_pos = gizmotypes->types[gizmo->type_id].fns.get_pos_fn;
+        if (get_pos != NULL) {
+            return get_pos(gizmo);
+        }
+    }
+
+    return NULL;
+}
+
+i32 GizmoGetGizmosUsingSpecial(GIZMOSYS *gizmo_sys, void *world, GIZMO **result, i32 result_capacity, char *name) {
+    if (gizmo_sys == NULL || gizmotypes == NULL || result == NULL || gizmotypes->count <= 0 || result_capacity <= 0) {
+        return 0;
+    }
+
+    i32 type_index = 0;
+    i32 result_count = 0;
+    for (; type_index < gizmotypes->count && result_count < result_capacity; ++type_index) {
+        GIZMOUSINGSPECIALFN using_special = gizmotypes->types[type_index].fns.using_special_fn;
+        if (using_special != NULL) {
+            const i32 added = using_special(result + result_count, world, result_capacity - result_count, name);
+            if (added == -1) {
+                return result_capacity;
+            }
+            result_count += added;
+            if (result_count > result_capacity) {
+                return result_capacity;
+            }
+        }
+    }
+    return result_count;
+}
+
+i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+    return -1;
 }
 
 i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
@@ -1264,14 +1629,43 @@ i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
     return 1;
 }
 
-i32 GizmoGetNumOutputs(GIZMOSYS_s *gizmo_sys, GIZMO_s *gizmo) {
-    if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
-        return 0;
-    }
-    if (gizmo->type_id >= gizmotypes->count || gizmotypes->types[gizmo->type_id].fns.get_num_outputs_fn == NULL) {
+i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
+    if (name == NULL || gizmo_sys == NULL) {
         return 1;
     }
-    return gizmotypes->types[gizmo->type_id].fns.get_num_outputs_fn(gizmo);
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+        if (type->fns.get_gizmo_name_fn == NULL) {
+            continue;
+        }
+
+        GIZMO *gizmo = set->gizmos;
+        for (i32 gizmo_index = 0; gizmo_index < set->count; ++gizmo_index, ++gizmo) {
+            if (NuStrICmp(name, type->fns.get_gizmo_name_fn(gizmo)) == 0) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+i32 GizmoNameUsesPrefix(char *name, char *prefix) {
+    if (prefix == NULL || name == NULL) {
+        return 0;
+    }
+
+    while (*name != '\0') {
+        if (NuToUpper(*name) != NuToUpper(*prefix)) {
+            return 0;
+        }
+        ++prefix;
+        ++name;
+    }
+
+    return 1;
 }
 
 i32 GizmoGetUniqueName(GIZMOSYS *gizmo_sys, char *prefix, char *name, char *result, i32 result_size) {
@@ -1313,36 +1707,45 @@ i32 GizmoGetUniqueName(GIZMOSYS *gizmo_sys, char *prefix, char *name, char *resu
     return 0;
 }
 
-i32 GizmoNameUsesPrefix(char *name, char *prefix) {
-    if (prefix == NULL || name == NULL) {
+i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown) {
+    if (gizmotypes == NULL || bolt == NULL || gizmo_sys == NULL) {
         return 0;
     }
 
-    while (*name != '\0') {
-        if (NuToUpper(*name) != NuToUpper(*prefix)) {
-            return 0;
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 i = 0; i < gizmotypes->count; i++, set++, type++) {
+        if (type->fns.bolt_hit_plat_fn != NULL) {
+            i32 result = type->fns.bolt_hit_plat_fn(world_info, set->unknown, bolt, unknown);
+            if (result != 0) {
+                return 1;
+            }
         }
-        ++prefix;
-        ++name;
     }
 
-    return 1;
+    return 0;
 }
 
-void GizmoActivateReverse(GIZMOSYS_s *system, GIZMO_s *gizmo, i32 reverse, i32 visibility, i32) {
-    const i32 command = visibility == 0 ? 2 : 6;
-    const i32 query = visibility == 0 ? 3 : 7;
-    if (gizmo == NULL || gizmotypes == NULL || gizmotypes->types[gizmo->type_id].fns.activate_rev_fn == NULL) {
-        return;
+i32 Gizmo_FindNuSpecial(nugscn_s *scene, nuhspecial_s *special, char *name, i32 flags, GIZMOSYS *gizmo_sys,
+                        char *prefix, char *suffix) {
+    if (NuSpecialFind(scene, special, name, flags) != 0) {
+        return 1;
     }
-    if (gizmotypes->types[gizmo->type_id].fns.activate_rev_fn(gizmo, reverse, query) == 0) {
-        return;
+
+    if (gizmo_sys == NULL || gizmo_sys->error_log == NULL || (gizmo_sys->flags & GIZMOSYS_FLAG_LOADING) == 0) {
+        return 0;
     }
-    gizmotypes->types[gizmo->type_id].fns.activate_rev_fn(gizmo, reverse, command);
-    LOG_INFO("gizmo reverse activation type=%s gizmo=%p reverse=%d visibility=%d",
-             gizmotypes->types[gizmo->type_id].name, (void *)gizmo, reverse, visibility);
-    if (visibility != 0) {
-        GizmoSetVisibility(system, gizmo, reverse == 0, 1);
+
+    GizmoAppendSpecialError(gizmo_sys, name);
+    if (prefix != NULL) {
+        GizmoAppendSpecialError(gizmo_sys, "\t\t");
+        GizmoAppendSpecialError(gizmo_sys, prefix);
     }
+    if (suffix != NULL) {
+        GizmoAppendSpecialError(gizmo_sys, "\t\t");
+        GizmoAppendSpecialError(gizmo_sys, suffix);
+    }
+    GizmoAppendSpecialError(gizmo_sys, "\n");
+    return 0;
 }
 

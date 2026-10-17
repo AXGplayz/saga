@@ -1,3 +1,6 @@
+// Original translation unit reconstructed from the reference address map.
+// Functions are defined in original address order.
+
 #include "legoapi/characters/motion/chris.h"
 
 #include "decomp.h"
@@ -28,39 +31,231 @@
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/playeritems.h"
 #include "legoapi/gizmo/object/gizmopickup.h"
-#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "nu2api/numusic/numusic.h"
 #include <string.h>
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuvuvec.hpp"
+#include <stdio.h>
+#include <math.h>
+#include "nu2api/nu3d/nurndr.h"
+#include "gameframework/saveload.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/core/input/timer.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world_shared.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/android/nugscn_android.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nupostparams.h"
+#include "gameapi/edtools/edfile.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/render/fx/spline_position.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "legoapi/items/base/apiobject.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nucore/nupad.h"
+#include "legoapi/actions/character/speederchase.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "gameapi/edtools/edui.h"
+#include "legoapi/render/core/gameliball.h"
+#include "legoapi/world/levels/episodeI.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-extern f32 SpaceRumbleTimer;
 extern i32 LevFlag[4];
 // The original keeps this scale in an aligned vector slot and copies it with movaps.
 static spacelevel_scale_s STARFIGHTERDRAWSCALE __attribute__((aligned(16)));
 NUVEC Jetpos = {0.15f, 0.08f, 0.32f};
-void DrawCross_Now(_vuv_s *position, f32 size, i32 colour, i32 mode);
-extern GameObject_s *Player[8];
-extern f32 FRAMETIME;
-extern LEVELDATA_s *DOGFIGHTA_LDATA;
-extern BOLT_s Bolt[32];
-extern i32 i_bolt;
-extern f32 BOLT_OVERRIDE_PLAYERBOLTSPEED;
-extern f32 BOLT_OVERRIDE_PLAYERBOLTDURATION;
 // Four debug door keys start enabled and are restored by each restart.
 i32 DogDebKey[4] __attribute__((aligned(16))) = {-1, -1, -1, -1};
 struct quickboltinfo;
-extern "C" void NuSpecialList(NUGSCN *);
-extern "C" i32 NuSpecialFind(NUGSCN *, nuhspecial_s *, char *, i32);
-extern "C" i32 NuSpecialExistsFn(void *);
-extern "C" nuvec_s *NuSpecialGetPos(void *);
-void ChrisAnakinCReset();
 static NUVEC4 RadialMoveCentre;
 static __used__ f32 RadialPlayerRadius[2];
 static __used__ f32 MaxRadialCamY;
+
+f32 MissileDist = -3.0f;
+static NUVEC4 PlayerPos, PlayerVel;
+
+anakin_door_setup_s DoorSetupList[15] = {
+    {"door1", "door1r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door2", "door2r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door3", "door3r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door4", "door4r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door5", "door5r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door6", "door6r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door7", "door7r", 15.0f, 1.0f, 0, {}, {1.0f, 1.0f, 0.0f}, -0.5f, 0.0f},
+    {"door8", "door8r", 15.0f, 1.0f, 0, {}, {0.0f, -1.0f, 0.0f}, -0.5f, 0.0f},
+    {"door9", "door9r", 15.0f, 1.0f, 0, {}, {0.0f, 1.0f, 0.0f}, -0.5f, 0.0f},
+    {"door10", "door10r", 15.0f, 1.0f, 0, {}, {0.0f, -1.0f, 0.0f}, -0.5f, 0.0f},
+    {"door11", "door11r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door12", "door12r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door15", "door15r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    {"door16", "door16r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
+    // The retail table stores an empty string here, not a null name.
+    {"", NULL, 0.0f, 0.0f, 0, {}, {0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+};
+
+#if defined(__i386__)
+#define CHRIS_REGPARM1 __attribute__((regparm(1)))
+#else
+#define CHRIS_REGPARM1
+#endif
+// Debug draw of a flight spline: the sampled curve, its roll axis at every
+// sample and the roll axis at every control point.  Retail only keeps the
+// clone with the four colours propagated (centre line, two axis halves and
+// the control-point marker), and nothing calls it.
+static __used__ __attribute__((noinline, noclone)) CHRIS_REGPARM1 void FlightSpline_Draw(flightspline_s *spline)
+    __asm__("_ZL17FlightSpline_DrawP14flightspline_siiii.constprop.39");
+
+static void DrawStarFighter(starfighter_s *starfighter);
+
+static inline void QuickBolt_Draw(quickboltinfo *info) {
+    static const i32 BoltObjA[4] = {303, 305, 301, 301};
+    static const i32 BoltObjB[4] = {304, 306, 302, 302};
+    if (info == NULL)
+        return;
+    if (info->count != 0) {
+        quickbolt_s *bolt = info->bolts;
+        quickbolt_s *end = bolt + info->count;
+        for (; bolt < end; ++bolt) {
+            if (bolt->duration != 0.0f) {
+                Draw3DObjectMtx(WORLD, BoltObjA[bolt->type], &bolt->matrix);
+                Draw3DObjectMtx(WORLD, BoltObjB[bolt->type], &bolt->matrix);
+            }
+        }
+    }
+}
+
+static inline void DrawSpaceGroup(spacelevel_flight_group_s *group) {
+    if (group->active != 0) {
+        if (group->fighters[0].active != 0)
+            DrawStarFighter(&group->fighters[0]);
+        if (group->fighters[1].active != 0)
+            DrawStarFighter(&group->fighters[1]);
+        if (group->fighters[2].active != 0)
+            DrawStarFighter(&group->fighters[2]);
+        if (group->fighters[3].active != 0)
+            DrawStarFighter(&group->fighters[3]);
+        if (group->fighters[4].active != 0)
+            DrawStarFighter(&group->fighters[4]);
+        if (group->draw_target != 0)
+            DrawCross_Now(reinterpret_cast<_vuv_s *>(&group->target), 3.0f, 0xffffff, 1);
+    }
+}
+
+static inline void DrawSpaceJet(i32 player_index, i32 key_index, bool left) {
+    GameObject_s *player = Player[player_index];
+    if (player != NULL) {
+        if (player->id == id_JEDISTARFIGHTERYELLOWEP3 || player->id == id_JEDISTARFIGHTERREDEP3) {
+            if (DogDebKey[key_index] == -1) {
+                AddDebrisEffect(&DogDebKey[key_index], WORLD->debris_sys->entries[47].effect, 0.0f, 0.0f, 0.0f);
+            } else {
+                NUMTX_ALIGNED16 matrix = {
+                    player->apiobj.field_0xb8.m00,  player->apiobj.field_0xb8.m01,  player->apiobj.field_0xb8.m02,
+                    player->apiobj.field_0xb8.m03,  player->apiobj.field_0xb8.m20,  player->apiobj.field_0xb8.m21,
+                    player->apiobj.field_0xb8.m22,  player->apiobj.field_0xb8.m23,  -player->apiobj.field_0xb8.m10,
+                    -player->apiobj.field_0xb8.m11, -player->apiobj.field_0xb8.m12, -player->apiobj.field_0xb8.m13,
+                    player->apiobj.field_0xb8.m30,  player->apiobj.field_0xb8.m31,  player->apiobj.field_0xb8.m32,
+                    player->apiobj.field_0xb8.m33};
+                if (left) {
+                    matrix.m30 += (matrix.m20 * Jetpos.y - matrix.m00 * Jetpos.x) + matrix.m10 * Jetpos.z;
+                    matrix.m31 += (matrix.m21 * Jetpos.y - matrix.m01 * Jetpos.x) + matrix.m11 * Jetpos.z;
+                    matrix.m32 += (matrix.m22 * Jetpos.y - matrix.m02 * Jetpos.x) + matrix.m12 * Jetpos.z;
+                } else {
+                    matrix.m31 += matrix.m01 * Jetpos.x + matrix.m21 * Jetpos.y + matrix.m11 * Jetpos.z;
+                    matrix.m30 += matrix.m00 * Jetpos.x + matrix.m20 * Jetpos.y + matrix.m10 * Jetpos.z;
+                    matrix.m32 += matrix.m02 * Jetpos.x + matrix.m22 * Jetpos.y + matrix.m12 * Jetpos.z;
+                }
+                DebrisPosOrientationMtx(DogDebKey[key_index], &matrix);
+            }
+        } else if (DogDebKey[key_index] != -1) {
+            DebFreeInstantly(&DogDebKey[key_index]);
+        }
+    }
+}
+
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
+
+struct GAMEMESSAGE_s;
+struct HINT_s;
+struct MENU_s;
+struct NuBloomParameters;
+struct STATUSPACKET_s;
+struct TouchHolder;
+struct _vum_s;
+struct _vuv_s;
+struct nuhspecial_s;
+struct ripple_node_s;
+struct ripple_set_s;
+struct VuVec;
+
+// Retail only keeps the IPA-SRA clone, which drops the unused fourth argument.
+
+extern i16 tNONEWBESTTIME, tNEWBESTTIME;
+
+extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
+extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
+
+extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
+
+extern "C" {
+    extern nurenderscene_s currentScene;
+}
+
+extern "C" {
+    char *FSP_Extension = ".FSP";
+}
+
+// The original copies the aligned spline point to the caller's vector as
+// one unaligned 4-float vector store.
+typedef f32 BezierVec4 __attribute__((vector_size(16)));
+typedef f32 BezierVec4Unaligned __attribute__((vector_size(16), aligned(4)));
+
+// Retail only keeps the split-out body of the IPA-SRA clone, which takes
+// &spline->length and &spline->pts in place of the spline.
+
+extern i32 (*GamePads_IgnoreInputFn)(void);
+extern "C" {
+    extern "C++" FadeSystem FadeSys;
+    extern i32 CutSceneWaiting;
+}
+
+f32 MulDist = 0.5f;
+f32 SpeedAdd = 1.0f;
+f32 SpeedDist = 5.0f;
+f32 MulAdd = 0.0f;
+
+// This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
+
+DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
+
+void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32));
+
+anakin_door_s *volatile AnakinC = NULL;
 
 static void MakeWingFormation(_vuv_s *start, _vuv_s *target, f32 duration, i32 mode) {
     spacelevel_s *space = WORLD->space_level;
@@ -140,7 +335,7 @@ static void MakeWingFormation(_vuv_s *start, _vuv_s *target, f32 duration, i32 m
 #undef INIT_WING_FIGHTER
 }
 
-static void StarFighterAlign(starfighter_s *fighter, _vuv_s *direction, f32 distance, i32 mode) {
+static __attribute__((noinline)) void StarFighterAlign(starfighter_s *fighter, _vuv_s *direction, f32 distance, i32 mode) {
     NUVEC4_ALIGNED16 local, up;
     NuVecInvMtxRotate(reinterpret_cast<NUVEC *>(&local), reinterpret_cast<NUVEC *>(direction), &fighter->matrix);
     const i16 yaw = static_cast<i16>(NuAtan2D(local.x, local.z));
@@ -181,8 +376,543 @@ static void StarFighterAlign(starfighter_s *fighter, _vuv_s *direction, f32 dist
     NuMtxPreRotateZ(&fighter->matrix, adjustment);
 }
 
-f32 MissileDist = -3.0f;
-static NUVEC4 PlayerPos, PlayerVel;
+static void ResetSpaceLevel(WORLDINFO_s *world, spacelevel_s *space) {
+    i32 door_index;
+    space->unknown_62eb8 = 0;
+    space->player_origin = {-1456.9f, 326.5f, -394.0f};
+    space->player_origin_padding = 0.0f;
+    space->direction = {1447.4901f, -492.25f, -704.0f};
+    space->camera_origin = {-9.409912f, -165.75f, -1098.0f};
+
+    space->direction_length = NuVecMag(&space->direction);
+    space->inverse_direction_length = 1.0f / space->direction_length;
+
+#define DOOR_REACHED(player_index, door_index)                                                                         \
+    (Player[player_index]->field_0x68c > DogFightDoors.doors[door_index].distance)
+    if (__builtin_expect(Player[0] != NULL, 0)) {
+        if (DOOR_REACHED(0, 6)) {
+            goto door_6;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 6)) {
+            goto door_6;
+        }
+        if (DOOR_REACHED(0, 5)) {
+            goto door_5;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 5)) {
+            goto door_5;
+        }
+        if (DOOR_REACHED(0, 4)) {
+            goto door_4;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 4)) {
+            goto door_4;
+        }
+        if (DOOR_REACHED(0, 3)) {
+            goto door_3;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 3)) {
+            goto door_3;
+        }
+        if (DOOR_REACHED(0, 2)) {
+            goto door_2;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 2)) {
+            goto door_2;
+        }
+        if (DOOR_REACHED(0, 1)) {
+            goto door_1;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 1)) {
+            goto door_1;
+        }
+        if (DOOR_REACHED(0, 0)) {
+            goto door_0;
+        }
+        if (Player[1] != NULL && DOOR_REACHED(1, 0)) {
+            goto door_0;
+        }
+    } else if (Player[1] != NULL) {
+        if (DOOR_REACHED(1, 6)) {
+            goto door_6;
+        }
+        if (DOOR_REACHED(1, 5)) {
+            goto door_5;
+        }
+        if (DOOR_REACHED(1, 4)) {
+            goto door_4;
+        }
+        if (DOOR_REACHED(1, 3)) {
+            goto door_3;
+        }
+        if (DOOR_REACHED(1, 2)) {
+            goto door_2;
+        }
+        if (DOOR_REACHED(1, 1)) {
+            goto door_1;
+        }
+        if (DOOR_REACHED(1, 0)) {
+            goto door_0;
+        }
+    }
+
+#undef DOOR_REACHED
+
+    space->door_countdown = 0.0f;
+    space->door_time = 0.0f;
+    space->door_elapsed = 0.0f;
+
+reset_space:
+
+#define RESET_STARFIGHTER(fighter)                                                                                     \
+    fighter.active = 0;                                                                                                \
+    fighter.parent = NULL;                                                                                             \
+    fighter.spline = NULL
+#define RESET_SPACE_GROUP(index)                                                                                       \
+    do {                                                                                                               \
+        RESET_STARFIGHTER(space->flight_groups[index].fighters[0]);                                                    \
+        RESET_STARFIGHTER(space->flight_groups[index].fighters[1]);                                                    \
+        RESET_STARFIGHTER(space->flight_groups[index].fighters[2]);                                                    \
+        RESET_STARFIGHTER(space->flight_groups[index].fighters[3]);                                                    \
+        RESET_STARFIGHTER(space->flight_groups[index].fighters[4]);                                                    \
+        space->flight_groups[index].reset_colour = 0xff00;                                                             \
+        space->flight_groups[index].active = 0;                                                                        \
+        space->flight_groups[index].draw_target = 0;                                                                   \
+    } while (0)
+    RESET_SPACE_GROUP(0);
+    RESET_SPACE_GROUP(1);
+    RESET_SPACE_GROUP(2);
+    RESET_SPACE_GROUP(3);
+    RESET_SPACE_GROUP(4);
+    RESET_SPACE_GROUP(5);
+    RESET_SPACE_GROUP(6);
+    RESET_SPACE_GROUP(7);
+#undef RESET_SPACE_GROUP
+#undef RESET_STARFIGHTER
+
+    STARFIGHTERDRAWSCALE = {4.0f, 4.0f, 4.0f, 1.0f};
+    space->draw_scale = {-141.0f, -121.0f, -1034.0f, 1.0f};
+    if (world->current_level == DOGFIGHTA_LDATA) {
+        space->unknown_3370 = NULL;
+    } else {
+        space->unknown_3370 = &Actions_AnakinA;
+    }
+    if (space->reset_buffer_count != 0) {
+        memset(space->reset_buffer, 0, space->reset_buffer_count * 96);
+        space->reset_buffer_used = 0;
+    }
+    space->current_action = NULL;
+    space->unknown_337c = 4;
+    space->unknown_338c = space;
+    space->unknown_3378 = 0;
+    space->value_one_b = 1.0f;
+    space->value_one_a = 1.0f;
+
+    space->player_colour = 0xffffff;
+    space->player_matrix_flags = 0;
+    space->player_matrix.m01 = 55.0f;
+    space->player_matrix.m00 = 80.0f;
+    space->player_matrix.m03 = 1.0f;
+    space->player_matrix.m02 = 200.0f;
+    space->player_matrix.m31 = 0.0f;
+    space->player_matrix.m30 = 0.0f;
+    space->player_matrix.m33 = 1.0f;
+    space->player_matrix.m32 = 0.0f;
+    space->player_matrix.m11 = 0.0f;
+    space->player_matrix.m10 = 0.0f;
+    space->player_matrix.m20 = 0.0f;
+    space->player_matrix.m13 = 1.0f;
+    space->player_matrix.m22 = 0.0f;
+    space->player_matrix.m21 = 0.0f;
+    space->player_matrix.m12 = 200.0f;
+    space->player_matrix.m23 = 1.0f;
+    space->player_matrix_state = 0;
+
+    space->camera_matrix.m00 = 5.0f;
+    space->camera_matrix.m01 = 80.0f;
+    space->camera_matrix.m02 = 55.0f;
+    space->camera_matrix.m03 = 200.0f;
+    space->camera_matrix.m30 = 0.0f;
+    space->camera_matrix.m31 = 0.0f;
+    space->camera_matrix.m33 = 1.0f;
+    space->camera_matrix.m10 = 0.0f;
+    space->camera_matrix.m32 = 0.0f;
+    space->camera_matrix.m11 = 0.0f;
+    space->camera_matrix.m13 = 1.0f;
+    space->camera_matrix.m20 = 0.0f;
+    space->camera_matrix.m21 = 0.0f;
+    space->camera_matrix.m23 = 1.0f;
+    space->camera_matrix.m12 = 200.0f;
+    space->camera_matrix.m22 = 0.0f;
+    space->camera_value = 5.0f;
+    space->camera_matrix_w = 1.0f;
+    space->camera_colour = 0xffffff;
+    space->camera_matrix_flags = 0;
+    space->camera_matrix_state = 0;
+
+    for (i32 i = 0; i < 96; ++i) {
+        space->queued_fighters[i].active = 0;
+        space->queued_fighters[i].parent = NULL;
+        space->queued_fighters[i].spline = NULL;
+    }
+    for (i32 i = 0; i < 256; ++i) {
+        space->large_records[i].saved_value = space->large_records[i].reset_value;
+        space->large_records[i].reset_state = space->large_records[i].saved_state;
+    }
+    SpaceRumbleTimer = NuRandFloat() * 10.0f + 3.0f;
+    return;
+
+door_6:
+    door_index = 6;
+    goto set_door_timer;
+door_5:
+    door_index = 5;
+    goto set_door_timer;
+door_4:
+    door_index = 4;
+    goto set_door_timer;
+door_3:
+    door_index = 3;
+    goto set_door_timer;
+door_2:
+    door_index = 2;
+    goto set_door_timer;
+door_1:
+    door_index = 1;
+    goto set_door_timer;
+door_0:
+    door_index = 0;
+
+set_door_timer:
+    space->door_time = DogFightDoors.doors[door_index].timer;
+    space->door_countdown = space->door_time * 94.977417f / 59.449684f;
+    space->door_elapsed = (space->door_countdown - FRAMETIME) * 94.977417f / 59.449684f;
+    goto reset_space;
+}
+
+void DrawLine_Now(_vuv_s *, _vuv_s *, i32, i32) {
+}
+
+void DrawBoxMtx_Now(_vum_s *, _vuv_s *, i32, i32) {
+}
+
+void DrawBox_Now(_vuv_s *, _vuv_s *, i32, i32) {
+}
+
+void DrawCross_Now(_vuv_s *, float, i32, i32) {
+}
+
+void DrawArrow_Now(_vum_s *, float, i32, i32) {
+}
+
+void ChrisAnakinCUpdate() {
+    anakin_door_s *door = AnakinC;
+    anakin_door_s *end = door + 12;
+    for (; door != end; ++door) {
+        if (door->active == 0)
+            continue;
+
+        const f32 offset = door->offset - door->speed * FRAMETIME;
+        door->offset = offset;
+        if (offset <= door->minimum_offset)
+            door->offset = door->minimum_offset;
+
+        // The retail transform temporaries require a 16-byte-aligned stack.
+        NUVEC *direction = &door->direction;
+        NUVEC_ALIGNED16 translation;
+        translation.x = direction->x * door->offset;
+        translation.y = direction->y * door->offset;
+        translation.z = direction->z * door->offset;
+        NUVEC_ALIGNED16 position;
+        NuVecMtxTransform(&position, &translation, &door->original_matrix);
+        memcpy(&door->matrix.m30, &position, sizeof(position));
+        door->matrix.m33 = 1.0f;
+        NuSpecialSetDrawMtx(&door->special, &door->matrix);
+        if (door->has_secondary != 0) {
+            NuVecMtxTransform(&position, &translation, &door->original_secondary_matrix);
+            memcpy(&door->secondary_matrix.m30, &position, sizeof(position));
+            door->secondary_matrix.m33 = 1.0f;
+            NuSpecialSetDrawMtx(&door->secondary_special, &door->secondary_matrix);
+        }
+    }
+}
+
+void ChrisAnakinCReset() {
+    anakin_door_s *door = AnakinC;
+    i32 count = 0;
+    for (anakin_door_setup_s *setup = DoorSetupList; count < 12; ++setup) {
+        if (setup->name == NULL) {
+            for (; count < 12; ++count, ++door)
+                door->active = 0;
+            return;
+        }
+        if (!NuSpecialFind(WORLD->current_gscn, &door->special, setup->name, 1) || !NuSpecialExistsFn(&door->special))
+            continue;
+
+        if (NuSpecialFind(WORLD->current_gscn, &door->secondary_special, setup->secondary_name, 1))
+            door->has_secondary = static_cast<i16>(NuSpecialExistsFn(&door->secondary_special));
+
+        NuMtxSetIdentity(&door->original_matrix);
+        door->matrix = door->original_matrix = *NuSpecialGetMtx(&door->special);
+        if (door->has_secondary != 0) {
+            NuMtxSetIdentity(&door->original_secondary_matrix);
+            door->secondary_matrix = door->original_secondary_matrix = *NuSpecialGetMtx(&door->secondary_special);
+        }
+        door->platform_id = static_cast<i16>(FindPlatInst(NuSpecialGetInstanceix(&door->special)));
+        door->active = 1;
+        door->flags = static_cast<u8>(setup->flags);
+        door->direction = setup->direction;
+        door->offset = setup->initial_offset;
+        door->speed = setup->speed;
+        door->minimum_offset = setup->minimum_offset;
+        door->unknown_134 = setup->unknown_20;
+        ++door;
+        ++count;
+    }
+}
+
+void ChrisAnakinCInit() {
+    NuSpecialList(WORLD->current_gscn);
+    ChrisAnakinCReset();
+}
+
+i32 DidBoltHitChrisJobby(WORLDINFO_s *, BOLT_s *) {
+    STUBBED();
+    return 0;
+}
+
+void ChrisGetTargetedSpaceShipMatrix(GameObject_s *object, numtx_s *matrix) {
+    *matrix = object->apiobj.field_0xb8;
+    NuMtxPreRotateY(matrix, 0x8000);
+}
+
+void ChrisGetSpaceShipMatrix(GameObject_s *object, numtx_s *matrix) {
+    *matrix = object->apiobj.field_0xb8;
+    NuMtxPreRotateY(matrix, 0x8000);
+}
+
+void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
+    const f32 scaled = (spline->point_count - 1) * along;
+    i32 index = static_cast<i32>(scaled);
+    const f32 fraction = scaled - index;
+    // The endpoint vectors occupy aligned stack slots in the retail evaluator.
+    _vuv_s first __attribute__((aligned(16)));
+    _vuv_s last __attribute__((aligned(16)));
+    NUVEC_ALIGNED16 direction;
+    _vuv_s *previous;
+    if (!(index <= 0)) {
+        // Retail retains the pre-clamp fraction and permits index == count;
+        // callers must supply the corresponding neighboring point storage.
+        if (index > spline->point_count)
+            index = spline->point_count;
+        previous = &spline->points[index - 1];
+    } else {
+        direction.x = spline->points[0].x - spline->points[1].x;
+        direction.y = spline->points[0].y - spline->points[1].y;
+        direction.z = spline->points[0].z - spline->points[1].z;
+        NuVecNorm(&direction, &direction);
+        direction.x *= 10.0f;
+        direction.y *= 10.0f;
+        direction.z *= 10.0f;
+        first.x = spline->points[0].x + direction.x;
+        first.y = spline->points[0].y + direction.y;
+        first.z = spline->points[0].z + direction.z;
+        first.w = spline->points[0].w;
+        previous = &first;
+        index = 0;
+    }
+
+    _vuv_s *current = &spline->points[index];
+    _vuv_s *next = &spline->points[index + 1];
+    _vuv_s *following;
+    if (!(index < spline->point_count - 2)) {
+        const i32 end = spline->point_count - 1;
+        direction.x = spline->points[end].x - spline->points[end - 1].x;
+        direction.y = spline->points[end].y - spline->points[end - 1].y;
+        direction.z = spline->points[end].z - spline->points[end - 1].z;
+        NuVecNorm(&direction, &direction);
+        direction.x *= 10.0f;
+        direction.y *= 10.0f;
+        direction.z *= 10.0f;
+        _vuv_s *end_point = &spline->points[spline->point_count - 1];
+        last.x = end_point->x + direction.x;
+        last.y = end_point->y + direction.y;
+        last.z = end_point->z + direction.z;
+        last.w = end_point->w;
+        following = &last;
+    } else {
+        following = &spline->points[index + 2];
+    }
+
+    const _vuv_s after = *following;
+    const _vuv_s before = *previous;
+    const f32 squared = fraction * fraction;
+    const f32 cubed = fraction * squared;
+    result->x = (((current->x - next->x) * 3.0f - before.x + after.x) * cubed +
+                 ((before.x * 2.0f - current->x * 5.0f + next->x * 4.0f - after.x) * squared +
+                  (current->x * 2.0f + (next->x - before.x) * fraction))) *
+                0.5f;
+    result->y = (((current->y - next->y) * 3.0f - before.y + after.y) * cubed +
+                 ((before.y * 2.0f - current->y * 5.0f + next->y * 4.0f - after.y) * squared +
+                  (current->y * 2.0f + (next->y - before.y) * fraction))) *
+                0.5f;
+    result->w = current->w + (next->w - current->w) * fraction;
+    result->z = (((current->z - next->z) * 3.0f - before.z + after.z) * cubed +
+                 ((before.z * 2.0f - current->z * 5.0f + next->z * 4.0f - after.z) * squared +
+                  (current->z * 2.0f + (next->z - before.z) * fraction))) *
+                0.5f;
+}
+
+static void FlightSpline_Draw(flightspline_s *spline) {
+    _vuv_s points[512];
+    _vuv_s direction;
+    _vuv_s axis;
+    _vuv_s plus;
+    _vuv_s minus;
+    const i32 count = spline->point_count * 8;
+    const i32 last = count - 1;
+    const f32 step = 1.0f / last;
+    points[0] = spline->points[0];
+    f32 along = step;
+    for (i32 i = 1; i < last; ++i) {
+        CalcSplinePoint(spline, &points[i], along);
+        along += step;
+    }
+    points[last] = spline->points[spline->point_count - 1];
+    for (i32 i = 1; i < count; ++i) {
+        DrawLine_Now(&points[i], &points[i - 1], 0xffffff, 1);
+        direction.x = points[i].x - points[i - 1].x;
+        direction.y = points[i].y - points[i - 1].y;
+        direction.z = points[i].z - points[i - 1].z;
+        const i16 yaw = static_cast<i16>(NuAtan2D(direction.x, direction.z));
+        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&direction), -yaw);
+        const i16 pitch = static_cast<i16>(NuAtan2D(axis.y, axis.z));
+        axis.x = 1.0f;
+        axis.y = 0.0f;
+        axis.z = 0.0f;
+        axis.w = 0.0f;
+        NuVecRotateZ(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis),
+                     static_cast<i16>(static_cast<i32>(points[i].w)));
+        NuVecRotateX(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), -pitch);
+        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), yaw);
+        plus.x = points[i].x + axis.x;
+        plus.y = points[i].y + axis.y;
+        plus.z = points[i].z + axis.z;
+        minus.x = points[i].x - axis.x;
+        minus.y = points[i].y - axis.y;
+        minus.z = points[i].z - axis.z;
+        DrawLine_Now(&plus, &points[i], 0x800080, 1);
+        DrawLine_Now(&points[i], &minus, 0x808080, 1);
+    }
+    for (i32 i = 0; i < spline->point_count; ++i) {
+        i32 from = static_cast<i32>(static_cast<f32>(i * count) / static_cast<f32>(spline->point_count - 1) - 0.5f);
+        i32 to;
+        if (from < 0) {
+            from = 0;
+            to = 1;
+        } else {
+            to = from + 1;
+            if (from >= last) {
+                from = count - 2;
+                to = last;
+            }
+        }
+        direction.x = points[to].x - points[from].x;
+        direction.y = points[to].y - points[from].y;
+        direction.z = points[to].z - points[from].z;
+        const i16 yaw = static_cast<i16>(NuAtan2D(direction.x, direction.z));
+        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&direction), -yaw);
+        const i16 pitch = static_cast<i16>(NuAtan2D(axis.y, axis.z));
+        axis.x = 2.0f;
+        axis.y = 0.0f;
+        axis.z = 0.0f;
+        axis.w = 0.0f;
+        NuVecRotateZ(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis),
+                     static_cast<i16>(static_cast<i32>(spline->points[i].w)));
+        NuVecRotateX(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), -pitch);
+        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), yaw);
+        plus.x = spline->points[i].x + axis.x;
+        plus.y = spline->points[i].y + axis.y;
+        plus.z = spline->points[i].z + axis.z;
+        minus.x = spline->points[i].x - axis.x;
+        minus.y = spline->points[i].y - axis.y;
+        minus.z = spline->points[i].z - axis.z;
+        DrawLine_Now(&plus, &minus, 0xff0000, 1);
+    }
+}
+
+static void DrawStarFighter(starfighter_s *starfighter) {
+    NUMTX_ALIGNED16 matrices[2];
+    NUMTX &scaled_special_matrix = matrices[0];
+    NUMTX &scaled_model_matrix = matrices[1];
+    if (starfighter->model_id >= 0) {
+        const f32 scale = starfighter->scale;
+        const i16 draw_flags = starfighter->draw_flags;
+        const i16 model_index = apicharsys->playermodelids[starfighter->model_id];
+        if (model_index == -1)
+            return;
+        NUMTX *matrix = &starfighter->matrix;
+        if (scale != 1.0f) {
+            scaled_model_matrix = starfighter->matrix;
+            NuMtxPreScaleUVU0(&scaled_model_matrix, scale);
+            matrix = &scaled_model_matrix;
+        }
+        GameDrawCharacterModel(&apicharsys->models[model_index], NULL, matrix, NULL, NULL, NULL, NULL, draw_flags);
+    } else {
+        NUMTX *matrix = &starfighter->matrix;
+        if (starfighter->model_id == -299 || starfighter->model_id == -297 || starfighter->model_id == -298 ||
+            starfighter->model_id == -307) {
+            scaled_special_matrix = starfighter->matrix;
+            scaled_special_matrix.m00 *= 1.15f;
+            scaled_special_matrix.m01 *= 1.15f;
+            scaled_special_matrix.m02 *= 1.15f;
+            scaled_special_matrix.m10 *= 1.15f;
+            scaled_special_matrix.m11 *= 1.15f;
+            scaled_special_matrix.m12 *= 1.15f;
+            scaled_special_matrix.m20 *= 1.15f;
+            scaled_special_matrix.m21 *= 1.15f;
+            scaled_special_matrix.m22 *= 1.15f;
+            matrix = &scaled_special_matrix;
+        }
+        NuSpecialDrawAt(&WORLD->lev_objs[-starfighter->model_id].special, matrix);
+        if (starfighter->model_id == -307)
+            AddVariableShotDebrisEffect(WORLD->debris_sys->entries[49].effect,
+                                        reinterpret_cast<NUVEC *>(&starfighter->matrix.m30), 1, 0, 0);
+    }
+}
+
+static void DrawSpaceLevel(spacelevel_s *space) {
+    if (space->crosses[0].enabled != 0) {
+        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->crosses[0].world_position),
+                          reinterpret_cast<NUVEC *>(&space->crosses[0].local_position), &GameCam->render_mtx);
+        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[0].world_position), space->crosses[0].scale,
+                      space->crosses[0].colour, 1);
+    }
+    if (space->crosses[1].enabled != 0) {
+        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->crosses[1].world_position),
+                          reinterpret_cast<NUVEC *>(&space->crosses[1].local_position), &GameCam->render_mtx);
+        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[1].world_position), space->crosses[1].scale,
+                      space->crosses[1].colour, 1);
+    }
+    DrawSpaceGroup(&space->flight_groups[0]);
+    DrawSpaceGroup(&space->flight_groups[1]);
+    DrawSpaceGroup(&space->flight_groups[2]);
+    DrawSpaceGroup(&space->flight_groups[3]);
+    DrawSpaceGroup(&space->flight_groups[4]);
+    DrawSpaceGroup(&space->flight_groups[5]);
+    DrawSpaceGroup(&space->flight_groups[6]);
+    DrawSpaceGroup(&space->flight_groups[7]);
+    for (i32 i = 0; i != 96; ++i) {
+        if (space->queued_fighters[i].active != 0)
+            DrawStarFighter(&space->queued_fighters[i]);
+    }
+    QuickBolt_Draw(&space->quick_bolts);
+
+    DrawSpaceJet(0, 0, false);
+    DrawSpaceJet(0, 1, true);
+    DrawSpaceJet(1, 2, false);
+    DrawSpaceJet(1, 3, true);
+}
 
 static i32 ProcessStarFighter(starfighter_s *fighter, quickboltinfo *info) {
 
@@ -567,6 +1297,261 @@ lost_target:
     return 1;
 }
 
+void CalcSplinePointFromDist(flightspline_s *spline, _vuv_s *result, float distance) {
+    if (distance >= spline->length) {
+        distance = 1.0f;
+    } else {
+        for (i32 index = 0; index < spline->point_count; ++index) {
+            const f32 end = spline->cumulative_distances[index];
+            if (end > distance) {
+                const f32 start = index == 0 ? 0.0f : spline->cumulative_distances[index - 1];
+                distance = ((distance - start) / (end - start) + index) / spline->point_count;
+                break;
+            }
+        }
+    }
+    CalcSplinePoint(spline, result, distance);
+}
+
+void FlightSpline_Init(WORLDINFO_s *world, flightspline_s *splines, i32 capacity) {
+    char filename[256];
+    sprintf(filename, "%s%s", world->config_file, FSP_Extension);
+    EdFileSetMedia(1);
+    if (!EdFileOpen(filename, NUFILE_READ))
+        return;
+
+    const i32 version = EdFileReadInt();
+    const i32 count = EdFileReadInt();
+    // The file is trusted to fit the supplied storage, as in the retail loader.
+    for (i32 i = 0; i < count; ++i) {
+        flightspline_s *spline = &splines[i];
+        spline->point_count = EdFileReadInt();
+        spline->field_0x408 = EdFileReadFloat();
+        spline->id = EdFileReadInt();
+        spline->unknown_528 = 1;
+        if (version > 1) {
+            spline->field_0x40c = EdFileReadFloat();
+            spline->field_0x514 = EdFileReadInt();
+        } else {
+            spline->field_0x40c = 0.0f;
+            spline->field_0x514 = 0;
+        }
+        if (version > 2) {
+            spline->field_0x51c = EdFileReadInt();
+            spline->field_0x520 = EdFileReadInt();
+        } else {
+            spline->field_0x51c = -1;
+            spline->field_0x520 = i;
+        }
+        for (i32 point = 0; point < spline->point_count; ++point) {
+            spline->points[point].x = EdFileReadFloat();
+            spline->points[point].y = EdFileReadFloat();
+            spline->points[point].z = EdFileReadFloat();
+            spline->points[point].w = EdFileReadFloat();
+        }
+    }
+
+    i32 i;
+    if (version > 3) {
+        for (i = 0; i < count; ++i) {
+            flightspline_s *spline = &splines[i];
+            spline->length = EdFileReadFloat();
+            if (version == 4) {
+                f32 distance = 0.0f;
+                _vuv_s previous, current;
+                NUVEC difference;
+                for (i32 point = 0; point < spline->point_count; ++point) {
+                    CalcSplinePoint(spline, &previous, static_cast<f32>(point) / spline->point_count);
+                    for (i32 sample = 1; sample <= 10; ++sample) {
+                        CalcSplinePoint(spline, &current, (sample / 10.0f + point) / spline->point_count);
+                        difference.x = current.x - previous.x;
+                        difference.y = current.y - previous.y;
+                        difference.z = current.z - previous.z;
+                        distance += NuVecMag(&difference);
+                        previous = current;
+                    }
+                    spline->cumulative_distances[point] = distance;
+                }
+                spline->length = distance;
+            } else {
+                for (i32 point = 0; point < spline->point_count; ++point)
+                    spline->cumulative_distances[point] = EdFileReadFloat();
+            }
+        }
+    } else {
+        for (i = 0; i < count; ++i) {
+            flightspline_s *spline = &splines[i];
+            f32 distance = 0.0f;
+            if (spline->point_count != 0) {
+                _vuv_s current;
+                CalcSplinePoint(spline, &current, 1.0f);
+                f32 along = 1.0f;
+                do {
+                    const _vuv_s previous = current;
+                    if (PODRACE_ADATA != NULL && PODRACE_ADATA == WORLD->area)
+                        along -= PODRACE_SPLINEINC;
+                    else
+                        along -= 0.01f;
+                    if (along < 0.0f)
+                        along = 0.0f;
+                    CalcSplinePoint(spline, &current, along);
+                    NUVEC difference{current.x - previous.x, current.y - previous.y, current.z - previous.z};
+                    distance += NuVecMag(&difference);
+                } while (along > 0.0f);
+            }
+            spline->length = distance;
+        }
+    }
+    for (; i < capacity; ++i)
+        splines[i].point_count = 0;
+    EdFileClose();
+}
+
+void ChrisAfterBurnerCam(nuvec_s *, nuvec_s *camera) {
+    *camera = WORLD->space_level->camera_origin;
+}
+
+void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
+    // The original keeps both deltas and the new target at 16-byte aligned stack addresses.
+    const f32 position_y = position->y;
+    const f32 target_y = target->y;
+    NUVEC position_delta
+        __attribute__((aligned(16))) = {position->x - RadialMoveCentre.x, 0.0f, position->z - RadialMoveCentre.z};
+    const f32 position_radius = NuVecMag(&position_delta);
+    NUVEC origin_delta __attribute__((aligned(16))) = {0.0f - RadialMoveCentre.x, 0.0f, 0.0f - RadialMoveCentre.z};
+    const f32 origin_radius = NuVecMag(&origin_delta);
+    RadialPlayerRadius[0] = origin_radius;
+    NUVEC new_target __attribute__((aligned(16)));
+
+    f32 base_radius;
+    if (origin_radius < 120.0f) {
+        base_radius = 120.0f;
+    } else {
+        base_radius = MIN(150.0f, origin_radius);
+    }
+    const f32 extra_radius = origin_radius - base_radius;
+    f32 target_radius = base_radius + extra_radius;
+    if (position_radius != 0.0f) {
+        const f32 scale = target_radius / position_radius;
+        position_delta.z *= scale;
+        position_delta.x *= scale;
+    }
+    position->x = RadialMoveCentre.x + position_delta.x;
+    position->y = position_y;
+    position->z = RadialMoveCentre.z + position_delta.z;
+
+    if (base_radius <= origin_radius) {
+        target_radius = base_radius + 0.6f * extra_radius;
+    }
+    if (origin_radius != 0.0f) {
+        const f32 scale = target_radius / origin_radius;
+        origin_delta.x *= scale;
+        origin_delta.z *= scale;
+    }
+    new_target.x = RadialMoveCentre.x + origin_delta.x;
+    new_target.y = target_y;
+    new_target.z = RadialMoveCentre.z + origin_delta.z;
+    memcpy(target, &new_target, sizeof(new_target));
+}
+
+void SpaceAudioPoint() {
+    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, WORLD->space_level->door_time);
+    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, WORLD->space_level->door_time);
+}
+
+void SpaceResetAudioPoint() {
+    for (i32 door = 6; door >= 0; --door) {
+        for (i32 player = 0; player < 2; ++player) {
+            if (Player[player] != NULL && Player[player]->sock_position.distance > DogFightDoors.doors[door].distance) {
+                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
+                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
+                return;
+            }
+        }
+    }
+    SetPreSeekStartPoint(0.0f);
+}
+
+void SpaceRumbleProcess() {
+    NUVEC_ALIGNED16 origin;
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
+        origin = Player[0]->apiobj.position;
+    } else if (Player[1] != NULL) {
+        origin = Player[1]->apiobj.position;
+    }
+
+    NUMTX_ALIGNED16 matrix;
+    NuMtxSetRotationY(&matrix, 0x2000);
+    NuMtxRotateZ(&matrix, 0x2000);
+
+    NUVEC4 ray;
+    ray.w = 1.0f;
+    f32 nearest = 35.0f;
+    for (i32 i = 0; i < 12; ++i) {
+        switch (i) {
+            case 0:
+            case 6:
+                ray.x = -35.0f;
+                ray.y = 0.0f;
+                ray.z = 0.0f;
+                break;
+            case 1:
+            case 7:
+                ray.x = 35.0f;
+                ray.y = 0.0f;
+                ray.z = 0.0f;
+                break;
+            case 2:
+            case 8:
+                ray.y = -35.0f;
+                ray.x = 0.0f;
+                ray.z = 0.0f;
+                break;
+            case 3:
+            case 9:
+                ray.y = 35.0f;
+                ray.x = 0.0f;
+                ray.z = 0.0f;
+                break;
+            case 4:
+            case 10:
+                ray.z = -35.0f;
+                ray.x = 0.0f;
+                ray.y = 0.0f;
+                break;
+            case 5:
+            case 11:
+                ray.z = 35.0f;
+                ray.x = 0.0f;
+                ray.y = 0.0f;
+                break;
+        }
+        if (i > 5) {
+            NuVec4MtxTransformVU0(&ray, &ray, &matrix);
+        }
+        if (GameRayCast(&origin, reinterpret_cast<NUVEC *>(&ray), 0.5f, 0) != 0) {
+            ray.x = NuFsqrt(ray.x * ray.x + ray.y * ray.y + ray.z * ray.z);
+            if (ray.x < nearest) {
+                nearest = ray.x;
+            }
+        }
+    }
+
+    if (nearest < 35.0f) {
+        f32 amount = 1.0f - nearest / 35.0f;
+        GameCam_NewShake(GameCam, MulDist * amount + MulAdd, 0.2f, SpeedDist * amount + SpeedAdd);
+        f32 scaled_strength = amount * 0.5f;
+        f32 strength = 0.35f < scaled_strength ? 0.35f : scaled_strength;
+        NewRumbleAllPlayers(strength, 0.0f, 0, 0);
+    }
+    SpaceRumbleTimer -= FRAMETIME;
+    if (SpaceRumbleTimer < 0.0f) {
+        GameCam_Judder(GameCam, 0.2f, 2, NULL);
+        NewRumbleAllPlayers(0.3f, 0.0f, 0, 0);
+        SpaceRumbleTimer = NuRandFloat() * 10.0f + 3.0f;
+    }
+}
+
 static void ProcessSpaceLevel(spacelevel_s *space) {
     NUVEC4_ALIGNED16 formation_start, formation_target;
     NUVEC4_ALIGNED16 passing_start, passing_target;
@@ -847,542 +1832,68 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         SpaceRumbleProcess();
 }
 
-void ChrisAnakinAUpdate(WORLDINFO_s *) {
-    ProcessSpaceLevel(WORLD->space_level);
+void DogFightARestart() {
+    memset(DogDebKey, 0xff, sizeof(DogDebKey));
 }
 
-void ChrisDogFightAUpdate(WORLDINFO_s *world) {
-    SpaceResetAudioPoint();
-    ProcessCurrentSpeed(world, DogFightSpeedList);
-    ProcessSpaceLevel(world->space_level);
-    if (AreaGlobals.values.field_0x00 == 0 && *reinterpret_cast<u8 *>(LevFlag) == 0 && DOGFIGHT_ADATA != NULL &&
-        Game.area_save[DOGFIGHT_ADATA->index].area_complete == 0 && GamePlayTimer.time_elapsed >= 3.0f)
-        *reinterpret_cast<u8 *>(LevFlag) = 1;
-}
-
-anakin_door_setup_s DoorSetupList[15] = {
-    {"door1", "door1r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door2", "door2r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door3", "door3r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door4", "door4r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door5", "door5r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door6", "door6r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door7", "door7r", 15.0f, 1.0f, 0, {}, {1.0f, 1.0f, 0.0f}, -0.5f, 0.0f},
-    {"door8", "door8r", 15.0f, 1.0f, 0, {}, {0.0f, -1.0f, 0.0f}, -0.5f, 0.0f},
-    {"door9", "door9r", 15.0f, 1.0f, 0, {}, {0.0f, 1.0f, 0.0f}, -0.5f, 0.0f},
-    {"door10", "door10r", 15.0f, 1.0f, 0, {}, {0.0f, -1.0f, 0.0f}, -0.5f, 0.0f},
-    {"door11", "door11r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door12", "door12r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door15", "door15r", 15.0f, 1.0f, 0, {}, {1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    {"door16", "door16r", 15.0f, 1.0f, 0, {}, {-1.0f, 0.0f, 0.0f}, -0.5f, 0.0f},
-    // The retail table stores an empty string here, not a null name.
-    {"", NULL, 0.0f, 0.0f, 0, {}, {0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
-};
-
-void DrawLine_Now(_vuv_s *, _vuv_s *, i32, i32);
-void CalcSplinePoint(flightspline_s *spline, _vuv_s *position, f32 along);
-
-#if defined(__i386__)
-#define CHRIS_REGPARM1 __attribute__((regparm(1)))
-#else
-#define CHRIS_REGPARM1
-#endif
-// Debug draw of a flight spline: the sampled curve, its roll axis at every
-// sample and the roll axis at every control point.  Retail only keeps the
-// clone with the four colours propagated (centre line, two axis halves and
-// the control-point marker), and nothing calls it.
-static __used__ __attribute__((noinline, noclone)) CHRIS_REGPARM1 void FlightSpline_Draw(flightspline_s *spline)
-    __asm__("_ZL17FlightSpline_DrawP14flightspline_siiii.constprop.39");
-static void FlightSpline_Draw(flightspline_s *spline) {
-    _vuv_s points[512];
-    _vuv_s direction;
-    _vuv_s axis;
-    _vuv_s plus;
-    _vuv_s minus;
-    const i32 count = spline->point_count * 8;
-    const i32 last = count - 1;
-    const f32 step = 1.0f / last;
-    points[0] = spline->points[0];
-    f32 along = step;
-    for (i32 i = 1; i < last; ++i) {
-        CalcSplinePoint(spline, &points[i], along);
-        along += step;
+void ProcessCurrentSpeed(WORLDINFO_s *world, speedup_s *speedup) {
+    spacelevel_s *space = world->space_level;
+    while (speedup->distance != 0.0f) {
+        if (speedup->distance > space->door_elapsed && speedup->distance <= space->door_countdown) {
+            space->value_one_a = speedup->speed;
+        }
+        ++speedup;
     }
-    points[last] = spline->points[spline->point_count - 1];
-    for (i32 i = 1; i < count; ++i) {
-        DrawLine_Now(&points[i], &points[i - 1], 0xffffff, 1);
-        direction.x = points[i].x - points[i - 1].x;
-        direction.y = points[i].y - points[i - 1].y;
-        direction.z = points[i].z - points[i - 1].z;
-        const i16 yaw = static_cast<i16>(NuAtan2D(direction.x, direction.z));
-        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&direction), -yaw);
-        const i16 pitch = static_cast<i16>(NuAtan2D(axis.y, axis.z));
-        axis.x = 1.0f;
-        axis.y = 0.0f;
-        axis.z = 0.0f;
-        axis.w = 0.0f;
-        NuVecRotateZ(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis),
-                     static_cast<i16>(static_cast<i32>(points[i].w)));
-        NuVecRotateX(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), -pitch);
-        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), yaw);
-        plus.x = points[i].x + axis.x;
-        plus.y = points[i].y + axis.y;
-        plus.z = points[i].z + axis.z;
-        minus.x = points[i].x - axis.x;
-        minus.y = points[i].y - axis.y;
-        minus.z = points[i].z - axis.z;
-        DrawLine_Now(&plus, &points[i], 0x800080, 1);
-        DrawLine_Now(&points[i], &minus, 0x808080, 1);
-    }
-    for (i32 i = 0; i < spline->point_count; ++i) {
-        i32 from = static_cast<i32>(static_cast<f32>(i * count) / static_cast<f32>(spline->point_count - 1) - 0.5f);
-        i32 to;
-        if (from < 0) {
-            from = 0;
-            to = 1;
-        } else {
-            to = from + 1;
-            if (from >= last) {
-                from = count - 2;
-                to = last;
-            }
-        }
-        direction.x = points[to].x - points[from].x;
-        direction.y = points[to].y - points[from].y;
-        direction.z = points[to].z - points[from].z;
-        const i16 yaw = static_cast<i16>(NuAtan2D(direction.x, direction.z));
-        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&direction), -yaw);
-        const i16 pitch = static_cast<i16>(NuAtan2D(axis.y, axis.z));
-        axis.x = 2.0f;
-        axis.y = 0.0f;
-        axis.z = 0.0f;
-        axis.w = 0.0f;
-        NuVecRotateZ(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis),
-                     static_cast<i16>(static_cast<i32>(spline->points[i].w)));
-        NuVecRotateX(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), -pitch);
-        NuVecRotateY(reinterpret_cast<NUVEC *>(&axis), reinterpret_cast<NUVEC *>(&axis), yaw);
-        plus.x = spline->points[i].x + axis.x;
-        plus.y = spline->points[i].y + axis.y;
-        plus.z = spline->points[i].z + axis.z;
-        minus.x = spline->points[i].x - axis.x;
-        minus.y = spline->points[i].y - axis.y;
-        minus.z = spline->points[i].z - axis.z;
-        DrawLine_Now(&plus, &minus, 0xff0000, 1);
-    }
-}
 
-static void DrawStarFighter(starfighter_s *starfighter) {
-    NUMTX_ALIGNED16 matrices[2];
-    NUMTX &scaled_special_matrix = matrices[0];
-    NUMTX &scaled_model_matrix = matrices[1];
-    if (starfighter->model_id >= 0) {
-        const f32 scale = starfighter->scale;
-        const i16 draw_flags = starfighter->draw_flags;
-        const i16 model_index = apicharsys->playermodelids[starfighter->model_id];
-        if (model_index == -1)
-            return;
-        NUMTX *matrix = &starfighter->matrix;
-        if (scale != 1.0f) {
-            scaled_model_matrix = starfighter->matrix;
-            NuMtxPreScaleUVU0(&scaled_model_matrix, scale);
-            matrix = &scaled_model_matrix;
-        }
-        GameDrawCharacterModel(&apicharsys->models[model_index], NULL, matrix, NULL, NULL, NULL, NULL, draw_flags);
-    } else {
-        NUMTX *matrix = &starfighter->matrix;
-        if (starfighter->model_id == -299 || starfighter->model_id == -297 || starfighter->model_id == -298 ||
-            starfighter->model_id == -307) {
-            scaled_special_matrix = starfighter->matrix;
-            scaled_special_matrix.m00 *= 1.15f;
-            scaled_special_matrix.m01 *= 1.15f;
-            scaled_special_matrix.m02 *= 1.15f;
-            scaled_special_matrix.m10 *= 1.15f;
-            scaled_special_matrix.m11 *= 1.15f;
-            scaled_special_matrix.m12 *= 1.15f;
-            scaled_special_matrix.m20 *= 1.15f;
-            scaled_special_matrix.m21 *= 1.15f;
-            scaled_special_matrix.m22 *= 1.15f;
-            matrix = &scaled_special_matrix;
-        }
-        NuSpecialDrawAt(&WORLD->lev_objs[-starfighter->model_id].special, matrix);
-        if (starfighter->model_id == -307)
-            AddVariableShotDebrisEffect(WORLD->debris_sys->entries[49].effect,
-                                        reinterpret_cast<NUVEC *>(&starfighter->matrix.m30), 1, 0, 0);
-    }
-}
-
-static inline void QuickBolt_Draw(quickboltinfo *info) {
-    static const i32 BoltObjA[4] = {303, 305, 301, 301};
-    static const i32 BoltObjB[4] = {304, 306, 302, 302};
-    if (info == NULL)
-        return;
-    if (info->count != 0) {
-        quickbolt_s *bolt = info->bolts;
-        quickbolt_s *end = bolt + info->count;
-        for (; bolt < end; ++bolt) {
-            if (bolt->duration != 0.0f) {
-                Draw3DObjectMtx(WORLD, BoltObjA[bolt->type], &bolt->matrix);
-                Draw3DObjectMtx(WORLD, BoltObjB[bolt->type], &bolt->matrix);
-            }
-        }
-    }
-}
-
-static inline void DrawSpaceGroup(spacelevel_flight_group_s *group) {
-    if (group->active != 0) {
-        if (group->fighters[0].active != 0)
-            DrawStarFighter(&group->fighters[0]);
-        if (group->fighters[1].active != 0)
-            DrawStarFighter(&group->fighters[1]);
-        if (group->fighters[2].active != 0)
-            DrawStarFighter(&group->fighters[2]);
-        if (group->fighters[3].active != 0)
-            DrawStarFighter(&group->fighters[3]);
-        if (group->fighters[4].active != 0)
-            DrawStarFighter(&group->fighters[4]);
-        if (group->draw_target != 0)
-            DrawCross_Now(reinterpret_cast<_vuv_s *>(&group->target), 3.0f, 0xffffff, 1);
-    }
-}
-
-static inline void DrawSpaceJet(i32 player_index, i32 key_index, bool left) {
-    GameObject_s *player = Player[player_index];
-    if (player != NULL) {
-        if (player->id == id_JEDISTARFIGHTERYELLOWEP3 || player->id == id_JEDISTARFIGHTERREDEP3) {
-            if (DogDebKey[key_index] == -1) {
-                AddDebrisEffect(&DogDebKey[key_index], WORLD->debris_sys->entries[47].effect, 0.0f, 0.0f, 0.0f);
-            } else {
-                NUMTX_ALIGNED16 matrix = {
-                    player->apiobj.field_0xb8.m00,  player->apiobj.field_0xb8.m01,  player->apiobj.field_0xb8.m02,
-                    player->apiobj.field_0xb8.m03,  player->apiobj.field_0xb8.m20,  player->apiobj.field_0xb8.m21,
-                    player->apiobj.field_0xb8.m22,  player->apiobj.field_0xb8.m23,  -player->apiobj.field_0xb8.m10,
-                    -player->apiobj.field_0xb8.m11, -player->apiobj.field_0xb8.m12, -player->apiobj.field_0xb8.m13,
-                    player->apiobj.field_0xb8.m30,  player->apiobj.field_0xb8.m31,  player->apiobj.field_0xb8.m32,
-                    player->apiobj.field_0xb8.m33};
-                if (left) {
-                    matrix.m30 += (matrix.m20 * Jetpos.y - matrix.m00 * Jetpos.x) + matrix.m10 * Jetpos.z;
-                    matrix.m31 += (matrix.m21 * Jetpos.y - matrix.m01 * Jetpos.x) + matrix.m11 * Jetpos.z;
-                    matrix.m32 += (matrix.m22 * Jetpos.y - matrix.m02 * Jetpos.x) + matrix.m12 * Jetpos.z;
-                } else {
-                    matrix.m31 += matrix.m01 * Jetpos.x + matrix.m21 * Jetpos.y + matrix.m11 * Jetpos.z;
-                    matrix.m30 += matrix.m00 * Jetpos.x + matrix.m20 * Jetpos.y + matrix.m10 * Jetpos.z;
-                    matrix.m32 += matrix.m02 * Jetpos.x + matrix.m22 * Jetpos.y + matrix.m12 * Jetpos.z;
-                }
-                DebrisPosOrientationMtx(DogDebKey[key_index], &matrix);
-            }
-        } else if (DogDebKey[key_index] != -1) {
-            DebFreeInstantly(&DogDebKey[key_index]);
-        }
-    }
-}
-
-static void DrawSpaceLevel(spacelevel_s *space) {
-    if (space->crosses[0].enabled != 0) {
-        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->crosses[0].world_position),
-                          reinterpret_cast<NUVEC *>(&space->crosses[0].local_position), &GameCam->render_mtx);
-        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[0].world_position), space->crosses[0].scale,
-                      space->crosses[0].colour, 1);
-    }
-    if (space->crosses[1].enabled != 0) {
-        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->crosses[1].world_position),
-                          reinterpret_cast<NUVEC *>(&space->crosses[1].local_position), &GameCam->render_mtx);
-        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[1].world_position), space->crosses[1].scale,
-                      space->crosses[1].colour, 1);
-    }
-    DrawSpaceGroup(&space->flight_groups[0]);
-    DrawSpaceGroup(&space->flight_groups[1]);
-    DrawSpaceGroup(&space->flight_groups[2]);
-    DrawSpaceGroup(&space->flight_groups[3]);
-    DrawSpaceGroup(&space->flight_groups[4]);
-    DrawSpaceGroup(&space->flight_groups[5]);
-    DrawSpaceGroup(&space->flight_groups[6]);
-    DrawSpaceGroup(&space->flight_groups[7]);
-    for (i32 i = 0; i != 96; ++i) {
-        if (space->queued_fighters[i].active != 0)
-            DrawStarFighter(&space->queued_fighters[i]);
-    }
-    QuickBolt_Draw(&space->quick_bolts);
-
-    DrawSpaceJet(0, 0, false);
-    DrawSpaceJet(0, 1, true);
-    DrawSpaceJet(1, 2, false);
-    DrawSpaceJet(1, 3, true);
-}
-
-void ChrisAnakinADraw() {
-    DrawSpaceLevel(WORLD->space_level);
-}
-
-void ChrisAnakinDDraw() {
-    DrawSpaceLevel(WORLD->space_level);
-}
-
-void ChrisDogFightADraw(WORLDINFO_s *world) {
-    DrawSpaceLevel(world->space_level);
-}
-
-static void ResetSpaceLevel(WORLDINFO_s *world, spacelevel_s *space) {
-    i32 door_index;
-    space->unknown_62eb8 = 0;
-    space->player_origin = {-1456.9f, 326.5f, -394.0f};
-    space->player_origin_padding = 0.0f;
-    space->direction = {1447.4901f, -492.25f, -704.0f};
-    space->camera_origin = {-9.409912f, -165.75f, -1098.0f};
-
-    space->direction_length = NuVecMag(&space->direction);
-    space->inverse_direction_length = 1.0f / space->direction_length;
-
-#define DOOR_REACHED(player_index, door_index)                                                                         \
-    (Player[player_index]->field_0x68c > DogFightDoors.doors[door_index].distance)
-    if (__builtin_expect(Player[0] != NULL, 0)) {
-        if (DOOR_REACHED(0, 6)) {
-            goto door_6;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 6)) {
-            goto door_6;
-        }
-        if (DOOR_REACHED(0, 5)) {
-            goto door_5;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 5)) {
-            goto door_5;
-        }
-        if (DOOR_REACHED(0, 4)) {
-            goto door_4;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 4)) {
-            goto door_4;
-        }
-        if (DOOR_REACHED(0, 3)) {
-            goto door_3;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 3)) {
-            goto door_3;
-        }
-        if (DOOR_REACHED(0, 2)) {
-            goto door_2;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 2)) {
-            goto door_2;
-        }
-        if (DOOR_REACHED(0, 1)) {
-            goto door_1;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 1)) {
-            goto door_1;
-        }
-        if (DOOR_REACHED(0, 0)) {
-            goto door_0;
-        }
-        if (Player[1] != NULL && DOOR_REACHED(1, 0)) {
-            goto door_0;
-        }
-    } else if (Player[1] != NULL) {
-        if (DOOR_REACHED(1, 6)) {
-            goto door_6;
-        }
-        if (DOOR_REACHED(1, 5)) {
-            goto door_5;
-        }
-        if (DOOR_REACHED(1, 4)) {
-            goto door_4;
-        }
-        if (DOOR_REACHED(1, 3)) {
-            goto door_3;
-        }
-        if (DOOR_REACHED(1, 2)) {
-            goto door_2;
-        }
-        if (DOOR_REACHED(1, 1)) {
-            goto door_1;
-        }
-        if (DOOR_REACHED(1, 0)) {
-            goto door_0;
+    f32 target_speed = space->value_one_a;
+    if (static_cast<u16>(GameCam->sock_position.next_segment - 120) <= 30) {
+        if (static_cast<i8>(LevBlowUp[0]->state_flags) < 0) {
+            target_speed *= 0.25f;
+        } else if (static_cast<i8>(LevBlowUp[1]->state_flags) < 0) {
+            target_speed *= 0.25f;
+        } else if (static_cast<i8>(LevBlowUp[2]->state_flags) < 0) {
+            target_speed *= 0.25f;
+        } else if (static_cast<i8>(LevBlowUp[3]->state_flags) < 0) {
+            target_speed *= 0.25f;
+        } else if (static_cast<i8>(LevBlowUp[4]->state_flags) < 0) {
+            target_speed *= 0.25f;
         }
     }
 
-#undef DOOR_REACHED
-
-    space->door_countdown = 0.0f;
-    space->door_time = 0.0f;
-    space->door_elapsed = 0.0f;
-
-reset_space:
-
-#define RESET_STARFIGHTER(fighter)                                                                                     \
-    fighter.active = 0;                                                                                                \
-    fighter.parent = NULL;                                                                                             \
-    fighter.spline = NULL
-#define RESET_SPACE_GROUP(index)                                                                                       \
-    do {                                                                                                               \
-        RESET_STARFIGHTER(space->flight_groups[index].fighters[0]);                                                    \
-        RESET_STARFIGHTER(space->flight_groups[index].fighters[1]);                                                    \
-        RESET_STARFIGHTER(space->flight_groups[index].fighters[2]);                                                    \
-        RESET_STARFIGHTER(space->flight_groups[index].fighters[3]);                                                    \
-        RESET_STARFIGHTER(space->flight_groups[index].fighters[4]);                                                    \
-        space->flight_groups[index].reset_colour = 0xff00;                                                             \
-        space->flight_groups[index].active = 0;                                                                        \
-        space->flight_groups[index].draw_target = 0;                                                                   \
-    } while (0)
-    RESET_SPACE_GROUP(0);
-    RESET_SPACE_GROUP(1);
-    RESET_SPACE_GROUP(2);
-    RESET_SPACE_GROUP(3);
-    RESET_SPACE_GROUP(4);
-    RESET_SPACE_GROUP(5);
-    RESET_SPACE_GROUP(6);
-    RESET_SPACE_GROUP(7);
-#undef RESET_SPACE_GROUP
-#undef RESET_STARFIGHTER
-
-    STARFIGHTERDRAWSCALE = {4.0f, 4.0f, 4.0f, 1.0f};
-    space->draw_scale = {-141.0f, -121.0f, -1034.0f, 1.0f};
-    if (world->current_level == DOGFIGHTA_LDATA) {
-        space->unknown_3370 = NULL;
-    } else {
-        space->unknown_3370 = &Actions_AnakinA;
+    if (target_speed > space->value_one_b) {
+        space->value_one_b += FRAMETIME * 0.25f;
+        if (space->value_one_b > target_speed) {
+            space->value_one_b = target_speed;
+        }
+    } else if (space->value_one_b > target_speed) {
+        space->value_one_b -= FRAMETIME * 0.25f;
+        if (space->value_one_b < target_speed) {
+            space->value_one_b = target_speed;
+        }
     }
-    if (space->reset_buffer_count != 0) {
-        memset(space->reset_buffer, 0, space->reset_buffer_count * 96);
-        space->reset_buffer_used = 0;
+    f32 current_speed = space->value_one_b;
+    f32 vehicle_speed = current_speed * 20.0f;
+    world->sock_sys->sock[0].current_speed = vehicle_speed;
+
+    if (world->current_level == DOGFIGHTA_LDATA && vehicle_speed != 0.0f) {
+        space->normalized_speed = vehicle_speed / 11.0f;
     }
-    space->current_action = NULL;
-    space->unknown_337c = 4;
-    space->unknown_338c = space;
-    space->unknown_3378 = 0;
-    space->value_one_b = 1.0f;
-    space->value_one_a = 1.0f;
-
-    space->player_colour = 0xffffff;
-    space->player_matrix_flags = 0;
-    space->player_matrix.m01 = 55.0f;
-    space->player_matrix.m00 = 80.0f;
-    space->player_matrix.m03 = 1.0f;
-    space->player_matrix.m02 = 200.0f;
-    space->player_matrix.m31 = 0.0f;
-    space->player_matrix.m30 = 0.0f;
-    space->player_matrix.m33 = 1.0f;
-    space->player_matrix.m32 = 0.0f;
-    space->player_matrix.m11 = 0.0f;
-    space->player_matrix.m10 = 0.0f;
-    space->player_matrix.m20 = 0.0f;
-    space->player_matrix.m13 = 1.0f;
-    space->player_matrix.m22 = 0.0f;
-    space->player_matrix.m21 = 0.0f;
-    space->player_matrix.m12 = 200.0f;
-    space->player_matrix.m23 = 1.0f;
-    space->player_matrix_state = 0;
-
-    space->camera_matrix.m00 = 5.0f;
-    space->camera_matrix.m01 = 80.0f;
-    space->camera_matrix.m02 = 55.0f;
-    space->camera_matrix.m03 = 200.0f;
-    space->camera_matrix.m30 = 0.0f;
-    space->camera_matrix.m31 = 0.0f;
-    space->camera_matrix.m33 = 1.0f;
-    space->camera_matrix.m10 = 0.0f;
-    space->camera_matrix.m32 = 0.0f;
-    space->camera_matrix.m11 = 0.0f;
-    space->camera_matrix.m13 = 1.0f;
-    space->camera_matrix.m20 = 0.0f;
-    space->camera_matrix.m21 = 0.0f;
-    space->camera_matrix.m23 = 1.0f;
-    space->camera_matrix.m12 = 200.0f;
-    space->camera_matrix.m22 = 0.0f;
-    space->camera_value = 5.0f;
-    space->camera_matrix_w = 1.0f;
-    space->camera_colour = 0xffffff;
-    space->camera_matrix_flags = 0;
-    space->camera_matrix_state = 0;
-
-    for (i32 i = 0; i < 96; ++i) {
-        space->queued_fighters[i].active = 0;
-        space->queued_fighters[i].parent = NULL;
-        space->queued_fighters[i].spline = NULL;
-    }
-    for (i32 i = 0; i < 256; ++i) {
-        space->large_records[i].saved_value = space->large_records[i].reset_value;
-        space->large_records[i].reset_state = space->large_records[i].saved_state;
-    }
-    SpaceRumbleTimer = NuRandFloat() * 10.0f + 3.0f;
-    return;
-
-door_6:
-    door_index = 6;
-    goto set_door_timer;
-door_5:
-    door_index = 5;
-    goto set_door_timer;
-door_4:
-    door_index = 4;
-    goto set_door_timer;
-door_3:
-    door_index = 3;
-    goto set_door_timer;
-door_2:
-    door_index = 2;
-    goto set_door_timer;
-door_1:
-    door_index = 1;
-    goto set_door_timer;
-door_0:
-    door_index = 0;
-
-set_door_timer:
-    space->door_time = DogFightDoors.doors[door_index].timer;
-    space->door_countdown = space->door_time * 94.977417f / 59.449684f;
-    space->door_elapsed = (space->door_countdown - FRAMETIME) * 94.977417f / 59.449684f;
-    goto reset_space;
-}
-
-void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
-    // The original keeps both deltas and the new target at 16-byte aligned stack addresses.
-    const f32 position_y = position->y;
-    const f32 target_y = target->y;
-    NUVEC position_delta
-        __attribute__((aligned(16))) = {position->x - RadialMoveCentre.x, 0.0f, position->z - RadialMoveCentre.z};
-    const f32 position_radius = NuVecMag(&position_delta);
-    NUVEC origin_delta __attribute__((aligned(16))) = {0.0f - RadialMoveCentre.x, 0.0f, 0.0f - RadialMoveCentre.z};
-    const f32 origin_radius = NuVecMag(&origin_delta);
-    RadialPlayerRadius[0] = origin_radius;
-    NUVEC new_target __attribute__((aligned(16)));
-
-    f32 base_radius;
-    if (origin_radius < 120.0f) {
-        base_radius = 120.0f;
-    } else {
-        base_radius = MIN(150.0f, origin_radius);
-    }
-    const f32 extra_radius = origin_radius - base_radius;
-    f32 target_radius = base_radius + extra_radius;
-    if (position_radius != 0.0f) {
-        const f32 scale = target_radius / position_radius;
-        position_delta.z *= scale;
-        position_delta.x *= scale;
-    }
-    position->x = RadialMoveCentre.x + position_delta.x;
-    position->y = position_y;
-    position->z = RadialMoveCentre.z + position_delta.z;
-
-    if (base_radius <= origin_radius) {
-        target_radius = base_radius + 0.6f * extra_radius;
-    }
-    if (origin_radius != 0.0f) {
-        const f32 scale = target_radius / origin_radius;
-        origin_delta.x *= scale;
-        origin_delta.z *= scale;
-    }
-    new_target.x = RadialMoveCentre.x + origin_delta.x;
-    new_target.y = target_y;
-    new_target.z = RadialMoveCentre.z + origin_delta.z;
-    memcpy(target, &new_target, sizeof(new_target));
 }
 
 void ChrisAnakinAInit(WORLDINFO_s *world) {
     ResetSpaceLevel(world, world->space_level);
 }
 
-void ChrisAnakinBDraw() {
+void ChrisAnakinAUpdate(WORLDINFO_s *) {
+    ProcessSpaceLevel(WORLD->space_level);
+}
+
+void ChrisAnakinADraw() {
+    DrawSpaceLevel(WORLD->space_level);
+}
+
+void ChrisAnakinAReset(WORLDINFO_s *world) {
+    ResetSpaceLevel(world, world->space_level);
 }
 
 void ChrisAnakinBInit() {
@@ -1399,17 +1910,41 @@ void ChrisAnakinBInit() {
     }
 }
 
-void ChrisAnakinCInit() {
-    NuSpecialList(WORLD->current_gscn);
-    ChrisAnakinCReset();
+void ChrisAnakinBUpdate() {
+}
+
+void ChrisAnakinBDraw() {
+}
+
+void ChrisAnakinBReset() {
+}
+
+void ChrisAnakinDDraw() {
+    DrawSpaceLevel(WORLD->space_level);
+}
+
+void ChrisAnakinDReset(WORLDINFO_s *world) {
+    ResetSpaceLevel(world, world->space_level);
 }
 
 void ChrisAnakinDInit(WORLDINFO_s *world) {
     ResetSpaceLevel(world, world->space_level);
 }
 
-void DogFightARestart() {
-    memset(DogDebKey, 0xff, sizeof(DogDebKey));
+void ChrisAnakinDUpdate(WORLDINFO_s *) {
+}
+
+void ChrisDogFightAUpdate(WORLDINFO_s *world) {
+    SpaceResetAudioPoint();
+    ProcessCurrentSpeed(world, DogFightSpeedList);
+    ProcessSpaceLevel(world->space_level);
+    if (AreaGlobals.values.field_0x00 == 0 && *reinterpret_cast<u8 *>(LevFlag) == 0 && DOGFIGHT_ADATA != NULL &&
+        Game.area_save[DOGFIGHT_ADATA->index].area_complete == 0 && GamePlayTimer.time_elapsed >= 3.0f)
+        *reinterpret_cast<u8 *>(LevFlag) = 1;
+}
+
+void ChrisDogFightADraw(WORLDINFO_s *world) {
+    DrawSpaceLevel(world->space_level);
 }
 
 void ChrisDogFightAReset(WORLDINFO_s *world) {
@@ -1426,93 +1961,6 @@ void ChrisDogFightAPanel(WORLDINFO_s *) {
 }
 
 void ChrisAnakinAPanel(WORLDINFO_s *) {
-}
-
-void ChrisAnakinAReset(WORLDINFO_s *world) {
-    ResetSpaceLevel(world, world->space_level);
-}
-
-void ChrisAnakinBReset() {
-}
-
-void ChrisAnakinCReset() {
-    anakin_door_s *door = AnakinC;
-    i32 count = 0;
-    for (anakin_door_setup_s *setup = DoorSetupList; count < 12; ++setup) {
-        if (setup->name == NULL) {
-            for (; count < 12; ++count, ++door)
-                door->active = 0;
-            return;
-        }
-        if (!NuSpecialFind(WORLD->current_gscn, &door->special, setup->name, 1) || !NuSpecialExistsFn(&door->special))
-            continue;
-
-        if (NuSpecialFind(WORLD->current_gscn, &door->secondary_special, setup->secondary_name, 1))
-            door->has_secondary = static_cast<i16>(NuSpecialExistsFn(&door->secondary_special));
-
-        NuMtxSetIdentity(&door->original_matrix);
-        door->matrix = door->original_matrix = *NuSpecialGetMtx(&door->special);
-        if (door->has_secondary != 0) {
-            NuMtxSetIdentity(&door->original_secondary_matrix);
-            door->secondary_matrix = door->original_secondary_matrix = *NuSpecialGetMtx(&door->secondary_special);
-        }
-        door->platform_id = static_cast<i16>(FindPlatInst(NuSpecialGetInstanceix(&door->special)));
-        door->active = 1;
-        door->flags = static_cast<u8>(setup->flags);
-        door->direction = setup->direction;
-        door->offset = setup->initial_offset;
-        door->speed = setup->speed;
-        door->minimum_offset = setup->minimum_offset;
-        door->unknown_134 = setup->unknown_20;
-        ++door;
-        ++count;
-    }
-}
-
-void ChrisAnakinDReset(WORLDINFO_s *world) {
-    ResetSpaceLevel(world, world->space_level);
-}
-
-void ChrisAnakinBUpdate() {
-}
-
-void ChrisAnakinCUpdate() {
-    anakin_door_s *door = AnakinC;
-    anakin_door_s *end = door + 12;
-    for (; door != end; ++door) {
-        if (door->active == 0)
-            continue;
-
-        const f32 offset = door->offset - door->speed * FRAMETIME;
-        door->offset = offset;
-        if (offset <= door->minimum_offset)
-            door->offset = door->minimum_offset;
-
-        // The retail transform temporaries require a 16-byte-aligned stack.
-        NUVEC *direction = &door->direction;
-        NUVEC_ALIGNED16 translation;
-        translation.x = direction->x * door->offset;
-        translation.y = direction->y * door->offset;
-        translation.z = direction->z * door->offset;
-        NUVEC_ALIGNED16 position;
-        NuVecMtxTransform(&position, &translation, &door->original_matrix);
-        memcpy(&door->matrix.m30, &position, sizeof(position));
-        door->matrix.m33 = 1.0f;
-        NuSpecialSetDrawMtx(&door->special, &door->matrix);
-        if (door->has_secondary != 0) {
-            NuVecMtxTransform(&position, &translation, &door->original_secondary_matrix);
-            memcpy(&door->secondary_matrix.m30, &position, sizeof(position));
-            door->secondary_matrix.m33 = 1.0f;
-            NuSpecialSetDrawMtx(&door->secondary_special, &door->secondary_matrix);
-        }
-    }
-}
-
-void ChrisAnakinDUpdate(WORLDINFO_s *) {
-}
-
-void ChrisAfterBurnerCam(nuvec_s *, nuvec_s *camera) {
-    *camera = WORLD->space_level->camera_origin;
 }
 
 void ChrisAllocLevelStuff(WORLDINFO_s *world) {
@@ -1570,9 +2018,11 @@ void ChrisDogFightAInit(WORLDINFO_s *world) {
     last->target_scale *= 1.5f;
 }
 
-i32 DidBoltHitChrisJobby(WORLDINFO_s *, BOLT_s *) {
-    STUBBED();
-    return 0;
+void ChrisUnallocLevelStuff(WORLDINFO_s *world) {
+    world->level_specific_data = NULL;
+    if (AnakinC == NULL) {
+        AnakinC = NULL;
+    }
 }
 
 i32 ShipDropCoins(starfighter_s *fighter) {
@@ -1698,12 +2148,3 @@ i32 ChrisExtraBoltCollision(BOLT_s *bolt, nuvec_s *points) {
     return 0;
 }
 
-void ChrisGetSpaceShipMatrix(GameObject_s *object, numtx_s *matrix) {
-    *matrix = object->apiobj.field_0xb8;
-    NuMtxPreRotateY(matrix, 0x8000);
-}
-
-void ChrisGetTargetedSpaceShipMatrix(GameObject_s *object, numtx_s *matrix) {
-    *matrix = object->apiobj.field_0xb8;
-    NuMtxPreRotateY(matrix, 0x8000);
-}

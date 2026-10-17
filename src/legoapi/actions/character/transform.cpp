@@ -2,7 +2,6 @@
 #include "legoapi/gizmo/object/gizmoblowups.h"
 
 #include "nu2api/numath/nuquat.h"
-#include "decomp.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/motion.h"
@@ -10,46 +9,15 @@
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
-#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+#include "legoapi/characters/motion/move.h"
 
 struct AIROW_s;
-struct nuqthdr_s;
 struct nunativegscene_s;
-struct SHOPINPUT;
-
-extern "C" i16 id_MINISLAVE1;
-
-void TurnCodeCamSafe(GameObject_s *object, NUMTX *matrix);
-void ResetForceGlow(PLAYERPACKET_s *packet);
-
-void ApplyExtraRotation(GameObject_s *object, numtx_s *matrix) {
-    switch (object->character_context) {
-        case 42:
-            TurnCodeCamSafe(object, matrix);
-            break;
-        case 58: {
-            const f32 phase = 1.0f - object->context_animation_timer / object->airborne_action_duration;
-            const f32 wave = NuTrigTable[(static_cast<i32>(32768.0f * phase + 16384.0f) >> 1) & 0x7fff];
-            const i32 rotation = static_cast<i32>((1.0f - (wave + 1.0f) * 0.5f) * 65536.0f);
-            if (object->field_0x7a3 == 0) {
-                NuMtxPreRotateZ(matrix, rotation);
-            } else {
-                NuMtxPreRotateZ(matrix, -rotation);
-            }
-            break;
-        }
-    }
-
-    if (object->id == id_MINISLAVE1) {
-        NuMtxPreRotateX(matrix, -16384);
-        NuMtxPreRotateY(matrix, 32768);
-    }
-}
 
 void Transform_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     ResetForceGlow(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
@@ -237,19 +205,3 @@ void GizmoBlowup_TransformDraw_Game(GIZMOBLOWUP_s *blowup) {
     Transform_DrawTarget(&blowup->mid_position, 1.4f * blowup->target_scale, 0.4f);
 }
 
-void InterpolateRotationMatrix(numtx_s *result, numtx_s *first, numtx_s *second, float fraction) {
-    SeekVec(NUMTX_GET_ROW_VEC(result, 0), NUMTX_GET_ROW_VEC(first, 0), NUMTX_GET_ROW_VEC(second, 0), fraction);
-    SeekVec(NUMTX_GET_ROW_VEC(result, 1), NUMTX_GET_ROW_VEC(first, 1), NUMTX_GET_ROW_VEC(second, 1), fraction);
-    SeekVec(NUMTX_GET_ROW_VEC(result, 2), NUMTX_GET_ROW_VEC(first, 2), NUMTX_GET_ROW_VEC(second, 2), fraction);
-    NuVecNorm(NUMTX_GET_ROW_VEC(result, 0), NUMTX_GET_ROW_VEC(result, 0));
-    NuVecNorm(NUMTX_GET_ROW_VEC(result, 1), NUMTX_GET_ROW_VEC(result, 1));
-    NuVecNorm(NUMTX_GET_ROW_VEC(result, 2), NUMTX_GET_ROW_VEC(result, 2));
-}
-
-void QuatInterpolateRotationMatrix(NUMTX *result, NUMTX *first, NUMTX *second, f32 fraction) {
-    NUQUAT a, b, interpolated;
-    NuMtxToQuat(second, &b);
-    NuMtxToQuat(first, &a);
-    NuQuatSlerp(&interpolated, &a, &b, fraction);
-    NuQuatToMtx(&interpolated, result);
-}

@@ -3,8 +3,6 @@
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/actions/combat/hits.h"
-#include "legoapi/characters/motion/gameanim.h"
-#include "legoapi/core/input/gamepads.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/characters/motion.h"
 #include "nu2api/numath/nutrig.h"
@@ -12,23 +10,9 @@
 #include "legoapi/gizmo/base/gizactions.h"
 #include <string.h>
 
-struct SPECIALMOVE_s {
-    i16 attacker_animation;
-    i16 attacker_id;
-    i8 attacker_action_type;
-    i8 victim_action_type;
-    i16 victim_id;
-    i16 victim_animation;
-    u16 flags;
-    f32 distance;
-};
-DECOMP_ASSERT(sizeof(SPECIALMOVE_s) == 0x10, "SPECIALMOVE size");
-DECOMP_ASSERT(offsetof(SPECIALMOVE_s, victim_animation) == 8, "SPECIALMOVE victim animation offset");
-DECOMP_ASSERT(offsetof(SPECIALMOVE_s, flags) == 10, "SPECIALMOVE flags offset");
+#include "legoapi/actions/character/specialmoves_types.h"
 static SPECIALMOVE_s *SpecialMove;
 static i32 SpecialMoveCount;
-
-i32 StartBackFlip(GameObject_s *object);
 extern i32 objhitobj_throwkillpartsup;
 
 i32 SpecialMove_Check(GameObject_s *attacker, GameObject_s *victim) {
@@ -235,30 +219,3 @@ void SpecialMove_Attacker_SetTargetMom(GameObject_s *object) {
     object->apiobj.velocity.x = object->target_velocity.x;
 }
 
-void BackFlipCode(GameObject_s *object) {
-    if (LEGOCONTEXT_BACKFLIP == -1 || object->character_context != LEGOCONTEXT_BACKFLIP) {
-        return;
-    }
-
-    if ((object->field_0xe22 & 0x10) != 0 && (object->pad_gamepad->buttons_held & GAMEPAD_JUMP) == 0) {
-        object->field_0xe22 &= static_cast<u8>(~0x10u);
-    }
-
-    if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
-        CurrentAnim(&object->apiobj.anim_packet) != object->context_animation) {
-        return;
-    }
-
-    object->context_animation_timer -= FRAMETIME;
-    if (object->context_animation_timer > 0.0f) {
-        return;
-    }
-
-    object->character_context = -1;
-    if ((object->pad_gamepad->buttons_held & GAMEPAD_JUMP) != 0 && (object->field_0xe22 & 0x10) == 0) {
-        StartBackFlip(object);
-    } else {
-        object->apiobj.velocity.x = 0.0f;
-        object->apiobj.velocity.z = 0.0f;
-    }
-}
