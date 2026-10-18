@@ -32,42 +32,6 @@ struct nuvec_s;
 struct VuMtx;
 struct VuVec;
 
-// A voice's membership in a listener's circular voice ring.  The voice embeds
-// one link for its nearest real listener and one for its focus listener; the
-// links detach themselves when the voice is destroyed.
-struct NuSoundVoiceListenerLink {
-    NuSoundListener *listener;
-    NuSoundVoiceListenerLink *previous;
-    NuSoundVoiceListenerLink *next;
-
-    ~NuSoundVoiceListenerLink() {
-        Detach();
-    }
-
-    void Detach() {
-        NuSoundListener *listener = this->listener;
-        if (listener == NULL) {
-            return;
-        }
-
-        NuSoundVoiceListenerLink *previous = this->previous;
-        if (previous == this) {
-            listener->field_0x8 = NULL;
-        } else {
-            NuSoundVoiceListenerLink *next = this->next;
-            previous->next = next;
-            next->previous = previous;
-            if (listener->field_0x8 == this) {
-                listener->field_0x8 = previous;
-            }
-        }
-
-        this->listener = NULL;
-        this->previous = NULL;
-        this->next = NULL;
-    }
-};
-
 // The voice doubles as the NuSoundBufferCallback the sample hands filled
 // buffers to (the original dispatched through the callback vtable slot +8,
 // which is NuVoiceAndroid::SubmitBuffer).
@@ -297,12 +261,9 @@ class NuVoiceAndroid : public NuSoundVoice {
 
     NuSoundMutex mutex; // +0x160
 
-    u32 field7_0x164;  // playback block position (low)
-    u32 field8_0x168;  // playback block position (high)
-    u32 field9_0x16c;  // wrap counter (low)
-    u32 field10_0x170; // wrap counter (high)
-    i32 field11_0x174; // playback position in samples (low)
-    i32 field12_0x178; // playback position in samples (high)
+    u64 block_position;   // +0x164 position within the streaming ring
+    u64 block_wraps;      // +0x16c times the ring position has wrapped
+    u64 playback_samples; // +0x174 playback position in samples
 
     i16 last_volume_level; // +0x17c centibels cache (-32768 = mute)
     union {                // +0x17e

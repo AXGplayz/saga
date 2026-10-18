@@ -85,23 +85,13 @@ namespace {
             return NULL;
         }
 
-#define CHECK_BUILDIT_PLAYER(slot)                                                                                     \
-    do {                                                                                                               \
-        GameObject_s *player = Player[slot];                                                                           \
-        if (player != NULL && static_cast<i8>(player->apiobj.field_0x1f8) < 0 &&                                       \
-            player->build_context == LEGOCONTEXT_BUILDIT && player->field_0x788 == buildit) {                          \
-            return player;                                                                                             \
-        }                                                                                                              \
-    } while (0)
-        CHECK_BUILDIT_PLAYER(0);
-        CHECK_BUILDIT_PLAYER(1);
-        CHECK_BUILDIT_PLAYER(2);
-        CHECK_BUILDIT_PLAYER(3);
-        CHECK_BUILDIT_PLAYER(4);
-        CHECK_BUILDIT_PLAYER(5);
-        CHECK_BUILDIT_PLAYER(6);
-        CHECK_BUILDIT_PLAYER(7);
-#undef CHECK_BUILDIT_PLAYER
+        for (i32 i = 0; i < 8; i++) {
+            GameObject_s *player = Player[i];
+            if (player != NULL && static_cast<i8>(player->apiobj.field_0x1f8) < 0 &&
+                player->build_context == LEGOCONTEXT_BUILDIT && player->field_0x788 == buildit) {
+                return player;
+            }
+        }
         return NULL;
     }
 
@@ -692,8 +682,10 @@ void GizBuildItPushAwayFromEnd(GameObject_s *player) {
 }
 
 f32 GizBuildItMul(GameObject_s *player) {
-    if (player->apiobj.player_controlled && Player_HasFastBuild(player)) {
-        return 3.0f;
+    if (player->apiobj.player_controlled) {
+        if (Player_HasFastBuild(player)) {
+            return 3.0f;
+        }
     }
 
     GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(player->field_0x788);
@@ -845,7 +837,7 @@ static void GizBuildIts_LateUpdate(void *world_ptr, void *data, float) {
             for (i32 piece_index = 0; piece_index < buildit.anim_object_count; ++piece_index) {
                 GAMEANIMOBJ_s *piece = buildit.anim_objects[piece_index];
                 GIZBUILDITANIMDATA_s *piece_data = static_cast<GIZBUILDITANIMDATA_s *>(piece->object_data);
-                if (__builtin_expect(buildit.linked_buildit != NULL, 0)) {
+                if (buildit.linked_buildit != NULL) {
                     finish_position.x = piece_data->end_mtx.m30;
                     finish_position.y = piece_data->end_mtx.m31;
                     finish_position.z = piece_data->end_mtx.m32;
@@ -1086,8 +1078,12 @@ void GizBuildit_Reset(GIZBUILDIT_s *buildit, void *world_ptr) {
     buildit->field_0x83 &= static_cast<u8>(~GIZBUILDIT_RUNTIME_REWARD_RELEASED);
     buildit->availability_flags |= GIZBUILDIT_AVAILABILITY_ACTIVE | GIZBUILDIT_AVAILABILITY_VISIBLE;
 
-    buildit->start_position = buildit->file_position;
-    buildit->position = buildit->file_position;
+    buildit->start_position.x = buildit->file_position.x;
+    buildit->start_position.y = buildit->file_position.y;
+    buildit->start_position.z = buildit->file_position.z;
+    buildit->position.x = buildit->file_position.x;
+    buildit->position.y = buildit->file_position.y;
+    buildit->position.z = buildit->file_position.z;
     buildit->bounds_radius = NuTrigTable[0x3000];
 
     if (buildit->anim_set != NULL && buildit->anim_set->objects != NULL) {
@@ -1245,11 +1241,15 @@ static i32 GizBuildIts_Load(void *world_ptr, void *data) {
 
         if (version <= 3) {
             buildit->state_flags = static_cast<i16>(static_cast<i8>(EdFileReadChar()));
-            if (version > 1 && EdFileReadChar() != 0) {
-                buildit->state_flags |= GIZBUILDIT_STATE_AUTO_BUILD_STATIC_OBJECTS;
+            if (version > 1) {
+                if (EdFileReadChar() != 0) {
+                    buildit->state_flags |= GIZBUILDIT_STATE_AUTO_BUILD_STATIC_OBJECTS;
+                }
             }
-            if (version == 3 && EdFileReadChar() != 0) {
-                buildit->state_flags |= 0x80;
+            if (version == 3) {
+                if (EdFileReadChar() != 0) {
+                    buildit->state_flags |= 0x80;
+                }
             }
         } else {
             buildit->state_flags = static_cast<u16>(EdFileReadShort());
@@ -1524,7 +1524,7 @@ void BuildIt_MoveCode(GameObject_s *player) {
                 player->big_jump_data = NULL;
             }
         }
-        if (buildit == NULL || static_cast<i8>(player->apiobj.flags_low) >= 0)
+        if (buildit == NULL || !player->apiobj.player_controlled)
             return;
         if (player->apiobj.field_0x27d != 0 && (buildit->state_flags & 4) != 0) {
             GizBuildItPushAwayFromStart(player, buildit);
@@ -1542,12 +1542,12 @@ void BuildIt_MoveCode(GameObject_s *player) {
             player->field_0x788 = buildit;
             player->build_context = LEGOCONTEXT_BUILDIT;
             player->context_animation = LEGOACT_BUILD;
-            player->field_0xe21 &= ~0x40;
+            player->idle_phase_odd = 0;
             GizBuildIt_SetStepTime(buildit, player);
             GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
             Hint_SetComplete(LEGOHINT_BUILD);
         }
-        if (static_cast<i8>(player->apiobj.flags_low) < 0 && player->apiobj.field_0x27d != 0) {
+        if (player->apiobj.player_controlled && player->apiobj.field_0x27d != 0) {
             GizBuildItPushAwayFromEnd(player);
         }
         return;

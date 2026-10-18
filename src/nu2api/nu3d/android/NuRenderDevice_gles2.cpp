@@ -57,8 +57,8 @@ void BeginCriticalSectionGL(const char *file, i32 line) {
 void SAGA_HOST_WEAK NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
     if (--this->lock_count == 0) {
         const i32 context_index = gt_glContextIndex;
-        const bool context_requires_detach = !this->field54_0x54;
         const bool render_state_requires_detach = static_cast<u32>(this->field50_0x50 - 2) <= 1;
+        const bool context_requires_detach = !this->field54_0x54;
         const i32 application_status = NuCore::GetApplicationState()->GetStatus();
         if (render_state_requires_detach || context_requires_detach || context_index != 0 || application_status == 1) {
             eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -95,6 +95,16 @@ void NuRenderDevice::ResizeDevice(i32 w, i32 h, i32, bool, bool, bool, bool) {
     aspect_ratio = static_cast<f32>(width) / static_cast<f32>(height);
     g_renderDevice.EndCriticalSection("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp",
                                       0x452);
+}
+
+SAGA_HOST_HOOK void NuRenderInspectEGLConfig(EGLDisplay display, EGLConfig config) {
+    EGLint config_attribs[6] = {};
+    eglGetConfigAttrib(display, config, EGL_RED_SIZE, &config_attribs[0]);
+    eglGetConfigAttrib(display, config, EGL_BLUE_SIZE, &config_attribs[1]);
+    eglGetConfigAttrib(display, config, EGL_GREEN_SIZE, &config_attribs[2]);
+    eglGetConfigAttrib(display, config, EGL_ALPHA_SIZE, &config_attribs[3]);
+    eglGetConfigAttrib(display, config, EGL_DEPTH_SIZE, &config_attribs[4]);
+    eglGetConfigAttrib(display, config, EGL_STENCIL_SIZE, &config_attribs[5]);
 }
 
 void NuRenderDevice::Initialize() {

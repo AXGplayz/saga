@@ -126,11 +126,6 @@
 #include "nu2api/nu3d/android/nubridge_android.h"
 #include "nu2api/nu3d/nu3d_includes.h"
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 static u8 *crashdata;
 
 namespace {
@@ -142,7 +137,7 @@ namespace {
         static const f32 kUnusedBlock = 2147483648.0f;
 
         while (node != NULL) {
-            const i32 point_count = node->point_count;
+            const u16 point_count = node->point_count;
             if (point_count != 0) {
                 TERRAIN_SPATIAL_NODE *block = node;
                 i32 first_point = 0;
@@ -796,16 +791,6 @@ static void edptlcbSetMasterGroup(eduimenu_s *, eduiitem_s *item, u32);
 static void edptlcbSetScaleFactor(eduimenu_s *, eduiitem_s *item, u32);
 static void edptlcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
 static void edptlcbTestDetailMenu(eduimenu_s *parent, eduiitem_s *, u32);
-
-static inline f32 edppInterpolateTorusCurve(const debris_float_key_s *keys, f32 time) {
-    for (i32 index = 0; index < 7; ++index) {
-        if (time >= keys[index].time && time <= keys[index + 1].time)
-            return ((time - keys[index].time) / (keys[index + 1].time - keys[index].time)) *
-                       (keys[index + 1].value - keys[index].value) +
-                   keys[index].value;
-    }
-    return 0.0f;
-}
 
 static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
                                                                                 int alignment, char *format, ...)
@@ -1540,8 +1525,6 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-struct CUTSCENEPLAYERCLIP;
-
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 
 GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
@@ -1563,8 +1546,6 @@ extern "C" {
     extern "C++" void AddChunkToRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **);
 } // extern "C"
 
-struct rtlset;
-
 extern "C" {
     // Shared suspend flag consulted by all timed debris emitters.
     i32 debris_suspended = 0;
@@ -1580,9 +1561,6 @@ extern "C" {
 }
 
 void AddChunkToRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **);
-
-struct spacelevel_s;
-struct quickboltinfo;
 
 extern "C" i16 id_LANDSPEEDER;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
@@ -1617,21 +1595,7 @@ extern EdEnumControl::Item YesNoItems[3];
 extern i32 AxisColour[8];
 extern f32 MouseScale;
 
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
-struct GAMEMESSAGE_s;
-struct HINT_s;
-struct MENU_s;
-struct NuBloomParameters;
-struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
 struct nuhspecial_s;
-struct ripple_node_s;
-struct ripple_set_s;
 struct VuVec;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
@@ -1642,8 +1606,6 @@ extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 struct tertype;
 struct terrsitu_s;
 struct PLATSKININFO;
-struct GAMECAMERA_s;
-struct pushblock_s;
 extern i16 id_SNAKE;
 static void *TerImpactData;
 static i32 *TerImpactDataCount;
@@ -1885,10 +1847,6 @@ i16 debug_index;
 
 #define IS_SNAN(x) (*(u32 *)&(x) == 0xffc00000)
 
-namespace {
-
-} // namespace
-
 static inline void ResetRayCastState() {
     plathitid = -1;
     TerrPolyObj = -1;
@@ -1961,23 +1919,6 @@ namespace {
     }
 
 } // namespace
-
-namespace {
-
-} // namespace
-
-static inline TERRAIN_PLATFORM *FindFreeTerrainPlatform(TERRSET *terrain, i32 *index) {
-    TERRAIN_PLATFORM *platform = NULL;
-    *index = -1;
-    for (i32 i = 0; i < terrain->max_platforms; i++) {
-        platform = &terrain->platforms[i];
-        if (platform->scene_object == NULL) {
-            *index = i;
-            break;
-        }
-    }
-    return platform;
-}
 
 static inline i32 InstallExtraTerrainPlatform(TERRSET *terrain, TERRAIN_GROUP *source, NUMTX *matrix, NUMTX *previous,
                                               i32 rotating, i32 index, TERRAIN_PLATFORM &platform, i16 group_index,
@@ -3350,7 +3291,7 @@ static void edptlcbDrawflagMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edptl_drawflag_menu->y = parent->y + 40;
 }
 
-static __attribute__((optimize("O2", "tree-vectorize"))) void edptlcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
+static void edptlcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     edptl_switchtype_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edptlcbCancelSwitchTypeMenu, "Switch Type");
     if (__builtin_expect(edptl_switchtype_menu != NULL, 1)) {
@@ -3701,15 +3642,14 @@ static void cbEffectListMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
 static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
-    auto *menu =
+    edanim_mctb_menu =
         eduiMenuCreate(70, 70, 250, 250, ed_fnt, edanimcbCancelMCTBMenu, const_cast<char *>("Memory Card Test Menu"));
-    edanim_mctb_menu = menu;
-    if (!menu) {
+    if (!edanim_mctb_menu) {
         return;
     }
 
     const auto add_item = [&](u32 slot, EdUiItemCallback callback, const char *name) {
-        eduiMenuAddItem(menu, eduiItemSelCreate(slot, colours, 0, 0, callback, const_cast<char *>(name)));
+        eduiMenuAddItem(edanim_mctb_menu, eduiItemSelCreate(slot, colours, 0, 0, callback, const_cast<char *>(name)));
     };
     add_item(1, edanimcbMCTBCardPresent, "Card Present Test");
     add_item(1, edanimcbMCTBCardType, "Card Type Test");
@@ -3727,9 +3667,9 @@ static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_
     add_item(1, edanimcbMCTBCardWriteKeyCard, "Write KeyCard");
     add_item(1, edanimcbMCTBCardCheckKeyCard, "Check KeyCard");
 
-    eduiMenuAttach(parent, menu);
-    menu->x = parent->x + 10;
-    menu->y = parent->y + 40;
+    eduiMenuAttach(parent, edanim_mctb_menu);
+    edanim_mctb_menu->x = parent->x + 10;
+    edanim_mctb_menu->y = parent->y + 40;
 }
 
 static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -3773,23 +3713,22 @@ static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem
         return;
     }
 
-    auto *menu =
+    edanim_sound_menu =
         eduiMenuCreate(70, 70, 250, 300, ed_fnt, edanimcbCancelSoundMenu, const_cast<char *>("Attached Sounds"));
-    edanim_sound_menu = menu;
-    if (!menu) {
+    if (!edanim_sound_menu) {
         return;
     }
 
-    eduiMenuAddItem(menu,
+    eduiMenuAddItem(edanim_sound_menu,
                     eduiItemSelCreate(1, colours, 0, 0, edanimcbSoundTypeMenu, const_cast<char *>("Sound Type...")));
     if (edanim_nearest_sound != -1) {
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalSoundMenu,
-                                                const_cast<char *>("Highlighted Snd Settings...")));
+        eduiMenuAddItem(edanim_sound_menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalSoundMenu,
+                                                             const_cast<char *>("Highlighted Snd Settings...")));
     }
 
-    eduiMenuAttach(parent, menu);
-    menu->x = parent->x + 10;
-    menu->y = parent->y + 40;
+    eduiMenuAttach(parent, edanim_sound_menu);
+    edanim_sound_menu->x = parent->x + 10;
+    edanim_sound_menu->y = parent->y + 40;
 }
 
 static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -3798,23 +3737,22 @@ static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduii
         return;
     }
 
-    auto *menu =
+    edanim_particle_menu =
         eduiMenuCreate(70, 70, 250, 300, ed_fnt, edanimcbCancelParticleMenu, const_cast<char *>("Attached Particles"));
-    edanim_particle_menu = menu;
-    if (!menu) {
+    if (!edanim_particle_menu) {
         return;
     }
 
-    eduiMenuAddItem(
-        menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbParticleTypeMenu, const_cast<char *>("Particle Type...")));
+    eduiMenuAddItem(edanim_particle_menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbParticleTypeMenu,
+                                                            const_cast<char *>("Particle Type...")));
     if (edanim_nearest_particle != -1) {
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalParticleMenu,
-                                                const_cast<char *>("Highlighted Ptl Settings...")));
+        eduiMenuAddItem(edanim_particle_menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalParticleMenu,
+                                                                const_cast<char *>("Highlighted Ptl Settings...")));
     }
 
-    eduiMenuAttach(parent, menu);
-    menu->x = parent->x + 10;
-    menu->y = parent->y + 40;
+    eduiMenuAttach(parent, edanim_particle_menu);
+    edanim_particle_menu->x = parent->x + 10;
+    edanim_particle_menu->y = parent->y + 40;
 }
 
 static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -4009,8 +3947,8 @@ static void edptlcbBounceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         edptl_bounce_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelBounceMenu, "Particle Bounce");
         if (edptl_bounce_menu != NULL) {
             eduiMenuAddItem(edptl_bounce_menu,
-                            eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceOffset, -10.0f * edptl_superscale,
-                                                 10.0f * edptl_superscale, key->collision_plane, "Plane Offset"));
+                            eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceOffset, -2.0f * edptl_superscale,
+                                                 4.0f * edptl_superscale, key->collision_plane, "Plane Offset"));
             eduiMenuAddItem(edptl_bounce_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceFactor, 0.0f, 2.0f,
                                                                     key->reflection_scale, "Bounce Factor"));
             eduiMenuAttach(parent, edptl_bounce_menu);
@@ -4107,21 +4045,23 @@ static void cbPtlEmitTimeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     emittimemenu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, cbPtlCancelEmitTimeMenu, "Emitter Timing");
-    if (emittimemenu == NULL)
-        return;
-    eduiMenuAddItem(emittimemenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOn, 0.01f, 5.0f * edptl_superscale,
-                                                       effect->emission_period_random, "On Time"));
-    eduiMenuAddItem(emittimemenu,
-                    eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOnRan, 0.0f, 5.0f * edptl_superscale,
-                                         effect->emission_pause, "Random On Time"));
-    eduiMenuAddItem(emittimemenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOff, 0.0f, 5.0f * edptl_superscale,
-                                                       effect->emission_pause_random, "Off Time"));
-    eduiMenuAddItem(emittimemenu,
-                    eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOffRan, 0.0f, 5.0f * edptl_superscale,
-                                         effect->start_offset_random, "Random Off Time"));
-    eduiMenuAttach(parent, emittimemenu);
-    emittimemenu->x = parent->x + 10;
-    emittimemenu->y = parent->y + 40;
+    if (emittimemenu != NULL) {
+        eduiMenuAddItem(emittimemenu,
+                        eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOn, 0.01f, 5.0f * edptl_superscale,
+                                             effect->emission_period_random, "On Time"));
+        eduiMenuAddItem(emittimemenu,
+                        eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOnRan, 0.0f, 5.0f * edptl_superscale,
+                                             effect->emission_pause, "Random On Time"));
+        eduiMenuAddItem(emittimemenu,
+                        eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOff, 0.0f, 5.0f * edptl_superscale,
+                                             effect->emission_pause_random, "Off Time"));
+        eduiMenuAddItem(emittimemenu,
+                        eduiItemSliderCreate(0, colours, 0, cbPtlChangeIvalOffRan, 0.0f, 5.0f * edptl_superscale,
+                                             effect->start_offset_random, "Random Off Time"));
+        eduiMenuAttach(parent, emittimemenu);
+        emittimemenu->x = parent->x + 10;
+        emittimemenu->y = parent->y + 40;
+    }
 }
 
 static void cbChangeETimeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -4277,19 +4217,21 @@ static void edptlcbGroupMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
 static void edptlcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
-    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
-        return;
-    edptl_switch_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edptlcbCancelSwitchMenu, "Switch Menu");
-    if (edptl_switch_menu == NULL)
-        return;
-    eduiMenuAddItem(edptl_switch_menu, eduiItemSelCreate(1, colours, 0, 0, edptlcbSwitchTypeMenu, "Switch Type..."));
-    eduiMenuAddItem(edptl_switch_menu, eduiItemSliderCreateInt(0, colours, 0, edptlcbSetSwitchId, -1, 129,
-                                                               edpp_ptls[edpp_nearest].switch_id, "Switch ID"));
-    eduiMenuAddItem(edptl_switch_menu, eduiItemSliderCreate(0, colours, 0, edptlcbSetSwitchVar, 0.0f, 20.0f,
-                                                            edpp_ptls[edpp_nearest].switch_variable, "Switch Var"));
-    eduiMenuAttach(parent, edptl_switch_menu);
-    edptl_switch_menu->x = parent->x + 10;
-    edptl_switch_menu->y = parent->y + 40;
+    if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
+        edptl_switch_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edptlcbCancelSwitchMenu, "Switch Menu");
+        if (edptl_switch_menu != NULL) {
+            eduiMenuAddItem(edptl_switch_menu,
+                            eduiItemSelCreate(1, colours, 0, 0, edptlcbSwitchTypeMenu, "Switch Type..."));
+            eduiMenuAddItem(edptl_switch_menu, eduiItemSliderCreateInt(0, colours, 0, edptlcbSetSwitchId, -1, 129,
+                                                                       edpp_ptls[edpp_nearest].switch_id, "Switch ID"));
+            eduiMenuAddItem(edptl_switch_menu,
+                            eduiItemSliderCreate(0, colours, 0, edptlcbSetSwitchVar, 0.0f, 20.0f,
+                                                 edpp_ptls[edpp_nearest].switch_variable, "Switch Var"));
+            eduiMenuAttach(parent, edptl_switch_menu);
+            edptl_switch_menu->x = parent->x + 10;
+            edptl_switch_menu->y = parent->y + 40;
+        }
+    }
 }
 
 static void cbPtlSScaleMenu(eduimenu_s *menu, eduiitem_s *, u32) {
@@ -4309,16 +4251,16 @@ static void edptlcbStarMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
         edptl_star_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelStarMenu, "Star Settings");
-        if (edptl_star_menu == NULL)
-            return;
-        eduiMenuAddItem(edptl_star_menu,
-                        eduiItemSliderCreateInt(0, colours, 0, edptlcbApplyStarPoints, 3, 17,
-                                                static_cast<i8>(effect->radial_segments), "Number of Points"));
-        eduiMenuAddItem(edptl_star_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyStarRatio, 0.1f, 0.8f,
-                                                              effect->radial_floor, "Radius Ratio"));
-        eduiMenuAttach(parent, edptl_star_menu);
-        edptl_star_menu->x = parent->x + 10;
-        edptl_star_menu->y = parent->y + 40;
+        if (edptl_star_menu != NULL) {
+            eduiMenuAddItem(edptl_star_menu,
+                            eduiItemSliderCreateInt(0, colours, 0, edptlcbApplyStarPoints, 3, 17,
+                                                    static_cast<i8>(effect->radial_segments), "Number of Points"));
+            eduiMenuAddItem(edptl_star_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyStarRatio, 0.1f, 0.8f,
+                                                                  effect->radial_floor, "Radius Ratio"));
+            eduiMenuAttach(parent, edptl_star_menu);
+            edptl_star_menu->x = parent->x + 10;
+            edptl_star_menu->y = parent->y + 40;
+        }
     }
 }
 
@@ -4327,17 +4269,18 @@ static void edptlcbGhostMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
         edptl_ghost_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelGhostMenu, "Particle Ghosts");
-        if (edptl_ghost_menu == NULL)
-            return;
-        eduiMenuAddItem(edptl_ghost_menu,
-                        eduiItemSliderCreateInt(0, colours, 0, edptlcbApplyNumGhosts, 0, 10,
-                                                static_cast<i8>(effect->trail_count), "Number of Ghosts"));
-        eduiMenuAddItem(edptl_ghost_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyGhostTime, 0.0f, 1.0f,
-                                                               static_cast<f32>(static_cast<i32>(effect->trail_time)),
-                                                               "Ghost Separation"));
-        eduiMenuAttach(parent, edptl_ghost_menu);
-        edptl_ghost_menu->x = parent->x + 10;
-        edptl_ghost_menu->y = parent->y + 40;
+        if (edptl_ghost_menu != NULL) {
+            eduiMenuAddItem(edptl_ghost_menu,
+                            eduiItemSliderCreateInt(0, colours, 0, edptlcbApplyNumGhosts, 0, 10,
+                                                    static_cast<i8>(effect->trail_count), "Number of Ghosts"));
+            eduiMenuAddItem(edptl_ghost_menu,
+                            eduiItemSliderCreate(0, colours, 0, edptlcbApplyGhostTime, 0.0f, 1.0f,
+                                                 static_cast<f32>(static_cast<i32>(effect->trail_time)),
+                                                 "Ghost Separation"));
+            eduiMenuAttach(parent, edptl_ghost_menu);
+            edptl_ghost_menu->x = parent->x + 10;
+            edptl_ghost_menu->y = parent->y + 40;
+        }
     }
 }
 
@@ -4512,8 +4455,8 @@ static void edptlcbSetSoundControl(eduimenu_s *menu, eduiitem_s *item, u32) {
             continue;
         }
         debkeydatatype_s *key = &debkeydata[instance_id];
-        debinftype *effect = debtab[key->effect_index];
         key->collision_timers[0] = 9999;
+        debinftype *effect = debtab[key->effect_index];
         if (effect->sound_data[1] == 3 || effect->sound_data[1] == 4) {
             key->collision_timers[0] = 1;
         }
@@ -4559,17 +4502,9 @@ static void edptlcbSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) {
         }
 
         debkeydata[instance_id].process_collision_sound = 0;
-        if (debtab[debkeydata[instance_id].effect_index]->sound_data[0] != -1) {
-            debkeydata[instance_id].process_collision_sound = 1;
-        }
-        if (debtab[debkeydata[instance_id].effect_index]->sound_data[3] != -1) {
-            debkeydata[instance_id].process_collision_sound = 1;
-        }
-        if (debtab[debkeydata[instance_id].effect_index]->sound_data[6] != -1) {
-            debkeydata[instance_id].process_collision_sound = 1;
-        }
-        if (debtab[debkeydata[instance_id].effect_index]->sound_data[9] != -1) {
-            debkeydata[instance_id].process_collision_sound = 1;
+        for (i32 slot = 0; slot < 4; ++slot) {
+            if (debtab[debkeydata[instance_id].effect_index]->sound_data[slot * 3] != -1)
+                debkeydata[instance_id].process_collision_sound = 1;
         }
     }
 
@@ -4592,8 +4527,8 @@ static void edptlcbCutClipboard(eduimenu_s *menu, eduiitem_s *, u32) {
 
 static void edptlcbPasteClipboard(eduimenu_s *menu, eduiitem_s *, u32) {
     debinftype *effect = debtab[edptl_clipboard_entry];
-    edptl_clipboard_entry = -1;
     effect->category = edpp_effect_list;
+    edptl_clipboard_entry = -1;
 
     eduimenu_s *parent = menu->parent;
     if (parent != NULL) {
@@ -4717,68 +4652,32 @@ static void cbPtlTorusMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     eduiMenuAddItem(edptl_torus_menu,
                     eduiItemGreyGradPickCreate(0, colours, cbPtlApplyTorusEnv1, "Major Radius Envelope"));
     torus_env1_item = edui_last_item;
-#define TORUS_MAJOR_STAGE(index)                                                                                       \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->torus_keys1[index];                                                    \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env1_item), key.time, key.value, key.value,      \
-                            key.value);                                                                                \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto torus_major_stages_done;                                                                              \
+    for (i32 i = 0; i < 8; ++i) {
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env1_item), effect->torus_keys1[i].time,
+                            effect->torus_keys1[i].value, effect->torus_keys1[i].value, effect->torus_keys1[i].value);
+        if (effect->torus_keys1[i].time == 1.0f)
+            break;
     }
-    TORUS_MAJOR_STAGE(0)
-    TORUS_MAJOR_STAGE(1)
-    TORUS_MAJOR_STAGE(2)
-    TORUS_MAJOR_STAGE(3)
-    TORUS_MAJOR_STAGE(4)
-    TORUS_MAJOR_STAGE(5)
-    TORUS_MAJOR_STAGE(6)
-    TORUS_MAJOR_STAGE(7)
-#undef TORUS_MAJOR_STAGE
-torus_major_stages_done:
 
     eduiMenuAddItem(edptl_torus_menu,
                     eduiItemGreyGradPickCreate(0, colours, cbPtlApplyTorusEnv2, "Minor Radius Envelope 1"));
     torus_env2_item = edui_last_item;
-#define TORUS_MINOR1_STAGE(index)                                                                                      \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->torus_keys2[index];                                                    \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env2_item), key.time, key.value, key.value,      \
-                            key.value);                                                                                \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto torus_minor1_stages_done;                                                                             \
+    for (i32 i = 0; i < 8; ++i) {
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env2_item), effect->torus_keys2[i].time,
+                            effect->torus_keys2[i].value, effect->torus_keys2[i].value, effect->torus_keys2[i].value);
+        if (effect->torus_keys2[i].time == 1.0f)
+            break;
     }
-    TORUS_MINOR1_STAGE(0)
-    TORUS_MINOR1_STAGE(1)
-    TORUS_MINOR1_STAGE(2)
-    TORUS_MINOR1_STAGE(3)
-    TORUS_MINOR1_STAGE(4)
-    TORUS_MINOR1_STAGE(5)
-    TORUS_MINOR1_STAGE(6)
-    TORUS_MINOR1_STAGE(7)
-#undef TORUS_MINOR1_STAGE
-torus_minor1_stages_done:
 
     eduiMenuAddItem(edptl_torus_menu,
                     eduiItemGreyGradPickCreate(0, colours, cbPtlApplyTorusEnv3, "Minor Radius Envelope 2"));
     torus_env3_item = edui_last_item;
-#define TORUS_MINOR2_STAGE(index)                                                                                      \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->torus_keys3[index];                                                    \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env3_item), key.time, key.value, key.value,      \
-                            key.value);                                                                                \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto torus_minor2_stages_done;                                                                             \
+    for (i32 i = 0; i < 8; ++i) {
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(torus_env3_item), effect->torus_keys3[i].time,
+                            effect->torus_keys3[i].value, effect->torus_keys3[i].value, effect->torus_keys3[i].value);
+        if (effect->torus_keys3[i].time == 1.0f)
+            break;
     }
-    TORUS_MINOR2_STAGE(0)
-    TORUS_MINOR2_STAGE(1)
-    TORUS_MINOR2_STAGE(2)
-    TORUS_MINOR2_STAGE(3)
-    TORUS_MINOR2_STAGE(4)
-    TORUS_MINOR2_STAGE(5)
-    TORUS_MINOR2_STAGE(6)
-    TORUS_MINOR2_STAGE(7)
-#undef TORUS_MINOR2_STAGE
-torus_minor2_stages_done:
     eduiMenuAttach(parent, edptl_torus_menu);
     edptl_torus_menu->x = parent->x + 10;
     edptl_torus_menu->y = parent->y + 40;
@@ -4796,26 +4695,17 @@ static void cbPtlCollMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     eduiMenuAddItem(collmenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplyCollEnv, "Collision Envelope"));
     coll_env_item = edui_last_item;
-#define COLL_STAGE(index)                                                                                              \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->collision_keys[index];                                                 \
-        const f32 minimum = effect->min_size / 10000.0f;                                                               \
-        const f32 range = (effect->max_size - effect->min_size) / 10000.0f;                                            \
-        const f32 value = effect->min_size == effect->max_size ? 1.0f : (key.value - minimum) / range;                 \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(coll_env_item), key.time, value, value, value);        \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto coll_stages_done;                                                                                     \
+    for (i32 i = 0; i < 8; ++i) {
+        const debris_float_key_s &key = effect->collision_keys[i];
+        f32 value;
+        if (effect->min_size == effect->max_size)
+            value = 1.0f;
+        else
+            value = (key.value - effect->min_size / 10000.0f) / ((effect->max_size - effect->min_size) / 10000.0f);
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(coll_env_item), key.time, value, value, value);
+        if (__builtin_expect(key.time == 1.0f, 0))
+            break;
     }
-    COLL_STAGE(0)
-    COLL_STAGE(1)
-    COLL_STAGE(2)
-    COLL_STAGE(3)
-    COLL_STAGE(4)
-    COLL_STAGE(5)
-    COLL_STAGE(6)
-    COLL_STAGE(7)
-#undef COLL_STAGE
-coll_stages_done:
     eduiMenuAddItem(collmenu, eduiItemSliderCreateInt(0, colours, 0, cbChangeNumCollSpheres, 0, 8,
                                                       static_cast<i8>(effect->process_spheres), "Num Spheres"));
     eduiMenuAddItem(collmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlDefaultCollEnv, "Default Envelope"));
@@ -4898,20 +4788,20 @@ static void edptlcbSoundsMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     const u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         edptl_sounds_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edptlcbCancelSoundsMenu, "Attached Sounds");
-        if (edptl_sounds_menu == NULL)
-            return;
-        char title[12];
-        sprintf(title, "Sound %d...", 1);
-        eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(0, colours, 0, 0, edptlcbSoundXMenu, title));
-        sprintf(title, "Sound %d...", 2);
-        eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(1, colours, 0, 0, edptlcbSoundXMenu, title));
-        sprintf(title, "Sound %d...", 3);
-        eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(2, colours, 0, 0, edptlcbSoundXMenu, title));
-        sprintf(title, "Sound %d...", 4);
-        eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(3, colours, 0, 0, edptlcbSoundXMenu, title));
-        eduiMenuAttach(parent, edptl_sounds_menu);
-        edptl_sounds_menu->x = parent->x + 10;
-        edptl_sounds_menu->y = parent->y + 40;
+        if (edptl_sounds_menu != NULL) {
+            char title[12];
+            sprintf(title, "Sound %d...", 1);
+            eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(0, colours, 0, 0, edptlcbSoundXMenu, title));
+            sprintf(title, "Sound %d...", 2);
+            eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(1, colours, 0, 0, edptlcbSoundXMenu, title));
+            sprintf(title, "Sound %d...", 3);
+            eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(2, colours, 0, 0, edptlcbSoundXMenu, title));
+            sprintf(title, "Sound %d...", 4);
+            eduiMenuAddItem(edptl_sounds_menu, eduiItemSelCreate(3, colours, 0, 0, edptlcbSoundXMenu, title));
+            eduiMenuAttach(parent, edptl_sounds_menu);
+            edptl_sounds_menu->x = parent->x + 10;
+            edptl_sounds_menu->y = parent->y + 40;
+        }
     }
 }
 
@@ -5090,27 +4980,18 @@ static void cbPtlRotMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     eduiMenuAddItem(ptlrotmenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplyRot, "Rotation Envelope"));
     grad_rot_item = edui_last_item;
-#define ROT_STAGE(index)                                                                                               \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->rotation_keys[index];                                                  \
-        const f32 rotation = key.value * (360.0f / 65536.0f);                                                          \
-        const f32 value = effect->min_rotation == effect->max_rotation                                                 \
-                              ? 1.0f                                                                                   \
-                              : (rotation - effect->min_rotation) / (effect->max_rotation - effect->min_rotation);     \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_rot_item), key.time, value, value, value);        \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto rot_stages_done;                                                                                      \
+    for (i32 i = 0; i < 8; ++i) {
+        f32 value;
+        if (effect->min_rotation == effect->max_rotation)
+            value = 1.0f;
+        else
+            value = (effect->rotation_keys[i].value * (360.0f / 65536.0f) - effect->min_rotation) /
+                    (effect->max_rotation - effect->min_rotation);
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_rot_item), effect->rotation_keys[i].time, value,
+                            value, value);
+        if (effect->rotation_keys[i].time == 1.0f)
+            break;
     }
-    ROT_STAGE(0)
-    ROT_STAGE(1)
-    ROT_STAGE(2)
-    ROT_STAGE(3)
-    ROT_STAGE(4)
-    ROT_STAGE(5)
-    ROT_STAGE(6)
-    ROT_STAGE(7)
-#undef ROT_STAGE
-rot_stages_done:
 
     eduiMenuAddItem(ptlrotmenu, eduiItemSliderCreate(0, colours, 0, cbPtlApplyRot, -720.0f, 1440.0f,
                                                      effect->min_rotation, "Min Rotation"));
@@ -5139,49 +5020,31 @@ static void cbPtlSizeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     eduiMenuAddItem(ptlsizemenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplySize, "Width Envelope"));
     grad_size_w_item = edui_last_item;
-#define WIDTH_STAGE(index)                                                                                             \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->width_keys[index];                                                     \
-        const f32 value = effect->min_size == effect->max_size                                                         \
-                              ? 1.0f                                                                                   \
-                              : (key.value - effect->min_size) / (effect->max_size - effect->min_size);                \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), key.time, value, value, value);     \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto width_stages_done;                                                                                    \
+    for (i32 i = 0; i < 8; ++i) {
+        const debris_float_key_s &key = effect->width_keys[i];
+        f32 value;
+        if (effect->min_size == effect->max_size)
+            value = 1.0f;
+        else
+            value = (key.value - effect->min_size) / (effect->max_size - effect->min_size);
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), key.time, value, value, value);
+        if (__builtin_expect(key.time == 1.0f, 0))
+            break;
     }
-    WIDTH_STAGE(0)
-    WIDTH_STAGE(1)
-    WIDTH_STAGE(2)
-    WIDTH_STAGE(3)
-    WIDTH_STAGE(4)
-    WIDTH_STAGE(5)
-    WIDTH_STAGE(6)
-    WIDTH_STAGE(7)
-#undef WIDTH_STAGE
-width_stages_done:
 
     eduiMenuAddItem(ptlsizemenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplySize, "Height Envelope"));
     grad_size_h_item = edui_last_item;
-#define HEIGHT_STAGE(index)                                                                                            \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->height_keys[index];                                                    \
-        const f32 value = effect->min_size == effect->max_size                                                         \
-                              ? 1.0f                                                                                   \
-                              : (key.value - effect->min_size) / (effect->max_size - effect->min_size);                \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), key.time, value, value, value);     \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto height_stages_done;                                                                                   \
+    for (i32 i = 0; i < 8; ++i) {
+        const debris_float_key_s &key = effect->height_keys[i];
+        f32 value;
+        if (effect->min_size == effect->max_size)
+            value = 1.0f;
+        else
+            value = (key.value - effect->min_size) / (effect->max_size - effect->min_size);
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), key.time, value, value, value);
+        if (__builtin_expect(key.time == 1.0f, 0))
+            break;
     }
-    HEIGHT_STAGE(0)
-    HEIGHT_STAGE(1)
-    HEIGHT_STAGE(2)
-    HEIGHT_STAGE(3)
-    HEIGHT_STAGE(4)
-    HEIGHT_STAGE(5)
-    HEIGHT_STAGE(6)
-    HEIGHT_STAGE(7)
-#undef HEIGHT_STAGE
-height_stages_done:
 
     eduiMenuAddItem(ptlsizemenu, eduiItemSliderCreate(0, colours, 0, cbPtlApplySize, 0.0f, 5000.0f * edptl_superscale,
                                                       effect->min_size, "Min Size"));
@@ -5432,69 +5295,35 @@ static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
     debinftype *effect = debtab[debkeydata[instance].effect_index];
     edui_gradient_pick_s *gradient;
     if (item->data == 1) {
-        effect->height_keys[0].time = effect->width_keys[0].time;
-        effect->height_keys[0].value = effect->width_keys[0].value;
-        effect->height_keys[1].time = effect->width_keys[1].time;
-        effect->height_keys[1].value = effect->width_keys[1].value;
-        effect->height_keys[2].time = effect->width_keys[2].time;
-        effect->height_keys[2].value = effect->width_keys[2].value;
-        effect->height_keys[3].time = effect->width_keys[3].time;
-        effect->height_keys[3].value = effect->width_keys[3].value;
-        effect->height_keys[4].time = effect->width_keys[4].time;
-        effect->height_keys[4].value = effect->width_keys[4].value;
-        effect->height_keys[5].time = effect->width_keys[5].time;
-        effect->height_keys[5].value = effect->width_keys[5].value;
-        effect->height_keys[6].time = effect->width_keys[6].time;
-        effect->height_keys[6].value = effect->width_keys[6].value;
-        effect->height_keys[7].time = effect->width_keys[7].time;
-        effect->height_keys[7].value = effect->width_keys[7].value;
+        for (i32 i = 0; i < 8; ++i) {
+            effect->height_keys[i].time = effect->width_keys[i].time;
+            effect->height_keys[i].value = effect->width_keys[i].value;
+        }
         gradient = static_cast<edui_gradient_pick_s *>(grad_size_h_item);
     } else {
-        effect->width_keys[0].time = effect->height_keys[0].time;
-        effect->width_keys[0].value = effect->height_keys[0].value;
-        effect->width_keys[1].time = effect->height_keys[1].time;
-        effect->width_keys[1].value = effect->height_keys[1].value;
-        effect->width_keys[2].time = effect->height_keys[2].time;
-        effect->width_keys[2].value = effect->height_keys[2].value;
-        effect->width_keys[3].time = effect->height_keys[3].time;
-        effect->width_keys[3].value = effect->height_keys[3].value;
-        effect->width_keys[4].time = effect->height_keys[4].time;
-        effect->width_keys[4].value = effect->height_keys[4].value;
-        effect->width_keys[5].time = effect->height_keys[5].time;
-        effect->width_keys[5].value = effect->height_keys[5].value;
-        effect->width_keys[6].time = effect->height_keys[6].time;
-        effect->width_keys[6].value = effect->height_keys[6].value;
-        effect->width_keys[7].time = effect->height_keys[7].time;
-        effect->width_keys[7].value = effect->height_keys[7].value;
+        for (i32 i = 0; i < 8; ++i) {
+            effect->width_keys[i].time = effect->height_keys[i].time;
+            effect->width_keys[i].value = effect->height_keys[i].value;
+        }
         gradient = static_cast<edui_gradient_pick_s *>(grad_size_w_item);
     }
     while (gradient->first_stage)
         eduiGradStageDelete(gradient, gradient->first_stage);
-    // Keep the eight stages explicit: the original callback expands each stage separately.
-#define COPY_SIZE_STAGE(i)                                                                                             \
-    if (item->data == 1) {                                                                                             \
-        f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);          \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), effect->height_keys[i].time, grey,  \
-                            grey, grey);                                                                               \
-        if (__builtin_expect(effect->height_keys[i].time == 1.0f, 0))                                                  \
-            goto copy_size_done;                                                                                       \
-    } else {                                                                                                           \
-        f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);           \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), effect->width_keys[i].time, grey,   \
-                            grey, grey);                                                                               \
-        if (__builtin_expect(effect->width_keys[i].time == 1.0f, 0))                                                   \
-            goto copy_size_done;                                                                                       \
+    for (i32 i = 0; i < 8; ++i) {
+        if (item->data == 1) {
+            f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
+            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), effect->height_keys[i].time,
+                                grey, grey, grey);
+            if (effect->height_keys[i].time == 1.0f)
+                break;
+        } else {
+            f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
+            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), effect->width_keys[i].time,
+                                grey, grey, grey);
+            if (effect->width_keys[i].time == 1.0f)
+                break;
+        }
     }
-    COPY_SIZE_STAGE(0)
-    COPY_SIZE_STAGE(1)
-    COPY_SIZE_STAGE(2)
-    COPY_SIZE_STAGE(3)
-    COPY_SIZE_STAGE(4)
-    COPY_SIZE_STAGE(5)
-    COPY_SIZE_STAGE(6)
-    COPY_SIZE_STAGE(7)
-#undef COPY_SIZE_STAGE
-copy_size_done:
     GenericDebinfoDmaTypeUpdate(effect);
 }
 
@@ -5550,48 +5379,26 @@ static void cbPtlColMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     eduiMenuAddItem(ptlcolmenu, eduiItemGradPickCreate(0, colours, cbPtlApplyGrad, "Colour Grad"));
     grad_item = edui_last_item;
-#define COLOUR_STAGE(index)                                                                                            \
-    {                                                                                                                  \
-        const debris_colour_key_s &key = effect->colour_keys[index];                                                   \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_item), key.time,                                  \
-                            static_cast<u32>(key.red) / 255.0f, static_cast<u32>(key.green) / 255.0f,                  \
-                            static_cast<u32>(key.blue) / 255.0f);                                                      \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto colour_stages_done;                                                                                   \
+    for (i32 i = 0; i < 8; ++i) {
+        const debris_colour_key_s &key = effect->colour_keys[i];
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_item), key.time,
+                            static_cast<u32>(key.red) / 255.0f, static_cast<u32>(key.green) / 255.0f,
+                            static_cast<u32>(key.blue) / 255.0f);
+        if (key.time == 1.0f)
+            break;
     }
-    COLOUR_STAGE(0)
-    COLOUR_STAGE(1)
-    COLOUR_STAGE(2)
-    COLOUR_STAGE(3)
-    COLOUR_STAGE(4)
-    COLOUR_STAGE(5)
-    COLOUR_STAGE(6)
-    COLOUR_STAGE(7)
-#undef COLOUR_STAGE
-colour_stages_done:
 
     char *alpha_label =
         effect->particle_type == 7 ? const_cast<char *>("Distortion Grad") : const_cast<char *>("Alpha Grad");
     eduiMenuAddItem(ptlcolmenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplyGrad, alpha_label));
     grad_alpha_item = edui_last_item;
-#define ALPHA_STAGE(index)                                                                                             \
-    {                                                                                                                  \
-        const debris_float_key_s &key = effect->alpha_keys[index];                                                     \
-        const f32 alpha = key.value / 255.0f;                                                                          \
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_alpha_item), key.time, alpha, alpha, alpha);      \
-        if (__builtin_expect(key.time == 1.0f, 0))                                                                     \
-            goto alpha_stages_done;                                                                                    \
+    for (i32 i = 0; i < 8; ++i) {
+        const f32 alpha = effect->alpha_keys[i].value / 255.0f;
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_alpha_item), effect->alpha_keys[i].time, alpha,
+                            alpha, alpha);
+        if (effect->alpha_keys[i].time == 1.0f)
+            break;
     }
-    ALPHA_STAGE(0)
-    ALPHA_STAGE(1)
-    ALPHA_STAGE(2)
-    ALPHA_STAGE(3)
-    ALPHA_STAGE(4)
-    ALPHA_STAGE(5)
-    ALPHA_STAGE(6)
-    ALPHA_STAGE(7)
-#undef ALPHA_STAGE
-alpha_stages_done:
 
     if (effect->particle_type == 7) {
         eduiMenuAddItem(ptlcolmenu, eduiItemSliderCreate(0, colours, 0, edptlcbChangeDistortX, 0.0f, 1.0f,
@@ -5743,18 +5550,14 @@ static void cbChangeNameMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 
 static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     i32 count = 0;
-    if (edpp_effect_list == 1) {
-        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
-            if (debtab[index] != NULL && debtab[index]->category == 1 &&
-                debtab[index]->page == edbits_particle_level_page) {
+    for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+        if (debtab[index] == NULL)
+            continue;
+        if (edpp_effect_list == 1) {
+            if (debtab[index]->category == 1 && debtab[index]->page == edbits_particle_level_page)
                 ++count;
-            }
-        }
-    } else {
-        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
-            if (debtab[index] != NULL && debtab[index]->category == edpp_effect_list) {
-                ++count;
-            }
+        } else if (debtab[index]->category == edpp_effect_list) {
+            ++count;
         }
     }
 
@@ -5764,7 +5567,7 @@ static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (ptltypemenu == NULL)
         return;
 
-    bool found_selected = false;
+    i32 found_selected = 0;
     for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
         debinftype *effect = debtab[index];
         if (effect == NULL)
@@ -5787,7 +5590,7 @@ static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         eduiMenuAddItem(ptltypemenu, eduiItemCheckCreate(index, placed ? edblack : eddarkred, selected, 1, cbPtlSelType,
                                                          effect->name));
         if (selected == 1) {
-            found_selected = true;
+            found_selected = 1;
             ptltypemenu->selected = edui_last_item;
         }
     }
@@ -5814,46 +5617,49 @@ static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, ed
 
 static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     u32 colours[4] __attribute__((aligned(16))) = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
-    if (edanim_nearest_sound == -1) {
-        return;
-    }
-    edanim_localsound_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edanimcbCancelLocalSoundMenu,
-                                            const_cast<char *>("Highlighted Sound Settings"));
-    if (!edanim_localsound_menu) {
-        return;
-    }
-
-    auto &param = AnimParams[edanim_nearest_param_id];
-    const i32 sound = edanim_nearest_sound;
-    eduiMenuAddItem(edanim_localsound_menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalSoundTypeMenu,
-                                                              const_cast<char *>("Highlighted Sound Type...")));
-    const bool repeats = param.sound_flags[sound] == 1;
-    eduiMenuAddItem(edanim_localsound_menu, eduiItemToggleCreate(1, colours, repeats, 1, edanimcbToggleSoundType,
-                                                                 const_cast<char *>("Repeating Sound")));
-    if (repeats) {
-        eduiMenuAddItem(edanim_localsound_menu, eduiItemSliderCreateInt(0, colours, 0, edanimcbSetSoundTiming, 1, 99,
-                                                                        static_cast<i32>(param.sound_values[sound]),
-                                                                        const_cast<char *>("Repeat Every")));
-    } else {
-        nuhspecial_s special;
-        NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
-        if (NuSpecialTestAnim(&special)) {
-            const auto *legacy_specials = reinterpret_cast<const NuSpecialLegacyLayout *>(edbits_base_scene->specials);
-            const auto *instance =
-                static_cast<const NuLegacyInstanceLayout *>(legacy_specials[edanim_nearest].instance)->animation;
-            const f32 end_frame =
-                *reinterpret_cast<const f32 *>(edbits_base_scene->instance_animation_data[instance->anim_ix]);
+    if (edanim_nearest_sound != -1) {
+        edanim_localsound_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edanimcbCancelLocalSoundMenu,
+                                                const_cast<char *>("Highlighted Sound Settings"));
+        if (edanim_localsound_menu) {
+            eduiMenuAddItem(edanim_localsound_menu, eduiItemSelCreate(1, colours, 0, 0, edanimcbLocalSoundTypeMenu,
+                                                                      const_cast<char *>("Highlighted Sound Type...")));
             eduiMenuAddItem(edanim_localsound_menu,
-                            eduiItemSliderCreate(0, colours, 0, edanimcbSetSoundTiming, 1.0f, end_frame,
-                                                 param.sound_values[sound], const_cast<char *>("Sound Trigger Time")));
-            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), const_cast<char *>("(%1.01f)"));
-            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+                            eduiItemToggleCreate(
+                                1, colours, AnimParams[edanim_nearest_param_id].sound_flags[edanim_nearest_sound] == 1,
+                                1, edanimcbToggleSoundType, const_cast<char *>("Repeating Sound")));
+            if (AnimParams[edanim_nearest_param_id].sound_flags[edanim_nearest_sound] == 1) {
+                eduiMenuAddItem(
+                    edanim_localsound_menu,
+                    eduiItemSliderCreateInt(
+                        0, colours, 0, edanimcbSetSoundTiming, 1, 99,
+                        static_cast<i32>(AnimParams[edanim_nearest_param_id].sound_values[edanim_nearest_sound]),
+                        const_cast<char *>("Repeat Every")));
+            } else {
+                nuhspecial_s special;
+                NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
+                if (NuSpecialTestAnim(&special)) {
+                    const auto *legacy_specials =
+                        reinterpret_cast<const NuSpecialLegacyLayout *>(edbits_base_scene->specials);
+                    const auto *instance =
+                        static_cast<const NuLegacyInstanceLayout *>(legacy_specials[edanim_nearest].instance)
+                            ->animation;
+                    const f32 end_frame =
+                        *reinterpret_cast<const f32 *>(edbits_base_scene->instance_animation_data[instance->anim_ix]);
+                    eduiMenuAddItem(
+                        edanim_localsound_menu,
+                        eduiItemSliderCreate(0, colours, 0, edanimcbSetSoundTiming, 1.0f, end_frame,
+                                             AnimParams[edanim_nearest_param_id].sound_values[edanim_nearest_sound],
+                                             const_cast<char *>("Sound Trigger Time")));
+                    eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), const_cast<char *>("(%1.01f)"));
+                    eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+                }
+            }
+
+            eduiMenuAttach(parent, edanim_localsound_menu);
+            edanim_localsound_menu->x = parent->x + 10;
+            edanim_localsound_menu->y = parent->y + 40;
         }
     }
-
-    eduiMenuAttach(parent, edanim_localsound_menu);
-    edanim_localsound_menu->x = parent->x + 10;
-    edanim_localsound_menu->y = parent->y + 40;
 }
 
 static void edgraChangeFilterName(eduimenu_s *, eduiitem_s *item, u32) {
@@ -5922,9 +5728,12 @@ static void edgracbChangeInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     char *name = NULL;
     for (i32 i = 0; i < count; ++i) {
         nuhspecial_s special;
+        NuGScnGetSpecial(&special, edbits_base_scene, i);
+        if (NuSpecialExistsFn(&special))
+            name = NuSpecialGetName(&special);
         const i32 selected = i == GrassClumps[edgra_nearest].special_index;
         NuGScnGetSpecial(&special, edbits_base_scene, i);
-        if (__builtin_expect(!!(NuSpecialExistsFn(&special)), 1))
+        if (NuSpecialExistsFn(&special))
             name = NuSpecialGetName(&special);
         if (__builtin_expect(edgra_filter && NuStrNCmp(edgra_filter_string, name, NuStrLen(edgra_filter_string)), 1)) {
             if (__builtin_expect(!selected, 1))
@@ -5955,7 +5764,7 @@ static void edgracbInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edgra_instance_menu =
         eduiMenuCreate(70, 70, 220, 250, ed_fnt, edgracbCancelInstanceMenu,
                        const_cast<char *>(edgra_filter ? "Base Instance Select (Filtered)" : "Base Instance Select"));
-    if (!edgra_instance_menu || !edbits_base_scene)
+    if (!edbits_base_scene || !edgra_instance_menu)
         return;
     i32 selected_found = 0;
     i32 added = 1;
@@ -5998,9 +5807,8 @@ static void edbricbRopeColourMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (!edbri_ropecolour_menu)
         return;
     eduiMenuAddItem(edbri_ropecolour_menu, eduiItemColourPickCreate(0, edblack, edbricbSetRopeColour, "Rope Colour"));
-    edbridge_s &bridge = edBridges[edbri_nearest];
-    eduiItemColourPickSetRGB(static_cast<edui_colour_pick_s *>(edui_last_item), bridge.red / 255.0f,
-                             bridge.green / 255.0f, bridge.blue / 255.0f);
+    eduiItemColourPickSetRGB(static_cast<edui_colour_pick_s *>(edui_last_item), edBridges[edbri_nearest].red / 255.0f,
+                             edBridges[edbri_nearest].green / 255.0f, edBridges[edbri_nearest].blue / 255.0f);
     eduiMenuAttach(parent, edbri_ropecolour_menu);
     edbri_ropecolour_menu->x = parent->x + 10;
     edbri_ropecolour_menu->y = parent->y + 40;
@@ -6040,10 +5848,11 @@ uv1deb *GenDebIndexRadialStar(debkeydatatype_s *key, debinftype *effect, float t
     i32 segment_angle = 0x10000 / static_cast<i8>(effect->radial_segments);
     i32 phase = static_cast<i32>(static_cast<f32>((angle_y + 0x10000) % segment_angle) /
                                  static_cast<f32>(segment_angle) * 32768.0f);
-    NUVEC vector = {
-        0.0f,
-        ((1.0f - effect->radial_floor) * (1.0f - NuTrigTable[(phase >> 1) & 0x7fff]) + effect->radial_floor) * radius,
-        0.0f};
+    NUVEC vector;
+    vector.x = 0.0f;
+    vector.y =
+        ((1.0f - effect->radial_floor) * (1.0f - NuTrigTable[(phase >> 1) & 0x7fff]) + effect->radial_floor) * radius;
+    vector.z = 0.0f;
     NuVecRotateZ(&vector, &vector, angle_z);
     NuVecRotateY(&vector, &vector, angle_y);
     NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
@@ -6068,9 +5877,8 @@ uv1deb *GenDebIndexRadialStar(debkeydatatype_s *key, debinftype *effect, float t
     particle->momentum.x += key->momentum.x;
     particle->momentum.y += key->momentum.y;
     particle->momentum.z += key->momentum.z;
-    auto key_particle_count = key->particle_count;
     for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        if (key->field_18a >= key_particle_count)
+        if (key->field_18a >= key->particle_count)
             key->field_18a = 0;
         dma_particle_s *copy = DebrisParticleAt(key, key->field_18a++, 0);
         *copy = particle_chunk->particles[particle_offset];
@@ -6122,7 +5930,10 @@ uv1deb *GenDebIndexImprovedRadial(debkeydatatype_s *key, debinftype *effect, flo
     i16 angle_z = static_cast<i16>(static_cast<i32>(radians * 10430.4f));
     i32 angle_y = static_cast<i32>(displacement.y) +
                   static_cast<i32>(static_cast<f32>(random_angle) * effect->field_050 * 0.000030517578125f);
-    NUVEC vector = {displacement.x, 0.0f, 0.0f};
+    NUVEC vector;
+    vector.x = displacement.x;
+    vector.y = 0.0f;
+    vector.z = 0.0f;
     NuVecRotateZ(&vector, &vector, angle_z);
     NuVecRotateY(&vector, &vector, angle_y);
     NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
@@ -6176,7 +5987,10 @@ uv1deb *GenDebIndexRadialRotor(debkeydatatype_s *key, debinftype *effect, float 
     NuVecAdd(&displacement, &displacement, reinterpret_cast<NUVEC *>(&effect->field_058));
     i32 angle_y = static_cast<i32>(static_cast<f32>(key->emitter_rotation_x) + displacement.y);
     i32 angle_z = static_cast<i32>(static_cast<f32>(key->emitter_rotation_y) + displacement.z);
-    NUVEC vector = {0.0f, displacement.x, 0.0f};
+    NUVEC vector;
+    vector.x = 0.0f;
+    vector.y = displacement.x;
+    vector.z = 0.0f;
     NuVecRotateZ(&vector, &vector, angle_z);
     NuVecRotateY(&vector, &vector, angle_y);
     NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
@@ -6210,14 +6024,14 @@ uv1deb *GenDebIndexRadialRotor(debkeydatatype_s *key, debinftype *effect, float 
     }
     if (effect->native_data == NULL)
         GenericDebinfoDmaTypeUpdate(effect);
-    if (effect->field_050 != 0.0f)
-        key->emitter_rotation_x += static_cast<i16>(static_cast<i32>(effect->field_050));
-    else
+    if (effect->field_050 == 0.0f)
         key->emitter_rotation_x = 0;
-    if (effect->field_054 != 0.0f)
-        key->emitter_rotation_y += static_cast<i16>(static_cast<i32>(effect->field_054));
     else
+        key->emitter_rotation_x += static_cast<i16>(static_cast<i32>(effect->field_050));
+    if (effect->field_054 == 0.0f)
         key->emitter_rotation_y = 0;
+    else
+        key->emitter_rotation_y += static_cast<i16>(static_cast<i32>(effect->field_054));
     return reinterpret_cast<uv1deb *>(particle);
 }
 
@@ -6242,7 +6056,10 @@ uv1deb *GenDebIndexRadial(debkeydatatype_s *key, debinftype *effect, float time)
         radius = (globaltime - key->last_update_time) / effect->scale_in_time * effect->field_058;
     else
         radius = effect->field_058;
-    NUVEC vector = {0.0f, radius, 0.0f};
+    NUVEC vector;
+    vector.x = 0.0f;
+    vector.y = radius;
+    vector.z = 0.0f;
     NuVecRotateZ(&vector, &vector, angle_z);
     NuVecRotateY(&vector, &vector, angle_y);
     NuVecMtxTransformVU0(&vector, &vector, &key->emitter_orientation);
@@ -6578,20 +6395,25 @@ static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, edui
 }
 
 uv1deb *GenDebIndexSpheroid(debkeydatatype_s *key, debinftype *effect, float time) {
-    i16 particle_index = key->field_18a;
-    if (particle_index < key->particle_count) {
-        ++key->field_18a;
+    u16 particle_index = key->field_18a;
+    u16 next_particle_index;
+    if (static_cast<i16>(particle_index) < key->particle_count) {
+        next_particle_index = particle_index + 1;
     } else {
         particle_index = 0;
-        key->field_18a = 1;
+        next_particle_index = 1;
     }
 
     dma_particle_s *particle = DebrisParticleAt(key, particle_index, effect->particle_type);
+    key->field_18a = next_particle_index;
     particle->start_time = time;
     key->emission_epoch = time;
     particle->inverse_lifetime = 64.0f / effect->particle_lifetime;
 
-    NUVEC vector = {NuFsqrt(NuRandFloatSeeded(&debrisseed)), 0.0f, 0.0f};
+    NUVEC vector;
+    vector.x = NuFsqrt(NuRandFloatSeeded(&debrisseed));
+    vector.y = 0.0f;
+    vector.z = 0.0f;
     i32 angle_y = static_cast<i32>(NuRandFloatSeeded(&debrisseed) * 65536.0f);
     f32 random = NuRandFloatSeeded(&debrisseed);
     f32 sine = random + random - 1.0f;
@@ -6629,14 +6451,16 @@ uv1deb *GenDebIndexSpheroid(debkeydatatype_s *key, debinftype *effect, float tim
     particle->momentum.z += key->momentum.z;
 
     for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        i16 trail_index = key->field_18a;
-        if (trail_index < key->particle_count) {
-            ++key->field_18a;
+        u16 trail_index = key->field_18a;
+        u16 next_trail_index;
+        if (static_cast<i16>(trail_index) < key->particle_count) {
+            next_trail_index = trail_index + 1;
         } else {
             trail_index = 0;
-            key->field_18a = 1;
+            next_trail_index = 1;
         }
         dma_particle_s *trail_particle = DebrisParticleAt(key, trail_index, effect->particle_type);
+        key->field_18a = next_trail_index;
         *trail_particle = *particle;
         trail_particle->start_time += static_cast<f32>(trail + 1) * effect->trail_time;
     }
@@ -6666,7 +6490,7 @@ static void cbCancelChangeNameMenu(eduimenu_s *menu, eduimenu_s *) {
     }
 }
 
-__attribute__((optimize("O2"))) void CRC_Init(VARIPTR *buffer_start) {
+void CRC_Init(VARIPTR *buffer_start) {
     if (g_crc_initialised) {
         return;
     }
@@ -6719,25 +6543,18 @@ __attribute__((optimize("O2"))) void CRC_Init(VARIPTR *buffer_start) {
 }
 
 u32 CRC_Process(const void *data, u32 size) {
-    if (size == 0) {
-        return 0;
-    }
-
-    const u8 *cursor = static_cast<const u8 *>(data);
-    const u8 *end = cursor + size;
+    const u8 *bytes = static_cast<const u8 *>(data);
     u32 crc = 0;
-    do {
-        const u32 table_index = *cursor++ ^ (crc >> 24);
-        crc = (crc << 8) ^ g_crc_table[table_index];
-    } while (cursor != end);
+    for (u32 i = 0; i < size; ++i) {
+        crc = g_crc_table[(crc >> 24) ^ bytes[i]] ^ (crc << 8);
+    }
     return crc;
 }
 
 u32 CRC_ProcessString(const char *str) {
     u32 crc = 0;
-    for (char c = *str++; c != '\0'; c = *str++) {
-        const u32 table_index = static_cast<u32>(static_cast<i32>(c)) ^ (crc >> 24);
-        crc = (crc << 8) ^ g_crc_table[table_index];
+    for (i32 i = 0; str[i] != '\0'; ++i) {
+        crc = g_crc_table[(crc >> 24) ^ str[i]] ^ (crc << 8);
     }
     return crc;
 }
@@ -6745,8 +6562,7 @@ u32 CRC_ProcessString(const char *str) {
 u32 CRC_ProcessStringN(const char *str, u32 size) {
     u32 crc = 0;
     for (u32 i = 0; str[i] != '\0' && i < size; ++i) {
-        const u32 table_index = static_cast<u32>(static_cast<i32>(str[i])) ^ (crc >> 24);
-        crc = (crc << 8) ^ g_crc_table[table_index];
+        crc = g_crc_table[(crc >> 24) ^ str[i]] ^ (crc << 8);
     }
     return crc;
 }
@@ -7223,10 +7039,10 @@ extern "C" void PlaySfxByIdEx(i32 sfx_id, nuvec_s *position, f32 volume, f32 pit
         }
     }
 
-    f32 pan = g_soundInfo[sfx_id].pan;
     i32 sample_index = g_soundInfo[sfx_id].index;
-    f32 buzz_timer = g_soundInfo[sfx_id].buzz_timer;
+    f32 pan = g_soundInfo[sfx_id].pan;
     u8 loop = static_cast<u8>(g_soundInfo[sfx_id].loop);
+    f32 buzz_timer = g_soundInfo[sfx_id].buzz_timer;
     f32 rumble_sustain = g_soundInfo[sfx_id].rumble_sustain;
     i32 rumble_strength = g_soundInfo[sfx_id].rumble_strength;
     f32 rumble_release = g_soundInfo[sfx_id].rumble_release;
@@ -7761,7 +7577,7 @@ extern "C" {
             return;
         }
 
-        const auto play_stream = [track](i32 stream, f32 seek_offset) {
+        const auto play_stream = [](i32 stream, i32 track, f32 seek_offset) {
             NuSound3StopStereoStream(stream);
             NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track, NUSOUNDPLAYTOK_VOL,
                                 0, NUSOUNDPLAYTOK_STARTOFFSET, static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT,
@@ -7776,22 +7592,19 @@ extern "C" {
             Music.queued_track = static_cast<i16>(track);
             Music.requested_track = static_cast<i16>(track);
             reinterpret_cast<u8 *>(&Music)[primary_stream + 0x12] = 0;
-            if (transition_frames < 64) {
-                if (state == MUSIC_PLAYBACK_STOPPED)
-                    goto first_play;
-                Music.pause_requested = true;
-            } else {
-            first_play:
+            if (state == MUSIC_PLAYBACK_STOPPED || transition_frames >= 64) {
                 Music.pause_requested = false;
                 const f32 seek_offset = Music.seek_offset;
                 const i32 stream = 1 - primary_stream;
-                play_stream(stream, seek_offset);
+                play_stream(stream, track, seek_offset);
                 Music.secondary_stream = static_cast<i16>(stream);
                 Music.transition_frames = 0;
                 Music.seek_offset = 0.0f;
                 if (track >= SFX_MUSIC_COUNT) {
                     return;
                 }
+            } else {
+                Music.pause_requested = true;
             }
         }
 
@@ -7804,17 +7617,17 @@ extern "C" {
             Music.requested_track = static_cast<i16>(track);
             Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
             reinterpret_cast<u8 *>(&Music)[primary_stream + 0x12] = 0;
-            if (transition_frames < 64) {
-                Music.pause_requested = true;
-            } else {
+            if (transition_frames >= 64) {
                 Music.pause_requested = false;
                 const f32 seek_offset = Music.seek_offset;
                 if (NOSOUND == 0 && NOMUSIC == 0) {
-                    play_stream(primary_stream, seek_offset);
-                    Music.secondary_stream = static_cast<i16>(primary_stream);
+                    play_stream(primary_stream, track, seek_offset);
                 }
+                Music.secondary_stream = static_cast<i16>(primary_stream);
                 Music.transition_frames = 0;
                 Music.seek_offset = 0.0f;
+            } else {
+                Music.pause_requested = true;
             }
         }
     }
@@ -8456,8 +8269,8 @@ extern "C" {
     void DebrisSetup2(VARIPTR *buffer, VARIPTR buffer_end, VARIPTR *trash_buffer, VARIPTR trash_end, char *texture_name,
                       i32 chunk_count, i32 glass_chunk_count, i32 key_count, i32 effect_count) {
         if (debris_trash_space == NULL) {
-            debrischunksglass = glass_chunk_count;
             debrischunks = chunk_count;
+            debrischunksglass = glass_chunk_count;
         }
         debris_setup_called = 1;
         maxdebkeys = key_count;
@@ -8506,8 +8319,8 @@ extern "C" {
 
         for (i32 i = 0; i < maxdebkeys; ++i) {
             spherecolldata[i * 2] = static_cast<u32>(i);
-            spherecolldata[i * 2 + 1] = 3;
             toruscolldata[i * 2] = static_cast<u32>(i);
+            spherecolldata[i * 2 + 1] = 3;
             toruscolldata[i * 2 + 1] = 3;
         }
 
@@ -8943,7 +8756,9 @@ extern "C" {
                 render_chunk->key = NULL;
                 render_chunk->effect_orientation = key->effect_orientation;
                 render_chunk->render_priority = key->render_priority;
-                render_chunk->position = key->position;
+                render_chunk->position.x = key->position.x;
+                render_chunk->position.y = key->position.y;
+                render_chunk->position.z = key->position.z;
                 if (key->field_2f6 != 0) {
                     AddChunkToRenderStack(render_chunk, &ParticleChunkRenderStack[render_chunk->effect->time_group]);
                 }
@@ -8962,7 +8777,9 @@ extern "C" {
             render_chunk->effect = debtab[key->effect_index];
             render_chunk->key = NULL;
             render_chunk->effect_orientation = key->effect_orientation;
-            render_chunk->position = key->position;
+            render_chunk->position.x = key->position.x;
+            render_chunk->position.y = key->position.y;
+            render_chunk->position.z = key->position.z;
             render_chunk->render_priority = key->render_priority;
         }
 
@@ -8980,15 +8797,17 @@ extern "C" {
     void DebReAlloc(debkeydatatype_s *key, i32 particle_count) {
         debinftype *effect = debtab[key->effect_index];
         key->previous_particle_count = static_cast<i16>(particle_count);
-        i32 chunk_count = effect->particle_type == 7 ? (particle_count + 11) / 12 : (particle_count + 31) / 32;
-        if (chunk_count > 32) {
-            chunk_count = 32;
+        if (effect->particle_type == 7)
+            key->previous_allocated_chunk_count = static_cast<i16>((particle_count + 11) / 12);
+        else
+            key->previous_allocated_chunk_count = static_cast<i16>((particle_count + 31) / 32);
+        if (key->previous_allocated_chunk_count > 32) {
+            key->previous_allocated_chunk_count = 32;
             key->previous_particle_count = effect->particle_type == 7 ? 0x180 : 0x400;
         }
-        key->previous_allocated_chunk_count = static_cast<i16>(chunk_count);
-        if (key->allocated_chunk_count == chunk_count) {
+        if (key->allocated_chunk_count == key->previous_allocated_chunk_count) {
             key->particle_count = key->previous_particle_count;
-        } else if (chunk_count != 0 && key->allocated_chunk_count == 0) {
+        } else if (key->previous_allocated_chunk_count != 0 && key->allocated_chunk_count == 0) {
             DebReAlloc2(key);
         }
     }
@@ -8996,8 +8815,8 @@ extern "C" {
 }
 
 static void UpdateTotalPtls(debinftype *effect) {
-    f32 elapsed_time = 0.0f;
     f32 active_time = 0.0f;
+    f32 elapsed_time = 0.0f;
     while (effect->particle_lifetime > elapsed_time) {
         f32 remaining_time = effect->particle_lifetime - elapsed_time;
         f32 emission_time = effect->emission_period_random + effect->emission_pause;
@@ -9218,8 +9037,10 @@ uv1deb *GenDebIndexBounceXZ(debkeydatatype_s *key, debinftype *effect, float tim
     NuVecRotateY(&normal, &normal, key->reflection_y);
     NUVEC plane_position;
     NuVecScale(&plane_position, &normal, key->collision_plane);
-    NUVEC end_position = {particle->momentum.x * effect->particle_lifetime + particle->position.x, 0.0f,
-                          effect->particle_lifetime * particle->momentum.z + particle->position.z};
+    NUVEC end_position;
+    end_position.x = particle->momentum.x * effect->particle_lifetime + particle->position.x;
+    end_position.y = 0.0f;
+    end_position.z = effect->particle_lifetime * particle->momentum.z + particle->position.z;
     NUVEC start_delta, end_delta;
     NuVecSub(&start_delta, &plane_position, &particle->position);
     NuVecSub(&end_delta, &plane_position, &end_position);
@@ -9232,8 +9053,8 @@ uv1deb *GenDebIndexBounceXZ(debkeydatatype_s *key, debinftype *effect, float tim
             f32 collision_time = (0.0f - start_distance) / (end_distance - start_distance) * lifetime;
             freechunkcontrols[freechunkcontrolsptr]->particle_chunk = chunk;
             freechunkcontrols[freechunkcontrolsptr]->expiry_time = time + collision_time;
-            freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
             freechunkcontrols[freechunkcontrolsptr]->active = 6;
+            freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
             freechunkcontrols[freechunkcontrolsptr]->effect_index = key->effect_index;
             freechunkcontrols[freechunkcontrolsptr]->rotation_y = key->reflection_y;
             freechunkcontrols[freechunkcontrolsptr]->field_01e = 0;
@@ -9295,29 +9116,26 @@ uv1deb *GenDebIndexBounceY(debkeydatatype_s *key, debinftype *effect, float time
 
     f32 first, second;
     if (SolveQuadratic(effect->field_0a0, particle->momentum.y, particle->position.y - key->collision_plane, &first,
-                       &second)) {
-        if ((first > second ? first > 0.0f : second > 0.0f) &&
-            effect->particle_lifetime > (first > second ? first : second)) {
-            DebrisGetControlStackLock();
-            if (freechunkcontrolsptr < debrischunks + debrischunksglass) {
-                debris_chunk_control_s *control = freechunkcontrols[freechunkcontrolsptr];
-                control->particle_chunk = chunk;
-                const f32 collision_time = first > second ? first : second;
-                control->owner = NULL;
-                control->active = 5;
-                control->expiry_time = time + collision_time;
-                control->effect_index = key->effect_index;
-                control->collision_plane = key->collision_plane;
-                control->rotation_y = 0;
-                control->restitution = key->reflection_scale;
-                control->field_01e = 0;
-                control->collision_time = collision_time;
-                control->particle_index = key->field_18a % 32;
-                AddChunkControlToStack(control, &debris_chunk_control_stack[0]);
-                ++freechunkcontrolsptr;
-            }
-            DebrisReleaseControlStackLock();
+                       &second) &&
+        (first > second ? first : second) > 0.0f && effect->particle_lifetime > (first > second ? first : second)) {
+        DebrisGetControlStackLock();
+        if (freechunkcontrolsptr < debrischunks + debrischunksglass) {
+            const f32 collision_time = first > second ? first : second;
+            freechunkcontrols[freechunkcontrolsptr]->particle_chunk = chunk;
+            freechunkcontrols[freechunkcontrolsptr]->active = 5;
+            freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
+            freechunkcontrols[freechunkcontrolsptr]->effect_index = key->effect_index;
+            freechunkcontrols[freechunkcontrolsptr]->expiry_time = time + collision_time;
+            freechunkcontrols[freechunkcontrolsptr]->collision_plane = key->collision_plane;
+            freechunkcontrols[freechunkcontrolsptr]->rotation_y = 0;
+            freechunkcontrols[freechunkcontrolsptr]->field_01e = 0;
+            freechunkcontrols[freechunkcontrolsptr]->restitution = key->reflection_scale;
+            freechunkcontrols[freechunkcontrolsptr]->collision_time = collision_time;
+            freechunkcontrols[freechunkcontrolsptr]->particle_index = key->field_18a % 32;
+            AddChunkControlToStack(freechunkcontrols[freechunkcontrolsptr], &debris_chunk_control_stack[0]);
+            ++freechunkcontrolsptr;
         }
+        DebrisReleaseControlStackLock();
     }
     if (key->momentum_adjuster != NULL)
         key->momentum_adjuster(key, effect, reinterpret_cast<uv1deb *>(particle));
@@ -9351,7 +9169,8 @@ void RemoveAnyChunkControls(i32 *chunk) {
             debris_chunk_control_s *next = control->next;
             if (control->particle_chunk == reinterpret_cast<dma_particle_chunk_s *>(chunk)) {
                 RemoveChunkControlFromStack(control, &debris_chunk_control_stack[i]);
-                freechunkcontrols[--freechunkcontrolsptr] = control;
+                --freechunkcontrolsptr;
+                freechunkcontrols[freechunkcontrolsptr] = control;
                 control->particle_chunk = NULL;
             }
             control = next;
@@ -9438,8 +9257,8 @@ void DebFreeChunksInstantly(i32 *handle) {
         if (render_chunk->particle_chunk == debkeydata[*handle].particle_chunks[0]) {
             if (debkeydata[*handle].field_2f6 != 0) {
                 RemoveChunkFromRenderStack(render_chunk, &ParticleChunkRenderStack[effect->time_group]);
-                render_chunk = &ParticleChunkToRender[i];
                 render_chunk_count = debrischunks + debrischunksglass;
+                render_chunk = &ParticleChunkToRender[i];
             }
             render_chunk->particle_chunk = NULL;
             render_chunk->effect = NULL;
@@ -9485,8 +9304,8 @@ extern "C" {
             ++freechunkcontrolsptr;
             RemoveChunkFromRenderStack(&ParticleChunkToRender[i],
                                        &ParticleChunkRenderStack[static_cast<i8>(effect->time_group)]);
-            ParticleChunkToRender[i].particle_chunk = NULL;
             ParticleChunkToRender[i].effect = NULL;
+            ParticleChunkToRender[i].particle_chunk = NULL;
         }
         DebrisReleaseControlStackLock();
     }
@@ -9592,7 +9411,7 @@ extern "C" {
         }
     }
 
-    void DebrisSetFacing(i32 handle, u8 enabled, i16 x_angle, i16 y_angle) {
+    void DebrisSetFacing(i32 handle, i8 enabled, i16 x_angle, i16 y_angle) {
         if (handle == -1)
             return;
         debkeydata[handle].field_2fa = enabled;
@@ -9606,8 +9425,8 @@ extern "C" {
 static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *item, u32) {
     edpp_ptls[edpp_nearest].facing_mode = item->highlighted;
     if (item->highlighted) {
-        edpp_ptls[edpp_nearest].facing_rotation_x = edpp_facrotx;
         edpp_ptls[edpp_nearest].facing_rotation_y = edpp_facroty;
+        edpp_ptls[edpp_nearest].facing_rotation_x = edpp_facrotx;
         DebrisSetFacing(edpp_ptls[edpp_nearest].instance_id, 1, edpp_ptls[edpp_nearest].facing_rotation_x,
                         edpp_ptls[edpp_nearest].facing_rotation_y);
     } else {
@@ -9819,7 +9638,8 @@ extern "C" {
             RemoveDebrisEffectFromStack(&debkeydata[*handle]);
         debkeydata[*handle].effect_index = 0;
         debkeydata[*handle].allocation_index = -1;
-        freedebkeys[--freedebkeyptr] = static_cast<i16>(*handle);
+        --freedebkeyptr;
+        freedebkeys[freedebkeyptr] = static_cast<i16>(*handle);
         debkeydata[*handle].allocation_locked = 0;
         *handle = -1;
     }
@@ -9918,7 +9738,8 @@ extern "C" {
         debkeydata[*handle].allocated_chunk_count = 0;
         debkeydata[*handle].effect_index = 0;
         debkeydata[*handle].allocation_index = -1;
-        freedebkeys[--freedebkeyptr] = static_cast<i16>(*handle);
+        --freedebkeyptr;
+        freedebkeys[freedebkeyptr] = static_cast<i16>(*handle);
         debkeydata[*handle].allocation_locked = 0;
         *handle = -1;
     }
@@ -10048,8 +9869,8 @@ extern "C" {
         effect->particle_keys[particle_key_slot] = static_cast<i16>(new_key_index);
         key = &debkeydata[effect->particle_keys[particle_key_slot]];
         key->effect_index = static_cast<i16>(effect_index);
-        key->field_1d4 = 0;
         key->generator = gensorttab[static_cast<i8>(effect->generator_type)];
+        key->field_1d4 = 0;
         key->momentum_adjuster = gencodetab[static_cast<i8>(effect->momentum_adjustment_type)];
         key->effect_orientation = *particle_orientation;
         key->effect_orientation.m30 = 0.0f;
@@ -10585,8 +10406,8 @@ void DebrisProcessControlChunks(i32 panel_time) {
 
         if (control->active == 8) {
             --freedebchkptrg;
-            freedebchunksglass[freedebchkptrg] = control->particle_chunk;
             control->particle_chunk->particles[0].start_time = 10000000000.0f;
+            freedebchunksglass[freedebchkptrg] = control->particle_chunk;
             control->particle_chunk->particles[0].inverse_lifetime = 128.0f;
             control->particle_chunk->particles[1].start_time = 10000000000.0f;
             control->particle_chunk->particles[1].inverse_lifetime = 128.0f;
@@ -10784,7 +10605,11 @@ void DebrisProcessControlChunks(i32 panel_time) {
             }
 
             control->expiry_time += 0.1f;
-            control->active = effect->particle_type == 7 ? 9 : 2;
+            if (effect->particle_type == 7) {
+                control->active = 9;
+            } else {
+                control->active = 2;
+            }
             AddChunkControlToStack(control, &debris_chunk_control_stack[panel_time]);
             continue;
         }
@@ -11117,48 +10942,34 @@ extern "C" {
 
     // LookupDebrisEffectPageIgnore @0x355d30. Search the requested page first,
     // then the two permanent pages, then every other active page.
-    i32 LookupDebrisEffectPageIgnore(char *name, i32 page, i32 ignore) {
+    i32 LookupDebrisEffectPageIgnore(char *name, char page, i32 ignore) {
         if (name == NULL) {
             return -1;
         }
 
-        i32 bound;
-        const u8 requested_page = static_cast<u8>(page);
-        if (requested_page < 8 && edpp_page_used[requested_page] != 0) {
-            bound = EDPP_MAX_TYPES;
-            for (i32 i = 1; i < bound; ++i) {
-                debinftype *effect = debtab[i];
-                if (i != ignore && effect != NULL && effect->page == requested_page) {
-                    if (NuStrICmp(effect->name, name) == 0) {
-                        return i;
-                    }
-                    bound = EDPP_MAX_TYPES;
-                }
-            }
-        } else {
-            bound = EDPP_MAX_TYPES;
-        }
-
-        for (i32 i = 1; i < bound; ++i) {
-            debinftype *effect = debtab[i];
-            if (!(i != ignore && effect != NULL &&
-                  ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)))) {
-                continue;
-            }
-            if (NuStrICmp(effect->name, name) == 0) {
-                return i;
-            }
-            bound = EDPP_MAX_TYPES;
-        }
-
-        for (i32 i = 1; i < bound; ++i) {
-            debinftype *effect = debtab[i];
-            if (i != ignore && effect != NULL && edpp_page_used[static_cast<i8>(effect->page)] != 0) {
-                if (NuStrICmp(effect->name, name) == 0) {
+        if (static_cast<u8>(page) < 8 && edpp_page_used[static_cast<i32>(page)] != 0) {
+            for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+                if (i == ignore || debtab[i] == NULL || debtab[i]->page != page)
+                    continue;
+                if (NuStrICmp(debtab[i]->name, name) == 0)
                     return i;
-                }
-                bound = EDPP_MAX_TYPES;
             }
+        }
+
+        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+            if (i == ignore || debtab[i] == NULL)
+                continue;
+            if (!((debtab[i]->page == 0 && edpp_page_used[0] != 0) || (debtab[i]->page == 1 && edpp_page_used[1] != 0)))
+                continue;
+            if (NuStrICmp(debtab[i]->name, name) == 0)
+                return i;
+        }
+
+        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
+            if (i == ignore || debtab[i] == NULL || edpp_page_used[static_cast<i8>(debtab[i]->page)] == 0)
+                continue;
+            if (NuStrICmp(debtab[i]->name, name) == 0)
+                return i;
         }
         return -1;
     }
@@ -11255,14 +11066,10 @@ void DebrisProcessGeneration() {
             volume = (sound_range - key->cutoff_distance) / sound_range;
         }
         if (key->process_collision_sound != 0 && key->field_184 != 0 && sound_range > key->cutoff_distance) {
-            if (effect->sound_data[0] != -1 && effect->sound_data[1] == 4)
-                PlaySfxByIdEx(effect->sound_data[0], &key->position, volume, 1.0f);
-            if (effect->sound_data[3] != -1 && effect->sound_data[4] == 4)
-                PlaySfxByIdEx(effect->sound_data[3], &key->position, volume, 1.0f);
-            if (effect->sound_data[6] != -1 && effect->sound_data[7] == 4)
-                PlaySfxByIdEx(effect->sound_data[6], &key->position, volume, 1.0f);
-            if (effect->sound_data[9] != -1 && effect->sound_data[10] == 4)
-                PlaySfxByIdEx(effect->sound_data[9], &key->position, volume, 1.0f);
+            for (i32 i = 0; i < 4; i++) {
+                if (effect->sound_data[i * 3] != -1 && effect->sound_data[i * 3 + 1] == 4)
+                    PlaySfxByIdEx(effect->sound_data[i * 3], &key->position, volume, 1.0f);
+            }
         }
         if (effect->status == 0)
             key->field_184 = 0;
@@ -11313,20 +11120,18 @@ void DebrisProcessGeneration() {
                                 key->process_collision_sound = 0;
                             }
                         }
-                        if (key->field_1d4 < 0 && ++key->field_1d4 == 0) {
-                            key->field_2f4 = 0;
-                            key->field_184 = 0;
+                        if (key->field_1d4 < 0) {
+                            if (++key->field_1d4 == 0) {
+                                key->field_2f4 = 0;
+                                key->field_184 = 0;
+                            }
                         }
                         if (key->process_collision_sound != 0 && key->field_184 != 0 &&
                             sound_range > key->cutoff_distance) {
-                            if (effect->sound_data[0] != -1 && effect->sound_data[1] == 1)
-                                PlaySfxByIdEx(effect->sound_data[0], &key->position, volume, 1.0f);
-                            if (effect->sound_data[3] != -1 && effect->sound_data[4] == 1)
-                                PlaySfxByIdEx(effect->sound_data[3], &key->position, volume, 1.0f);
-                            if (effect->sound_data[6] != -1 && effect->sound_data[7] == 1)
-                                PlaySfxByIdEx(effect->sound_data[6], &key->position, volume, 1.0f);
-                            if (effect->sound_data[9] != -1 && effect->sound_data[10] == 1)
-                                PlaySfxByIdEx(effect->sound_data[9], &key->position, volume, 1.0f);
+                            for (i32 i = 0; i < 4; i++) {
+                                if (effect->sound_data[i * 3] != -1 && effect->sound_data[i * 3 + 1] == 1)
+                                    PlaySfxByIdEx(effect->sound_data[i * 3], &key->position, volume, 1.0f);
+                            }
                         }
                         pause = 0.0f;
                     } else {
@@ -11338,14 +11143,10 @@ void DebrisProcessGeneration() {
                             key->field_184 = 0;
                         if (key->process_collision_sound != 0 && key->field_184 != 0 &&
                             sound_range > key->cutoff_distance) {
-                            if (effect->sound_data[0] != -1 && effect->sound_data[1] == 2)
-                                PlaySfxByIdEx(effect->sound_data[0], &key->position, volume, 1.0f);
-                            if (effect->sound_data[3] != -1 && effect->sound_data[4] == 2)
-                                PlaySfxByIdEx(effect->sound_data[3], &key->position, volume, 1.0f);
-                            if (effect->sound_data[6] != -1 && effect->sound_data[7] == 2)
-                                PlaySfxByIdEx(effect->sound_data[6], &key->position, volume, 1.0f);
-                            if (effect->sound_data[9] != -1 && effect->sound_data[10] == 2)
-                                PlaySfxByIdEx(effect->sound_data[9], &key->position, volume, 1.0f);
+                            for (i32 i = 0; i < 4; i++) {
+                                if (effect->sound_data[i * 3] != -1 && effect->sound_data[i * 3 + 1] == 2)
+                                    PlaySfxByIdEx(effect->sound_data[i * 3], &key->position, volume, 1.0f);
+                            }
                         }
                     }
                 }
@@ -11356,14 +11157,10 @@ void DebrisProcessGeneration() {
                     if (effect->process_spheres != 0 && particle != NULL && emission == 1)
                         DebrisProcessSpheres(particle, emission_time, effect, key, 0);
                     if (key->process_collision_sound != 0 && sound_range > key->cutoff_distance) {
-                        if (effect->sound_data[0] != -1 && effect->sound_data[1] == 3)
-                            PlaySfxByIdEx(effect->sound_data[0], &key->position, volume, 1.0f);
-                        if (effect->sound_data[3] != -1 && effect->sound_data[4] == 3)
-                            PlaySfxByIdEx(effect->sound_data[3], &key->position, volume, 1.0f);
-                        if (effect->sound_data[6] != -1 && effect->sound_data[7] == 3)
-                            PlaySfxByIdEx(effect->sound_data[6], &key->position, volume, 1.0f);
-                        if (effect->sound_data[9] != -1 && effect->sound_data[10] == 3)
-                            PlaySfxByIdEx(effect->sound_data[9], &key->position, volume, 1.0f);
+                        for (i32 i = 0; i < 4; i++) {
+                            if (effect->sound_data[i * 3] != -1 && effect->sound_data[i * 3 + 1] == 3)
+                                PlaySfxByIdEx(effect->sound_data[i * 3], &key->position, volume, 1.0f);
+                        }
                     }
                 }
                 key->emission_epoch = emission_time;
@@ -11420,9 +11217,9 @@ void DebrisProcessTriggers() {
                     DebrisStartOffsetEx(key, 0.0f);
                     f32 shift = key->emission_time - globaltime;
                     key->field_1d8 = 0;
-                    key->emission_epoch = globaltime;
                     key->emission_time -= shift;
                     key->field_1e4 -= shift;
+                    key->emission_epoch = globaltime;
                     if (key->process_collision_sound != 0) {
                         key->cutoff_distance = CameraEmitterDistance(&key->position);
                         f32 range = effect->sound_range_override;
@@ -11432,25 +11229,17 @@ void DebrisProcessTriggers() {
                             range = effect->clip_extent;
                         f32 volume = 0.0f;
                         if (range > key->cutoff_distance) {
-                            if (effect->sound_data[0] != -1)
-                                SetSfxBit_On(effect->sound_data[0]);
-                            if (effect->sound_data[3] != -1)
-                                SetSfxBit_On(effect->sound_data[3]);
-                            if (effect->sound_data[6] != -1)
-                                SetSfxBit_On(effect->sound_data[6]);
-                            if (effect->sound_data[9] != -1)
-                                SetSfxBit_On(effect->sound_data[9]);
+                            for (i32 i = 0; i < 4; i++) {
+                                if (effect->sound_data[i * 3] != -1)
+                                    SetSfxBit_On(effect->sound_data[i * 3]);
+                            }
                             volume = (range - key->cutoff_distance) / range;
                         }
                         if (range > key->cutoff_distance) {
-                            if (effect->sound_data[0] != -1 && effect->sound_data[1] == 1)
-                                PlaySfxByIdEx(effect->sound_data[0], &key->position, volume, 1.0f);
-                            if (effect->sound_data[3] != -1 && effect->sound_data[4] == 1)
-                                PlaySfxByIdEx(effect->sound_data[3], &key->position, volume, 1.0f);
-                            if (effect->sound_data[6] != -1 && effect->sound_data[7] == 1)
-                                PlaySfxByIdEx(effect->sound_data[6], &key->position, volume, 1.0f);
-                            if (effect->sound_data[9] != -1 && effect->sound_data[10] == 1)
-                                PlaySfxByIdEx(effect->sound_data[9], &key->position, volume, 1.0f);
+                            for (i32 i = 0; i < 4; i++) {
+                                if (effect->sound_data[i * 3] != -1 && effect->sound_data[i * 3 + 1] == 1)
+                                    PlaySfxByIdEx(effect->sound_data[i * 3], &key->position, volume, 1.0f);
+                            }
                         }
                     }
                     break;
@@ -11531,13 +11320,13 @@ extern "C" {
             }
             NuMtxTranslate(&matrix, &position);
             f32 render_time;
-            if (pass == 4) {
+            if (pass != 4) {
+                render_time = renderglobaltime;
+                effect->last_render_time = globaltime;
+            } else {
                 NuMtxMulVU0(&matrix, &matrix, NuCameraGetMtx());
                 render_time = renderpanelglobaltime;
                 effect->last_render_time = panelglobaltime;
-            } else {
-                render_time = renderglobaltime;
-                effect->last_render_time = globaltime;
             }
             if (key != NULL && key->field_2fa != 0)
                 NuRndrSetParticleRotation(&key->particle_orientation);
@@ -11569,7 +11358,7 @@ extern "C" {
         if (__builtin_expect(debris_suspended != 0, 0))
             return;
         AddDebrisEffect(handle, effect, position->x, position->y, position->z);
-        if (__builtin_expect(*handle == -1, 1))
+        if (*handle == -1)
             return;
         debkeydata[*handle].field_1d4 = count;
         const f32 now = debtab[effect]->time_group == 4 ? panelglobaltime : globaltime;
@@ -11589,25 +11378,17 @@ extern "C" {
                 range = debtab[effect]->clip_extent;
             f32 volume = 0.0f;
             if (debkeydata[*handle].cutoff_distance < range) {
-                if (debtab[effect]->sound_data[0] != -1)
-                    SetSfxBit_On(debtab[effect]->sound_data[0]);
-                if (debtab[effect]->sound_data[3] != -1)
-                    SetSfxBit_On(debtab[effect]->sound_data[3]);
-                if (debtab[effect]->sound_data[6] != -1)
-                    SetSfxBit_On(debtab[effect]->sound_data[6]);
-                if (debtab[effect]->sound_data[9] != -1)
-                    SetSfxBit_On(debtab[effect]->sound_data[9]);
+                for (i32 i = 0; i < 4; i++) {
+                    if (debtab[effect]->sound_data[i * 3] != -1)
+                        SetSfxBit_On(debtab[effect]->sound_data[i * 3]);
+                }
                 volume = (range - debkeydata[*handle].cutoff_distance) / range;
             }
             if (debkeydata[*handle].cutoff_distance < range) {
-                if (debtab[effect]->sound_data[0] != -1 && debtab[effect]->sound_data[1] == 1)
-                    PlaySfxByIdEx(debtab[effect]->sound_data[0], position, volume, 1.0f);
-                if (debtab[effect]->sound_data[3] != -1 && debtab[effect]->sound_data[4] == 1)
-                    PlaySfxByIdEx(debtab[effect]->sound_data[3], position, volume, 1.0f);
-                if (debtab[effect]->sound_data[6] != -1 && debtab[effect]->sound_data[7] == 1)
-                    PlaySfxByIdEx(debtab[effect]->sound_data[6], position, volume, 1.0f);
-                if (debtab[effect]->sound_data[9] != -1 && debtab[effect]->sound_data[10] == 1)
-                    PlaySfxByIdEx(debtab[effect]->sound_data[9], position, volume, 1.0f);
+                for (i32 i = 0; i < 4; i++) {
+                    if (debtab[effect]->sound_data[i * 3] != -1 && debtab[effect]->sound_data[i * 3 + 1] == 1)
+                        PlaySfxByIdEx(debtab[effect]->sound_data[i * 3], position, volume, 1.0f);
+                }
             }
         }
         if (emitter_momentum != NULL) {
@@ -11634,20 +11415,22 @@ extern "C" {
         i32 count = 0;
         for (i32 i = 0; i < maxdebkeys; ++i) {
             debkeydatatype_s *key = &debkeydata[i];
-            if (key->effect_index == effect_index && (key->allocated_chunk_count != 0 || active_only == 0)) {
-                i32 output_index = count - skip;
-                if (output_index >= 0) {
-                    if (capacity > output_index) {
-                        if (positions != NULL) {
-                            positions[output_index].x = key->position.x;
-                            positions[output_index].y = key->position.y;
-                            positions[output_index].z = key->position.z;
+            if (key->effect_index == effect_index) {
+                if (key->allocated_chunk_count != 0 || active_only == 0) {
+                    i32 output_index = count - skip;
+                    if (output_index >= 0) {
+                        if (capacity > output_index) {
+                            if (positions != NULL) {
+                                positions[output_index].x = key->position.x;
+                                positions[output_index].y = key->position.y;
+                                positions[output_index].z = key->position.z;
+                            }
+                            if (handles != NULL)
+                                handles[output_index] = i;
                         }
-                        if (handles != NULL)
-                            handles[output_index] = i;
                     }
+                    ++count;
                 }
-                ++count;
             }
         }
         return count - skip;
@@ -11770,8 +11553,8 @@ i32 DebrisSingleTorusCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f3
 
     f32 dx = position->x - debris_collide_pt.x;
     f32 dy = position->y - debris_collide_pt.y;
-    f32 dz = position->z - debris_collide_pt.z;
     f32 combined_radius = radius + horizontal_radius;
+    f32 dz = position->z - debris_collide_pt.z;
     if (horizontal_radius != vertical_radius || y_scale != 1.0f)
         dy *= combined_radius / (radius * y_scale + vertical_radius);
     return combined_radius * combined_radius > dx * dx + dy * dy + dz * dz;
@@ -11842,8 +11625,8 @@ i32 DebrisSingleCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f32 rad
             if (effect_radius <= 0.0f)
                 goto next_sphere;
 
-            f32 dx = position->x - x;
             f32 dy = position->y - y;
+            f32 dx = position->x - x;
             f32 dz = position->z - z;
             f32 combined_radius = radius + effect_radius;
             if (y_scale != 1.0f)
@@ -11962,9 +11745,9 @@ extern "C" {
             material->attribs.cull_mode = 2;
             material->attribs.z_mode = 3;
             material->attribs.alpha_mode = 0;
-            material->attribs.filter_mode = 0;
             material->attribs.unknown_2_1_2 = 2;
             material->attribs.unknown_2_4 = 1;
+            material->attribs.filter_mode = 0;
             NuMtlUpdate(material);
         }
         debris_initialised = 1;
@@ -11975,10 +11758,10 @@ extern "C" {
             return;
         i32 reserved = NuTexReserve(NuTexGetReqSize(debris_rt, 0));
         DebrisGlassParticlesActive();
-        if (flicker == 0)
-            NuRndrBeginSceneEx(-1, -2, 1);
-        else
+        if (flicker != 0)
             NuRndrFlickerBeginScene();
+        else
+            NuRndrBeginSceneEx(-1, -2, 1);
         if (DebrisGlassParticlesActive() != 0)
             DebrisDraw(0, 2);
         NuRainDraw(reserved);
@@ -12154,8 +11937,8 @@ void edanimSoundPlace(i32 sound_index, nuvec_s *position) {
 extern "C" {
     void edanimSoundDestroy(i32 parameter_index, i32 sound_index) {
         for (i32 i = sound_index; i < AnimParams[parameter_index].sound_count - 1; i++) {
-            AnimParams[parameter_index].sound_values[i] = AnimParams[parameter_index].sound_values[i + 1];
             AnimParams[parameter_index].sound_ids[i] = AnimParams[parameter_index].sound_ids[i + 1];
+            AnimParams[parameter_index].sound_values[i] = AnimParams[parameter_index].sound_values[i + 1];
             memcpy(AnimParams[parameter_index].sound_positions[i], AnimParams[parameter_index].sound_positions[i + 1],
                    sizeof(NUVEC));
             strcpy(AnimParams[parameter_index].sound_names[i], AnimParams[parameter_index].sound_names[i + 1]);
@@ -12572,14 +12355,13 @@ extern "C" void edbitsDrawDiagonalCross(f32 x, f32 y, f32 z, f32 radius, i32 col
 }
 
 void edanimRenderSoundEmitters(i32 parameter_index) {
-    auto &param = AnimParams[parameter_index];
     nuhspecial_s special;
-    NuGScnGetSpecial(&special, edbits_base_scene, param.instance_id);
+    NuGScnGetSpecial(&special, edbits_base_scene, AnimParams[parameter_index].instance_id);
     const NUVEC *base_position = NuSpecialGetPos(&special);
     const auto *offset_cursor = AnimParams[parameter_index].sound_positions;
-    for (i32 sound = 0; sound < param.sound_count; ++sound, ++offset_cursor) {
+    for (i32 sound = 0; sound < AnimParams[parameter_index].sound_count; ++sound, ++offset_cursor) {
         // The original skips sounds by their flags slot rather than the sound id.
-        if (param.sound_flags[sound] == -1) {
+        if (AnimParams[parameter_index].sound_flags[sound] == -1) {
             continue;
         }
         const i32 colour = edanim_sound_mode && edanim_nearest_sound == sound ? 0xffff0000 : 0xffffffff;
@@ -12648,7 +12430,7 @@ extern "C" void edbitsDrawCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, num
         NUVEC position;
         static i32 localframecount;
         float seconds;
-        if (__builtin_expect(NuVideoGetMode() == 3, 1))
+        if (__builtin_expect(NuVideoGetMode() == 3, 0))
             seconds = elapsed / 50.0f;
         else
             seconds = elapsed / 60.0f;
@@ -12722,7 +12504,7 @@ extern "C" void edbitsDrawCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, num
                 if (index == edanim_nearest_param_id && (edanim_particle_mode != 0 || edanim_sound_mode != 0))
                     animation->ltime = 1.0f;
             }
-            if (__builtin_expect(NuSpecialGetVisibilityFn(&special) != NULL, 1)) {
+            if (NuSpecialGetVisibilityFn(&special) != NULL) {
                 i32 particle_index = 0;
                 while (particle_index < AnimParams[index].effect_count) {
                     i32 effect = AnimParams[index].effect_ids[particle_index];
@@ -12830,9 +12612,8 @@ static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent,
 
 static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32) {
     edanim_localsoundtype_menu = NULL;
-    auto &param = AnimParams[edanim_nearest_param_id];
-    param.sound_ids[edanim_nearest_sound] = item->data;
-    strcpy(param.sound_names[edanim_nearest_sound], edbitsGetSoundName(item->data));
+    AnimParams[edanim_nearest_param_id].sound_ids[edanim_nearest_sound] = item->data;
+    strcpy(AnimParams[edanim_nearest_param_id].sound_names[edanim_nearest_sound], edbitsGetSoundName(item->data));
     edanim_sound_type = item->data;
     eduiMenuDetach(menu);
     eduiMenuDestroy(menu);
@@ -12961,15 +12742,14 @@ void edanimDrawCursor() {
 }
 
 void edanimSoundCreate(nuvec_s *position) {
-    edanim_param_s &params = AnimParams[edanim_nearest_param_id];
-    i32 sound_index = params.sound_count;
+    i32 sound_index = AnimParams[edanim_nearest_param_id].sound_count;
     if (sound_index != 8 && edanim_sound_type != -1) {
         edanimSoundPlace(sound_index, position);
-        params.sound_ids[sound_index] = edanim_sound_type;
-        params.sound_flags[sound_index] = 1;
-        strcpy(params.sound_names[sound_index], edbitsGetSoundName(edanim_sound_type));
-        params.sound_count++;
-        params.sound_values[sound_index] = 50.0f;
+        AnimParams[edanim_nearest_param_id].sound_ids[sound_index] = edanim_sound_type;
+        AnimParams[edanim_nearest_param_id].sound_flags[sound_index] = 1;
+        strcpy(AnimParams[edanim_nearest_param_id].sound_names[sound_index], edbitsGetSoundName(edanim_sound_type));
+        AnimParams[edanim_nearest_param_id].sound_count++;
+        AnimParams[edanim_nearest_param_id].sound_values[sound_index] = 50.0f;
     }
 }
 
@@ -13383,48 +13163,45 @@ extern "C" i32 edbriLoadPage(char *path, void *gscn) {
     if (count + edbri_bridges_used > 64)
         count = 64 - edbri_bridges_used;
     i32 index = 0;
-    if (count > 0) {
-        for (i32 i = 0; i != count; ++i) {
-            // Retail tests the slot before the bound, so a full table reads one
-            // entry past edBridges before the loop stops.
-            while (edBridges[index].connection_index != 0xff && index < 64)
-                ++index;
-            if (index >= 64)
-                continue;
-            edbridge_s &bridge = edBridges[index];
-            bridge.instance_id = -1;
-            EdFileReadNuVec(&bridge.position);
-            bridge.length = EdFileReadFloat();
-            bridge.field_14 = EdFileReadFloat();
-            bridge.rotation_z = EdFileReadShort();
-            bridge.rotation_y = EdFileReadShort();
-            bridge.connection_index = page;
-            bridge.field_1d = EdFileReadChar();
-            bridge.field_1e = EdFileReadChar();
-            char name[20];
-            EdFileRead(name, 20);
-            if (name[0])
-                bridge.special_20 = edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn));
-            else
-                bridge.special_20 = -1;
-            EdFileRead(name, 20);
-            if (name[0]) {
-                bridge.special_24 = edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn));
-            } else {
-                bridge.special_24 = -1;
-            }
-            bridge.field_28 = EdFileReadFloat();
-            bridge.field_2c = EdFileReadFloat();
-            bridge.field_30 = EdFileReadFloat();
-            bridge.field_34 = EdFileReadFloat();
-            bridge.field_38 = EdFileReadFloat();
-            bridge.field_3c = EdFileReadFloat();
-            bridge.red = EdFileReadChar();
-            bridge.green = EdFileReadChar();
-            bridge.blue = EdFileReadChar();
-            bridge.field_43 = EdFileReadChar();
-            ++edbri_bridges_used;
+    for (i32 i = 0; i < count; ++i) {
+        // Retail tests the slot before the bound, so a full table reads one
+        // entry past edBridges before the loop stops.
+        while (edBridges[index].connection_index != 0xff && index < 64)
+            ++index;
+        if (index >= 64)
+            continue;
+        edBridges[index].instance_id = -1;
+        EdFileReadNuVec(&edBridges[index].position);
+        edBridges[index].length = EdFileReadFloat();
+        edBridges[index].field_14 = EdFileReadFloat();
+        edBridges[index].rotation_z = EdFileReadShort();
+        edBridges[index].rotation_y = EdFileReadShort();
+        edBridges[index].connection_index = page;
+        edBridges[index].field_1d = EdFileReadChar();
+        edBridges[index].field_1e = EdFileReadChar();
+        char name[20];
+        EdFileRead(name, 20);
+        if (!name[0])
+            edBridges[index].special_20 = -1;
+        else
+            edBridges[index].special_20 = edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn));
+        EdFileRead(name, 20);
+        if (!name[0]) {
+            edBridges[index].special_24 = -1;
+        } else {
+            edBridges[index].special_24 = edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn));
         }
+        edBridges[index].field_28 = EdFileReadFloat();
+        edBridges[index].field_2c = EdFileReadFloat();
+        edBridges[index].field_30 = EdFileReadFloat();
+        edBridges[index].field_34 = EdFileReadFloat();
+        edBridges[index].field_38 = EdFileReadFloat();
+        edBridges[index].field_3c = EdFileReadFloat();
+        edBridges[index].red = EdFileReadChar();
+        edBridges[index].green = EdFileReadChar();
+        edBridges[index].blue = EdFileReadChar();
+        edBridges[index].field_43 = EdFileReadChar();
+        ++edbri_bridges_used;
     }
     EdFileClose();
     edbri_nearest = -1;
@@ -13465,10 +13242,9 @@ void edbriBridgeUpdate(i32 index, NUGSCN *scene) {
 
 static void edbricbSetRopeColour(eduimenu_s *menu, eduiitem_s *item, u32) {
     edui_colour_pick_s *colour = static_cast<edui_colour_pick_s *>(item);
-    edbridge_s &bridge = edBridges[edbri_nearest];
-    bridge.red = static_cast<u8>(colour->red * 255.0f);
-    bridge.green = static_cast<u8>(colour->green * 255.0f);
-    bridge.blue = static_cast<u8>(colour->blue * 255.0f);
+    edBridges[edbri_nearest].red = static_cast<u8>(colour->red * 255.0f);
+    edBridges[edbri_nearest].green = static_cast<u8>(colour->green * 255.0f);
+    edBridges[edbri_nearest].blue = static_cast<u8>(colour->blue * 255.0f);
     edbriBridgeUpdate(edbri_nearest, edbits_base_scene);
     eduimenu_s *parent = menu->parent;
     eduiMenuDetach(menu);
@@ -13681,8 +13457,8 @@ static void edbriRender() {
     edcamSet();
     edbriDrawCursor();
     if (edbri_nearest != -1) {
-        const NUVEC &position = edBridges[edbri_nearest].position;
-        edbitsDrawDiagonalCross(position.x, position.y, position.z, 0.125f, 0xff80ffff, edbri_mtl_zoff);
+        edbitsDrawDiagonalCross(edBridges[edbri_nearest].position.x, edBridges[edbri_nearest].position.y,
+                                edBridges[edbri_nearest].position.z, 0.125f, 0xff80ffff, edbri_mtl_zoff);
     }
     if (edbri_active_menu)
         eduiMenuRender(edbri_active_menu);
@@ -13716,15 +13492,14 @@ void edbriDoInput(nupad_s *pad) {
         if (edbri_nearest != -1) {
             edbridge_s &bridge = edBridges[edbri_nearest];
             edcamSetPos(&bridge.position);
-            edbridge_s &selected_bridge = edBridges[edbri_nearest];
-            edbri_rotz = selected_bridge.rotation_z;
-            edbri_roty = selected_bridge.rotation_y;
-            edbri_length = selected_bridge.length;
-            edbri_width = selected_bridge.field_14;
-            edbri_planks = selected_bridge.field_1d;
-            edbri_post_interval = selected_bridge.field_1e;
-            edbri_plank_instance_type = selected_bridge.special_20;
-            edbri_post_instance_type = selected_bridge.special_24;
+            edbri_rotz = edBridges[edbri_nearest].rotation_z;
+            edbri_roty = edBridges[edbri_nearest].rotation_y;
+            edbri_length = edBridges[edbri_nearest].length;
+            edbri_width = edBridges[edbri_nearest].field_14;
+            edbri_planks = edBridges[edbri_nearest].field_1d;
+            edbri_post_interval = edBridges[edbri_nearest].field_1e;
+            edbri_plank_instance_type = edBridges[edbri_nearest].special_20;
+            edbri_post_instance_type = edBridges[edbri_nearest].special_24;
         }
     }
     edcamGetPosAng(&edbri_cam_pos, &edbri_cam_ax, &edbri_cam_ay);
@@ -14009,9 +13784,9 @@ void edgraCalculatePage(char page, i32 calculate_vectors) {
             }
             ++element_matrix;
         }
-        GrassClumps[clump_index].matrices = matrix_start;
         max_clumps = EDGRA_MAX_CLUMPS;
         matrix += element;
+        GrassClumps[clump_index].matrices = matrix_start;
     }
 }
 
@@ -14468,53 +14243,53 @@ i32 edppPtlCreate(NUVEC *position, i32 effect_index) {
     while (edpp_ptls[index].instance_id != -1)
         ++index;
     AddDebrisEffect(&edpp_ptls[index].instance_id, effect_index, position->x, position->y, position->z);
-    edpp_particle_s *particle = &edpp_ptls[index];
-    if (particle->instance_id == -1)
+    if (edpp_ptls[index].instance_id == -1)
         return -1;
-    debkeydata[particle->instance_id].field_2f9 = 0;
-    particle->position = *position;
-    particle->effect_index = effect_index;
-    particle->rotation_z = edpp_rotz;
-    particle->rotation_y = edpp_roty;
-    particle->emitter_rotation_z = edpp_emitrotz;
-    particle->emitter_rotation_y = edpp_emitroty;
-    particle->emitter_rotation_x = edpp_emitrotx;
-    particle->start_offset = edpp_offset;
-    particle->switch_type = 0;
-    particle->switch_variable = 0.0f;
-    particle->switch_id = -1;
-    particle->reflection_bounce = 0.9f;
-    particle->reflection_offset = 0.0f;
-    particle->render_group = 0;
-    particle->page = edbits_particle_level_page;
-    particle->detail_levels = 7;
+    debkeydata[edpp_ptls[index].instance_id].field_2f9 = 0;
+    edpp_ptls[index].position = *position;
+    edpp_ptls[index].effect_index = effect_index;
+    edpp_ptls[index].rotation_z = edpp_rotz;
+    edpp_ptls[index].rotation_y = edpp_roty;
+    edpp_ptls[index].emitter_rotation_z = edpp_emitrotz;
+    edpp_ptls[index].emitter_rotation_y = edpp_emitroty;
+    edpp_ptls[index].emitter_rotation_x = edpp_emitrotx;
+    edpp_ptls[index].start_offset = edpp_offset;
+    edpp_ptls[index].switch_type = 0;
+    edpp_ptls[index].switch_variable = 0.0f;
+    edpp_ptls[index].switch_id = -1;
+    edpp_ptls[index].reflection_bounce = 0.9f;
+    edpp_ptls[index].reflection_offset = 0.0f;
+    edpp_ptls[index].render_group = 0;
+    edpp_ptls[index].page = edbits_particle_level_page;
+    edpp_ptls[index].detail_levels = 7;
     const u8 particle_type = debtab[effect_index]->particle_type;
     if (particle_type == 2)
-        particle->render_priority = static_cast<i16>(40000);
+        edpp_ptls[index].render_priority = static_cast<i16>(40000);
     else if (particle_type == 3)
-        particle->render_priority = 30000;
+        edpp_ptls[index].render_priority = 30000;
     else if (particle_type == 0)
-        particle->render_priority = 20000;
+        edpp_ptls[index].render_priority = 20000;
     else if (particle_type == 7)
-        particle->render_priority = 10000;
-    particle = &edpp_ptls[index];
-    particle->dynamic_priority = 0;
-    particle->facing_mode = 0;
-    particle->facing_rotation_x = 0;
-    particle->facing_rotation_y = 0;
-    strcpy(particle->name, debtab[particle->effect_index]->name);
-    DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
-    DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z, particle->emitter_rotation_y,
-                             particle->emitter_rotation_x);
-    DebrisStartOffset(particle->instance_id, particle->start_offset);
-    DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z, particle->reflection_rotation_y,
-                                particle->reflection_offset, particle->reflection_bounce);
-    DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
-                    particle->facing_rotation_y);
-    DebrisSetGroupID(particle->instance_id, particle->render_group);
-    DebrisSetPriority(particle->instance_id, particle->render_priority, particle->dynamic_priority);
-    DebrisSetRoomID(particle->instance_id, 0);
-    DebrisSetDetailLevels(particle->instance_id, particle->detail_levels);
+        edpp_ptls[index].render_priority = 10000;
+    edpp_ptls[index].dynamic_priority = 0;
+    edpp_ptls[index].facing_mode = 0;
+    edpp_ptls[index].facing_rotation_x = 0;
+    edpp_ptls[index].facing_rotation_y = 0;
+    strcpy(edpp_ptls[index].name, debtab[edpp_ptls[index].effect_index]->name);
+    DebrisOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].rotation_z, edpp_ptls[index].rotation_y);
+    DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].emitter_rotation_z,
+                             edpp_ptls[index].emitter_rotation_y, edpp_ptls[index].emitter_rotation_x);
+    DebrisStartOffset(edpp_ptls[index].instance_id, edpp_ptls[index].start_offset);
+    DebrisReflectionOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].reflection_rotation_z,
+                                edpp_ptls[index].reflection_rotation_y, edpp_ptls[index].reflection_offset,
+                                edpp_ptls[index].reflection_bounce);
+    DebrisSetFacing(edpp_ptls[index].instance_id, edpp_ptls[index].facing_mode, edpp_ptls[index].facing_rotation_x,
+                    edpp_ptls[index].facing_rotation_y);
+    DebrisSetGroupID(edpp_ptls[index].instance_id, edpp_ptls[index].render_group);
+    DebrisSetPriority(edpp_ptls[index].instance_id, edpp_ptls[index].render_priority,
+                      edpp_ptls[index].dynamic_priority);
+    DebrisSetRoomID(edpp_ptls[index].instance_id, 0);
+    DebrisSetDetailLevels(edpp_ptls[index].instance_id, edpp_ptls[index].detail_levels);
     ++edpp_instances_used;
     edpp_page_used[edbits_particle_level_page] = 1;
     edpp_page_on[edbits_particle_level_page] = 1;
@@ -14529,58 +14304,57 @@ i32 edppPtlCreateCopy(NUVEC *position, i32 source_index) {
     i32 index = 0;
     while (edpp_ptls[index].instance_id != -1)
         ++index;
-    edpp_particle_s *source = &edpp_ptls[source_index];
-    AddDebrisEffect(&edpp_ptls[index].instance_id, source->effect_index, position->x, position->y, position->z);
-    edpp_particle_s *particle = &edpp_ptls[index];
-    if (particle->instance_id == -1)
+    AddDebrisEffect(&edpp_ptls[index].instance_id, edpp_ptls[source_index].effect_index, position->x, position->y,
+                    position->z);
+    if (edpp_ptls[index].instance_id == -1)
         return -1;
-    debkeydata[particle->instance_id].field_2f9 = 0;
-    particle->effect_index = source->effect_index;
-    particle->rotation_z = source->rotation_z;
-    particle->rotation_y = source->rotation_y;
-    particle->position = *position;
-    particle->emitter_rotation_y = source->emitter_rotation_y;
-    particle->emitter_rotation_z = source->emitter_rotation_z;
-    particle->start_offset = source->start_offset;
-    particle->switch_type = source->switch_type;
-    particle->switch_id = source->switch_id;
-    particle->switch_variable = source->switch_variable;
-    particle->reflection_offset = source->reflection_offset;
-    particle->reflection_bounce = source->reflection_bounce;
-    particle->page = source->page;
-    particle->render_group = source->render_group;
-    particle->detail_levels = source->detail_levels;
-    particle->facing_mode = source->facing_mode;
-    particle->facing_rotation_x = source->facing_rotation_x;
-    particle->facing_rotation_y = source->facing_rotation_y;
-    strcpy(edpp_ptls[index].name, debtab[particle->effect_index]->name);
-    DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
-    DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z, particle->emitter_rotation_y,
-                             particle->emitter_rotation_x);
-    DebrisStartOffset(particle->instance_id, particle->start_offset);
-    DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z, particle->reflection_rotation_y,
-                                particle->reflection_offset, particle->reflection_bounce);
-    DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
-                    particle->facing_rotation_y);
-    DebrisSetGroupID(particle->instance_id, particle->render_group);
-    DebrisSetRoomID(particle->instance_id, reinterpret_cast<NUGSCN *>(edpp_page_scene[particle->page]));
-    DebrisSetDetailLevels(particle->instance_id, particle->detail_levels);
+    debkeydata[edpp_ptls[index].instance_id].field_2f9 = 0;
+    edpp_ptls[index].rotation_z = edpp_ptls[source_index].rotation_z;
+    edpp_ptls[index].effect_index = edpp_ptls[source_index].effect_index;
+    edpp_ptls[index].rotation_y = edpp_ptls[source_index].rotation_y;
+    edpp_ptls[index].emitter_rotation_y = edpp_ptls[source_index].emitter_rotation_y;
+    edpp_ptls[index].position = *position;
+    edpp_ptls[index].emitter_rotation_z = edpp_ptls[source_index].emitter_rotation_z;
+    edpp_ptls[index].start_offset = edpp_ptls[source_index].start_offset;
+    edpp_ptls[index].switch_type = edpp_ptls[source_index].switch_type;
+    edpp_ptls[index].switch_id = edpp_ptls[source_index].switch_id;
+    edpp_ptls[index].switch_variable = edpp_ptls[source_index].switch_variable;
+    edpp_ptls[index].reflection_offset = edpp_ptls[source_index].reflection_offset;
+    edpp_ptls[index].page = edpp_ptls[source_index].page;
+    edpp_ptls[index].render_group = edpp_ptls[source_index].render_group;
+    edpp_ptls[index].reflection_bounce = edpp_ptls[source_index].reflection_bounce;
+    edpp_ptls[index].detail_levels = edpp_ptls[source_index].detail_levels;
+    edpp_ptls[index].facing_mode = edpp_ptls[source_index].facing_mode;
+    edpp_ptls[index].facing_rotation_x = edpp_ptls[source_index].facing_rotation_x;
+    edpp_ptls[index].facing_rotation_y = edpp_ptls[source_index].facing_rotation_y;
+    strcpy(edpp_ptls[index].name, debtab[edpp_ptls[index].effect_index]->name);
+    DebrisOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].rotation_z, edpp_ptls[index].rotation_y);
+    DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].emitter_rotation_z,
+                             edpp_ptls[index].emitter_rotation_y, edpp_ptls[index].emitter_rotation_x);
+    DebrisStartOffset(edpp_ptls[index].instance_id, edpp_ptls[index].start_offset);
+    DebrisReflectionOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].reflection_rotation_z,
+                                edpp_ptls[index].reflection_rotation_y, edpp_ptls[index].reflection_offset,
+                                edpp_ptls[index].reflection_bounce);
+    DebrisSetFacing(edpp_ptls[index].instance_id, edpp_ptls[index].facing_mode, edpp_ptls[index].facing_rotation_x,
+                    edpp_ptls[index].facing_rotation_y);
+    DebrisSetGroupID(edpp_ptls[index].instance_id, edpp_ptls[index].render_group);
+    DebrisSetRoomID(edpp_ptls[index].instance_id, reinterpret_cast<NUGSCN *>(edpp_page_scene[edpp_ptls[index].page]));
+    DebrisSetDetailLevels(edpp_ptls[index].instance_id, edpp_ptls[index].detail_levels);
     ++edpp_instances_used;
     return index;
 }
 
 i32 edppPtlPlace(i32 index, NUVEC *position) {
-    edpp_particle_s *particle = &edpp_ptls[index];
-    DebrisEmitterPos(particle->instance_id, position->x, position->y, position->z);
-    DebrisOrientation(particle->instance_id, edpp_rotz, edpp_roty);
-    DebrisEmitterOrientation(particle->instance_id, edpp_emitrotz, edpp_emitroty, edpp_emitrotx);
-    DebrisReflectionOrientation(particle->instance_id, edpp_refrotz, edpp_refroty, particle->reflection_offset,
-                                particle->reflection_bounce);
-    if (particle->facing_mode != 0) {
-        particle->facing_rotation_y = edpp_facroty;
-        particle->facing_rotation_x = edpp_facrotx;
-        DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
-                        particle->facing_rotation_y);
+    DebrisEmitterPos(edpp_ptls[index].instance_id, position->x, position->y, position->z);
+    DebrisOrientation(edpp_ptls[index].instance_id, edpp_rotz, edpp_roty);
+    DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_emitrotz, edpp_emitroty, edpp_emitrotx);
+    DebrisReflectionOrientation(edpp_ptls[index].instance_id, edpp_refrotz, edpp_refroty,
+                                edpp_ptls[index].reflection_offset, edpp_ptls[index].reflection_bounce);
+    if (edpp_ptls[index].facing_mode != 0) {
+        edpp_ptls[index].facing_rotation_x = edpp_facrotx;
+        edpp_ptls[index].facing_rotation_y = edpp_facroty;
+        DebrisSetFacing(edpp_ptls[index].instance_id, edpp_ptls[index].facing_mode,
+                        edpp_ptls[index].facing_rotation_x, edpp_ptls[index].facing_rotation_y);
     }
     edpp_ptls[index].position = *position;
     edpp_ptls[index].emitter_rotation_z = edpp_emitrotz;
@@ -14654,10 +14428,9 @@ void edppMultipleCopyPaste() {
         NuVecAdd(&position, &edpp_cam_pos, &offset);
         const i32 index = edppPtlCreateCopy(&position, edpp_copy_source[source]);
         if (index != -1) {
-            edpp_particle_s &particle = edpp_ptls[index];
-            particle.emitter_rotation_y += static_cast<i16>(edpp_copyroty);
-            DebrisEmitterOrientation(particle.instance_id, particle.emitter_rotation_z, particle.emitter_rotation_y,
-                                     particle.emitter_rotation_x);
+            edpp_ptls[index].emitter_rotation_y += static_cast<i16>(edpp_copyroty);
+            DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].emitter_rotation_z,
+                                     edpp_ptls[index].emitter_rotation_y, edpp_ptls[index].emitter_rotation_x);
         }
     }
 }
@@ -14673,13 +14446,16 @@ extern "C" {
         if (effect->process_spheres == 0)
             return;
         for (i32 sphere_index = 0; sphere_index < static_cast<i8>(effect->process_spheres); ++sphere_index) {
-            debris_process_sphere_s *sphere = &debkeydata[key_index].process_spheres[sphere_index];
-            f32 time = globaltime - sphere->time;
+            f32 time = globaltime - debkeydata[key_index].process_spheres[sphere_index].time;
             if (time >= 0.0f && time <= effect->particle_lifetime) {
 
-                NUVEC position = {sphere->momentum.x * time + sphere->position.x,
-                                  sphere->momentum.y * time + time * time * effect->field_0a0 + sphere->position.y,
-                                  sphere->momentum.z * time + sphere->position.z};
+                NUVEC position = {debkeydata[key_index].process_spheres[sphere_index].momentum.x * time +
+                                      debkeydata[key_index].process_spheres[sphere_index].position.x,
+                                  debkeydata[key_index].process_spheres[sphere_index].momentum.y * time +
+                                      time * time * effect->field_0a0 +
+                                      debkeydata[key_index].process_spheres[sphere_index].position.y,
+                                  debkeydata[key_index].process_spheres[sphere_index].momentum.z * time +
+                                      debkeydata[key_index].process_spheres[sphere_index].position.z};
                 time /= effect->particle_lifetime;
                 i32 first;
                 for (first = 0; first < 7; ++first) {
@@ -14709,9 +14485,36 @@ extern "C" {
             return;
         }
         time /= effect->torus_lifetime;
-        f32 radius = edppInterpolateTorusCurve(effect->torus_keys1, time);
-        f32 radial_extent = edppInterpolateTorusCurve(effect->torus_keys2, time);
-        f32 vertical_extent = edppInterpolateTorusCurve(effect->torus_keys3, time);
+        f32 radius = 0.0f;
+        f32 radial_extent = 0.0f;
+        f32 vertical_extent = 0.0f;
+        for (i32 index = 0; index < 7; ++index) {
+            if (time >= effect->torus_keys1[index].time && time <= effect->torus_keys1[index + 1].time) {
+                radius = (time - effect->torus_keys1[index].time) /
+                             (effect->torus_keys1[index + 1].time - effect->torus_keys1[index].time) *
+                             (effect->torus_keys1[index + 1].value - effect->torus_keys1[index].value) +
+                         effect->torus_keys1[index].value;
+                break;
+            }
+        }
+        for (i32 index = 0; index < 7; ++index) {
+            if (time >= effect->torus_keys2[index].time && time <= effect->torus_keys2[index + 1].time) {
+                radial_extent = (time - effect->torus_keys2[index].time) /
+                                    (effect->torus_keys2[index + 1].time - effect->torus_keys2[index].time) *
+                                    (effect->torus_keys2[index + 1].value - effect->torus_keys2[index].value) +
+                                effect->torus_keys2[index].value;
+                break;
+            }
+        }
+        for (i32 index = 0; index < 7; ++index) {
+            if (time >= effect->torus_keys3[index].time && time <= effect->torus_keys3[index + 1].time) {
+                vertical_extent = (time - effect->torus_keys3[index].time) /
+                                      (effect->torus_keys3[index + 1].time - effect->torus_keys3[index].time) *
+                                      (effect->torus_keys3[index + 1].value - effect->torus_keys3[index].value) +
+                                  effect->torus_keys3[index].value;
+                break;
+            }
+        }
         f32 scaled_radius = radius * effect->torus_radius1;
         f32 scaled_vertical_extent = vertical_extent * effect->torus_radius2;
         f32 scaled_radial_extent = radial_extent * effect->torus_radius2;
@@ -14912,10 +14715,9 @@ void edppDrawCursor() {
             if (edpp_nearest == -1) {
                 NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "Highlight: <none>");
             } else {
-                edpp_particle_s &particle = edpp_ptls[edpp_nearest];
-                debkeydatatype_s &key = debkeydata[particle.instance_id];
+                debkeydatatype_s &key = debkeydata[edpp_ptls[edpp_nearest].instance_id];
                 debinftype *effect = debtab[key.effect_index];
-                i32 instance_id = particle.instance_id;
+                i32 instance_id = edpp_ptls[edpp_nearest].instance_id;
                 if (effect->generator_type == 0) {
                     edbitsDrawCube(edpp_cam_pos.x, edpp_cam_pos.y, edpp_cam_pos.z, effect->field_058, effect->field_05c,
                                    effect->field_060, edpp_emitrotz, edpp_emitroty, edpp_emitrotx, rotation_z,
@@ -14958,8 +14760,7 @@ void edppDrawCursor() {
         if (edpp_nearest == -1) {
             NuQFntPrintEx(system_qfont, 0x1720, 0xa50, 0x10, "Highlight: <none>");
         } else {
-            edpp_particle_s &particle = edpp_ptls[edpp_nearest];
-            debkeydatatype_s &key = debkeydata[particle.instance_id];
+            debkeydatatype_s &key = debkeydata[edpp_ptls[edpp_nearest].instance_id];
             NuQFntPrintEx(system_qfont, 0x1720, 0xa50, 0x10, "Highlight: %s", debtab[key.effect_index]->name);
             NuQFntPrintEx(system_qfont, 0x1720, 0xaf0, 0x10, "XYZ: %0.2f %0.2f %0.2f", key.position.x, key.position.y,
                           key.position.z);
@@ -15129,9 +14930,9 @@ void edppDoInput(nupad_s *pad) {
                 edpp_refrotz = -0x8000;
         } else if (edpp_dpad_mode == 2) {
             if (pad->analog_left_pad_up == 255 || (pad->digital_buttons_pressed & 0x1000))
-                edpp_offset += 1.25f;
+                edpp_offset += 0.01f;
             if (pad->analog_left_pad_down == 255 || (pad->digital_buttons_pressed & 0x4000))
-                edpp_offset -= 1.25f;
+                edpp_offset -= 0.01f;
             if (edpp_offset < 0.0f)
                 edpp_offset = 0.0f;
         } else if (edpp_dpad_mode == 4) {
@@ -15191,8 +14992,8 @@ void edppHighlightNearest() {
         }
     } else {
         if (edpp_nearest != -1) {
-            const NUVEC &position = edpp_ptls[edpp_nearest].position;
-            edbitsDrawCube(position.x, position.y, position.z, 0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 0, 0xffffffff, edpp_mtl);
+            edbitsDrawCube(edpp_ptls[edpp_nearest].position.x, edpp_ptls[edpp_nearest].position.y,
+                           edpp_ptls[edpp_nearest].position.z, 0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 0, 0xffffffff, edpp_mtl);
         }
         if (edpp_showAllPlaced != 0) {
             for (i32 index = 0; index < 512; ++index) {
@@ -15613,8 +15414,11 @@ i32 edppSaveEffects(char *filename, char page) {
         EdFileWriteFloat(effecttypes[index].torus_keys3[7].time);
         EdFileWriteFloat(effecttypes[index].torus_keys3[7].value);
 
-        i32 sound_count = (effecttypes[index].sound_data[0] != -1) + (effecttypes[index].sound_data[3] != -1) +
-                          (effecttypes[index].sound_data[6] != -1) + (effecttypes[index].sound_data[9] != -1);
+        i32 sound_count = 0;
+        for (i32 i = 0; i < 4; ++i) {
+            if (effecttypes[index].sound_data[i * 3] != -1)
+                ++sound_count;
+        }
         EdFileWriteInt(sound_count);
         if (effecttypes[index].sound_data[0] != -1) {
             EdFileWrite(const_cast<char *>(g_soundInfo[effecttypes[index].sound_data[0]].sfx_name), 16);
@@ -15650,31 +15454,32 @@ i32 edppSaveEffects(char *filename, char page) {
             instance_count += edpp_ptls[index].instance_id != -1;
         EdFileWriteInt(instance_count);
         for (i32 index = 0; index < 512; ++index) {
-            edpp_particle_s *particle = &edpp_ptls[index];
-            if (particle->instance_id == -1)
+            if (edpp_ptls[index].instance_id == -1)
                 continue;
-            EdFileWriteNuVec(&particle->position);
-            EdFileWriteShort(particle->rotation_z);
-            EdFileWriteShort(particle->rotation_y);
-            EdFileWriteShort(particle->emitter_rotation_z);
-            EdFileWriteShort(particle->emitter_rotation_y);
-            EdFileWriteShort(particle->emitter_rotation_x);
-            EdFileWriteFloat(particle->start_offset);
-            EdFileWrite(particle->effect_index == -1 ? particle->name : debtab[particle->effect_index]->name, 16);
-            EdFileWriteInt(particle->switch_type);
-            EdFileWriteInt(particle->switch_id);
-            EdFileWriteFloat(particle->switch_variable);
-            EdFileWriteShort(particle->reflection_rotation_z);
-            EdFileWriteShort(particle->reflection_rotation_y);
-            EdFileWriteFloat(particle->reflection_offset);
-            EdFileWriteFloat(particle->reflection_bounce);
-            EdFileWriteShort(particle->render_group);
-            EdFileWriteUnsignedShort(particle->render_priority);
-            EdFileWriteChar(particle->dynamic_priority);
-            EdFileWriteChar(particle->detail_levels);
-            EdFileWriteChar(particle->facing_mode);
-            EdFileWriteShort(particle->facing_rotation_x);
-            EdFileWriteShort(particle->facing_rotation_y);
+            EdFileWriteNuVec(&edpp_ptls[index].position);
+            EdFileWriteShort(edpp_ptls[index].rotation_z);
+            EdFileWriteShort(edpp_ptls[index].rotation_y);
+            EdFileWriteShort(edpp_ptls[index].emitter_rotation_z);
+            EdFileWriteShort(edpp_ptls[index].emitter_rotation_y);
+            EdFileWriteShort(edpp_ptls[index].emitter_rotation_x);
+            EdFileWriteFloat(edpp_ptls[index].start_offset);
+            EdFileWrite(edpp_ptls[index].effect_index == -1 ? edpp_ptls[index].name
+                                                            : debtab[edpp_ptls[index].effect_index]->name,
+                        16);
+            EdFileWriteInt(edpp_ptls[index].switch_type);
+            EdFileWriteInt(edpp_ptls[index].switch_id);
+            EdFileWriteFloat(edpp_ptls[index].switch_variable);
+            EdFileWriteShort(edpp_ptls[index].reflection_rotation_z);
+            EdFileWriteShort(edpp_ptls[index].reflection_rotation_y);
+            EdFileWriteFloat(edpp_ptls[index].reflection_offset);
+            EdFileWriteFloat(edpp_ptls[index].reflection_bounce);
+            EdFileWriteShort(edpp_ptls[index].render_group);
+            EdFileWriteUnsignedShort(edpp_ptls[index].render_priority);
+            EdFileWriteChar(edpp_ptls[index].dynamic_priority);
+            EdFileWriteChar(edpp_ptls[index].detail_levels);
+            EdFileWriteChar(edpp_ptls[index].facing_mode);
+            EdFileWriteShort(edpp_ptls[index].facing_rotation_x);
+            EdFileWriteShort(edpp_ptls[index].facing_rotation_y);
         }
     }
     EdFileSetReadWrongEndianess(0);
@@ -15722,7 +15527,7 @@ void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     else
         strcpy(level_extension, edbits_level_save_extension);
 
-    bool valid_page = true;
+    i32 valid_page = 1;
     const char *saved_name = NULL;
     if (edpp_effect_list == 0) {
         saved_name = edpp_save_names[0];
@@ -15743,7 +15548,7 @@ void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
             sprintf(backup, "%s\\char.%s.bak", general_directory, general_extension);
         }
     } else {
-        valid_page = false;
+        valid_page = 0;
     }
     if (saved_name != NULL) {
         NuStrCpy(filename, const_cast<char *>(saved_name));
@@ -15752,42 +15557,37 @@ void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     }
 
     i32 backup_succeeded = 1;
-    i32 save_succeeded = 0;
-    if (valid_page) {
-        if (edpp_usememcard == 0 && edbits_override_backups == 0)
-            backup_succeeded = EdFileBackup(filename, backup);
-        save_succeeded = edppSaveEffects(filename, edpp_effect_list);
-    }
-    const char *message;
-    u32 colours[4];
-    // Each outcome builds its own message menu in the original.
-    if (save_succeeded == 0) {
-        colours[0] = 0x800000c0;
-        colours[1] = 0x80ff0000;
-        colours[2] = 0x80808080;
-        colours[3] = 0x80404040;
-        messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
-        message = "File Save Error";
-    } else if (backup_succeeded != 0) {
-        colours[0] = 0x8000c000;
-        colours[1] = 0x80ff0000;
-        colours[2] = 0x80808080;
-        colours[3] = 0x80404040;
-        messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
-        message = "Saved OK";
+    if (edpp_usememcard == 0 && edbits_override_backups == 0 && valid_page)
+        backup_succeeded = EdFileBackup(filename, backup);
+    if (valid_page && edppSaveEffects(filename, edpp_effect_list)) {
+        if (backup_succeeded != 0) {
+            u32 colours[4] = {0x8000c000, 0x80ff0000, 0x80808080, 0x80404040};
+            messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
+            if (messagemenu != NULL) {
+                eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK"));
+                eduiMenuAttach(parent, messagemenu);
+                messagemenu->x = parent->x + 10;
+                messagemenu->y = parent->y + 40;
+            }
+        } else {
+            u32 colours[4] = {0x8000c000, 0x80ff0000, 0x80808080, 0x80404040};
+            messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
+            if (messagemenu != NULL) {
+                eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK - Backup Failed"));
+                eduiMenuAttach(parent, messagemenu);
+                messagemenu->x = parent->x + 10;
+                messagemenu->y = parent->y + 40;
+            }
+        }
     } else {
-        colours[0] = 0x8000c000;
-        colours[1] = 0x80ff0000;
-        colours[2] = 0x80808080;
-        colours[3] = 0x80404040;
+        u32 colours[4] = {0x800000c0, 0x80ff0000, 0x80808080, 0x80404040};
         messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
-        message = "Saved OK - Backup Failed";
-    }
-    if (messagemenu != NULL) {
-        eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, const_cast<char *>(message)));
-        eduiMenuAttach(parent, messagemenu);
-        messagemenu->x = parent->x + 10;
-        messagemenu->y = parent->y + 40;
+        if (messagemenu != NULL) {
+            eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, "File Save Error"));
+            eduiMenuAttach(parent, messagemenu);
+            messagemenu->x = parent->x + 10;
+            messagemenu->y = parent->y + 40;
+        }
     }
     if (original_directory[0] != '\0')
         NuFileSetCurrentDirectory(original_directory);
@@ -15799,7 +15599,12 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
     effect->category = static_cast<u8>(category);
     if (version < 28) {
         const i16 rate = EdFileReadShort();
-        effect->frequency = rate > 0 ? static_cast<i16>(rate * 60) : rate == 0 ? 0 : static_cast<i16>(-60 / rate);
+        if (rate > 0)
+            effect->frequency = rate * 60;
+        else if (rate == 0)
+            effect->frequency = 0;
+        else
+            effect->frequency = -60 / rate;
         effect->max_particles = EdFileReadShort();
         effect->emission_period = static_cast<f32>(EdFileReadShort()) / 60.0f;
         effect->emission_period_random = static_cast<f32>(EdFileReadShort()) / 60.0f;
@@ -15815,9 +15620,10 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->emission_pause_random = EdFileReadFloat();
         effect->start_offset_random = EdFileReadFloat();
     }
-    if (effect->frequency != 0) {
-        const f32 minimum_period = 1.0f / static_cast<f32>(effect->frequency);
-        if (effect->emission_period_random <= minimum_period && effect->emission_period_random != minimum_period)
+    const f32 frequency = static_cast<f32>(effect->frequency);
+    if (frequency != 0.0f) {
+        const f32 minimum_period = 1.0f / frequency;
+        if (minimum_period > effect->emission_period_random)
             effect->emission_period_random = minimum_period;
     }
 
@@ -15845,10 +15651,10 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->cut_on = 0.0f;
         effect->clip_extent = 25.0f;
     }
-    if (version >= 10)
-        effect->sound_range = EdFileReadFloat();
-    else
+    if (version < 10)
         effect->sound_range = 0.0f;
+    else
+        effect->sound_range = EdFileReadFloat();
     if (version >= 23)
         effect->sound_range_override = EdFileReadFloat();
     else
@@ -15998,12 +15804,14 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->repeat_box.x = 1.0f;
         effect->repeat_box.z = 1.0f;
     }
-    if (version >= 36)
-        effect->thinning = EdFileReadFloat();
-    else
+    if (version >= 36) {
+        const f32 thinning = EdFileReadFloat();
+        effect->thinning = thinning;
+        if (version == 36 && thinning < 4.0f)
+            effect->thinning = 4.0f;
+    } else {
         effect->thinning = 4.0f;
-    if (version == 36 && effect->thinning < 4.0f)
-        effect->thinning = 4.0f;
+    }
     if (!(version >= 30)) {
         effect->torus_radius1 = 1.0f;
         effect->torus_radius2 = 0.1f;
@@ -16056,22 +15864,15 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
             effect->sound_data[11] = EdFileReadInt();
         }
     } else {
-        const i32 stored_sound_count = EdFileReadInt();
-        const i32 sound_count = MAX(0, stored_sound_count);
+        const i32 sound_count = EdFileReadInt();
         for (i32 i = 0; i < sound_count; ++i) {
             char sound_name[16];
             EdFileRead(sound_name, sizeof(sound_name));
-            if (i < 4) {
-                effect->sound_data[i * 3] = GetSfxIdN(sound_name, sizeof(sound_name));
-                effect->sound_data[i * 3 + 1] = EdFileReadInt();
-                effect->sound_data[i * 3 + 2] = EdFileReadInt();
-            } else {
-                GetSfxIdN(sound_name, sizeof(sound_name));
-                EdFileReadInt();
-                EdFileReadInt();
-            }
+            effect->sound_data[i * 3] = GetSfxIdN(sound_name, sizeof(sound_name));
+            effect->sound_data[i * 3 + 1] = EdFileReadInt();
+            effect->sound_data[i * 3 + 2] = EdFileReadInt();
         }
-        for (i32 i = MIN(sound_count, 4); i < 4; ++i)
+        for (i32 i = sound_count; i < 4; ++i)
             effect->sound_data[i * 3] = -1;
     }
     if (version >= 16) {
@@ -16139,9 +15940,9 @@ extern "C" {
         i32 requested = EdFileReadInt();
         i32 skipped = 0;
         if (requested + edpp_types_used > EDPP_MAX_TYPES) {
+            edbits_types_error = 300;
             skipped = requested + edpp_types_used - EDPP_MAX_TYPES;
             requested = EDPP_MAX_TYPES - edpp_types_used;
-            edbits_types_error = 300;
         }
 
         // The request was clamped to the free slot count above, so the
@@ -16262,12 +16063,16 @@ extern "C" {
         EdFileClose();
         edppDetermineNearest(1.0f);
 
-        if (page_type == 0) {
-            edbits_particle_general_page = page_index;
-        } else if (page_type == 5) {
-            edbits_particle_char_page = page_index;
-        } else if (page_type == 1) {
-            edbits_particle_level_page = page_index;
+        switch (page_type) {
+            case 0:
+                edbits_particle_general_page = page_index;
+                break;
+            case 1:
+                edbits_particle_level_page = page_index;
+                break;
+            case 5:
+                edbits_particle_char_page = page_index;
+                break;
         }
         return page_index;
     }
@@ -16320,26 +16125,28 @@ static void edptlcbResetParticles(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void edppStartSingleEffect(i32 index) {
-    edpp_particle_s &particle = edpp_ptls[index];
-    if (particle.instance_id != -1)
+    if (edpp_ptls[index].instance_id != -1)
         return;
-    AddDebrisEffect(&particle.instance_id, particle.effect_index, particle.position.x, particle.position.y,
-                    particle.position.z);
-    if (particle.instance_id == -1)
+    AddDebrisEffect(&edpp_ptls[index].instance_id, edpp_ptls[index].effect_index, edpp_ptls[index].position.x,
+                    edpp_ptls[index].position.y, edpp_ptls[index].position.z);
+    if (edpp_ptls[index].instance_id == -1)
         return;
 
-    debkeydata[particle.instance_id].field_2f9 = 0;
-    DebrisOrientation(particle.instance_id, particle.rotation_z, particle.rotation_y);
-    DebrisEmitterOrientation(particle.instance_id, particle.emitter_rotation_z, particle.emitter_rotation_y,
-                             particle.emitter_rotation_x);
-    DebrisStartOffset(particle.instance_id, particle.start_offset);
-    DebrisSetTrigger(particle.instance_id, particle.switch_type, particle.switch_id, particle.switch_variable);
-    DebrisReflectionOrientation(particle.instance_id, particle.reflection_rotation_z, particle.reflection_rotation_y,
-                                particle.reflection_offset, particle.reflection_bounce);
-    DebrisSetFacing(particle.instance_id, particle.facing_mode, particle.facing_rotation_x, particle.facing_rotation_y);
-    DebrisSetGroupID(particle.instance_id, particle.render_group);
-    DebrisSetRoomID(particle.instance_id, reinterpret_cast<NUGSCN *>(edpp_page_scene[particle.page]));
-    DebrisSetDetailLevels(particle.instance_id, particle.detail_levels);
+    debkeydata[edpp_ptls[index].instance_id].field_2f9 = 0;
+    DebrisOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].rotation_z, edpp_ptls[index].rotation_y);
+    DebrisEmitterOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].emitter_rotation_z,
+                             edpp_ptls[index].emitter_rotation_y, edpp_ptls[index].emitter_rotation_x);
+    DebrisStartOffset(edpp_ptls[index].instance_id, edpp_ptls[index].start_offset);
+    DebrisSetTrigger(edpp_ptls[index].instance_id, edpp_ptls[index].switch_type, edpp_ptls[index].switch_id,
+                     edpp_ptls[index].switch_variable);
+    DebrisReflectionOrientation(edpp_ptls[index].instance_id, edpp_ptls[index].reflection_rotation_z,
+                                edpp_ptls[index].reflection_rotation_y, edpp_ptls[index].reflection_offset,
+                                edpp_ptls[index].reflection_bounce);
+    DebrisSetFacing(edpp_ptls[index].instance_id, edpp_ptls[index].facing_mode, edpp_ptls[index].facing_rotation_x,
+                    edpp_ptls[index].facing_rotation_y);
+    DebrisSetGroupID(edpp_ptls[index].instance_id, edpp_ptls[index].render_group);
+    DebrisSetRoomID(edpp_ptls[index].instance_id, reinterpret_cast<NUGSCN *>(edpp_page_scene[edpp_ptls[index].page]));
+    DebrisSetDetailLevels(edpp_ptls[index].instance_id, edpp_ptls[index].detail_levels);
 }
 
 static void edptlcbSetDrawflag(eduimenu_s *, eduiitem_s *item, u32) {
@@ -16596,8 +16403,8 @@ i32 ReadTerrain(unsigned char *base_path, i32 first_group, i16 **buffer, TERRSET
         return 0;
     }
 
-    terrain->file_version = chunk->version;
     terrain->spatial_nodes = NULL;
+    terrain->file_version = chunk->version;
 
     i32 group_count = 0;
     i32 chunk_index = 0;
@@ -16612,9 +16419,9 @@ i32 ReadTerrain(unsigned char *base_path, i32 first_group, i16 **buffer, TERRSET
                     terrain->groups[first_group].chunk_type = chunk->chunk_type;
                     terrain->groups[first_group].origin.x = origin_x;
                     terrain->groups[first_group].origin.y = chunk->origin.y;
-                    terrain->groups[first_group].field_0x30 = chunk->field_0x16;
                     terrain->groups[first_group].origin.z = chunk->origin.z;
                     terrain->groups[first_group].data = chunk_data;
+                    terrain->groups[first_group].field_0x30 = chunk->field_0x16;
                     terrain->groups[first_group].field_0x28 = chunk->field_0x2c;
                     ++group_count;
                     ++first_group;
@@ -16714,9 +16521,9 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
     cursor->u8_ptr += sizeof(TERRSET);
 
     terrain->groups = reinterpret_cast<TERRAIN_GROUP *>(cursor->u8_ptr);
+    terrain->max_platforms = max_platforms;
     terrain->max_group_indices = max_group_indices;
     terrain->max_groups = max_groups;
-    terrain->max_platforms = max_platforms;
     cursor->u8_ptr += (max_groups + 0x80) * sizeof(TERRAIN_GROUP);
     terrain->group_indices = reinterpret_cast<i16 *>(cursor->u8_ptr);
     cursor->u8_ptr += max_group_indices * sizeof(i16);
@@ -16792,8 +16599,8 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
         f32 min_y = kBoundsMaximum;
         f32 min_z = kBoundsMaximum;
         f32 max_x = kBoundsMinimum;
-        f32 radius_squared = 0.0f;
         f32 max_y = kBoundsMinimum;
+        f32 radius_squared = 0.0f;
         f32 max_z = kBoundsMinimum;
 
         TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group.data);
@@ -16846,7 +16653,7 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
                 f32 current_minimum_height = static_cast<f32>(terrain->minimum_height);
                 for (i32 vector_index = 0; vector_index < 4; ++vector_index) {
                     const NUVEC &vector = shape->vectors[vector_index];
-                    const f32 world_y = group.origin.y + vector.y;
+                    const f32 world_y = vector.y + group.origin.y;
                     if (current_minimum_height > world_y) {
                         terrain->minimum_height = static_cast<i32>(world_y);
                         current_minimum_height = static_cast<f32>(terrain->minimum_height);
@@ -16863,20 +16670,20 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
         }
 
         group.radius = NuFsqrt(radius_squared);
-        if (group.chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
-            group.bounds_min.x = min_x;
-            group.bounds_min.y = min_y;
-            group.bounds_min.z = min_z;
-            group.bounds_max.x = max_x;
-            group.bounds_max.y = max_y;
-            group.bounds_max.z = max_z;
-        } else {
+        if (group.chunk_type != TERRAIN_CHUNK_GROUP_SECONDARY) {
             group.bounds_min.x = group.origin.x + min_x;
             group.bounds_min.y = group.origin.y + min_y;
             group.bounds_min.z = group.origin.z + min_z;
             group.bounds_max.y = group.origin.y + max_y;
             group.bounds_max.x = group.origin.x + max_x;
             group.bounds_max.z = group.origin.z + max_z;
+        } else {
+            group.bounds_min.x = min_x;
+            group.bounds_min.y = min_y;
+            group.bounds_min.z = min_z;
+            group.bounds_max.x = max_x;
+            group.bounds_max.y = max_y;
+            group.bounds_max.z = max_z;
         }
         ++terraincnt;
     }
@@ -16973,8 +16780,8 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
         terrain->cells[terrain->used_cell_count].first_group = static_cast<u16>(terrain->group_index_count);
 
         f32 min_x = kBoundsMaximum;
-        f32 min_z = kBoundsMaximum;
         f32 max_x = kBoundsMinimum;
+        f32 min_z = kBoundsMaximum;
         f32 max_z = kBoundsMinimum;
         for (i32 group_index = 0; group_index < group_count; ++group_index) {
             TERRAIN_GROUP &group = terrain->groups[group_index];
@@ -17018,8 +16825,8 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
         u16 scene_object_index = group.scene_index;
         debug_index = static_cast<i16>(scene_object_index);
         if (scene == NULL) {
-            group.chunk_type = -1;
             group.scene_index = static_cast<u16>(platform_count);
+            group.chunk_type = -1;
             continue;
         }
 
@@ -17041,8 +16848,8 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
 
         TERRAIN_PLATFORM &platform = terrain->platforms[static_cast<i16>(group.scene_index)];
         platform.flags = static_cast<u8>((platform.flags & 0xfa) | (group.platform_flags & 1));
-        platform.scene_object_index = scene_object_index;
         platform.terrain_group_index = static_cast<i16>(group_index);
+        platform.scene_object_index = scene_object_index;
 
         if (display_scene != NULL) {
             TERRAIN_DISPLAY_OBJECT *display_object = NULL;
@@ -17603,11 +17410,10 @@ extern "C" {
     i32 edgraLoadPage(char *path, void *gscn, i32 terrain, void *buf, void *buf_end) {
         i32 page = -1;
         for (i32 index = 0; index < 8; ++index) {
-            if (__builtin_expect(edgra_page_used[index] != 0, 1)) {
-                continue;
+            if (edgra_page_used[index] == 0) {
+                page = index;
+                break;
             }
-            page = index;
-            break;
         }
         if (page == -1) {
             return -1;
@@ -17615,7 +17421,7 @@ extern "C" {
 
         VARIPTR *buffer = static_cast<VARIPTR *>(buf);
         usize matrix_base;
-        if (__builtin_expect(edbits_editmode == 1 && edgra_mtxbuffer != NULL, 0)) {
+        if (edbits_editmode == 1 && edgra_mtxbuffer != NULL) {
             matrix_base = reinterpret_cast<usize>(edgra_mtxbuffer);
         } else {
             matrix_base = ALIGN(buffer->addr, 16);
@@ -17628,7 +17434,7 @@ extern "C" {
         }
         EdFileSetReadWrongEndianess(1);
         const i32 version = EdFileReadInt();
-        if (__builtin_expect(version < 1 || version > 9, 0)) {
+        if (version < 1 || version > 9) {
             EdFileSetReadWrongEndianess(0);
             EdFileClose();
             return -1;
@@ -17642,22 +17448,22 @@ extern "C" {
             edgra_global_fadeout = 25.0f;
         }
 
-        const i32 file_clump_count = EdFileReadInt();
-        const i32 available = EDGRA_MAX_CLUMPS - edgra_clumps_used;
-        const i32 clump_count = MIN(file_clump_count, available);
+        i32 clump_count = EdFileReadInt();
+        if (clump_count + edgra_clumps_used > EDGRA_MAX_CLUMPS) {
+            clump_count = EDGRA_MAX_CLUMPS - edgra_clumps_used;
+        }
         const i32 matrix_count = version >= 8 ? EdFileReadInt() : 0x3000;
-        usize vector_cursor = matrix_base + static_cast<usize>(matrix_count) * sizeof(NUMTX);
+        usize vector_cursor;
         if (edbits_editmode == 1 && edgra_vecbuffer != NULL) {
             vector_cursor = reinterpret_cast<usize>(edgra_vecbuffer);
+        } else {
+            vector_cursor = matrix_base + static_cast<usize>(matrix_count) * sizeof(NUMTX);
         }
 
         i32 slot = 0;
         for (i32 file_index = 0; file_index < clump_count; ++file_index) {
-            while (slot < EDGRA_MAX_CLUMPS && GrassClumps[slot].element_count != 0) {
+            while (GrassClumps[slot].element_count != 0 && slot < EDGRA_MAX_CLUMPS) {
                 ++slot;
-            }
-            if (slot == EDGRA_MAX_CLUMPS) {
-                break;
             }
 
             edgra_clump_s *clump = &GrassClumps[slot];
@@ -17698,7 +17504,7 @@ extern "C" {
                 clump->field_30 = EdFileReadFloat();
             }
 
-            if (__builtin_expect(version < 5, 0)) {
+            if (version < 5) {
                 clump->rotation_z = 0;
                 clump->rotation_y = 0;
             } else {
@@ -17736,7 +17542,10 @@ extern "C" {
 
             i32 skipped_individuals = 0;
             if (clump->kind == 3) {
-                if (edgra_ind_clumps_used != EDGRA_MAX_INDIVIDUAL_CLUMPS) {
+                if (edgra_ind_clumps_used == EDGRA_MAX_INDIVIDUAL_CLUMPS) {
+                    skipped_individuals = clump->element_count;
+                    clump->element_count = 0;
+                } else {
                     i32 individual = 0;
                     while (IndGrassClumpsUsed[individual] != 0) {
                         ++individual;
@@ -17755,9 +17564,6 @@ extern "C" {
                         GetIndGrassClump(individual, element)->field_10 = EdFileReadShort();
                         GetIndGrassClump(individual, element)->field_12 = EdFileReadShort();
                     }
-                } else {
-                    skipped_individuals = clump->element_count;
-                    clump->element_count = 0;
                 }
                 for (i32 element = 0; element < skipped_individuals; ++element) {
                     EdFileReadFloat();
@@ -17770,14 +17576,15 @@ extern "C" {
             }
 
             clump->vector_buffer = reinterpret_cast<void *>(vector_cursor);
-            edgra_page_vectors_valid[page] = version >= 8;
             if (version >= 8) {
-                NUVEC *vectors = static_cast<NUVEC *>(clump->vector_buffer);
+                edgra_page_vectors_valid[page] = 1;
                 for (i32 element = 0; element < clump->element_count; ++element) {
-                    vectors[element].x = EdFileReadFloat();
-                    vectors[element].y = EdFileReadFloat();
-                    vectors[element].z = EdFileReadFloat();
+                    static_cast<NUVEC *>(clump->vector_buffer)[element].x = EdFileReadFloat();
+                    static_cast<NUVEC *>(clump->vector_buffer)[element].y = EdFileReadFloat();
+                    static_cast<NUVEC *>(clump->vector_buffer)[element].z = EdFileReadFloat();
                 }
+            } else {
+                edgra_page_vectors_valid[page] = 0;
             }
             if (clump->element_count < 4) {
                 clump->element_count = 4;
@@ -18346,8 +18153,8 @@ void TerrDrawPlat(tertype *terrain, i16 index) {
     normal.x = record->normals[0].x * 0.4f;
     normal.y = record->normals[0].y * 0.4f;
     normal.z = record->normals[0].z * 0.4f;
-    normal.w = 0.0f;
     i32 colour = static_cast<i8>(record->unknown_60[2]) < 0 ? 0x0000ffff : 0x00ff0000;
+    normal.w = 0.0f;
     if (platform->flags & TERRAIN_PLATFORM_FLAG_ROTATING) {
         NuVec4MtxTransformVU0(&points[0], &points[0], static_cast<NUMTX *>(platform->scene_object));
         NuVec4MtxTransformVU0(
@@ -18537,8 +18344,8 @@ extern "C" void TerrDrawImpactPol(void) {
 
         TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group.data);
         while (batch->marker >= 0) {
-            const i32 shape_count = batch->shape_count;
             TERRAIN_SHAPE *shape = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
+            const i32 shape_count = batch->shape_count;
             for (i32 i = shape_count; i > 0; --i, ++shape)
                 TerrDrawPlat(shape, CurTerr->platforms[platform_index].terrain_group_index);
             batch = reinterpret_cast<TERRAIN_SHAPE_BATCH *>(shape);
@@ -18553,7 +18360,7 @@ void DrawMSitu(i32 index) {
         TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group->data);
         while (batch->marker >= 0) {
             u8 *entry = reinterpret_cast<u8 *>(batch + 1);
-            i32 count = batch->shape_count;
+            i16 count = batch->shape_count;
             for (i32 remaining = count; remaining > 0; --remaining) {
                 TerrDraw(reinterpret_cast<tertype *>(entry), static_cast<i16>(index));
                 // This debug walker uses the original 100-byte record stride.
@@ -18648,8 +18455,8 @@ NUVEC TerrainSkin(PLATSKININFO *info, nuvec_s *position, float weight, i32 mode)
             };
             SKIN_BLEND_DATA *blend = static_cast<SKIN_BLEND_DATA *>(info->skin_data);
             weight = (f32)(i32)(weight * 10.0f + 0.5f) / 10.0f;
-            point.z = position->z - info->scale * weight;
             f32 inverse_weight = 1.0f - weight;
+            point.z = position->z - info->scale * weight;
             f32 wave = NU_SIN_LUT((i32)(weight * 32768.0f));
             f32 *out = reinterpret_cast<f32 *>(&matrix);
             f32 *start = reinterpret_cast<f32 *>(info->matrix);
@@ -18725,8 +18532,8 @@ void SkinPlatform(terrsitu_s *terrain_group, unsigned char *buffer, PLATSKININFO
             destination->min_y = shape_min_y - 0.05f;
             destination->min_z = shape_min_z - 0.05f;
             destination->max_x = shape_max_x + 0.05f;
-            destination->max_z = shape_max_z + 0.05f;
             destination->max_y = shape_max_y + 0.05f;
+            destination->max_z = shape_max_z + 0.05f;
             if (source->normals[1].y < 65535.0f) {
                 NUVEC a, b;
                 a.x = destination->vectors[1].x - destination->vectors[3].x;
@@ -18747,8 +18554,8 @@ void SkinPlatform(terrsitu_s *terrain_group, unsigned char *buffer, PLATSKININFO
                 NUVEC a, b;
                 a.x = destination->vectors[2].x - destination->vectors[0].x;
                 a.y = destination->vectors[2].y - destination->vectors[0].y;
-                a.z = destination->vectors[2].z - destination->vectors[0].z;
                 b.x = destination->vectors[1].x - destination->vectors[0].x;
+                a.z = destination->vectors[2].z - destination->vectors[0].z;
                 b.y = destination->vectors[1].y - destination->vectors[0].y;
                 b.z = destination->vectors[1].z - destination->vectors[0].z;
                 NUVEC &n = destination->normals[0];
@@ -18824,9 +18631,9 @@ void TerrainSkinAllocate(terrsitu_s *terrain_group) {
             CurTerr->index_levels[i].entry_count = 0;
     }
     PLATSKININFO *info = &PlatSkinInfo[skin_index];
-    group->data = info->terrain_data;
     info->cache_slot = slot;
     cache->skin_index = skin_index;
+    group->data = info->terrain_data;
     SkinPlatform(terrain_group, PlatSkinMem + slot * PlatSkinMaxSize, info);
     SkinMemInfo[slot].last_used = TerrainUpadteCnt;
 }
@@ -18853,8 +18660,8 @@ void RotateVec(NUVEC *source, NUVEC *destination) {
     // The yaw table entries are read again after each destination store.
     const f32 yaw = query->movement_yaw;
     const i32 cos_yaw = (static_cast<i32>(yaw + 16384.0f) >> 1) & (NUTRIGTABLE_COUNT - 1);
-    const i32 sin_yaw = (static_cast<i32>(yaw) >> 1) & (NUTRIGTABLE_COUNT - 1);
     const f32 x = source->x;
+    const i32 sin_yaw = (static_cast<i32>(yaw) >> 1) & (NUTRIGTABLE_COUNT - 1);
     destination->z = rotated_z * NuTrigTable[cos_yaw] - x * NuTrigTable[sin_yaw];
     destination->x = rotated_z * NuTrigTable[sin_yaw] + x * NuTrigTable[cos_yaw];
 }
@@ -18872,8 +18679,8 @@ void RotateTerrain(tertype *surface) {
         const NUVEC &source = surface->vectors[vertex_index];
         NUVEC &destination = query->transformed_vertices[vertex_index];
         const f32 z = source.z;
-        const f32 x = source.x;
         destination.y = source.y * cos_pitch - z * sin_pitch;
+        const f32 x = source.x;
         const f32 rotated_z = source.y * sin_pitch + z * cos_pitch;
         destination.z = rotated_z * cos_yaw - x * sin_yaw;
         destination.x = rotated_z * sin_yaw + x * cos_yaw;
@@ -18882,8 +18689,8 @@ void RotateTerrain(tertype *surface) {
         const NUVEC &source = surface->vectors[3];
         NUVEC &destination = query->transformed_vertices[3];
         const f32 z = source.z;
-        const f32 x = source.x;
         destination.y = source.y * cos_pitch - z * sin_pitch;
+        const f32 x = source.x;
         const f32 rotated_z = source.y * sin_pitch + z * cos_pitch;
         destination.z = rotated_z * cos_yaw - x * sin_yaw;
         destination.x = rotated_z * sin_yaw + x * cos_yaw;
@@ -19127,15 +18934,15 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
                       group.bounds_max.z > min_z) ||
                     group.chunk_type == -1, 0))
                     continue;
+                const f32 local_max_z = max_z - group.origin.z;
                 const f32 local_max_x = max_x - group.origin.x;
                 const f32 local_min_x = min_x - group.origin.x;
-                const f32 local_max_z = max_z - group.origin.z;
                 const f32 local_min_z = min_z - group.origin.z;
                 if (group.scene_index < 0)
                     TerrainSkinAllocate(reinterpret_cast<terrsitu_s *>(&group));
                 TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group.data);
                 while (batch->marker >= 0) {
-                    const i32 count = batch->shape_count;
+                    const i16 count = batch->shape_count;
                     TERRAIN_SHAPE *shape = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
                     if (local_max_x >= batch->min_x && batch->max_x > local_min_x && local_max_z >= batch->min_z &&
                         batch->max_z > local_min_z) {
@@ -19162,9 +18969,9 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
     if (fill_cache) {
         i16 *terminator = reinterpret_cast<i16 *>(writer.group_header);
         terminator[0] = 0;
-        terminator[1] = 0;
         cache.center_x = position->x;
         cache.center_z = position->z;
+        terminator[1] = 0;
     }
 
     if (fill_cache || cache_hit) {
@@ -19175,8 +18982,8 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
         writer.shape_count = 0;
         min_x = position_x - SHADOW_SCAN_HALF_EXTENT;
         min_z = position_z - SHADOW_SCAN_HALF_EXTENT;
-        max_x = position_x + SHADOW_SCAN_HALF_EXTENT;
         max_z = position_z + SHADOW_SCAN_HALF_EXTENT;
+        max_x = position_x + SHADOW_SCAN_HALF_EXTENT;
 
         u8 *entry = cache.scan_list;
         for (;;) {
@@ -19219,8 +19026,8 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
     }
 
     if (scan_platforms != 0) {
-        min_z -= 0.05f;
         min_x -= 0.05f;
+        min_z -= 0.05f;
         max_x += 0.05f;
         max_z += 0.05f;
         // This scan uses the complete platform cell, not NewScanRot's active cache.
@@ -19296,8 +19103,8 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
     void *scratch = NuScratchAlloc32(0xd0);
     const f32 position_z = position->z;
     i32 cache_index = 0;
-    i16 oldest_age = CurTerr->index_levels[0].cache_age;
     bool cache_hit = false;
+    i16 oldest_age = CurTerr->index_levels[0].cache_age;
     for (i32 i = 0; i < 16; ++i) {
         TERRAIN_INDEX_LEVEL &cache = CurTerr->index_levels[i];
         i16 age = cache.cache_age;
@@ -19332,8 +19139,8 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
 
     const f32 extent = fill_cache ? 1.0f : SHADOW_SCAN_HALF_EXTENT;
     f32 min_x = position->x - extent;
-    f32 min_z = position_z - extent;
     f32 max_x = position->x + extent;
+    f32 min_z = position_z - extent;
     f32 max_z = position_z + extent;
 
     if (!cache_hit) {
@@ -19400,7 +19207,7 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
         max_z = position_z + SHADOW_SCAN_HALF_EXTENT;
         u8 *entry = cache.scan_list;
         for (;;) {
-            i16 count = reinterpret_cast<i16 *>(entry)[0];
+            i32 count = reinterpret_cast<i16 *>(entry)[0];
             if (count <= 0)
                 break;
             i16 group_index = reinterpret_cast<i16 *>(entry)[1];
@@ -19450,8 +19257,8 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                 group.origin.z - group.radius > max_z || min_z > group.origin.z + group.radius)
                 continue;
             TERRAIN_PLATFORM &platform = CurTerr->platforms[group.scene_index];
-            f32 local_min_x = min_x - group.origin.x, local_max_x = max_x - group.origin.x;
             f32 local_min_z = min_z - group.origin.z, local_max_z = max_z - group.origin.z;
+            f32 local_min_x = min_x - group.origin.x, local_max_x = max_x - group.origin.x;
             NUMTX *matrix = static_cast<NUMTX *>(platform.scene_object);
             if (matrix != NULL) {
                 if (matrix->m30 > platform.previous_matrix.m30)
@@ -19507,10 +19314,10 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                         NuVec4MtxTransformVU0x3(vertices, vertices, matrix);
                         bool quad = shape->normals[1].y < 65535.0f;
                         if (quad) {
-                            vertices[3].x = shape->vectors[3].x;
-                            vertices[3].y = shape->vectors[3].y;
-                            vertices[3].z = shape->vectors[3].z;
                             vertices[3].w = 0.0f;
+                            vertices[3].y = shape->vectors[3].y;
+                            vertices[3].x = shape->vectors[3].x;
+                            vertices[3].z = shape->vectors[3].z;
                             NuVec4MtxTransformVU0(&vertices[3], &vertices[3], matrix);
                         } else
                             vertices[3] = vertices[2];
@@ -19538,9 +19345,9 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                             transformed->vectors[3].y = vertices[3].y;
                             transformed->vectors[3].z = vertices[3].z;
                             vertices[0].x = transformed->vectors[1].x - transformed->vectors[3].x;
-                            vertices[0].y = transformed->vectors[1].y - transformed->vectors[3].y;
                             vertices[0].z = transformed->vectors[1].z - transformed->vectors[3].z;
                             vertices[1].x = transformed->vectors[2].x - transformed->vectors[3].x;
+                            vertices[0].y = transformed->vectors[1].y - transformed->vectors[3].y;
                             vertices[1].y = transformed->vectors[2].y - transformed->vectors[3].y;
                             vertices[1].z = transformed->vectors[2].z - transformed->vectors[3].z;
                             transformed->normals[1] = TerCrossProduct(reinterpret_cast<NUVEC *>(&vertices[0]),
@@ -19609,7 +19416,7 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
     ecastnum = -1;
     shape_count = *reinterpret_cast<i16 *>(scan);
     while (shape_count > 0) {
-        i16 group_index = reinterpret_cast<i16 *>(scan)[1];
+        i32 group_index = reinterpret_cast<i16 *>(scan)[1];
         TERRAIN_SHAPE **surfaces = reinterpret_cast<TERRAIN_SHAPE **>(scan + 4);
         f32 x = position->x - CurTerr->groups[group_index].origin.x;
         f32 z = position->z - CurTerr->groups[group_index].origin.z;
@@ -19719,8 +19526,8 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
             EShadRoofNorm.x = eroof_nx;
             EShadRoofNorm.y = eroof_ny;
             EShadRoofNorm.z = eroof_nz;
-            eshadroofhit = 1;
             ecastroofnum = eroof_group;
+            eshadroofhit = 1;
         }
     } else {
         EShadRoofPoly = NULL;
@@ -19730,22 +19537,22 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
     if (eroof_y < 2000000.0f && eroof_ny > 0.0f && roof_range + position->y > eroof_y) {
         if (roof_y < 2000000.0f && roof_ny < 0.0f && roof_range + position->y > roof_y && eroof_y > roof_y) {
             eshadhit = 3;
-            EShadY = 2000000.0f;
             EShadNorm.y = 1.0f;
+            EShadY = 2000000.0f;
             EShadPoly = NULL;
         } else {
-            EShadPoly = eroof_poly;
             EShadY = eroof_y;
-            EShadNorm.x = eroof_nx;
+            EShadPoly = eroof_poly;
             EShadNorm.y = eroof_ny;
+            EShadNorm.x = eroof_nx;
             EShadNorm.z = eroof_nz;
             eshadhit = 1;
             ecastnum = eroof_group;
         }
     } else if (efloor_y > -2000000.0f && !(floor_y > -2000000.0f && floor_y > efloor_y)) {
         eshadhit = 2;
-        EShadY = efloor_y;
         EShadPoly = efloor_poly;
+        EShadY = efloor_y;
         EShadNorm.x = efloor_nx;
         EShadNorm.y = efloor_ny;
         EShadNorm.z = efloor_nz;
@@ -19760,8 +19567,8 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
         shadroofhit = 1;
         ShadRoofNorm.x = roof_nx;
         ShadRoofNorm.y = roof_ny;
-        ShadRoofNorm.z = roof_nz;
         castroofnum = roof_group;
+        ShadRoofNorm.z = roof_nz;
         ShadRoofY = roof_y;
         ShadRoofPoly = roof_poly;
     } else {
@@ -19771,13 +19578,13 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
 
     if (roof_y < 2000000.0f && roof_ny > 0.0f && height_above + position->y > roof_y) {
         position->y = roof_y;
-        ShadNorm.x = roof_nx;
         ShadNorm.y = roof_ny;
+        ShadNorm.x = roof_nx;
         ShadNorm.z = roof_nz;
         shadhit = 1;
-        ShadPoly = roof_poly;
         castnum = roof_group;
-    } else if (__builtin_expect(floor_y > -2000000.0f, 0)) {
+        ShadPoly = roof_poly;
+    } else if (__builtin_expect(floor_y > -2000000.0f, 1)) {
         ShadNorm.x = floor_nx;
         ShadNorm.y = floor_ny;
         ShadNorm.z = floor_nz;
@@ -19883,11 +19690,10 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
             return 0;
         }
 
-        NUVEC local_normal = {
-            -query->transformed_vertices[second_vertex].x,
-            -query->transformed_vertices[second_vertex].y,
-            0.0f,
-        };
+        NUVEC local_normal;
+        local_normal.x = -query->transformed_vertices[second_vertex].x;
+        local_normal.y = -query->transformed_vertices[second_vertex].y;
+        local_normal.z = 0.0f;
         RotateVec(&local_normal, &local_normal);
         const NUVEC &surface_normal = query->working_surface->normals[0];
         if (local_normal.x * surface_normal.x + local_normal.y * surface_normal.y + local_normal.z * surface_normal.z <=
@@ -20034,7 +19840,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     };
     const f32 distance_sq =
         edge_direction.x * edge_direction.x + edge_direction.y * edge_direction.y + edge_direction.z * edge_direction.z;
-    if (__builtin_expect(distance_sq >= query->collision_radius_sq, 0)) {
+    if (__builtin_expect(distance_sq >= query->collision_radius_sq, 1)) {
         return 0;
     }
 
@@ -20196,7 +20002,7 @@ i32 HitPoly(f32 primary_start, f32 primary_end, f32 secondary_start, f32 seconda
         contact_point.x = query->movement.x * candidate_time;
         contact_point.z = query->movement.z * candidate_time;
         test_primary_face = 1;
-    } else if (__builtin_expect(primary_start <= 0.0f && primary_end <= 0.0f && primary_start >= -radius && primary_end >= -radius, 0)) {
+    } else if (primary_start <= 0.0f && primary_end <= 0.0f && primary_end >= -radius && primary_start >= -radius) {
         candidate_time = primary_start;
         const f32 projection_distance = -primary_start;
         contact_point.y = primary_normal.y * projection_distance;
@@ -20226,7 +20032,9 @@ i32 HitPoly(f32 primary_start, f32 primary_end, f32 secondary_start, f32 seconda
             query->hit_time = candidate_time;
             query->hit_type =
                 primary_start > 0.0f ? TERRAIN_HIT_TYPE_FACE : TERRAIN_HIT_TYPE_FACE | TERRAIN_HIT_TYPE_SECOND_NORMAL;
-            query->movement_normal = primary_normal;
+            query->movement_normal.x = primary_normal.x;
+            query->movement_normal.y = primary_normal.y;
+            query->movement_normal.z = primary_normal.z;
             collision_found = 1;
         }
     }
@@ -20275,7 +20083,9 @@ i32 HitPoly(f32 primary_start, f32 primary_end, f32 secondary_start, f32 seconda
                 candidate_time < TerI->hit_time) {
                 query = TerI;
                 query->hit_time = candidate_time;
-                query->movement_normal = secondary_normal;
+                query->movement_normal.x = secondary_normal.x;
+                query->movement_normal.y = secondary_normal.y;
+                query->movement_normal.z = secondary_normal.z;
                 query->shape_adjusted = (surface->normal_flags & TERRAIN_SHAPE_NORMAL_FLAG_SECOND_STEEP) != 0;
                 query->hit_type = secondary_start > 0.0f ? TERRAIN_HIT_TYPE_FACE
                                                          : TERRAIN_HIT_TYPE_FACE | TERRAIN_HIT_TYPE_SECOND_NORMAL;
@@ -20380,8 +20190,8 @@ i32 HitWallSpline() {
         const f32 radius = query->collision_radius;
         const f32 px = query->position.x;
         const f32 mz = query->movement.z;
-        const f32 pz = query->position.z;
         const f32 mx = query->movement.x;
+        const f32 pz = query->position.z;
         const f32 end_distance = ((mx + px) - WallSplList[i].position.x) * normal.x +
                                  ((mz + pz) - WallSplList[i].position.z) * normal.z - radius;
         const f32 start_distance =
@@ -20408,8 +20218,8 @@ i32 HitWallSpline() {
                 query->surface = NULL;
                 TerrWallInfo = 1;
                 query->movement_normal.x = normal.x;
-                query->movement_normal.y = normal.y;
                 query->hit_time = time;
+                query->movement_normal.y = normal.y;
                 query->movement_normal.z = normal.z;
                 TerrWallTab[0] = WallSplList[i].material[0];
                 TerrWallTab[1] = WallSplList[i].material[1];
@@ -20422,7 +20232,10 @@ i32 HitWallSpline() {
         const f32 distance_sq = dx * dx + dz * dz;
         if (!(64.0f > fabsf(dx) && 64.0f > fabsf(dz) && reach * reach > distance_sq))
             continue;
-        NUVEC direction = {mx, 0.0f, mz};
+        NUVEC direction;
+        direction.x = mx;
+        direction.y = 0.0f;
+        direction.z = mz;
         NuVecNorm(&direction, &direction);
         const f32 along = direction.x * dx + direction.z * dz;
         const f32 padded_radius = radius + 0.0005f;
@@ -20434,8 +20247,8 @@ i32 HitWallSpline() {
             const f32 side_x_sq = side_x * side_x;
             const f32 side_z_sq = side_z * side_z;
             if (__builtin_expect(side_x_sq + side_z_sq <= padded_radius * padded_radius, 0)) {
-                const f32 distance = along - NuFsqrt((radius * radius - side_x_sq) - side_z_sq);
                 const f32 movement_sq = mx * mx + mz * mz;
+                const f32 distance = along - NuFsqrt((radius * radius - side_x_sq) - side_z_sq);
                 if (distance >= -0.0005f && movement_sq >= distance * distance) {
                     const f32 length = NuFsqrt(movement_sq);
                     if (length != 0.0f && distance != 0.0f) {
@@ -20455,16 +20268,16 @@ i32 HitWallSpline() {
         if (penetrating) {
             if (!(padded_radius * padded_radius >= distance_sq))
                 continue;
-            normal.x = px - WallSplList[i].position.x;
             normal.z = pz - WallSplList[i].position.z;
+            normal.x = px - WallSplList[i].position.x;
             NuVecNorm(&normal, &normal);
             query->hit_type = 0x11;
             time = (NuFsqrt(distance_sq) - radius) - 0.0005f;
         } else {
             query->hit_type = 1;
         }
-        query->hit_time = time;
         query->movement_normal.x = normal.x;
+        query->hit_time = time;
         query->movement_normal.y = normal.y;
         query->movement_normal.z = normal.z;
         query->surface = NULL;
@@ -20593,8 +20406,8 @@ i32 HitTerrain() {
 
     NUVEC sphere_position;
     for (i32 sphere_index = 0; sphere_index < curSphereter; ++sphere_index) {
-        const f32 scaled_collision_radius = TerI->collision_radius * TerI->object_scale;
         sphere_position = SphereData[sphere_index].position;
+        const f32 scaled_collision_radius = TerI->collision_radius * TerI->object_scale;
         sphere_position.y *= TerI->inverse_object_scale;
         sphere_position.y -= scaled_collision_radius;
         DeRotatePoint(&sphere_position);
@@ -20789,8 +20602,8 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
             bounds.min_z = scan_query->position.z - 0.02f - radius;
             bounds.max_z = scan_query->position.z + scan_query->movement.z + 0.02f + radius;
         }
-        const f32 dx = bounds.min_x - bounds.max_x;
         const f32 dy = bounds.min_y - bounds.max_y;
+        const f32 dx = bounds.min_x - bounds.max_x;
         const f32 dz = bounds.min_z - bounds.max_z;
         scan_radius = NuFsqrt(dx * dx + dy * dy + dz * dz);
     }
@@ -20824,8 +20637,8 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
             f32 group_bounds_max_z = bounds.max_z;
             group_bounds_min_x -= group.origin.x;
             group_bounds_max_x -= group.origin.x;
-            group_bounds_min_y -= group.origin.y;
             group_bounds_max_y -= group.origin.y;
+            group_bounds_min_y -= group.origin.y;
             group_bounds_min_z -= group.origin.z;
             group_bounds_max_z -= group.origin.z;
 
@@ -20984,9 +20797,9 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
                     }
                 } else {
                     local_min_x = bounds.min_x - group.origin.x;
-                    local_max_x = bounds.max_x - group.origin.x;
                     local_min_y = bounds.min_y - group.origin.y;
                     local_max_y = bounds.max_y - group.origin.y;
+                    local_max_x = bounds.max_x - group.origin.x;
                     local_min_z = bounds.min_z - group.origin.z;
                     local_max_z = bounds.max_z - group.origin.z;
                 }
@@ -21036,8 +20849,8 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
                                     if (quad) {
                                         vertices[3].x = shape->vectors[3].x;
                                         vertices[3].y = shape->vectors[3].y;
-                                        vertices[3].z = shape->vectors[3].z;
                                         vertices[3].w = 0.0f;
+                                        vertices[3].z = shape->vectors[3].z;
                                         NuVec4MtxTransformVU0(&vertices[3], &vertices[3], matrix);
                                     } else
                                         vertices[3] = vertices[2];
@@ -21191,8 +21004,8 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
                     end = MIN(end, first + 16);
                 }
                 for (i32 i = first; i < end; ++i) {
-                    NUVEC &a = node->points[i];
                     NUVEC &b = node->points[i + 1];
+                    NUVEC &a = node->points[i];
                     if (!((a.x >= wall_bounds_min_x && wall_bounds_max_x >= b.x) ||
                           (b.x >= wall_bounds_min_x && wall_bounds_max_x >= a.x)))
                         continue;
@@ -21584,7 +21397,22 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
             TerI->movement.y -= travelled.y;
             TerI->movement.z -= travelled.z;
 
-            if (walkable_normal_y > TerI->impact_normal.y) {
+            if (!(walkable_normal_y > TerI->impact_normal.y)) {
+                FullDeflect(&TerI->movement_normal, &TerI->movement, &TerI->movement);
+                FullDeflect(&TerI->impact_normal, movement, movement);
+
+                terrhitflags |= TERRAIN_IMPACT_RESULT_GROUND;
+                hit_flags[0] = 1;
+                hit_flags[1] = 1;
+                TerI->position.y += TerI->movement_normal.y * 0.0003f;
+
+                if (TerI->terrain_group_index != -1) {
+                    group = &CurTerr->groups[TerI->terrain_group_index];
+                    if (group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
+                        CurTerr->platforms[group->scene_index].flags |= TERRAIN_PLATFORM_FLAG_COLLIDED;
+                    }
+                }
+            } else {
                 hit_flags[0] = 0;
                 terrhitflags |= TERRAIN_IMPACT_RESULT_WALL;
                 if (TerI->terrain_group_index == -1 ||
@@ -21612,21 +21440,6 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
                 CurTrackInfo->wall_contact_state = TERRAIN_TRACK_CONTACT_ACTIVE;
                 CurTrackInfo->impact_normal = TerI->impact_normal;
                 TerrWallNorm = TerI->impact_normal;
-            } else {
-                FullDeflect(&TerI->movement_normal, &TerI->movement, &TerI->movement);
-                FullDeflect(&TerI->impact_normal, movement, movement);
-
-                terrhitflags |= TERRAIN_IMPACT_RESULT_GROUND;
-                hit_flags[0] = 1;
-                hit_flags[1] = 1;
-                TerI->position.y += TerI->movement_normal.y * 0.0003f;
-
-                if (TerI->terrain_group_index != -1) {
-                    group = &CurTerr->groups[TerI->terrain_group_index];
-                    if (group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
-                        CurTerr->platforms[group->scene_index].flags |= TERRAIN_PLATFORM_FLAG_COLLIDED;
-                    }
-                }
             }
 
             TerI->flags &= static_cast<u8>(~TERRAIN_QUERY_FLAG_PREVIOUS_NORMAL);
@@ -21661,9 +21474,9 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
 
             const f32 contact_push = 0.0035f - TerI->unclamped_hit_time * 1.05f;
             if (walkable_normal_y > TerI->impact_normal.y) {
-                const f32 movement_push = 0.0035f - TerI->unclamped_hit_time * 0.35f;
                 TerI->position.x += response_normal.x * contact_push;
                 TerI->position.y += response_normal.y * contact_push;
+                const f32 movement_push = 0.0035f - TerI->unclamped_hit_time * 0.35f;
                 TerI->position.z += response_normal.z * contact_push;
                 TerI->movement.x += response_normal.x * movement_push;
                 TerI->movement.y += response_normal.y * movement_push;
@@ -21703,8 +21516,8 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
             position->x = TerI->position.x + TerI->movement.x;
             position->y = (TerI->position.y + TerI->movement.y) * TerI->object_scale -
                           TerI->object_scale * TerI->collision_radius;
-            position->z = TerI->position.z + TerI->movement.z;
             TerI->flags &= static_cast<u8>(~TERRAIN_QUERY_FLAG_PREVIOUS_NORMAL);
+            position->z = TerI->position.z + TerI->movement.z;
     }
 
     hit_type = TerI->hit_type;
@@ -21849,13 +21662,12 @@ i32 TerrainPlatformMoveCheck(nuvec_s *position, nuvec_s *normal, i32 platform_in
 i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
     TerrainQuery_s *old_query = TerI;
     i32 platform_index = CurTerr->groups[old_query->terrain_group_index].scene_index;
-    TERRAIN_PLATFORM *platform = &CurTerr->platforms[platform_index];
-    NUMTX *matrix = static_cast<NUMTX *>(platform->scene_object);
+    NUMTX *matrix = static_cast<NUMTX *>(CurTerr->platforms[platform_index].scene_object);
     if (__builtin_expect(matrix == NULL, 0))
         return 1;
-    NUMTX *previous = &platform->previous_matrix;
+    NUMTX *previous = &CurTerr->platforms[platform_index].previous_matrix;
     if (previous->m30 == matrix->m30 && previous->m31 == matrix->m31 && previous->m32 == matrix->m32) {
-        if (!(platform->flags & 1))
+        if (!(CurTerr->platforms[platform_index].flags & 1))
             return 1;
         if (__builtin_expect(previous->m00 == matrix->m00 && previous->m01 == matrix->m01 && previous->m02 == matrix->m02 &&
             previous->m10 == matrix->m10 && previous->m11 == matrix->m11 && previous->m12 == matrix->m12 &&
@@ -21863,8 +21675,8 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
             return 1;
     }
     i32 saved_sphere = curSphereter;
-    ScaleTerrain = static_cast<TERRAIN_SHAPE *>(ScaleTerrainT2);
     curSphereter = 0;
+    ScaleTerrain = static_cast<TERRAIN_SHAPE *>(ScaleTerrainT2);
     TerrainQuery_s *query = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
     TerI = query;
     void *scratch = NuScratchAlloc32(0xd0);
@@ -21885,11 +21697,11 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
     query->movement.x = (previous->m30 - matrix->m30) * 1.73f;
     query->movement.y = ((previous->m31 - matrix->m31) * 1.73f) * query->inverse_object_scale;
     query->movement.z = (previous->m32 - matrix->m32) * 1.73f;
-    if (platform->flags & 1) {
+    if (CurTerr->platforms[platform_index].flags & 1) {
         NuMtxInvRSS(&tertempmat, previous);
-        tertempvec4.y = (old_query->position.y - query->collision_radius) * query->object_scale - previous->m31;
         tertempvec4.z = old_query->position.z - previous->m32;
         tertempvec4.x = old_query->position.x - previous->m30;
+        tertempvec4.y = (old_query->position.y - query->collision_radius) * query->object_scale - previous->m31;
         tertempvec4.w = 1.0f;
         NuVec4MtxTransformVU0(&tertempvec4, &tertempvec4, &tertempmat);
         NuVec4MtxTransformVU0(&tertempvec4, &tertempvec4, matrix);
@@ -21902,16 +21714,16 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
     query->movement.y -= 0.01f * old_query->movement_normal.y;
     query->movement.z -= 0.01f * old_query->movement_normal.z;
     query->position.x = old_query->position.x - query->movement.x * 0.91f;
-    query->position.z = old_query->position.z - query->movement.z * 0.91f;
     query->position.y = old_query->position.y - query->movement.y * 0.91f;
+    query->position.z = old_query->position.z - query->movement.z * 0.91f;
 
-    TERRAIN_GROUP *group = &CurTerr->groups[old_query->terrain_group_index];
     TERRAIN_SHAPE **cursor = reinterpret_cast<TERRAIN_SHAPE **>(query->scan_list_storage + 4);
-    i32 count = 0;
     i32 transformed_count = 0;
-    TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group->data);
+    i32 count = 0;
+    TERRAIN_SHAPE_BATCH *batch =
+        static_cast<TERRAIN_SHAPE_BATCH *>(CurTerr->groups[old_query->terrain_group_index].data);
     if (query->object_scale == 1.0f) {
-        if (platform->flags & 1) {
+        if (CurTerr->platforms[platform_index].flags & 1) {
             while (batch->marker >= 0) {
                 i32 shape_count = batch->shape_count;
                 TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
@@ -21928,10 +21740,13 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                     vertices[1].w = 0.0f;
                     vertices[2].x = source->vectors[2].x;
                     vertices[2].y = source->vectors[2].y;
-                    vertices[2].z = source->vectors[2].z;
                     vertices[2].w = 0.0f;
-                    NuVec4MtxTransformVU0x3(vertices, vertices,
-                                            static_cast<NUMTX *>(CurTerr->platforms[group->scene_index].scene_object));
+                    vertices[2].z = source->vectors[2].z;
+                    NuVec4MtxTransformVU0x3(
+                        vertices, vertices,
+                        static_cast<NUMTX *>(
+                            CurTerr->platforms[CurTerr->groups[old_query->terrain_group_index].scene_index]
+                                .scene_object));
                     bool quad = source->normals[1].y < 65535.0f;
                     if (!quad) {
                         vertices[3] = vertices[2];
@@ -21942,7 +21757,9 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                         vertices[3].w = 0.0f;
                         NuVec4MtxTransformVU0(
                             &vertices[3], &vertices[3],
-                            static_cast<NUMTX *>(CurTerr->platforms[group->scene_index].scene_object));
+                            static_cast<NUMTX *>(
+                                CurTerr->platforms[CurTerr->groups[old_query->terrain_group_index].scene_index]
+                                    .scene_object));
                     }
                     TERRAIN_SHAPE *surface = &ScaleTerrain[transformed_count];
                     memcpy(surface->material, source->material, 4);
@@ -21953,8 +21770,8 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                     surface->vectors[1].y = vertices[1].y;
                     surface->vectors[1].z = vertices[1].z;
                     surface->vectors[2].x = vertices[2].x;
-                    surface->vectors[2].y = vertices[2].y;
                     surface->vectors[2].z = vertices[2].z;
+                    surface->vectors[2].y = vertices[2].y;
                     if (quad) {
                         surface->vectors[3].x = vertices[3].x;
                         surface->vectors[3].y = vertices[3].y;
@@ -21964,11 +21781,11 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                         surface->normals[1].y = 65536.0f;
                     } else {
                         vertices[0].x = surface->vectors[1].x - surface->vectors[3].x;
-                        vertices[0].y = surface->vectors[1].y - surface->vectors[3].y;
                         vertices[0].z = surface->vectors[1].z - surface->vectors[3].z;
+                        vertices[0].y = surface->vectors[1].y - surface->vectors[3].y;
                         vertices[1].x = surface->vectors[2].x - surface->vectors[3].x;
-                        vertices[1].y = surface->vectors[2].y - surface->vectors[3].y;
                         vertices[1].z = surface->vectors[2].z - surface->vectors[3].z;
+                        vertices[1].y = surface->vectors[2].y - surface->vectors[3].y;
                         surface->normals[1] = TerCrossProduct(reinterpret_cast<NUVEC *>(&vertices[0]),
                                                               reinterpret_cast<NUVEC *>(&vertices[1]));
                         surface = &ScaleTerrain[transformed_count];
@@ -21980,19 +21797,19 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                         surface->normals[1].y *= inverse;
                         surface->normals[1].z *= inverse;
                     }
-                    vertices[0].x = surface->vectors[2].x - surface->vectors[0].x;
                     vertices[0].y = surface->vectors[2].y - surface->vectors[0].y;
-                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
+                    vertices[0].x = surface->vectors[2].x - surface->vectors[0].x;
                     vertices[1].x = surface->vectors[1].x - surface->vectors[0].x;
-                    vertices[1].y = surface->vectors[1].y - surface->vectors[0].y;
+                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
                     vertices[1].z = surface->vectors[1].z - surface->vectors[0].z;
+                    vertices[1].y = surface->vectors[1].y - surface->vectors[0].y;
                     surface->normals[0] = TerCrossProduct(reinterpret_cast<NUVEC *>(&vertices[0]),
                                                           reinterpret_cast<NUVEC *>(&vertices[1]));
                     surface = &ScaleTerrain[transformed_count];
                     NUVEC *normal = &surface->normals[0];
                     f32 length = NuFsqrt(normal->x * normal->x + normal->y * normal->y + normal->z * normal->z);
-                    f32 inverse = length == 0.0f ? 0.0f : 1.0f / length;
                     surface = &ScaleTerrain[transformed_count];
+                    f32 inverse = length == 0.0f ? 0.0f : 1.0f / length;
                     surface->normals[0].x *= inverse;
                     surface->normals[0].y *= inverse;
                     surface->normals[0].z *= inverse;
@@ -22004,8 +21821,8 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
             }
         } else {
             while (batch->marker >= 0) {
-                i32 shape_count = batch->shape_count;
                 TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
+                i32 shape_count = batch->shape_count;
                 for (i32 remaining = shape_count; remaining > 0; --remaining, ++source) {
                     if (source->material[1] != 0)
                         continue;
@@ -22016,7 +21833,7 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
             }
         }
     } else {
-        if (platform->flags & 1) {
+        if (CurTerr->platforms[platform_index].flags & 1) {
             while (batch->marker >= 0) {
                 i32 shape_count = batch->shape_count;
                 TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
@@ -22031,42 +21848,52 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                     vertices[1].y = source->vectors[1].y;
                     vertices[1].z = source->vectors[1].z;
                     vertices[1].w = 0.0f;
-                    vertices[2].x = source->vectors[2].x;
                     vertices[2].y = source->vectors[2].y;
+                    vertices[2].x = source->vectors[2].x;
                     vertices[2].z = source->vectors[2].z;
                     vertices[2].w = 0.0f;
-                    NuVec4MtxTransformVU0x3(vertices, vertices,
-                                            static_cast<NUMTX *>(CurTerr->platforms[group->scene_index].scene_object));
+                    NuVec4MtxTransformVU0x3(
+                        vertices, vertices,
+                        static_cast<NUMTX *>(
+                            CurTerr->platforms[CurTerr->groups[old_query->terrain_group_index].scene_index]
+                                .scene_object));
                     bool quad = source->normals[1].y < 65535.0f;
-                    if (!quad) {
-                        vertices[3] = vertices[2];
-                    } else {
+                    if (quad) {
                         vertices[3].x = source->vectors[3].x;
                         vertices[3].y = source->vectors[3].y;
                         vertices[3].z = source->vectors[3].z;
                         vertices[3].w = 0.0f;
                         NuVec4MtxTransformVU0(
                             &vertices[3], &vertices[3],
-                            static_cast<NUMTX *>(CurTerr->platforms[group->scene_index].scene_object));
+                            static_cast<NUMTX *>(
+                                CurTerr->platforms[CurTerr->groups[old_query->terrain_group_index].scene_index]
+                                    .scene_object));
+                    } else {
+                        vertices[3] = vertices[2];
                     }
                     TERRAIN_SHAPE *surface = &ScaleTerrain[transformed_count];
                     memcpy(surface->material, source->material, 4);
                     surface->vectors[0].x = vertices[0].x;
-                    surface->vectors[0].y =
-                        (vertices[0].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                    surface->vectors[0].y = (vertices[0].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                                                query->inverse_object_scale -
+                                            CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[0].z = vertices[0].z;
                     surface->vectors[1].x = vertices[1].x;
-                    surface->vectors[1].y =
-                        (vertices[1].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                    surface->vectors[1].y = (vertices[1].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                                                query->inverse_object_scale -
+                                            CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[1].z = vertices[1].z;
                     surface->vectors[2].x = vertices[2].x;
-                    surface->vectors[2].y =
-                        (vertices[2].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                    surface->vectors[2].y = (vertices[2].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                                                query->inverse_object_scale -
+                                            CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[2].z = vertices[2].z;
                     if (quad) {
                         surface->vectors[3].x = vertices[3].x;
                         surface->vectors[3].y =
-                            (vertices[3].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                            (vertices[3].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                                query->inverse_object_scale -
+                            CurTerr->groups[old_query->terrain_group_index].origin.y;
                         surface->vectors[3].z = vertices[3].z;
                     }
                     if (__builtin_expect(!quad, 1)) {
@@ -22091,8 +21918,8 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                     }
                     vertices[0].x = surface->vectors[2].x - surface->vectors[0].x;
                     vertices[0].y = surface->vectors[2].y - surface->vectors[0].y;
-                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
                     vertices[1].x = surface->vectors[1].x - surface->vectors[0].x;
+                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
                     vertices[1].y = surface->vectors[1].y - surface->vectors[0].y;
                     vertices[1].z = surface->vectors[1].z - surface->vectors[0].z;
                     surface->normals[0] = TerCrossProduct(reinterpret_cast<NUVEC *>(&vertices[0]),
@@ -22124,20 +21951,28 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                     memcpy(surface->material, source->material, 4);
                     surface->vectors[0].x = source->vectors[0].x;
                     surface->vectors[0].y =
-                        (source->vectors[0].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                        (source->vectors[0].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                            query->inverse_object_scale -
+                        CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[0].z = source->vectors[0].z;
                     surface->vectors[1].x = source->vectors[1].x;
                     surface->vectors[1].y =
-                        (source->vectors[1].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                        (source->vectors[1].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                            query->inverse_object_scale -
+                        CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[1].z = source->vectors[1].z;
                     surface->vectors[2].x = source->vectors[2].x;
                     surface->vectors[2].y =
-                        (source->vectors[2].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                        (source->vectors[2].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                            query->inverse_object_scale -
+                        CurTerr->groups[old_query->terrain_group_index].origin.y;
                     surface->vectors[2].z = source->vectors[2].z;
                     if (quad) {
                         surface->vectors[3].x = source->vectors[3].x;
                         surface->vectors[3].y =
-                            (source->vectors[3].y + group->origin.y) * query->inverse_object_scale - group->origin.y;
+                            (source->vectors[3].y + CurTerr->groups[old_query->terrain_group_index].origin.y) *
+                                query->inverse_object_scale -
+                            CurTerr->groups[old_query->terrain_group_index].origin.y;
                         surface->vectors[3].z = source->vectors[3].z;
                     }
                     if (__builtin_expect(!!(quad), 0)) {
@@ -22146,20 +21981,20 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                                              normal->z * normal->z);
                         f32 inverse = length == 0.0f ? 0.0f : 1.0f / length;
                         surface = &ScaleTerrain[transformed_count];
-                        surface->normals[1].x = normal->x * inverse;
                         surface->normals[1].y = (normal->y * query_object_scale) * inverse;
+                        surface->normals[1].x = normal->x * inverse;
                         surface->normals[1].z = normal->z * inverse;
                     } else {
                         surface->normals[1].y = 65536.0f;
                     }
-                    NUVEC *normal = &source->normals[0];
-                    f32 length = NuFsqrt(normal->x * normal->x + (normal->y * normal->y) * query->object_scale_sq +
-                                         normal->z * normal->z);
+                    f32 length = NuFsqrt(source->normals[0].x * source->normals[0].x +
+                                         (source->normals[0].y * source->normals[0].y) * query->object_scale_sq +
+                                         source->normals[0].z * source->normals[0].z);
                     f32 inverse = length == 0.0f ? 0.0f : 1.0f / length;
                     surface = &ScaleTerrain[transformed_count];
-                    surface->normals[0].x = normal->x * inverse;
-                    surface->normals[0].y = (normal->y * query_object_scale) * inverse;
-                    surface->normals[0].z = normal->z * inverse;
+                    surface->normals[0].x = source->normals[0].x * inverse;
+                    surface->normals[0].y = (source->normals[0].y * query_object_scale) * inverse;
+                    surface->normals[0].z = source->normals[0].z * inverse;
                     *cursor++ = surface;
                     ++count;
                     ++transformed_count;
@@ -22218,12 +22053,14 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
     }
     if (__builtin_expect(!TerrainPlatformMoveCheck(&query->position, NULL, platform_index, 1, 1), 0))
         flags[0] = 0;
-    TerI->position = query->position;
+    TerI->position.x = query->position.x;
+    TerI->position.y = query->position.y;
+    TerI->position.z = query->position.z;
     if (flags[0] != 0 && CurTerr->groups[castnum].chunk_type == 1) {
         TerI->hit_flags[1] = 1;
         PlatformConnect(reinterpret_cast<char *>(old_query->hit_flags), &old_query->movement, movement_delta,
                         CurTerr->groups[castnum].scene_index);
-    } else if (__builtin_expect(CurTrackInfo != NULL, 0)) {
+    } else if (__builtin_expect(CurTrackInfo != NULL, 1)) {
         CurTrackInfo->flags &= ~TERRAIN_TRACK_FLAG_CONNECTED;
     }
     NuScratchRelease();
@@ -22299,8 +22136,8 @@ i32 PlatformChecks(i32 count, nuvec_s *movement) {
         return count;
     TerrainQuery_s *query = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
     TerI = query;
-    u8 *output = query->scan_list_storage;
     u8 *input = static_cast<u8 *>(old_query->scan_list);
+    u8 *output = query->scan_list_storage;
     while (*reinterpret_cast<i16 *>(input) > 0) {
         i16 *input_header = reinterpret_cast<i16 *>(input);
         i16 *output_header = reinterpret_cast<i16 *>(output);
@@ -22316,8 +22153,8 @@ i32 PlatformChecks(i32 count, nuvec_s *movement) {
         for (i32 remaining = shape_count; remaining != 0; --remaining) {
             for (u32 word = 0; word < sizeof(TERRAIN_SHAPE *) / sizeof(i16); ++word)
                 output_words[word] = input_words[word];
-            input_words += sizeof(TERRAIN_SHAPE *) / sizeof(i16);
             output_words += sizeof(TERRAIN_SHAPE *) / sizeof(i16);
+            input_words += sizeof(TERRAIN_SHAPE *) / sizeof(i16);
         }
         input = reinterpret_cast<u8 *>(input_words);
         output = reinterpret_cast<u8 *>(output_words);
@@ -22576,8 +22413,15 @@ extern "C" i32 AddPickupTerrRot(i32 type, NUMTX *matrix, NUMTX *previous, i32 ro
     i16 source = pickups->group_for_type[type];
     if (source == -1 || terrain->removed_platform_count >= 32)
         return -1;
-    i32 index;
-    TERRAIN_PLATFORM *platform = FindFreeTerrainPlatform(terrain, &index);
+    TERRAIN_PLATFORM *platform = NULL;
+    i32 index = -1;
+    for (i32 i = 0; i < terrain->max_platforms; i++) {
+        platform = &terrain->platforms[i];
+        if (platform->scene_object == NULL) {
+            index = i;
+            break;
+        }
+    }
     if (index == -1)
         return -1;
     return InstallExtraTerrainPlatform(terrain, &pickups->groups[source], matrix, previous, rotating, index, *platform,
@@ -22708,9 +22552,9 @@ i32 TerrShapeSideStep(NUVEC *, NUVEC *, u8 *) {
         query->position.z += query->movement.z;
     }
 
-    TerrShape->offset.z += query->start_position.z - query->position.z;
-    TerrShape->offset.x += query->start_position.x - query->position.x;
     query->hit_type = TERRAIN_HIT_TYPE_FACE;
+    TerrShape->offset.x += query->start_position.x - query->position.x;
+    TerrShape->offset.z += query->start_position.z - query->position.z;
     query->movement.x = query->start_movement.x;
     query->movement.y = query->start_movement.y;
     query->movement.z = query->start_movement.z;
@@ -22756,7 +22600,10 @@ extern "C" void TerrainWallSideSlide(NUVEC *movement, void *id, f32 speed, f32 u
     if (CurTrackInfo == NULL || CurTrackInfo->wall_contact_state == 0)
         return;
     if (speed != 0.0f) {
-        NUVEC slide = {0.0f, 0.0f, speed};
+        NUVEC slide;
+        slide.x = 0.0f;
+        slide.y = 0.0f;
+        slide.z = speed;
         NuVecRotateY(&slide, &slide, angle);
         FullDeflect(&CurTrackInfo->impact_normal, &slide, &slide);
         slide.x += (speed * CurTrackInfo->impact_normal.x) * 0.4f;
@@ -22790,8 +22637,8 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
     TerrPoly = 0;
     TerrWallInfo = 0;
     PlatCrush = 0;
-    terrhitflags = 0;
     castnum = -1;
+    terrhitflags = 0;
 
     if (CurTerr == NULL) {
         TerImpactData = 0;
@@ -22829,8 +22676,8 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
     f32 position_y = collision_radius;
     position_y *= object_scale;
     position_y += position->y;
-    TerI->start_position.x = TerI->position.x = position->x;
     TerI->start_position.y = TerI->position.y = position_y;
+    TerI->start_position.x = TerI->position.x = position->x;
     TerI->start_position.z = TerI->position.z = position->z;
     TerI->start_movement.x = TerI->movement.x = movement->x;
     TerI->start_movement.y = TerI->movement.y = movement->y;
@@ -22901,10 +22748,9 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
                             TerI->movement_normal.z * TerI->surface->normals[0].z;
                 }
 
-                TERRAIN_GROUP *group = &CurTerr->groups[group_index];
                 const u8 hit_class = hit_type & TERRAIN_HIT_TYPE_CLASS_MASK;
                 f32 wall_limit;
-                if (group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
+                if (CurTerr->groups[group_index].chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
                     wall_limit = 0.707f;
                     if (hit_class > TERRAIN_HIT_TYPE_FACE && 0.95f > slope) {
                         wall_limit = 0.98f;
@@ -22929,8 +22775,10 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
                     wall_limit = 1.1f;
                 }
 
-                if (TerI->impact_normal.y >= wall_limit && group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
-                    CurTerr->platforms[group->scene_index].flags |= TERRAIN_PLATFORM_FLAG_COLLIDED;
+                if (TerI->impact_normal.y >= wall_limit &&
+                    CurTerr->groups[group_index].chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
+                    CurTerr->platforms[CurTerr->groups[group_index].scene_index].flags |=
+                        TERRAIN_PLATFORM_FLAG_COLLIDED;
                 }
             }
         }
@@ -22971,9 +22819,9 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
                     TerI->start_movement.y = movement->y;
                     TerI->start_movement.z = movement->z;
                     TerrainImpact(position, movement, hit_flags);
-                    position->x = TerI->position.x;
                     position->y = TerI->position.y * TerI->object_scale - TerI->collision_radius * TerI->object_scale;
                     position->z = TerI->position.z;
+                    position->x = TerI->position.x;
                     movement->x = TerI->start_movement.x;
                     movement->y = TerI->start_movement.y;
                     movement->z = TerI->start_movement.z;
@@ -23270,15 +23118,15 @@ extern "C" u8 *CrashDataPtr(void) {
                 continue;
             TERRAIN_GROUP &group = terrain->groups[group_index];
             group = terrain->groups[original->terrain_group_index];
-            group.scene_index = index;
             group.chunk_type = 1;
             TERRAIN_PLATFORM &platform = terrain->platforms[index];
+            group.scene_index = index;
             platform.scene_object = object;
             platform.terrain_group_index = group_index;
-            platform.scene_object_index = instance;
             platform.scene_transform = NULL;
             platform.flags = (platform.flags & ~1) | (original->flags & 1);
             terrain->group_indices[group_index_count] = group_index;
+            platform.scene_object_index = instance;
             terrain->group_index_count = group_index_count + 1;
             platform.bounce_impulse = 0.0f;
             platform.bounce_offset = 0.0f;
@@ -23370,15 +23218,22 @@ extern "C" i16 NewPlatPickupInst(void *object, i32 type) {
     i16 source = pickups->group_for_type[type];
     if (source == -1)
         return -1;
-    i32 index;
-    TERRAIN_PLATFORM *platform = FindFreeTerrainPlatform(terrain, &index);
+    TERRAIN_PLATFORM *platform = NULL;
+    i32 index = -1;
+    for (i32 i = 0; i < terrain->max_platforms; i++) {
+        platform = &terrain->platforms[i];
+        if (platform->scene_object == NULL) {
+            index = i;
+            break;
+        }
+    }
     if (index == -1)
         return -1;
     TERRAIN_GROUP &group = terrain->groups[group_index];
     group = pickups->groups[source];
     group.scene_index = index;
-    group.chunk_type = 1;
     platform->scene_object = object;
+    group.chunk_type = 1;
     platform->flags &= ~TERRAIN_PLATFORM_FLAG_ROTATING;
     NUMTX *matrix = static_cast<NUMTX *>(object);
     group.origin.x = matrix->m30;
@@ -23451,10 +23306,11 @@ static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiite
     if (edanim_nearest == -1) {
         return;
     }
-    auto &param = AnimParams[edanim_nearest_param_id];
-    param.bounce_damping = static_cast<edui_slider_s *>(item)->value;
-    if (param.platform_id != -1) {
-        PlatInstBounce(param.platform_id, param.bounce_impulse, param.bounce_spring, param.bounce_damping);
+    AnimParams[edanim_nearest_param_id].bounce_damping = static_cast<edui_slider_s *>(item)->value;
+    if (AnimParams[edanim_nearest_param_id].platform_id != -1) {
+        PlatInstBounce(
+            AnimParams[edanim_nearest_param_id].platform_id, AnimParams[edanim_nearest_param_id].bounce_impulse,
+            AnimParams[edanim_nearest_param_id].bounce_spring, AnimParams[edanim_nearest_param_id].bounce_damping);
     }
 }
 
@@ -23462,10 +23318,11 @@ static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiite
     if (edanim_nearest == -1) {
         return;
     }
-    auto &param = AnimParams[edanim_nearest_param_id];
-    param.bounce_spring = static_cast<edui_slider_s *>(item)->value;
-    if (param.platform_id != -1) {
-        PlatInstBounce(param.platform_id, param.bounce_impulse, param.bounce_spring, param.bounce_damping);
+    AnimParams[edanim_nearest_param_id].bounce_spring = static_cast<edui_slider_s *>(item)->value;
+    if (AnimParams[edanim_nearest_param_id].platform_id != -1) {
+        PlatInstBounce(
+            AnimParams[edanim_nearest_param_id].platform_id, AnimParams[edanim_nearest_param_id].bounce_impulse,
+            AnimParams[edanim_nearest_param_id].bounce_spring, AnimParams[edanim_nearest_param_id].bounce_damping);
     }
 }
 
@@ -23473,10 +23330,11 @@ static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, edui
     if (edanim_nearest == -1) {
         return;
     }
-    auto &param = AnimParams[edanim_nearest_param_id];
-    param.bounce_impulse = static_cast<edui_slider_s *>(item)->value;
-    if (param.platform_id != -1) {
-        PlatInstBounce(param.platform_id, param.bounce_impulse, param.bounce_spring, param.bounce_damping);
+    AnimParams[edanim_nearest_param_id].bounce_impulse = static_cast<edui_slider_s *>(item)->value;
+    if (AnimParams[edanim_nearest_param_id].platform_id != -1) {
+        PlatInstBounce(
+            AnimParams[edanim_nearest_param_id].platform_id, AnimParams[edanim_nearest_param_id].bounce_impulse,
+            AnimParams[edanim_nearest_param_id].bounce_spring, AnimParams[edanim_nearest_param_id].bounce_damping);
     }
 }
 
@@ -23512,7 +23370,7 @@ extern "C" {
             EdFileRead(name, 20);
             AnimParams[slot].instance_id = edanimLookupSpecial(name, scene);
             AnimParams[slot].effect_count = EdFileReadInt();
-            if (__builtin_expect(version > 1, 0)) {
+            if (__builtin_expect(version > 1, 1)) {
                 AnimParams[slot].sound_count = EdFileReadInt();
             } else {
                 AnimParams[slot].sound_count = 0;
@@ -23617,10 +23475,10 @@ static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s 
         page = edanimLoadPage(path, edbits_base_scene);
     }
     edanimStartAllPages();
-    if (page < 0)
-        eduiCreateMessageMenu(menu, const_cast<char *>("File Load Error"), 0);
-    else
+    if (page >= 0)
         eduiCreateMessageMenu(menu, const_cast<char *>("Loaded OK"), 1);
+    else
+        eduiCreateMessageMenu(menu, const_cast<char *>("File Load Error"), 0);
 }
 
 i32 edanimParamCreate(i32 instance_id) {
@@ -23754,7 +23612,7 @@ void edanimDoInput(nupad_s *pad) {
                     NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
                     edcamSetPos(NuSpecialGetPos(&special));
                     edanim_nearest_param_id = -1;
-                    for (i32 index = 0; index < 64; ++index) {
+                    for (u32 index = 0; index < 64; ++index) {
                         if (AnimParams[index].instance_id == edanim_nearest) {
                             edanim_nearest_param_id = index;
                             break;
@@ -23797,7 +23655,7 @@ void edanimDoInput(nupad_s *pad) {
         if (pad->digital_buttons & 0x20) {
             if (edanim_particle_mode != 0 && edanim_nearest_particle != -1) {
                 edanimParticlePlace(edanim_nearest_particle, &edanim_cam_pos);
-            } else if (edanim_sound_mode != 0 && edanim_nearest_sound != -1) {
+            } else if (edanim_nearest_sound != -1 && edanim_sound_mode != 0) {
                 edanimSoundPlace(edanim_nearest_sound, &edanim_cam_pos);
             }
         }
@@ -23868,12 +23726,11 @@ extern "C" {
 
     void PlatOnOff(i32 index, i32 enabled) {
         if (CurTerr != NULL && index >= 0 && index < CurTerr->max_platforms) {
-            TERRAIN_GROUP &group = CurTerr->groups[CurTerr->platforms[index].terrain_group_index];
             if (enabled != 0) {
-                group.chunk_type = 1;
+                CurTerr->groups[CurTerr->platforms[index].terrain_group_index].chunk_type = 1;
                 return;
             }
-            group.chunk_type = -1;
+            CurTerr->groups[CurTerr->platforms[index].terrain_group_index].chunk_type = -1;
         }
     }
 
@@ -23923,8 +23780,15 @@ extern "C" i32 AddMSituExtraTerrRot(i32 source_index, NUMTX *matrix, NUMTX *prev
     if (group_index >= terrain->max_groups || matrix == NULL || (rotating != 0 && previous == NULL) ||
         source->removed_platform_count >= 32 || source->group_count <= source_index)
         return -1;
-    i32 index;
-    TERRAIN_PLATFORM *platform = FindFreeTerrainPlatform(terrain, &index);
+    TERRAIN_PLATFORM *platform = NULL;
+    i32 index = -1;
+    for (i32 i = 0; i < terrain->max_platforms; i++) {
+        platform = &terrain->platforms[i];
+        if (platform->scene_object == NULL) {
+            index = i;
+            break;
+        }
+    }
     if (index == -1)
         return -1;
     return InstallExtraTerrainPlatform(terrain, &source->groups[source_index], matrix, previous, rotating, index,
@@ -24096,8 +23960,8 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
     bounds.min_y -= 0.05f;
     bounds.max_y += 0.05f;
     bounds.min_z -= 0.05f;
-    bounds.max_z += 0.05f;
     TerI->scan_list = writer.group_header;
+    bounds.max_z += 0.05f;
     if (scan_type != 0) {
         const TERRAIN_CELL &cell = CurTerr->cells[TERRAIN_PLATFORM_CELL];
         const i16 *indices = CurTerr->group_indices + static_cast<i16>(cell.first_group);
@@ -24117,8 +23981,8 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
                     local.max_x = bounds.max_x - group.origin.x;
                     local.min_x = (matrix->m30 - platform.previous_matrix.m30) * 1.5f + bounds.min_x - group.origin.x;
                 } else {
-                    local.max_x = (matrix->m30 - platform.previous_matrix.m30) * 1.5f + bounds.max_x - group.origin.x;
                     local.min_x = bounds.min_x - group.origin.x;
+                    local.max_x = (matrix->m30 - platform.previous_matrix.m30) * 1.5f + bounds.max_x - group.origin.x;
                 }
                 if (__builtin_expect(matrix->m31 > platform.previous_matrix.m31, 1)) {
                     local.max_y = (matrix->m31 - platform.previous_matrix.m31) * 1.5f + bounds.max_y - group.origin.y;
@@ -24128,8 +23992,8 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
                     local.min_y = (matrix->m31 - platform.previous_matrix.m31) * 1.5f + bounds.min_y - group.origin.y;
                 }
                 if (!(matrix->m32 > platform.previous_matrix.m32)) {
-                    local.max_z = bounds.max_z - group.origin.z;
                     local.min_z = (matrix->m32 - platform.previous_matrix.m32) * 1.5f + bounds.min_z - group.origin.z;
+                    local.max_z = bounds.max_z - group.origin.z;
                 } else {
                     local.min_z = bounds.min_z - group.origin.z;
                     local.max_z = (matrix->m32 - platform.previous_matrix.m32) * 1.5f + bounds.max_z - group.origin.z;
@@ -24343,7 +24207,7 @@ i16 *NewScanHandelSubset(i16 *subset, nuvec_s *position, nuvec_s *movement, f32 
                 local.min_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.min_y - group.origin.y;
                 local.max_y = bounds.max_y - group.origin.y;
             }
-            if (__builtin_expect(matrix->m32 > platform->previous_matrix.m32, 0)) {
+            if (__builtin_expect(matrix->m32 > platform->previous_matrix.m32, 1)) {
                 local.max_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.max_z - group.origin.z;
                 local.min_z = bounds.min_z - group.origin.z;
             } else {
@@ -24403,8 +24267,8 @@ i16 *NewScanHandelSubset(i16 *subset, nuvec_s *position, nuvec_s *movement, f32 
     i16 *terminator = reinterpret_cast<i16 *>(writer.group_header);
     terminator[0] = terminator[1] = 0;
     bounds.min_x -= 0.02f;
-    bounds.max_x += 0.02f;
     bounds.min_z -= 0.02f;
+    bounds.max_x += 0.02f;
     bounds.max_z += 0.02f;
     TERRAIN_WALL_POINT **source =
         reinterpret_cast<TERRAIN_WALL_POINT **>(reinterpret_cast<u8 *>(subset) + sizeof(void *));
@@ -24485,13 +24349,13 @@ void ScanTerrainHandel(i32 terrain_mask, i16 *handle) {
                           TerI->movement.z * TerI->movement.z;
         f32 reach = 0.02f + TerI->collision_radius_sq + movement_sq;
         f32 vertical_reach = TerI->object_scale * reach;
-        bounds.max_x = TerI->position.x + reach;
         bounds.min_y = TerI->position.y - vertical_reach;
+        bounds.max_x = TerI->position.x + reach;
         bounds.max_y = TerI->position.y + vertical_reach;
-        bounds.min_x = TerI->position.x - reach;
         bounds.max_z = TerI->position.z + reach;
         bounds.min_z = TerI->position.z - reach;
         scan_radius_sq = reach + 1.0f;
+        bounds.min_x = TerI->position.x - reach;
     }
     f32 scan_radius = NuFsqrt(scan_radius_sq);
     TerrainQuery_s *query = TerI;
@@ -24510,22 +24374,22 @@ void ScanTerrainHandel(i32 terrain_mask, i16 *handle) {
                 local.max_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.max_x - group.origin.x;
                 local.min_x = bounds.min_x - group.origin.x;
             } else {
-                local.min_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.min_x - group.origin.x;
                 local.max_x = bounds.max_x - group.origin.x;
+                local.min_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.min_x - group.origin.x;
             }
             if (matrix->m31 > platform->previous_matrix.m31) {
-                local.max_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.max_y - group.origin.y;
                 local.min_y = bounds.min_y - group.origin.y;
+                local.max_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.max_y - group.origin.y;
             } else {
-                local.min_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.min_y - group.origin.y;
                 local.max_y = bounds.max_y - group.origin.y;
+                local.min_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.min_y - group.origin.y;
             }
-            if (matrix->m32 > platform->previous_matrix.m32) {
-                local.max_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.max_z - group.origin.z;
-                local.min_z = bounds.min_z - group.origin.z;
-            } else {
+            if (!(matrix->m32 > platform->previous_matrix.m32)) {
                 local.min_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.min_z - group.origin.z;
                 local.max_z = bounds.max_z - group.origin.z;
+            } else {
+                local.min_z = bounds.min_z - group.origin.z;
+                local.max_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.max_z - group.origin.z;
             }
             if (__builtin_expect(group.scene_index == TerrPlatDis, 0))
                 continue;
@@ -24793,15 +24657,15 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
     TERRAIN_PLATFORM *platform = &CurTerr->platforms[group->scene_index];
     NUMTX *matrix = static_cast<NUMTX *>(platform->scene_object);
     TerrainScanBounds local = bounds;
-    if (__builtin_expect(matrix != NULL, 1)) {
+    if (__builtin_expect(matrix != NULL, 0)) {
         if (platform->previous_matrix.m30 < matrix->m30)
             local.max_x += (matrix->m30 - platform->previous_matrix.m30) * 1.5f;
         else
             local.min_x += (matrix->m30 - platform->previous_matrix.m30) * 1.5f;
-        if (platform->previous_matrix.m31 < matrix->m31)
-            local.max_y += (matrix->m31 - platform->previous_matrix.m31) * 1.5f;
-        else
+        if (!(platform->previous_matrix.m31 < matrix->m31))
             local.min_y += (matrix->m31 - platform->previous_matrix.m31) * 1.5f;
+        else
+            local.max_y += (matrix->m31 - platform->previous_matrix.m31) * 1.5f;
         if (__builtin_expect(!(matrix->m32 > platform->previous_matrix.m32), 0))
             local.min_z += (matrix->m32 - platform->previous_matrix.m32) * 1.5f;
         else
@@ -24811,8 +24675,8 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
     local.max_x -= group->origin.x;
     local.min_y -= group->origin.y;
     local.max_y -= group->origin.y;
-    local.min_z -= group->origin.z;
     local.max_z -= group->origin.z;
+    local.min_z -= group->origin.z;
     i32 count = 0;
     i32 scaled_count = 0;
     if ((platform->flags & TERRAIN_PLATFORM_FLAG_ROTATING) == 0) {
@@ -24855,9 +24719,9 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                             surface->vectors[2].z = source->vectors[2].z;
                             surface->vectors[2].y = (source->vectors[2].y + origin_y) * inverse_scale - origin_y;
                             if (source->normals[1].y < 65535.0f) {
-                                surface->vectors[3].x = source->vectors[3].x;
                                 surface->vectors[3].z = source->vectors[3].z;
                                 surface->vectors[3].y = (source->vectors[3].y + origin_y) * inverse_scale - origin_y;
+                                surface->vectors[3].x = source->vectors[3].x;
                                 const NUVEC *normal = &source->normals[1];
                                 f32 length =
                                     NuFsqrt(normal->x * normal->x + normal->y * normal->y * query->object_scale_sq +
@@ -24865,11 +24729,11 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                                 f32 inverse = 0.0f;
                                 if (length != 0.0f)
                                     inverse = 1.0f / length;
-                                surface = &ScaleTerrain[scaled_count];
                                 query = TerI;
+                                surface = &ScaleTerrain[scaled_count];
                                 surface->normals[1].x = normal->x * inverse;
-                                surface->normals[1].y = normal->y * query->object_scale * inverse;
                                 surface->normals[1].z = inverse * normal->z;
+                                surface->normals[1].y = normal->y * query->object_scale * inverse;
                             } else {
                                 surface->normals[1].y = 65536.0f;
                             }
@@ -24880,9 +24744,9 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                             f32 inverse = 0.0f;
                             if (length != 0.0f)
                                 inverse = 1.0f / length;
-                            query = TerI;
                             surface = &ScaleTerrain[scaled_count];
                             surface->normals[0].x = normal->x * inverse;
+                            query = TerI;
                             surface->normals[0].y = normal->y * query->object_scale * inverse;
                             surface->normals[0].z = inverse * normal->z;
                             *cursor++ = surface;
@@ -24920,11 +24784,11 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                     vertices[1].w = 0.0f;
                     vertices[2].x = source->vectors[2].x;
                     vertices[2].y = source->vectors[2].y;
-                    vertices[2].z = source->vectors[2].z;
                     vertices[2].w = 0.0f;
+                    vertices[2].z = source->vectors[2].z;
                     NuVec4MtxTransformVU0x3(vertices, vertices,
                                             static_cast<NUMTX *>(CurTerr->platforms[group->scene_index].scene_object));
-                    if (__builtin_expect(source->normals[1].y < 65535.0f, 1)) {
+                    if (source->normals[1].y < 65535.0f) {
                         vertices[3].x = source->vectors[3].x;
                         vertices[3].y = source->vectors[3].y;
                         vertices[3].z = source->vectors[3].z;
@@ -24951,8 +24815,8 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                     const f32 origin_y = group->origin.y;
                     const f32 inverse_scale = TerI->inverse_object_scale;
                     surface->vectors[0].x = vertices[0].x;
-                    surface->vectors[0].z = vertices[0].z;
                     surface->vectors[1].x = vertices[1].x;
+                    surface->vectors[0].z = vertices[0].z;
                     surface->vectors[1].z = vertices[1].z;
                     surface->vectors[2].x = vertices[2].x;
                     surface->vectors[2].z = vertices[2].z;
@@ -24984,11 +24848,11 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
                     } else {
                         surface->normals[1].y = 65536.0f;
                     }
-                    vertices[0].x = surface->vectors[2].x - surface->vectors[0].x;
                     vertices[0].y = surface->vectors[2].y - surface->vectors[0].y;
-                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
-                    vertices[1].x = surface->vectors[1].x - surface->vectors[0].x;
                     vertices[1].y = surface->vectors[1].y - surface->vectors[0].y;
+                    vertices[0].x = surface->vectors[2].x - surface->vectors[0].x;
+                    vertices[1].x = surface->vectors[1].x - surface->vectors[0].x;
+                    vertices[0].z = surface->vectors[2].z - surface->vectors[0].z;
                     vertices[1].z = surface->vectors[1].z - surface->vectors[0].z;
                     surface->normals[0] = TerCrossProduct(reinterpret_cast<NUVEC *>(&vertices[0]),
                                                           reinterpret_cast<NUVEC *>(&vertices[1]));
@@ -25120,8 +24984,8 @@ void SkinPlatformSize(i32 group_index, unsigned char *buffer, PLATSKININFO *info
         while (input->marker >= 0) {
             output->marker = input->marker;
             output->shape_count = input->shape_count;
-            TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(input + 1);
             const i32 shape_count = input->shape_count;
+            TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(input + 1);
             TERRAIN_SHAPE *destination = reinterpret_cast<TERRAIN_SHAPE *>(output + 1);
             for (i32 i = 0; i < shape_count; ++i, ++source, ++destination) {
                 i32 last_vertex = source->normals[1].y > 65535.0f ? 2 : 3;
@@ -25177,15 +25041,15 @@ void SkinPlatformSize(i32 group_index, unsigned char *buffer, PLATSKININFO *info
             input = reinterpret_cast<TERRAIN_SHAPE_BATCH *>(source);
             output = reinterpret_cast<TERRAIN_SHAPE_BATCH *>(destination);
         }
-        output->marker = -1;
         output->shape_count = -1;
         bytes = reinterpret_cast<unsigned char *>(input) + 4 - static_cast<unsigned char *>(group->data);
+        output->marker = -1;
     }
     group->origin.x = info->matrix->m30;
-    group->origin.y = info->matrix->m31;
     group->origin.z = info->matrix->m32;
-    group->bounds_min.x = (min_x - 0.1f) + info->matrix->m30;
+    group->origin.y = info->matrix->m31;
     group->bounds_min.y = (min_y - 0.1f) + info->matrix->m31;
+    group->bounds_min.x = (min_x - 0.1f) + info->matrix->m30;
     group->bounds_min.z = (min_z - 0.1f) + info->matrix->m32;
     group->bounds_max.x = (max_x + 0.1f) + info->matrix->m30;
     group->bounds_max.z = (max_z + 0.1f) + info->matrix->m32;
@@ -25297,9 +25161,9 @@ extern "C" {
             TERRAIN_GROUP &group = groups[i];
             if (group.chunk_type != 0)
                 continue;
-            group_min_x[i] = 200000000.0f;
             group_min_z[i] = 200000000.0f;
             group_max_x[i] = -200000000.0f;
+            group_min_x[i] = 200000000.0f;
             group_max_z[i] = -200000000.0f;
             group_min_x[i] = MIN(group.bounds_min.x, group_min_x[i]);
             group_min_z[i] = MIN(group.bounds_min.z, group_min_z[i]);

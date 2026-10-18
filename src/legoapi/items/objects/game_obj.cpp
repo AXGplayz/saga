@@ -341,7 +341,7 @@ static __used__ void SpeederPart_Update(PART_s *part) {
         if ((bike->rider->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
             bike->rider->field_0xefe |= 0x40;
             bike->rider->apiobj.flags_low |= 0x20;
-            bike->rider->field_0xf00 |= 0x20;
+            bike->rider->time_based_update_disabled = 1;
             bike->rider_position.x = SeekLinearF(bike->rider_position.x, camera->mtx.m30, FRAMETIME);
             bike->rider_position.y = SeekLinearF(bike->rider_position.y, camera->mtx.m31 - 2.0f, FRAMETIME * 1.5f);
             bike->rider_position.z = SeekLinearF(bike->rider_position.z, camera->mtx.m32, FRAMETIME);
@@ -585,7 +585,7 @@ void ManageGameObjects() {
                     object->current_hp = object->hitpoints;
                     object->field_0xe38 = 4;
                     object->field_0xe37 = object->apiobj.character_data->game_character->field_0xf5;
-                    object->field_0xefc |= 0x80;
+                    object->reset_lighting = 1;
                     object->field_0x7a5 = 0xff;
                     if (object->apiobj.field_0x27c != -1)
                         object->spawn_protection_timer = 2.5f;
@@ -619,8 +619,8 @@ void ManageGameObjects() {
                     object->field_0x101c = 2.0f;
                 } else {
                     AICREATURE *creature = &WORLD->ai_sys->creatures[object->ai.field_0x134];
-                    if ((object->field_0xefa & 0x10) != 0) {
-                        if ((object->field_0xefa & 0x20) == 0) {
+                    if (object->respawnable) {
+                        if (!object->respawn_at_origin) {
                             if (object->id == id_STAP2 && WORLD->current_level == NEGOTIATIONSC_LDATA) {
                                 object->field_0x101c = 5.0f;
                             } else {
@@ -649,7 +649,7 @@ void ManageGameObjects() {
                 }
                 continue;
             }
-            if ((object->field_0xefa & 0x10) != 0) {
+            if (object->respawnable) {
                 object->field_0x101c = 1.0f;
                 continue;
             }
@@ -834,7 +834,7 @@ void CollideGameObjects(WORLDINFO_s *world) {
             continue;
         }
 
-        const i8 context = object->character_context;
+        const i32 context = object->character_context;
         if ((CInfo[context].flags & 0x8000) != 0 || context == 0x3b || context == 0x3c || context == 0x0f ||
             context == 0x39) {
             continue;
@@ -929,6 +929,7 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
                          : object->id == id_MOWER     ? mower
                                                       : standard;
         NUVEC points[4];
+        NUVEC corner[3];
         for (i32 i = 0; i < 4; ++i) {
             NuVecRotateY(&points[i], &offsets[i], api.field_0x276);
             NuVecAdd(&points[i], &points[i], &api.lower_position);
@@ -939,11 +940,10 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
             } else {
                 object->suspension[i].velocity += -5.0f * FRAMETIME;
                 const f32 height = object->suspension[i].height + dy + object->suspension[i].velocity * FRAMETIME;
+                object->suspension[i].height = height;
                 if (floor > height) {
                     object->suspension[i].height = floor;
                     object->suspension[i].velocity = vertical_speed;
-                } else {
-                    object->suspension[i].height = height;
                 }
                 const f32 lower = api.lower_position.y - (api.field_0x1dc + api.field_0x1dc);
                 if (lower > object->suspension[i].height) {
@@ -952,27 +952,29 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
                 } else {
                     const f32 upper = api.lower_position.y + 3.0f * api.field_0x1dc;
                     if (object->suspension[i].height > upper) {
-                        object->suspension[i].height = upper;
                         object->suspension[i].velocity = vertical_speed;
+                        object->suspension[i].height = upper;
                     }
                 }
             }
+            corner[0].x = points[i].x;
+            corner[0].y = object->suspension[i].height;
+            corner[0].z = points[i].z;
         }
         NUVEC normal = v000;
         for (i32 i = 0; i < 4; ++i) {
-            NUVEC a, b, c;
-            a.x = points[i].x;
-            a.y = object->suspension[i].height;
-            a.z = points[i].z;
-            b.x = points[(i + 1) & 3].x;
-            b.y = object->suspension[(i + 1) & 3].height;
-            b.z = points[(i + 1) & 3].z;
-            c.x = points[(i + 2) & 3].x;
-            c.y = object->suspension[(i + 2) & 3].height;
-            c.z = points[(i + 2) & 3].z;
+            corner[0].x = points[i].x;
+            corner[0].y = object->suspension[i].height;
+            corner[0].z = points[i].z;
+            corner[1].x = points[(i + 1) & 3].x;
+            corner[1].y = object->suspension[(i + 1) & 3].height;
+            corner[1].z = points[(i + 1) & 3].z;
+            corner[2].x = points[(i + 2) & 3].x;
+            corner[2].y = object->suspension[(i + 2) & 3].height;
+            corner[2].z = points[(i + 2) & 3].z;
             NUVEC ab, ac;
-            NuVecSub(&ab, &b, &a);
-            NuVecSub(&ac, &c, &a);
+            NuVecSub(&ab, &corner[1], &corner[0]);
+            NuVecSub(&ac, &corner[2], &corner[0]);
             NuVecCross(&ab, &ab, &ac);
             NuVecAdd(&normal, &normal, &ab);
         }
@@ -999,9 +1001,9 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
     u16 x = object->field_0x1062, z = object->field_0x1064;
     temp_xrot = x;
     temp_zrot = z;
-    const bool sliding = (flags & 0x200) != 0 && object->character_context == 0x33;
-    const bool magnet = !sliding && (flags & 0x10000000) != 0 && object->character_context == 0x44;
-    const bool grapple = !sliding && object->character_context == 0x46 && object->field_0x7a3 == 0;
+    const i32 sliding = (flags & 0x200) != 0 && object->character_context == 0x33;
+    const i32 magnet = !sliding && (flags & 0x10000000) != 0 && object->character_context == 0x44;
+    const i32 grapple = !sliding && object->character_context == 0x46 && object->field_0x7a3 == 0;
     i32 alignment = 0;
     if (object->field_0x1086 == 2 &&
         ((api.character_data->model_flags & 0x100) != 0 || (flags & 0x200000) != 0 || sliding)) {
@@ -1108,17 +1110,9 @@ void PlayerTakeHit(GameObject_s *object, GameObject_s *attacker) {
         return;
 
     const u8 state = object->field_0xe31;
-    i32 animation;
-    void *animation_data;
-    if (state != 1) {
-        animation = 0x3d;
-        animation_data = object->apiobj.character_model->model_data_b[0x3d];
-    } else {
-        animation = 0x3e;
-        animation_data = object->apiobj.character_model->model_data_b[0x3e];
-    }
-    if (animation_data == NULL) {
-        if ((object->field_0xefb & 8) != 0) {
+    const i32 animation = state == 1 ? 0x3e : 0x3d;
+    if (object->apiobj.character_model->model_data_b[animation] == NULL) {
+        if (object->is_boss) {
             ResetAnimPacket(&object->apiobj.anim_packet, -1);
             Player_ClearContext(object, 1);
             Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
@@ -1384,7 +1378,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
 
         const bool force_update =
             timebase_updates == 0 || (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0 ||
-            (object->field_0xefb & 8) != 0 || (object->field_0xf00 & GAME_OBJECT_AI_UPDATE_SPECIAL_STATE) != 0 ||
+            object->is_boss || (object->field_0xf00 & GAME_OBJECT_AI_UPDATE_SPECIAL_STATE) != 0 ||
             (CInfo[object->character_context].flags & 0x200) != 0 || object->apiobj.supporting_platform_id != -1 ||
             (object->field_0xcc0 != NULL && object->character_context == CHARACTER_CONTEXT_LINKED_OBJECT) ||
             Technos_FindControllingTechno(object) != NULL ||
@@ -1430,7 +1424,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
             (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0)
             continue;
-        object->apiobj.flags_high = (object->apiobj.flags_high & ~0x40) | ((object->field_0x7a5 == 0) << 6);
+        object->apiobj.use_cached_los = object->field_0x7a5 == 0;
         object->field_0x1024 -= FRAMETIME;
         if (object->field_0x1024 < -1.0f)
             SetFlicker(object, 0.0f);
@@ -1464,16 +1458,16 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 MovePlayer(object);
             if (TimingBarSet == 4)
                 TBCLOSEFN("Move", 4);
-            if ((object->field_0xefa & 0x40) != 0 && (object->apiobj.flags_low & 4) == 0) {
+            if (object->portal_enabled && (object->apiobj.flags_low & 4) == 0) {
                 object->room_id = -1;
-                if ((object->field_0xefa & 0x80) != 0 && world->current_gscn != NULL)
+                if (object->portal_update_room && world->current_gscn != NULL)
                     object->room_id = NuPortalWhichRoom(world->current_gscn, &object->apiobj.collision_position);
             }
             FRAMETIME = frame_time;
         }
         GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
         if (data->field275_0x116 == 10 &&
-            ((object->apiobj.model_draw_result != 0) != ((object->field_0xf01 & 1) != 0))) {
+            ((object->apiobj.model_draw_result != 0) != object->model_drawn_last_frame)) {
             f32 *wait = object->apiobj.model_draw_result != 0 ? &tieonsfxwait : &tieoffsfxwait;
             if (*wait <= 0.0f) {
                 PlaySfx("veh_tie_by", &object->apiobj.collision_position);
@@ -1508,9 +1502,10 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         object->field_0xf03 &= ~0x10;
         f32 flicker_decay = 1.0f;
         if (object->field_0x1024 > 0.0f && object->apiobj.player_controlled) {
-            if (adtab[adaptivedifficulty[0]][2] == 1)
+            const i32 difficulty = adtab[adaptivedifficulty[0]][2];
+            if (difficulty == 1)
                 flicker_decay = 2.0f;
-            else if (adtab[adaptivedifficulty[0]][2] == -1)
+            else if (difficulty == -1)
                 flicker_decay = 0.5f;
         }
         object->field_0x1024 -= flicker_decay * FRAMETIME;
@@ -1520,7 +1515,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             object->timer_d28 -= FRAMETIME;
         if (object->timer_d50 > 0.0f)
             object->timer_d50 -= FRAMETIME;
-        object->apiobj.flags_high = (object->apiobj.flags_high & ~0x40) | ((object->field_0x7a5 == 0) << 6);
+        object->apiobj.use_cached_los = object->field_0x7a5 == 0;
         if ((object->apiobj.field_0x1f4 & 0x40000) != 0) {
             MovePlayer_NETWORK(object);
         } else {
@@ -1545,9 +1540,9 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             if (TimingBarSet == 3)
                 TBCLOSEFN("Move", 3);
         }
-        if ((object->field_0xefa & 0x40) != 0 && (object->apiobj.flags_low & 4) == 0) {
+        if (object->portal_enabled && (object->apiobj.flags_low & 4) == 0) {
             object->room_id = -1;
-            if ((object->field_0xefa & 0x80) != 0 && world->current_gscn != NULL)
+            if (object->portal_update_room && world->current_gscn != NULL)
                 object->room_id = NuPortalWhichRoom(world->current_gscn, &object->apiobj.collision_position);
         }
     }
@@ -1714,7 +1709,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             InDoubleScoreZone(object) != 0) {
             DoubleScore |= static_cast<i32>(1u << (static_cast<u8>(object->apiobj.field_0x27c) & 31));
         }
-        UpdateCoinPacket(object->coinpacket, static_cast<u8>(object->apiobj.flags_low) >> 7,
+        UpdateCoinPacket(object->coinpacket, object->apiobj.is_player,
                          static_cast<i8>(object->apiobj.field_0x27c));
         if (!((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 && object->apiobj.field_0x287 == 0 &&
               object->field_0x7a5 != 0x2b && !(object->field_0x7a5 == 0x0f && object->field_0x7a3 == 1))) {
@@ -1843,66 +1838,58 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         player_indicator[0] = 1;
         player_indicator[1] = 1;
     } else {
-        // The reference has two fixed player gates, not a dynamic player loop.
-#define CHECK_PLAYER_VEHICLE_INDICATOR(i)                                                                              \
-    {                                                                                                                  \
-        GameObject_s *object = Player[i];                                                                              \
-        if (object != NULL && object->apiobj.player_controlled && (object->field_0xe24 & 8) != 0 &&                    \
-            object->field_0xcc0 != NULL &&                                                                             \
-            (object->id == id_ATST || object->id == id_ATST_LOWRES || object->id == id_ATAT)) {                        \
-            player_indicator[i] = 2;                                                                                   \
-        }                                                                                                              \
+        for (i32 i = 0; i < 2; i++) {
+            GameObject_s *object = Player[i];
+            if (object != NULL && object->apiobj.player_controlled && object->locators_updated &&
+                object->field_0xcc0 != NULL &&
+                (object->id == id_ATST || object->id == id_ATST_LOWRES || object->id == id_ATAT)) {
+                player_indicator[i] = 2;
+            }
+        }
     }
-        CHECK_PLAYER_VEHICLE_INDICATOR(0)
-        CHECK_PLAYER_VEHICLE_INDICATOR(1)
-#undef CHECK_PLAYER_VEHICLE_INDICATOR
+    for (i32 i = 0; i < 2; i++) {
+        GameObject_s *object = Player[i];
+        if (object == NULL || player_indicator[i] == 0 || object->apiobj.field_0x287 != 0 ||
+            (object->hud_icon_timer > 0.0f && VehicleArea == 0))
+            continue;
+        NUVEC position;
+        if (player_indicator[i] == 2) {
+            GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+            i32 locator = data->ride_locator;
+            if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {
+                position.x = object->joint_matrices[locator].m30;
+                position.y = object->joint_matrices[locator].m31;
+                position.z = object->joint_matrices[locator].m32;
+            } else {
+                position = object->apiobj.upper_position;
+            }
+            position.y += 0.5f * object->apiobj.field_0x1e0;
+        } else if (world->current_level == DOGFIGHTA_LDATA) {
+            position.x = 0.0f;
+            position.y = object->field_0x1000 * object->apiobj.field_0xa8;
+            position.z = 0.0f;
+            NuVecMtxRotate(&position, &position, &object->vehicle_orientation);
+            NuVecAdd(&position, &position, &object->apiobj.position);
+        } else {
+            position.x = object->apiobj.collision_position.x;
+            position.y = object->apiobj.collision_position.y;
+            position.z = object->apiobj.collision_position.z;
+            position.y += 1.5f * object->apiobj.field_0x1e0;
+        }
+        message = AddGameMsg_Default;
+        message.text = ASCII_DOWN;
+        message.position = &position;
+        message.scale = 0.666f;
+        message.red = PlayerRGB[i][0];
+        message.green = PlayerRGB[i][1];
+        message.blue = PlayerRGB[i][2];
+        f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
+        u16 angle = static_cast<u16>((pulse + pulse) * 65536.0f);
+        message.alpha = static_cast<u8>(48.0f * NuTrigTable[angle / 2] + 80.0f);
+        message.flags = 0x83;
+        message.field_0x4f = 4;
+        AddGameMsg(&message);
     }
-    // Keep the two reference message blocks while sharing their source body.
-#define ADD_PLAYER_VEHICLE_INDICATOR(i)                                                                                \
-    do {                                                                                                               \
-        GameObject_s *object = Player[i];                                                                              \
-        if (object == NULL || player_indicator[i] == 0 || object->apiobj.field_0x287 != 0 ||                           \
-            (object->hud_icon_timer > 0.0f && VehicleArea == 0))                                                       \
-            break;                                                                                                     \
-        NUVEC position;                                                                                                \
-        if (player_indicator[i] == 2) {                                                                                \
-            GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);   \
-            i32 locator = data->ride_locator;                                                                          \
-            if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL) {                \
-                position.x = object->joint_matrices[locator].m30;                                                      \
-                position.y = object->joint_matrices[locator].m31;                                                      \
-                position.z = object->joint_matrices[locator].m32;                                                      \
-            } else {                                                                                                   \
-                position = object->apiobj.upper_position;                                                              \
-            }                                                                                                          \
-            position.y += 0.5f * object->apiobj.field_0x1e0;                                                           \
-        } else if (world->current_level == DOGFIGHTA_LDATA) {                                                          \
-            position.x = 0.0f;                                                                                         \
-            position.y = object->field_0x1000 * object->apiobj.field_0xa8;                                             \
-            position.z = 0.0f;                                                                                         \
-            NuVecMtxRotate(&position, &position, &object->vehicle_orientation);                                        \
-            NuVecAdd(&position, &position, &object->apiobj.position);                                                  \
-        } else {                                                                                                       \
-            position = object->apiobj.collision_position;                                                              \
-            position.y += 1.5f * object->apiobj.field_0x1e0;                                                           \
-        }                                                                                                              \
-        message = AddGameMsg_Default;                                                                                  \
-        message.text = ASCII_DOWN;                                                                                     \
-        message.position = &position;                                                                                  \
-        message.scale = 0.666f;                                                                                        \
-        message.red = PlayerRGB[i][0];                                                                                 \
-        message.green = PlayerRGB[i][1];                                                                               \
-        message.blue = PlayerRGB[i][2];                                                                                \
-        f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);                                                  \
-        u16 angle = static_cast<u16>((pulse + pulse) * 65536.0f);                                                      \
-        message.alpha = static_cast<u8>(48.0f * NuTrigTable[angle / 2] + 80.0f);                                      \
-        message.flags = 0x83;                                                                                          \
-        message.field_0x4f = 4;                                                                                        \
-        AddGameMsg(&message);                                                                                          \
-    } while (0)
-    ADD_PLAYER_VEHICLE_INDICATOR(0);
-    ADD_PLAYER_VEHICLE_INDICATOR(1);
-#undef ADD_PLAYER_VEHICLE_INDICATOR
     if (MissionSys != NULL && Mission_Active(MissionSys) != NULL && MissionSys->mission != NULL) {
         CheckMissionEnd(MissionSys);
     }
@@ -1969,7 +1956,10 @@ void InitBikeParts() {
 }
 
 void KillParts_SpeederBike(ADDPART_s *params, i32, i32, GameObject_s *object) {
-    NUVEC velocity = {object->apiobj.velocity.x * 1.5f, 0.0f, object->apiobj.velocity.z * 1.5f};
+    NUVEC velocity;
+    velocity.x = object->apiobj.velocity.x * 1.5f;
+    velocity.y = 0.0f;
+    velocity.z = object->apiobj.velocity.z * 1.5f;
     params->flags = 0x400;
     params->field_44 = SpeederPart_Kill;
     params->field_48 = SpeederPart_Update;
@@ -2038,9 +2028,8 @@ void KillParts_ATAT(ADDPART_s *params, i32, i32 variant, GameObject_s *) {
 void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode, float vertical_scale,
                i32 use_vehicle_velocity, u16 *angle_override) {
     CHARACTERDATA *character = object->apiobj.character_data;
-    GAMECHARACTERDATA *game_character = character->game_character;
     if ((character->model_flags & 0x02000000) != 0 ||
-        (game_character->flags_090 & GAMECHARACTER_FLAG_GRAB_DISABLED) != 0)
+        (character->game_character->flags_090 & GAMECHARACTER_FLAG_GRAB_DISABLED) != 0)
         return;
     if (object->id == id_BOBAFETT && WORLD->current_level == SARLACCPITA_LDATA && FreePlay == 0 &&
         static_cast<u8>(object->apiobj.field_0x27c) == 0xff)
@@ -2051,7 +2040,7 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
     extern HUBMINIKITPIECES_s **Char_MiniKit;
     if ((object->apiobj.character_data->model_flags & 0x04000000) != 0 && object->id != id_MINIDROIDEKA) {
         HUBMINIKITPIECES_s *pieces = Char_MiniKit[object->id];
-        if (pieces == NULL || pieces->piece_count == 0)
+        if (pieces == NULL)
             return;
         for (i32 i = 0; i < pieces->piece_count; ++i) {
             HUBMINIKITPIECE_s *piece = &pieces->pieces[i];
@@ -2533,11 +2522,11 @@ i32 KillGameObject(GameObject_s *object, i32 requested_reason, i32) {
         AICREATURE *creature = NULL;
         bool respawn = false;
         if (!remove) {
-            bool persistent = (object->field_0xefa & 0x10) != 0;
+            bool persistent = object->respawnable;
             if ((object->apiobj.field_0x1f4 & 0x4400) == 0x4400) {
                 creature = &WORLD->ai_sys->creatures[object->ai.field_0x134];
                 if (persistent) {
-                    respawn = (object->field_0xefa & 0x20) != 0;
+                    respawn = object->respawn_at_origin;
                 } else {
                     u32 limit = object->ai_respawn_count + 1;
                     if (creature->max_respawn_count != -1 && object->ai.respawn_locator == NULL)
@@ -2711,7 +2700,7 @@ i32 ObjHitObj(GameObject_s *attacker, GameObject_s *target, i32 damage, u16 flag
         if (target->character_context == 13 || target->character_context == 14)
             return 0;
     }
-    if (CInfo[target->character_context].parameter & 4)
+    if (CInfo[target->character_context].flags & (4ull << 32))
         return 0;
     if (attacker && !(attacker->apiobj.flags_low & 1))
         attacker = NULL;
@@ -2760,7 +2749,7 @@ i32 ObjHitObj(GameObject_s *attacker, GameObject_s *target, i32 damage, u16 flag
     }
     if (flags == 0)
         flags = ObjHitObj_Flags(attacker);
-    if ((target->field_0xefb & 8) || WORLD->current_level == VADERC_LDATA) {
+    if (target->is_boss || WORLD->current_level == VADERC_LDATA) {
         if (static_cast<u32>(hit) >= 2)
             hit = 1;
     } else if (attacker && (flags & 0x100) && attacker->character_context == 5 && attacker->combo_branch == 6 &&
@@ -2874,7 +2863,7 @@ impact:
             PlayerTakeHit(target, attacker);
         goto finish;
     }
-    if (target->character_context == 21 && (target->field_0xefb & 8)) {
+    if (target->character_context == 21 && target->is_boss) {
         target->spawn_protection_timer = 2.5f;
         result = 0;
         goto finish;
@@ -2929,7 +2918,7 @@ impact:
     }
     if (target->apiobj.character_data->model_flags & 0x40000000)
         goto refill;
-    if ((target->field_0xefb & 8) && (!FreePlay || WORLD->current_level != CRUISERC_LDATA))
+    if (target->is_boss && (!FreePlay || WORLD->current_level != CRUISERC_LDATA))
         goto surviving_hit;
     if (probe) {
         result = 2;
@@ -2958,7 +2947,7 @@ impact:
         DrawBuildUpTime = 1.0f;
         builduptime = 1.0f;
     }
-    if (hearts || coins > 0)
+    if (coins > 0 || hearts)
         AddPickups(coins, hearts, 0, 0, &target->apiobj.collision_position, NULL, 2.0f, -1, 1.0f, 2000000.0f, attacker,
                    !BonusArea && coins < 2500, BonusArea ? 1 : 0, false);
     if (target->torpedo && WORLD->area != SPEEDERCHASE_ADATA && (!WORLD->area || !(WORLD->area->flags & 4)))
@@ -3150,7 +3139,7 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
 }
 
 void ClearLastSafeTakeOver(GameObject_s *object) {
-    if (object == NULL || (object->field_0xefa & 0x10) != 0) {
+    if (object == NULL || object->respawnable) {
         return;
     }
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {

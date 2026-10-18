@@ -119,11 +119,6 @@
 #include "legoapi/world/levels.h"
 #include "legoapi/world/levels/hub.h"
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 i8 adtabentries[9][4] = {{-1, -1, -1, -1}, {-1, -1, -1, 0}, {-1, -1, 0, 0}, {-1, 0, 0, 0}, {0, 0, 0, 0},
                          {1, 0, 0, 0},     {1, 1, 0, 0},    {1, 1, 1, 0},   {1, 1, 1, 1}};
 i8 (*adtab)[4] = &adtabentries[4];
@@ -162,8 +157,6 @@ extern "C" {
 // remaining ids enumerate the current story list while omitting variants that
 // are represented by those dedicated routes.
 static const char *skip_chars[] = {"Batman", "Robin", "Glide_Pack", NULL};
-
-struct CUTSCENEPLAYERCLIP;
 
 f32 draw_attention_distance = 2.0f;
 extern "C" i32 party_under_cover;
@@ -235,7 +228,6 @@ f32 alert_time = 10.0f;
 extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
 
 struct nuhspecial_s;
-struct minitrooperteam_s;
 struct nuvec_s;
 
 static AtOnceAttacker AtOnce_attackingPlayer[8][17];
@@ -262,80 +254,13 @@ extern "C" {
 void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
 } // extern "C"
 
-struct nupad_s;
-
-struct EDAISHAREDPATHNODE_s;
 struct AIPATH_s;
-struct eduimenu_s;
-struct eduiitem_s;
-
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
-static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
-    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
 
 struct EDCREATURE_s;
-struct AIPATHSYS_s;
-
-#if defined(__i386__)
-#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
-#else
-#define CREATURE_EDITOR_REGPARM1
-#endif
-static __used__
-    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
-                                                                                           eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
-                                                                                          eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
-                                                                                         unsigned int);
 
 extern "C" {
     struct EDCREATURE_s;
 }
-
-#if defined(__i386__)
-static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
-static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#else
-static void DestroyLocator(EDLOCATOR_s *);
-static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#endif
-static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
-
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void
-locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
-
-static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
-
-#if defined(__i386__)
-static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
-#else
-static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
-#endif
-AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
-    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
 
 extern f32 DEFENDTIME;
 
@@ -363,38 +288,14 @@ extern "C" {
 extern i32 party_under_cover;
 }
 
-struct GIZSPINNER_s;
-
-namespace {
-
-} // namespace
-
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
-struct GAMEMESSAGE_s;
-struct HINT_s;
-struct MENU_s;
-struct NuBloomParameters;
-struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
-struct ripple_node_s;
-struct ripple_set_s;
-struct VuVec;
-
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
-struct AIPACKET_s;
 struct APIOBJECT_s;
 struct AISYS_s;
 struct AIGROUP_s;
-struct nufpar_s;
 
 extern "C" {
     extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
@@ -610,33 +511,27 @@ static NUVEC *GetAICreatureOrigin(AISYS *system, AIPACKET *packet) {
 }
 
 static APIOBJECT *GetNamedAPIObject(AISYS *system, char *name) {
+    APIOBJECT *found = NULL;
     if (system != NULL) {
         for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
             if ((Obj[index].apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0) {
                 continue;
             }
-
             if ((Obj[index].apiobj.field_0x1f4 & 0x400) != 0 && Obj[index].ai.field_0x134 != 0xff) {
-                usize creature_address =
-                    reinterpret_cast<usize>(system->creatures) + Obj[index].ai.field_0x134 * sizeof(*system->creatures);
-                auto *creature = reinterpret_cast<decltype(system->creatures)>(creature_address);
+                auto *creature = &system->creatures[Obj[index].ai.field_0x134];
                 if (creature != NULL && NuStrICmp(creature->name, name) == 0) {
-                    usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
-                    if (result_address == 0) {
-                        break;
-                    }
-                    return reinterpret_cast<APIOBJECT *>(result_address);
+                    found = &Obj[index].apiobj;
+                    break;
                 }
             }
-            if (NuStrICmp(Obj[index].apiobj.character_data->file, name) != 0) {
-                continue;
-            }
-            usize result_address = reinterpret_cast<usize>(Obj) + index * sizeof(*Obj);
-            if (result_address == 0) {
+            if (NuStrICmp(Obj[index].apiobj.character_data->file, name) == 0) {
+                found = &Obj[index].apiobj;
                 break;
             }
-            return reinterpret_cast<APIOBJECT *>(result_address);
         }
+    }
+    if (found != NULL) {
+        return found;
     }
 
     if (NuStrICmp(name, "player") == 0) {
@@ -676,10 +571,10 @@ static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *, VARIPTR 
     if (__builtin_expect(version < 12 && system->path_sys != NULL && system->path_sys->path_count != 0, 1)) {
         AIPATHSYS *path_system = system->path_sys;
         AIPATH **paths = path_system->paths;
-        for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
+        for (u32 path_index = 0; path_index < path_system->path_count; ++path_index) {
             AIPATH *path = paths[path_index];
-            const i32 connection_count = path->connection_count;
             AIPATHCNX *entries = path->connections;
+            const i32 connection_count = path->connection_count;
             for (i32 connection = 0; connection < connection_count; ++connection) {
                 entries[connection].traversal_flags[0] = 0;
                 entries[connection].original_traversal_flags[0] = 0;
@@ -974,7 +869,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                     if (baddy == goody || baddy->ai->pending_opponent == goody)
                         continue;
                     i32 have_distance = 0;
-                    if (baddy->objptr->field_0xefc & 2) {
+                    if (baddy->objptr->cannot_be_seen) {
                         goody->ai_awareness_mask &= ~((u64)1 << baddy->field_0x289);
                     } else if ((goody->ai_awareness_mask >> baddy->field_0x289) & 1) {
                         distance = NuVecDist(&baddy->position, &goody->position, &difference);
@@ -996,7 +891,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                             awareness |= goody->ai_awareness_mask;
                         }
                     }
-                    if (goody->objptr->field_0xefc & 2) {
+                    if (goody->objptr->cannot_be_seen) {
                         baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
                     } else if (baddy->objptr->alert_target == goody) {
                         baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
@@ -1030,9 +925,9 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         distance = NuVecDist(&baddy->position, &goody->position, &difference);
                     GameObject_s *baddy_object = baddy->objptr;
                     i16 baddy_id = baddy_object->id;
-                    if (baddy_id != id_JAWA && baddy_id != id_UGNAUGHT) {
+                    if (baddy_id != id_UGNAUGHT && baddy_id != id_JAWA) {
                         if (!(goody->character_data->model_flags & 0x80000)) {
-                            if ((baddy_object->field_0xefb & 1) && goody->objptr != player &&
+                            if (baddy_object->only_attack_players && goody->objptr != player &&
                                 goody->objptr != player2) {
                                 baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
                             } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
@@ -1068,7 +963,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                                         best_baddy = baddy;
                                     }
                                 }
-                            } else if (goody->player_controlled && (baddy_object->field_0xefb & 0x40)) {
+                            } else if (goody->player_controlled && baddy_object->prefers_players) {
                                 if (!packet->pending_opponent->player_controlled ||
                                     packet->pending_opponent_metric > metric) {
                                     best_distance = distance;
@@ -1110,11 +1005,11 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         system->unknown_flag_2 = 1;
                         if (!((goody->objptr->ai_opponent_exclusion_mask >> best_baddy->field_0x289) & 1) &&
                             ((goody->ai_awareness_mask >> best_baddy->field_0x289) & 1)) {
-                            AIPACKET *packet = goody->ai;
-                            if (!(packet->field_0x1e5 & 0x10) || packet->pending_opponent_metric > best_distance) {
-                                packet->pending_opponent = best_baddy;
-                                packet->pending_opponent_metric = best_distance;
-                                packet->field_0x1e5 |= 0x10;
+                            if (!(goody->ai->field_0x1e5 & 0x10) ||
+                                goody->ai->pending_opponent_metric > best_distance) {
+                                goody->ai->pending_opponent = best_baddy;
+                                goody->ai->pending_opponent_metric = best_distance;
+                                goody->ai->field_0x1e5 |= 0x10;
                             }
                         }
                     }
@@ -1161,7 +1056,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
             AIPACKET *packet = object->ai;
             packet->opponent_metric = packet->pending_opponent_metric;
             packet->opponent_object = packet->pending_opponent;
-            packet->field_0x1e5 = (packet->field_0x1e5 & ~8) | ((packet->field_0x1e5 >> 1) & 8);
+            packet->opponent_is_threat = packet->field_0x1e5_bit4;
             packet = object->ai;
             packet->nearest_opponent_metric = packet->pending_nearest_metric;
             packet->nearest_opponent_object = packet->pending_nearest_opponent;
@@ -1197,28 +1092,36 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
 void MakeBaddiesForgetAboutParty(i32 check_hostility) {
     GameObject_s *baddies[64];
     GameObject_s *party[64];
-    i32 baddie_count = 0;
     i32 party_count = 0;
     GameObject_s *objects = Obj;
     i32 count = HIGHGAMEOBJECT;
+    GameObject_s **next_baddie = baddies;
+    GameObject_s **next_party = party;
     GameObject_s *object = objects;
+    i32 baddie_count = 0;
     for (i32 i = 0; i < count; ++i, ++object) {
         if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0)
             continue;
-        if ((object->apiobj.field_0x1f4 & 1) != 0)
-            party[party_count++] = object;
-        else if ((object->apiobj.field_0x1f4 & 4) == 0)
-            baddies[baddie_count++] = object;
+        if ((object->apiobj.field_0x1f4 & 1) != 0) {
+            *next_party++ = object;
+            party_count++;
+        } else if ((object->apiobj.field_0x1f4 & 4) == 0) {
+            *next_baddie++ = object;
+            baddie_count++;
+        }
     }
     if (check_hostility != 0) {
         for (i32 i = 0; i < baddie_count; ++i) {
-            u64 mask = u64(1) << baddies[i]->apiobj.field_0x289;
             for (i32 j = 0; j < party_count; ++j) {
+                u64 mask = u64(1) << baddies[i]->apiobj.field_0x289;
                 APIOBJECT *object = &party[j]->apiobj;
                 u64 hostile = u64(object->field387_0x2a0) | (u64(object->field388_0x2a4) << 32);
                 if ((hostile & mask) != 0) {
-                    u32 *defaults = WORLD->api_object_sys->hostility_masks[object->field_0x289];
-                    if (((u64(defaults[0]) | (u64(defaults[1]) << 32)) & mask) != 0)
+                    APIOBJECTSYS_s *api_object_sys = WORLD->api_object_sys;
+                    const u8 slot = object->field_0x289;
+                    if (((u64(api_object_sys->hostility_masks[slot][0]) |
+                          (u64(api_object_sys->hostility_masks[slot][1]) << 32)) &
+                         mask) != 0)
                         return;
                 }
             }
@@ -1226,8 +1129,8 @@ void MakeBaddiesForgetAboutParty(i32 check_hostility) {
     }
     for (i32 i = 0; i < baddie_count; ++i) {
         APIOBJECT *baddie = &baddies[i]->apiobj;
-        u64 mask = ~(u64(1) << baddie->field_0x289);
         for (i32 j = 0; j < party_count; ++j) {
+            u64 mask = ~(u64(1) << baddie->field_0x289);
             APIOBJECT *member = &party[j]->apiobj;
             member->field387_0x2a0 &= static_cast<u32>(mask);
             member->field388_0x2a4 &= static_cast<u32>(mask >> 32);
@@ -1266,7 +1169,7 @@ void MakeBaddiesForgetAboutParty(i32 check_hostility) {
     for (i32 i = 0; i < 8; ++i) {
         GameObject_s *player = Player[i];
         if (player == NULL || (player->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player->apiobj.field_0x287 != 0 ||
-            (player->field_0xeff & 1) != 0)
+            player->not_with_party)
             continue;
         if (player->field_0x108e == 5 ||
             ((FreePlay != 0 || WORLD->current_level == HUB_LDATA) &&
@@ -1307,15 +1210,15 @@ void GameAISysStartFrame(AISYS_s *system) {
         // shared endpoint is transformed only once this frame.
         for (i32 path_index = 0; path_index < system->path_sys->path_count; ++path_index) {
             AIPATH *path = system->path_sys->paths[path_index];
-            for (i32 connection_index = 0; connection_index < path->connection_count; ++connection_index) {
+            for (u32 connection_index = 0; connection_index < path->connection_count; ++connection_index) {
                 AIPATHCNX *connection = &path->connections[connection_index];
                 AIPATHNODE *node = &path->nodes[connection->direction_a];
-                if (__builtin_expect(node->has_special != 0, 0)) {
+                if (node->has_special != 0) {
                     AIPathNodeUpdatePos(system, path, node);
                 }
                 path = system->path_sys->paths[path_index];
                 node = &path->nodes[connection->direction_b];
-                if (__builtin_expect(node->has_special != 0, 0)) {
+                if (node->has_special != 0) {
                     AIPathNodeUpdatePos(system, path, node);
                     path = system->path_sys->paths[path_index];
                 }
@@ -1512,14 +1415,14 @@ void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system) {
         return;
     }
 
-    system->available_controllers.head = NULL;
-    system->available_controllers.tail = NULL;
+    NULISTHDR *available = &system->available_controllers;
+    available->head = NULL;
+    available->tail = NULL;
     system->active_controllers.head = NULL;
     system->active_controllers.tail = NULL;
     memset(system->controllers, 0, system->controller_count * sizeof(*system->controllers));
-    auto system_controller_count = system->controller_count;
-    for (i32 i = 0; i < system_controller_count; ++i) {
-        NuLinkedListAppend(&system->available_controllers, &system->controllers[i].links);
+    for (i32 i = 0; i < system->controller_count; ++i) {
+        NuLinkedListAppend(available, &system->controllers[i].links);
     }
 }
 
@@ -1596,91 +1499,89 @@ void GameAISysReset(AISYS_s *system) {
 AIPATHCNXCONTROLLER_s *AIPathCnxControllerCreate(AIPATHCNXCONTROLSYS_s *control_system, AISYS_s *ai_system,
                                                  AIPATH_s *path, char *from, char *to, i32 target_type,
                                                  char *target_name, i32 fake_animation_id, i32 gizmo_output) {
+    AIPATHCNXCONTROLLER_s *controller = NULL;
     nuhspecial_s special = {};
-    if (from == NULL || control_system == NULL || to == NULL) {
-        return NULL;
-    }
-
-    i32 direction;
-    AIPATHCNX *connection = static_cast<AIPATHCNX *>(AIPAthFindPathCnx(ai_system, path, from, to, &direction));
-    void *target = NULL;
-    if (connection != NULL) {
-        i32 gizmo_type;
-        switch (target_type) {
-            case 0:
-                if (target_name != NULL) {
-                    NuSpecialFind(ai_system->scene, &special, target_name, 1);
+    if (from != NULL) {
+        if (control_system != NULL && to != NULL) {
+            i32 direction;
+            AIPATHCNX *connection = static_cast<AIPATHCNX *>(AIPAthFindPathCnx(ai_system, path, from, to, &direction));
+            void *target = NULL;
+            if (connection != NULL) {
+                i32 gizmo_type;
+                switch (target_type) {
+                    case 0:
+                        if (target_name != NULL) {
+                            NuSpecialFind(ai_system->scene, &special, target_name, 1);
+                        }
+                        break;
+                    case 1:
+                        target = CutScene_FindInst(WORLD->cutscene_sys, target_name);
+                        break;
+                    case 2:
+                        target = GizBuildIt_Find(WORLD, target_name);
+                        break;
+                    case 3:
+                        target = GizmoFindByName(WORLD->gizmo_sys, -1, target_name);
+                        break;
+                    case 4:
+                        gizmo_type = blowup_gizmotype_id;
+                        goto find_typed_gizmo;
+                    case 7:
+                        gizmo_type = force_gizmotype_id;
+                        goto find_typed_gizmo;
+                    case 8:
+                        gizmo_type = obstacle_gizmotype_id;
+                        goto find_typed_gizmo;
+                    case 9: {
+                        gizmo_type = zipup_gizmotype_id;
+                    find_typed_gizmo:
+                        GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, gizmo_type, target_name);
+                        target = gizmo != NULL ? gizmo->object : NULL;
+                        break;
+                    }
+                    case 5:
+                        if (fake_animation_id != 0) {
+                            return NULL;
+                        }
+                        break;
+                    case 6:
+                        target = FlowBoxFindByName(WORLD->giz_flow, target_name);
+                        break;
+                    default:
+                        break;
                 }
-                break;
-            case 1:
-                target = CutScene_FindInst(WORLD->cutscene_sys, target_name);
-                break;
-            case 2:
-                target = GizBuildIt_Find(WORLD, target_name);
-                break;
-            case 3:
-                target = GizmoFindByName(WORLD->gizmo_sys, -1, target_name);
-                break;
-            case 4:
-                gizmo_type = blowup_gizmotype_id;
-                goto find_typed_gizmo;
-            case 7:
-                gizmo_type = force_gizmotype_id;
-                goto find_typed_gizmo;
-            case 8:
-                gizmo_type = obstacle_gizmotype_id;
-                goto find_typed_gizmo;
-            case 9: {
-                gizmo_type = zipup_gizmotype_id;
-            find_typed_gizmo:
-                GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, gizmo_type, target_name);
-                target = gizmo != NULL ? gizmo->object : NULL;
-                break;
             }
-            case 5:
-                if (fake_animation_id != 0) {
-                    return NULL;
+            if (target != NULL || NuSpecialExistsFn(&special) != 0 || target_type == 5) {
+                NULISTLNK *node = NuLinkedListGetHead(&control_system->available_controllers);
+                if (node != NULL) {
+                    NuLinkedListRemove(&control_system->available_controllers, node);
+                    NuLinkedListAppend(&control_system->active_controllers, node);
+
+                    controller = reinterpret_cast<AIPATHCNXCONTROLLER_s *>(node);
+                    AIPATHSYS *path_system = ai_system->path_sys;
+                    const i32 path_count = path_system->path_count;
+                    AIPATH **path_cursor = path_system->paths;
+                    for (u8 index = 0; index < path_count; ++index, ++path_cursor) {
+                        if (*path_cursor == path) {
+                            controller->path_index = index;
+                            break;
+                        }
+                    }
+                    controller->flags = static_cast<u8>((controller->flags & ~1) | (direction & 1));
+                    controller->connection = connection;
+                    controller->gizmo_output = gizmo_output;
+                    if (target != NULL) {
+                        controller->target = target;
+                    } else if (NuSpecialExistsFn(&special) != 0) {
+                        controller->special = special;
+                    } else {
+                        controller->fake_animation_id = fake_animation_id;
+                    }
+                    controller->target_type = static_cast<u8>(target_type);
                 }
-                break;
-            case 6:
-                target = FlowBoxFindByName(WORLD->giz_flow, target_name);
-                break;
-            default:
-                break;
+            }
         }
     }
-    if (target == NULL && NuSpecialExistsFn(&special) == 0 && target_type != 5) {
-        return NULL;
-    }
-
-    NULISTLNK *node = NuLinkedListGetHead(&control_system->available_controllers);
-    if (node == NULL) {
-        return NULL;
-    }
-    NuLinkedListRemove(&control_system->available_controllers, node);
-    NuLinkedListAppend(&control_system->active_controllers, node);
-
-    AIPATHCNXCONTROLLER_s *controller = reinterpret_cast<AIPATHCNXCONTROLLER_s *>(node);
-    AIPATHSYS *path_system = ai_system->path_sys;
-    const u8 path_count = path_system->path_count;
-    AIPATH **path_cursor = path_system->paths;
-    for (u8 index = 0; index < path_count; ++index, ++path_cursor) {
-        if (*path_cursor == path) {
-            controller->path_index = index;
-            break;
-        }
-    }
-    controller->flags = static_cast<u8>((controller->flags & ~1) | (direction & 1));
-    controller->connection = connection;
-    controller->gizmo_output = gizmo_output;
-    if (target != NULL) {
-        controller->target = target;
-    } else if (NuSpecialExistsFn(&special) != 0) {
-        controller->special = special;
-    } else {
-        controller->fake_animation_id = fake_animation_id;
-    }
-    controller->target_type = static_cast<u8>(target_type);
     return controller;
 }
 
@@ -1730,10 +1631,18 @@ void AIPathCnxControllerSetOnRange(AIPATHCNXCONTROLLER_s *controller, i32 start_
         animation_end = 1024;
     }
 
-    i32 first = start_frame == -1 ? animation_end : start_frame == -2 ? animation_end - 1 : start_frame;
-    i32 last = end_frame == -1 ? animation_end : end_frame == -2 ? animation_end - 1 : end_frame;
-    first = first > 0 ? first - 1 : 0;
-    last = last < animation_end ? last : animation_end;
+    if (start_frame == -1) {
+        start_frame = animation_end;
+    } else if (start_frame == -2) {
+        start_frame = animation_end - 1;
+    }
+    if (end_frame == -1) {
+        end_frame = animation_end;
+    } else if (end_frame == -2) {
+        end_frame = animation_end - 1;
+    }
+    i32 first = start_frame > 0 ? start_frame - 1 : 0;
+    i32 last = end_frame <= animation_end ? end_frame : animation_end;
     for (i32 frame = first; frame < last; ++frame) {
         controller->on_frames[frame >> 5] |= 1u << (frame & 31);
     }
@@ -1746,11 +1655,11 @@ void AIPathCnxControlSysUpdate(AIPATHCNXCONTROLSYS_s *system) {
          node = NuLinkedListGetNext(&system->active_controllers, node)) {
         AIPATHCNXCONTROLLER_s *controller = reinterpret_cast<AIPATHCNXCONTROLLER_s *>(node);
         controller->flags &= ~0x20;
-        bool on = true;
+        i32 on = 1;
         switch (controller->target_type) {
             case 0: {
                 if ((controller->flags & 4) != 0 && NuSpecialGetVisibilityFn(&controller->special) == NULL) {
-                    on = false;
+                    on = 0;
                     break;
                 }
                 i32 frame = 0;
@@ -1761,45 +1670,36 @@ void AIPathCnxControlSysUpdate(AIPATHCNXCONTROLSYS_s *system) {
                         float end = NuAnimEndFrameOld(data);
                         i32 current = static_cast<i32>(animation->ltime);
                         if (current > 0) {
-                            if (current < 1024)
-                                frame = current;
-                            else
-                                frame = 1024;
+                            frame = current < 1024 ? current : 1024;
                             i32 end_frame = static_cast<i32>(end);
-                            if (frame < end_frame)
-                                frame = frame;
-                            else
-                                frame = end_frame;
+                            frame = frame < end_frame ? frame : end_frame;
                             --frame;
                         }
                     }
                 }
-                on = (controller->on_frames[frame / 32] & (1u << (frame % 32))) != 0;
+                if ((controller->on_frames[frame / 32] & (1u << (frame % 32))) == 0)
+                    on = 0;
                 break;
             }
             case 1: {
                 const u8 *instance = static_cast<const u8 *>(controller->target);
-                float end = *reinterpret_cast<f32 *>(*reinterpret_cast<u8 *const *>(instance + 0x58) + 8);
                 i32 frame = static_cast<i32>(*reinterpret_cast<const f32 *>(instance + 0x90));
+                float end = *reinterpret_cast<f32 *>(*reinterpret_cast<u8 *const *>(instance + 0x58) + 8);
                 if (frame > 0) {
                     i32 end_frame = static_cast<i32>(end);
-                    if (frame < end_frame)
-                        frame = frame;
-                    else
-                        frame = end_frame;
-                    if (frame < 1024)
-                        frame = frame;
-                    else
-                        frame = 1024;
+                    frame = frame < end_frame ? frame : end_frame;
+                    frame = frame < 1024 ? frame : 1024;
                     --frame;
                 } else {
                     frame = 0;
                 }
-                on = (controller->on_frames[frame / 32] & (1u << (frame % 32))) != 0;
+                if ((controller->on_frames[frame / 32] & (1u << (frame % 32))) == 0)
+                    on = 0;
                 break;
             }
             case 2:
-                on = static_cast<GIZBUILDIT_s *>(controller->target)->build_state == 2;
+                if (static_cast<GIZBUILDIT_s *>(controller->target)->build_state != 2)
+                    on = 0;
                 break;
             case 3:
                 on = GizmoGetOutput(WORLD->gizmo_sys, static_cast<GIZMO *>(controller->target),
@@ -1809,29 +1709,27 @@ void AIPathCnxControlSysUpdate(AIPATHCNXCONTROLSYS_s *system) {
                 on = (static_cast<GIZMOBLOWUP_s *>(controller->target)->status_flags & 1) == 0;
                 break;
             case 5: {
+                float end = fakeanimendframe[controller->fake_animation_id];
                 i32 frame = static_cast<i32>(fakeanimframe[controller->fake_animation_id]);
                 if (frame > 0) {
-                    i32 end_frame = static_cast<i32>(fakeanimendframe[controller->fake_animation_id]);
-                    if (frame < end_frame)
-                        frame = frame;
-                    else
-                        frame = end_frame;
-                    if (frame < 1024)
-                        frame = frame;
-                    else
-                        frame = 1024;
+                    i32 end_frame = static_cast<i32>(end);
+                    frame = frame < end_frame ? frame : end_frame;
+                    frame = frame < 1024 ? frame : 1024;
                     --frame;
                 } else {
                     frame = 0;
                 }
-                on = (controller->on_frames[frame / 32] & (1u << (frame % 32))) != 0;
+                if ((controller->on_frames[frame / 32] & (1u << (frame % 32))) == 0)
+                    on = 0;
                 break;
             }
             case 6:
-                on = (static_cast<FLOWBOX_s *>(controller->target)->state_flags & 2) != 0;
+                if ((static_cast<FLOWBOX_s *>(controller->target)->state_flags & 2) == 0)
+                    on = 0;
                 break;
             case 7:
-                on = GizForce_Complete(static_cast<GIZFORCE_s *>(controller->target)) != 0;
+                if (GizForce_Complete(static_cast<GIZFORCE_s *>(controller->target)) == 0)
+                    on = 0;
                 break;
             case 8:
                 on = static_cast<GIZOBSTACLE_s *>(controller->target)->anim_set->state == GAMEANIMSET_STATE_AT_END;
@@ -1906,8 +1804,7 @@ f32 oneAtOnce_GetHoldRange(GameObject_s *object) {
 
 void oneAtOnce_SetNumAttackers(i32 attackers) {
     if (attackers < 0) {
-        AtOnce_maxAttackers = 0;
-        return;
+        attackers = 0;
     }
     if (attackers >= 5) {
         attackers = 4;
@@ -1936,13 +1833,13 @@ void oneAtOnce_MaintainArray() {
         GameObject_s *object = &Obj[index];
         const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
         if (__builtin_expect(object == NULL || (object->apiobj.field_0x1f8 & character_flags) != character_flags ||
-            object->ai.opponent == NULL || (object->field_0xf01 & 0x20) == 0, 0)) {
+            object->ai.opponent == NULL || (object->field_0xf01 & 0x20) == 0, 1)) {
             continue;
         }
 
-        const u8 old_player = object->one_at_once_player;
-        if (__builtin_expect(old_player != 0xff, 1)) {
-            previous_attackers[old_player][previous_count[old_player]++] = object;
+        if (__builtin_expect(object->one_at_once_player != 0xff, 1)) {
+            previous_attackers[object->one_at_once_player][previous_count[object->one_at_once_player]] = object;
+            ++previous_count[object->one_at_once_player];
         }
         object->one_at_once_player = 0xff;
 
@@ -1977,25 +1874,20 @@ void oneAtOnce_MaintainArray() {
         if (Player[player] == NULL) {
             continue;
         }
-        const i32 count = attacker_count[player];
-        for (i32 slot = 0; slot < count && AtOnce_attackingPlayer[player][slot].object != NULL; ++slot) {
-            if (previous_count[player] > 0 &&
-                AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][0]) {
+        for (i32 slot = 0; AtOnce_attackingPlayer[player][slot].object != NULL; ++slot) {
+            if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][0]) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
-            if (previous_count[player] > 1 &&
-                AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][1]) {
+            if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][1]) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
-            if (previous_count[player] > 2 &&
-                AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][2]) {
+            if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][2]) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
-            if (previous_count[player] > 3 &&
-                AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][3]) {
+            if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][3]) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
-            for (i32 adjacent = 1; adjacent <= count - slot; ++adjacent) {
+            for (i32 adjacent = 1; adjacent <= attacker_count[player] - slot; ++adjacent) {
                 if (AtOnce_attackingPlayer[player][adjacent].distance <
                     AtOnce_attackingPlayer[player][adjacent - 1].distance) {
                     GameObject_s *object = AtOnce_attackingPlayer[player][adjacent - 1].object;
@@ -2010,11 +1902,8 @@ void oneAtOnce_MaintainArray() {
             }
         }
 
-        if (Player[player] != NULL) {
-            const i32 attack_limit = AtOnce_maxAttackers < count ? AtOnce_maxAttackers : count;
-            for (i32 slot = 0; slot < attack_limit && AtOnce_attackingPlayer[player][slot].object != NULL; ++slot) {
-                AtOnce_attackingPlayer[player][slot].object->one_at_once_player = static_cast<u8>(player);
-            }
+        for (i32 slot = 0; slot < AtOnce_maxAttackers && AtOnce_attackingPlayer[player][slot].object != NULL; ++slot) {
+            AtOnce_attackingPlayer[player][slot].object->one_at_once_player = static_cast<u8>(player);
         }
     }
 }
@@ -2084,12 +1973,12 @@ void GameAIProcess() {
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object = player_slots[index];
         if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && (object->field_0xeff & 1) == 0 &&
+            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && !object->not_with_party &&
             (VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && party_cant_be_under_cover == 0) {
             if (object->field_0x108e == 5 ||
                 ((FreePlay != 0 || WORLD->current_level == HUB_LDATA) &&
                  (object->apiobj.character_data->model_flags & 0x204) != 0 && object->field_0xcc0 == NULL)) {
-                if (alert_obj == NULL || alert_obj->apiobj.field_0x27c == -1 || (alert_obj->field_0xeff & 1) != 0)
+                if (alert_obj == NULL || alert_obj->apiobj.field_0x27c == -1 || alert_obj->not_with_party)
                     cover_result = 1;
             }
             all_under_cover = (object->apiobj.character_data->model_flags & 0x80000) != 0 ? all_under_cover : 0;
@@ -2097,7 +1986,7 @@ void GameAIProcess() {
         party_follow_offsets[index] = 0.5f;
     }
     party_under_cover = cover_result;
-    if ((VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && __builtin_expect(all_under_cover != 0, 0) &&
+    if ((VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && (all_under_cover != 0) &&
         party_cant_be_under_cover == 0) {
         party_under_cover = 1;
     }
@@ -2154,7 +2043,7 @@ void GameAIProcess() {
         }
         object = Player[index];
         if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && (object->field_0xeff & 1) == 0 &&
+            (object->apiobj.field_0x287 == 0 || object->field_0x101c > 0.0f) && !object->not_with_party &&
             !object->apiobj.player_controlled) {
             party_follow_offsets[object->apiobj.field_0x27c] = follow_offset;
             follow_offset += 0.2f;
@@ -2291,7 +2180,7 @@ void GameAIProcess() {
                 object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLERIGHT;
             if ((object->field_0xef8 & 2) != 0 &&
                 ((object->apiobj.field_0x1f4 & 0x400) != 0 || party_under_cover == 0 ||
-                 (object->field_0xeff & 1) != 0) &&
+                 object->not_with_party) &&
                 (CanFightLikeAJedi(object) != 0 || object->id == id_GAMORREANGUARD)) {
                 if ((object->field_0xef8 & 1) != 0 || object->ai.opponent_object != NULL ||
                     (object->field_0xe22 & 8) != 0)
@@ -2302,11 +2191,11 @@ void GameAIProcess() {
                         object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
                 }
             }
-            if ((object->field_0xefb & 0x20) != 0) {
+            if (object->use_weapon) {
                 defend = true;
                 if ((object->field_0xe22 & 1) != 0) {
                     object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
-                    object->field_0xefb &= ~0x20;
+                    object->use_weapon = 0;
                 }
             }
             if ((object->field_0xef8 & 8) != 0 &&
@@ -2343,15 +2232,15 @@ void GameAIProcess() {
                 object->ai_jump_timer = 0.0f;
             }
         }
-        if (__builtin_expect(object->ai.action_target_ref != NULL, 0))
+        if (__builtin_expect(object->ai.action_target_ref != NULL, 1))
             SetObjAsHeadTarget(object, *object->ai.action_target_ref, 2, 1.0f, 0.0f, 0.0f);
         goto interaction;
     ai_precombat:
         if (__builtin_expect(!object->apiobj.player_controlled, 1)) {
             if (object->character_context == 0x5d)
                 SetBallooningHeight(object, object->ai.movement_destination.y);
-            if (__builtin_expect(WORLD->current_level == JEDI_B_LDATA, 0) && object->id == id_JANGOFETT &&
-                (object->field_0xefb & 8) != 0 && object->hover_height_override != 1.0e9f && object->field_0xe31 == 0)
+            if ((WORLD->current_level == JEDI_B_LDATA) && object->id == id_JANGOFETT &&
+                object->is_boss && object->hover_height_override != 1.0e9f && object->field_0xe31 == 0)
                 object->field_0xe31 = 1;
             if (object->apiobj.field_0x27c != -1 && object->field_0xe31 != 0 &&
                 (object->ai.capabilities & LEGO_AIPATHCNX_R2D2GLIDE) == 0)
@@ -2554,7 +2443,7 @@ void GameAIProcess() {
             *interactive_cursor++ = &object->apiobj;
             object->apiobj.resolved_collision_priority = 0;
             object->apiobj.collision_priority = HIGHGAMEOBJECT - object->apiobj.field_0x289;
-            if ((object->apiobj.flags_low & 2) != 0 || (object->field_0xeff & 0x80) != 0) {
+            if ((object->apiobj.flags_low & 2) != 0 || object->high_collision_priority) {
                 object->apiobj.collision_priority = 0x8000;
             } else if (!object->apiobj.player_controlled) {
                 if (__builtin_expect((object->ai.field_0x1e7 & 0x80) != 0, 1))
@@ -2585,7 +2474,7 @@ void GameAIProcess() {
                 object->ai.opponent = NULL;
                 object->ai.opponent_metric = 1.0e9f;
             }
-            if ((object->field_0xeff & 8) != 0 || debug_ignore_players != 0 || Hub_InMenu() != 0) {
+            if (object->ignore_players || debug_ignore_players != 0 || Hub_InMenu() != 0) {
                 object->ai_opponent_exclusion_mask |= (u64)1 << player->apiobj.field_0x289;
                 if (player2 != NULL)
                     object->ai_opponent_exclusion_mask |= (u64)1 << player2->apiobj.field_0x289;
@@ -2675,23 +2564,22 @@ void GameAIProcess() {
                         TestWalkAround(second, &first->position.x, &first->position.z, &difference, radius);
                     }
                     AIPACKET *first_ai = first->ai;
-                    AIPACKET *second_ai = second->ai;
                     f32 first_timer = first_ai->antinode_timer;
-                    f32 second_timer = second_ai->antinode_timer;
+                    f32 second_timer = second->ai->antinode_timer;
                     if (__builtin_expect(first_timer > antinode_time && second_timer > antinode_time, 1)) {
                         if (first_timer > second_timer) {
-                            second_ai->antinode_timer = first_timer;
-                            second_ai->antinode_clockwise = first_ai->antinode_clockwise;
+                            second->ai->antinode_timer = first_timer;
+                            second->ai->antinode_clockwise = first_ai->antinode_clockwise;
                         } else {
                             first_ai->antinode_timer = second_timer;
-                            first_ai->antinode_clockwise = second_ai->antinode_clockwise;
+                            first_ai->antinode_clockwise = second->ai->antinode_clockwise;
                         }
                     } else if (second_timer > antinode_time) {
                         first_ai->antinode_timer = second_timer;
-                        first_ai->antinode_clockwise = second_ai->antinode_clockwise;
+                        first_ai->antinode_clockwise = second->ai->antinode_clockwise;
                     } else if (first_timer > 0.0f) {
-                        second_ai->antinode_timer = first_timer;
-                        second_ai->antinode_clockwise = first_ai->antinode_clockwise;
+                        second->ai->antinode_timer = first_timer;
+                        second->ai->antinode_clockwise = first_ai->antinode_clockwise;
                     }
                     if (((first->field_0x1f4 ^ second->field_0x1f4) & 1) != 0) {
                         first->ai->field_0x1e5 |= 0x40;
@@ -2760,13 +2648,13 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     const u32 model_flags = character->model_flags;
     if ((model_flags & 0x200) != 0) {
         object->apiobj.field_0x1f4 |= 0x404;
-    } else if ((model_flags & 0x400) != 0) {
+    } else if ((model_flags & 4) != 0) {
         object->apiobj.field_0x1f4 |= 0x401;
     }
-    if ((model_flags & 0x1000) != 0)
-        object->field_0x1050 |= 5;
-    else
+    if ((model_flags & 0x1000) == 0)
         object->field_0x1050 |= 1;
+    else
+        object->field_0x1050 |= 5;
 
     GAMECHARACTERDATA &game_character = *(GAMECHARACTERDATA *)character->field11_0x24;
     object->apiobj.viewdistance = game_character.viewdistance;
@@ -2777,17 +2665,18 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->ai.pending_nearest_metric = 1000000000.0f;
     object->ai.pending_opponent_metric = 1000000000.0f;
     object->field_0xef8 &= static_cast<u8>(~1u);
-    object->ai.field_0x1e5 &= static_cast<u8>(~0x50u);
+    object->ai.field_0x1e5_bit4 = 0;
+    object->ai.nearest_opponent = NULL;
+    object->ai.pending_nearest_opponent = NULL;
+    object->ai.opponent = NULL;
+    object->ai.pending_opponent = NULL;
+    object->ai.antinode_timer = 0.0f;
     object->apiobj.ai_awareness_mask = 0;
     object->ai_seen_mask = 0;
     object->field_0xecc = 0;
     object->field_0xed0 = 0;
     object->field_0xed8 = 0;
-    object->ai.nearest_opponent = NULL;
-    object->ai.pending_nearest_opponent = NULL;
-    object->ai.pending_opponent = NULL;
-    object->ai.opponent = NULL;
-    object->ai.antinode_timer = 0.0f;
+    object->ai.field_0x1e5_bit6 = 0;
     InitPlayerAI(object);
 
     if (spline != NULL) {
@@ -2801,11 +2690,11 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         object->apiobj.pitch_angle = static_cast<u16>(-pitch);
 
         if (spline_offset != NULL) {
-            NUVEC *stored_offset = &object->movement_spline_offset;
-            *stored_offset = *spline_offset;
-            if (spline_offset->x != 0.0f || spline_offset->y != 0.0f || spline_offset->z != 0.0f) {
-                NuVecRotateX(&offset, spline_offset, static_cast<u16>(-pitch));
-                NuVecRotateY(&offset, &offset, yaw);
+            object->movement_spline_offset = *spline_offset;
+            if (object->movement_spline_offset.x != 0.0f || object->movement_spline_offset.y != 0.0f ||
+                object->movement_spline_offset.z != 0.0f) {
+                NuVecRotateX(&offset, &object->movement_spline_offset, static_cast<u16>(-pitch));
+                NuVecRotateY(&offset, &offset, object->apiobj.field_0x276);
                 NuVecAdd(&spline_point, &spline_point, &offset);
             }
         }
@@ -2820,7 +2709,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
             offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
             if (object->ai.group_column & 1)
                 offset.x = -offset.x;
-            offset.z = -group->z_spacing * object->ai.group_member;
+            offset.z = -group->z_spacing * static_cast<u32>(object->ai.group_member);
             offset.y = 0.0f;
             NuVecRotateY(&offset, &offset, angle);
             NuVecAdd(&object->apiobj.position, &object->apiobj.position, &offset);
@@ -2860,11 +2749,10 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     }
     PortalGameObject(object, 1, 1, -1, WORLD->current_gscn);
     if (reset_restart != 0) {
-        GAMECHARACTERDATA *config = (GAMECHARACTERDATA *)object->apiobj.character_data->field11_0x24;
-        object->hitpoints = config->hitpoints;
+        CHARACTERDATA *character = object->apiobj.character_data;
+        object->current_hp = object->hitpoints = ((GAMECHARACTERDATA *)character->field11_0x24)->hitpoints;
+        object->field_0xe37 = ((GAMECHARACTERDATA *)character->field11_0x24)->field_0xf5;
         object->field_0xe38 = 4;
-        object->current_hp = config->hitpoints;
-        object->field_0xe37 = config->field_0xf5;
     }
 
     object->apiobj.field_0x1f4 &= ~0x100u;

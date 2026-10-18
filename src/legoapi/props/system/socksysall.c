@@ -750,8 +750,8 @@ static f32 BestSockPosition(SOCKSYS *sock_sys, NUVEC *point, SOCKPOSITION *resul
     i32 segment = 0, next = 0, initial_segment = 0;
     i32 ascending_segment = 0, descending_segment = 0;
     i32 direction = 0, exhausted_directions = 0, segment_count = 0;
-    f32 distance_squared = 0.0f;
     SOCK *sock = NULL;
+    f32 distance_squared = 0.0f;
     SOCKSEGMENT *segment_data = NULL;
     sock = &sock_sys->sock[sock_index];
     result->location.sock = -1;
@@ -1647,10 +1647,8 @@ extern "C" {
         i32 contributing_sockets = 0;
         for (i = 0; i < TempSPosCount; ++i) {
             SOCKPOSITION *candidate = &TempSPosList[i];
-            bool include =
-                socket_changed == 0 || candidate->location.sock == camera_socket_position->location.sock ||
-                SockBitSet(&sock_sys->sock[camera_socket_position->location.sock], candidate->location.sock) == 0;
-            if (include) {
+            if (socket_changed == 0 || candidate->location.sock == camera_socket_position->location.sock ||
+                SockBitSet(&sock_sys->sock[camera_socket_position->location.sock], candidate->location.sock) == 0) {
                 SOCK *sock = &sock_sys->sock[candidate->location.sock];
 
                 if ((sock->flags & SOCK_FLAG_PROJECT_CAMERA_FROM_PLAYER) != 0) {
@@ -1724,17 +1722,17 @@ extern "C" {
                         local_right = {1.0f, 0.0f, 0.0f};
                         NuVecRotateY(&local_right, &local_right, candidate->midpoint_rotation.y);
                         side = local_right.x * displacement.x + local_right.z * displacement.z;
-                        bool have_limit = false;
+                        i32 have_limit = 0;
                         if (side < 0.0f) {
                             if (sock->left != NULL) {
                                 SockSysPointAlongSpline(&scratch, sock->left, candidate->location.segment,
                                                         candidate->next_segment, candidate->ratio);
-                                have_limit = true;
+                                have_limit = 1;
                             }
                         } else if (sock->right != NULL) {
                             SockSysPointAlongSpline(&scratch, sock->right, candidate->location.segment,
                                                     candidate->next_segment, candidate->ratio);
-                            have_limit = true;
+                            have_limit = 1;
                         }
                         if (have_limit) {
                             local_x.x = scratch.x - candidate->camera_position.x;

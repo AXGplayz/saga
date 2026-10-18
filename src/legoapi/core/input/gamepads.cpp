@@ -90,9 +90,10 @@ extern "C" {
 
 GAMEPAD_s *GamePad_Allocate() {
     for (i32 i = 0; i < 64; i++) {
-        if ((GamePad[i].allocated_5a & 1) == 0) {
-            GamePad[i].allocated_5a |= 1;
-            return &GamePad[i];
+        GAMEPAD_s *pad = &GamePad[i];
+        if ((pad->allocated_5a & 1) == 0) {
+            pad->allocated_5a |= 1;
+            return pad;
         }
     }
     return NULL;
@@ -129,20 +130,17 @@ f32 GamePad_Rotate(GameObject_s *object) {
     }
 
     GAMEPAD_s *pad = object->pad_gamepad;
-    if (pad == NULL || pad->input_magnitude == 0.0f || PadOldSpeed[player_index] == 0.0f ||
-        PadOldSpeed2[player_index] == 0.0f) {
+    if (pad->input_magnitude == 0.0f || PadOldSpeed[player_index] == 0.0f || PadOldSpeed2[player_index] == 0.0f) {
         return 0.0f;
     }
 
     const i32 current_delta = RotDiff(PadOldAngle[player_index], pad->input_angle);
     const i32 previous_delta = RotDiff(PadOldAngle2[player_index], PadOldAngle[player_index]);
-    const bool turning_clockwise = current_delta > 0 && previous_delta > 0;
-    const bool turning_counter_clockwise = current_delta < 0 && previous_delta < 0;
-    if ((!turning_clockwise && !turning_counter_clockwise) || RotationDistance(current_delta) >= 0x2000 ||
-        RotationDistance(previous_delta) >= 0x2000) {
-        return 0.0f;
+    if ((current_delta < 0 && previous_delta < 0 && current_delta > -0x2000 && previous_delta > -0x2000) ||
+        (current_delta > 0 && previous_delta > 0 && current_delta < 0x2000 && previous_delta < 0x2000)) {
+        return (static_cast<f32>(current_delta) / 65536.0f) / FRAMETIME;
     }
-    return (static_cast<f32>(current_delta) / 65536.0f) / FRAMETIME;
+    return 0.0f;
 }
 
 i32 GamePad_Waggle(GAMEPAD_s *pad) {
@@ -160,18 +158,18 @@ i32 GamePad_Waggle(GAMEPAD_s *pad) {
 }
 
 void ResetRumble(RUMBLEPACKET *packet) {
-    packet->rumble_time = 0.0f;
-    packet->rumble_amount = 0.0f;
-    packet->active = 0;
+    packet->buzz_time = 0.0f;
+    packet->time = 0.0f;
+    packet->priority = 0;
 }
 
 void UpdateRumble(RUMBLEPACKET *packet) {
-    if (packet->rumble_time > 0.0f)
-        packet->rumble_time -= FRAMETIME;
-    if (packet->rumble_amount > 0.0f)
-        packet->rumble_amount -= FRAMETIME;
-    if (packet->active != 0)
-        --packet->active;
+    if (packet->buzz_time > 0.0f)
+        packet->buzz_time -= FRAMETIME;
+    if (packet->time > 0.0f)
+        packet->time -= FRAMETIME;
+    if (packet->priority != 0)
+        --packet->priority;
 }
 
 void NewRumble(nupad_s *pad, float strength, i32) {
@@ -292,8 +290,10 @@ void PadOutPause(i32 port, WORLDINFO_s *world) {
         (world->current_level->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) != 0 || GetMenuID() != -1) {
         return;
     }
-    if (CUTSTOPGAME != 0 && !CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {
-        return;
+    if (CUTSTOPGAME != 0) {
+        if (!CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {
+            return;
+        }
     }
     if (CutSceneWaiting == 0) {
         PauseGame(port);
@@ -400,18 +400,20 @@ void DoInput(WORLDINFO_s *world) {
         world = WorldInfo_CurrentlyActive();
     }
 
-    const i32 player_0_input = ReadPad(0);
-    const i32 player_1_input = ReadPad(1);
+    i32 input_result[2];
+    input_result[0] = ReadPad(0);
+    input_result[1] = ReadPad(1);
     i32 player_state_changed = PlayersDropInOut();
 
     for (i32 player_index = 0; player_index < 2; ++player_index) {
         nupad_s *pad = GamePad[player_index].pad;
         GameObject_s *player = Player[player_index];
-        const i32 input_result = player_index == 0 ? player_0_input : player_1_input;
-        if (GamePads_IgnoreInputFn != NULL && GamePads_IgnoreInputFn() != 0) {
-            continue;
+        if (GamePads_IgnoreInputFn != NULL) {
+            if (GamePads_IgnoreInputFn() != 0) {
+                continue;
+            }
         }
-        if (static_cast<u32>(input_result) <= 1) {
+        if (static_cast<u32>(input_result[player_index]) <= 1) {
             if (player != NULL && player->apiobj.player_controlled && pad != NULL && MiniCutCam == 0 && world != NULL &&
                 world->current_level != NULL) {
                 PadOutPause(player_index, world);
@@ -423,13 +425,12 @@ void DoInput(WORLDINFO_s *world) {
         }
 
         if (player == NULL || !player->apiobj.player_controlled ||
-            (LEGOCONTEXT_DROPIN != -1 && static_cast<i8>(player->field_0x7a5) == LEGOCONTEXT_DROPIN) || pad == NULL ||
+            (LEGOCONTEXT_DROPIN != -1 && static_cast<i8>(player->field_0x7a5) == LEGOCONTEXT_DROPIN) ||
             (pad->digital_buttons_pressed & GAMEPAD_START) == 0) {
             continue;
         }
         if (NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f || editor_active != 0 ||
-            !(GameTimer.time_elapsed > 0.0f) || world == NULL || world->current_level == NULL ||
-            world->current_level == TITLES_LDATA) {
+            !(GameTimer.time_elapsed > 0.0f) || world == NULL || world->current_level == TITLES_LDATA) {
             continue;
         }
 
@@ -459,23 +460,13 @@ void DoInput(WORLDINFO_s *world) {
 }
 
 u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
-    if (!object->apiobj.player_controlled || object->field_0x661 == 0xff) {
-        goto camera_relative;
-    }
-    {
+    if (object->apiobj.player_controlled && object->field_0x661 != 0xff) {
         SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
         if ((socket.flags & 0x40) != 0) {
-            goto socket_relative;
+            return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
         }
     }
-
-camera_relative:
-    return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
-
-socket_relative: {
-    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
-    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
-}
+    return static_cast<u16>(GameCam->input_yaw + pad->input_angle);
 }
 
 i32 GamePads_SkipMovie() {

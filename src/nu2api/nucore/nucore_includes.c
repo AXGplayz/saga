@@ -446,8 +446,6 @@ void NuQFntPrintV(NUQFNT *font, const char *format, va_list arguments);
     extern void (*nuapi_endframe_callbackfn)(void);
 } // extern "C"
 
-union variptr_u;
-
 #define MAX_GAME_PAD_COUNT 2
 
 #define ANALOG_CENTER 0x80
@@ -6702,8 +6700,8 @@ i32 NuStringTableLoadCSV(char *filepath, VARIPTR *buf, VARIPTR buf_end, char *la
 i32 NuStringTableLoadTXT(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
     i32 i;
     i32 max_strings;
-    NUSTRING *strings = NULL;
     NUSTRINGBANK *bank = &StringBank[CurrentStringBank];
+    NUSTRING *strings = NULL;
     char *tmp_buf = NULL;
     void *mem_buf;
     i32 bytes_read;

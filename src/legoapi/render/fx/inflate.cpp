@@ -56,9 +56,8 @@ static u8 DefaultDistances[32] = {0};
 static void FillBits(DEFLATECONTEXT *ctx) {
     u32 byte;
 
-    auto ctx_read_buffer_end = ctx->read_buffer_end;
     do {
-        if (ctx->read_buffer < ctx_read_buffer_end) {
+        if (ctx->read_buffer < ctx->read_buffer_end) {
             byte = *ctx->read_buffer++;
         } else {
             byte = 0;
@@ -218,7 +217,7 @@ i32 DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
 
             symbol = CtxReadHuffmanSymbol(ctx, &ctx->distance_tree);
             i32 distance = DistanceBase[symbol];
-            if (__builtin_expect(DistanceExtraBits[symbol] != 0, 0)) {
+            if (__builtin_expect(DistanceExtraBits[symbol] != 0, 1)) {
                 distance += READBITS(ctx, DistanceExtraBits[symbol]);
             }
 
@@ -366,7 +365,7 @@ i32 DecodeDeflated(DEFLATECONTEXT *ctx) {
                 }
                 break;
             case BLOCK_FIXED_HUFFMAN:
-                if (__builtin_expect(DefaultDistances[0x1f] == '\0', 0)) {
+                if (__builtin_expect(DefaultDistances[0x1f] == '\0', 1)) {
                     InitHuffmanDefaults();
                 }
 

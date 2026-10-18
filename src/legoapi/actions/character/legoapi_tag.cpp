@@ -325,11 +325,11 @@ i32 TagCode(GameObject_s *source, GameObject_s *destination, i32 takeover, i32 b
         source->field_0xef0 = 0;
         source->pause_context_state = 0;
         source->input_toggle_hold_time = TOGGLEHOLDTIME;
-        source->field_0xefc |= 0x80;
+        source->reset_lighting = 1;
         source->field_0xefe &= ~0x18;
         destination->hud_icon_timer = 2.0f;
         destination->input_toggle_hold_time = TOGGLEHOLDTIME;
-        destination->field_0xefc |= 0x80;
+        destination->reset_lighting = 1;
         NewBuzzFrames(destination->pad_gamepad->pad, 2, 0);
         if (static_cast<i8>(source->apiobj.field_0x27c) != -1) {
             Player[static_cast<i8>(source->apiobj.field_0x27c)] = source;
@@ -426,9 +426,9 @@ i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode) {
             target = Player[2];
         else if (available(Player[3]))
             target = Player[3];
-        else if (__builtin_expect(!!(available(Player[4])), 1))
+        else if (__builtin_expect(!!(available(Player[4])), 0))
             target = Player[4];
-        else if (__builtin_expect(!!(available(Player[5])), 1))
+        else if (__builtin_expect(!!(available(Player[5])), 0))
             target = Player[5];
         else if (available(Player[6]))
             target = Player[6];
@@ -524,8 +524,8 @@ void ReleaseTakeOver(GameObject_s *object, i32) {
         Buck_Start(object, rider);
     }
     object->field_0xcc0 = NULL;
-    rider->field_0xe23 &= 0x7f;
-    object->field_0xe23 &= 0x7f;
+    rider->tag_highlighted = 0;
+    object->tag_highlighted = 0;
     rider->ai.path_info.flags &= ~1;
     object->saved_position = object->apiobj.position;
     if (rider->apiobj.field_0x27c != -1 || object->apiobj.field_0x27c != -1) {
@@ -663,8 +663,8 @@ void Tag_Check(GameObject_s *object) {
             } else {
                 if (Arcade == 0 && Tag_Mode == 3 && GetMenuID() == -1) {
                     if (__builtin_expect(FindGameMsgsWithID(-1, 0, -1, NULL) == 0, 1)) {
-                        f32 nearest = 0.7f * 0.7f * 2.0f;
                         i32 pack_index = -1;
+                        f32 nearest = 0.7f * 0.7f * 2.0f;
 
                         for (i32 i = 0; i < 11; ++i) {
                             if (!Store_IsPackUnlocked(i) && StorePack[i].id != NULL) {
@@ -705,7 +705,7 @@ void Tag_Check(GameObject_s *object) {
                     } else if (Arcade == 0) {
                         if (Tag_Mode == 3) {
                             if (object->character_context == 0x17 || object->character_context == -1 ||
-                                (CInfo[object->character_context].parameter & 0x10) != 0 ||
+                                (CInfo[object->character_context].flags & (0x10ull << 32)) != 0 ||
                                 (CInfo[object->character_context].flags & 4) != 0) {
                                 target = Tag_FindGameObject_TRANSFER(object);
                             }
@@ -740,7 +740,7 @@ void Tag_Check(GameObject_s *object) {
                         } else {
                             if (Tag_Mode == 1) {
                                 if (object->character_context == 0x17 || object->character_context == -1 ||
-                                    (CInfo[object->character_context].parameter & 0x10) != 0 ||
+                                    (CInfo[object->character_context].flags & (0x10ull << 32)) != 0 ||
                                     (CInfo[object->character_context].flags & 4) != 0) {
                                     GameObject_s *found = Tag_FindGameObject_TRANSFER(object);
                                     if (found != NULL && found->apiobj.field_0x27c != -1)
@@ -800,7 +800,7 @@ void Tag_Check(GameObject_s *object) {
         else
             GameCam_Reset(GameCam);
         RememberPlayerIDs(0, Player[0] != NULL ? Player[0]->id : -1, Player[1] != NULL ? Player[1]->id : -1);
-        if (__builtin_expect((Tag_Mode & ~2) == 1, 0))
+        if (__builtin_expect((Tag_Mode & ~2) == 1, 1))
             Tag_NewTransfer(object, target);
         if (static_cast<u8>(object->apiobj.field_0x27c) < 2 && static_cast<u8>(target->apiobj.field_0x27c) < 2)
             ResetTimer(&JoinInTimer, 0.0f);
@@ -866,7 +866,7 @@ __attribute__((force_align_arg_pointer)) void TakeOverCode(GameObject_s *object,
         }
         const f32 phase = fraction * 32768.0f;
         api.position.y += height * NU_SIN_LUT(static_cast<i32>(phase));
-        const u16 start_angle = object->takeover_start_angle;
+        const i32 start_angle = object->takeover_start_angle;
         const i32 difference = RotDiff(start_angle, target->apiobj.field_0x276);
         const f32 blend = 1.0f - (NU_SIN_LUT(static_cast<i32>(phase + 16384.0f)) + 1.0f) * 0.5f;
         const u16 angle = static_cast<u16>(static_cast<f32>(start_angle) + static_cast<f32>(difference) * blend);
@@ -953,7 +953,7 @@ __attribute__((force_align_arg_pointer)) void TakeOverCode(GameObject_s *object,
             TakeOver2GetIn(object, nearest);
         } else {
             object->tag_flags |= 1;
-            nearest->field_0xe23 |= 0x80;
+            nearest->tag_highlighted = 1;
         }
     }
 }

@@ -151,10 +151,9 @@ static i32 GizPanel_Load(void *world_ptr, void *) {
                                 (shadow_panel.draw_flags & ~GIZPANEL_DRAW_FLAG_NO_SHADOW_RESET) |
                                 (no_shadow_reset << 1));
                             if (version != 7) {
-                                GIZPANEL &legacy_panel = panel_sys->panels[index];
                                 const bool legacy = EdFileReadChar() != 0;
-                                legacy_panel.draw_flags = static_cast<GIZPANEL_DRAW_FLAGS>(
-                                    (legacy_panel.draw_flags & ~GIZPANEL_DRAW_FLAG_LEGACY) |
+                                panel_sys->panels[index].draw_flags = static_cast<GIZPANEL_DRAW_FLAGS>(
+                                    (panel_sys->panels[index].draw_flags & ~GIZPANEL_DRAW_FLAG_LEGACY) |
                                     (legacy ? GIZPANEL_DRAW_FLAG_LEGACY : 0));
                             }
                         }
@@ -274,7 +273,7 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
 #define CONSIDER_PANEL_PLAYER(player_index)                                                                            \
     do {                                                                                                               \
         GameObject_s *candidate = players[player_index];                                                               \
-        if (__builtin_expect(candidate != NULL && (candidate->apiobj.flags_high & 0x10) != 0 && candidate->apiobj.field_0x287 == 0, 0)) {   \
+        if (__builtin_expect(candidate != NULL && (candidate->apiobj.flags_high & 0x10) != 0 && candidate->apiobj.field_0x287 == 0, 1)) {   \
             panel_position = panel.position;                                                                           \
             if (panel.model_variant == 2) {                                                                            \
                 panel_position.y += 0.245f;                                                                            \
@@ -313,7 +312,7 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
         if (nearest_player == NULL) {
             panel.target_x_rotation = SeekRot(panel.target_x_rotation, 0xe000, 10.0f);
             panel.target_y_rotation = SeekRot(panel.target_y_rotation, 0, 10.0f);
-            if (__builtin_expect((panel.flags & GIZPANEL_FLAG_PLAYER_NEAR) != 0, 0)) {
+            if (__builtin_expect((panel.flags & GIZPANEL_FLAG_PLAYER_NEAR) != 0, 1)) {
                 PlaySfx(const_cast<char *>("DPanelDis"), &panel.position);
             }
             panel.flags = static_cast<GIZPANEL_FLAGS>(panel.flags & ~GIZPANEL_FLAG_PLAYER_NEAR);
@@ -336,12 +335,14 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
                     target_y_rotation = 0xc000;
                 }
             } else {
-                if (target_y_rotation > 0x4000 && target_y_rotation < 0xc000) {
-                    target_y_rotation = 0x4000;
+                if (target_y_rotation > 0x4000) {
+                    if (target_y_rotation < 0xc000) {
+                        target_y_rotation = 0x4000;
+                    }
                 }
             }
             if (previous_x_rotation <= 0x4000) {
-                if (__builtin_expect(target_x_rotation > 0x4000 && target_x_rotation < 0xc000, 0)) {
+                if (__builtin_expect(target_x_rotation > 0x4000 && target_x_rotation < 0xc000, 1)) {
                     target_x_rotation = static_cast<u16>(panel.y_rotation + 0x4000);
                 }
             } else if (previous_x_rotation > 0xbfff && target_x_rotation < 0xc000 && target_x_rotation > 0x4000) {

@@ -88,8 +88,6 @@ extern f32 GhostLightMul;
 #include <emmintrin.h>
 #endif
 
-struct rtlidata_s;
-
 void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC *direction1, NUCOLOUR3 *colour2,
                NUVEC *direction2, NUVEC *ambient) {
     NuRndrLightingStateCurrent.direction[0] = *direction0;
@@ -274,7 +272,7 @@ void LightGameObject(GameObject_s *object, void *set) {
 
     const rtldata_s &target = object->light_data;
     OBJECTLIGHTINGSTATE_s &current = object->lighting_state;
-    const bool reset = (object->field_0xefc & 0x80) != 0;
+    const bool reset = object->reset_lighting;
 
     f32 surface_fade = 0.0f;
     if (object->apiobj.field_0x218 != 2000000.0f &&
@@ -346,7 +344,7 @@ void LightGameObject(GameObject_s *object, void *set) {
         NuVecNorm(&current.direction[2], &current.direction[2]);
     }
 
-    object->field_0xefc &= 0x7f;
+    object->reset_lighting = 0;
 }
 
 void LightEverythingInEditor(void *light_set) {
@@ -354,7 +352,7 @@ void LightEverythingInEditor(void *light_set) {
     GameObject_s *object = Obj;
     for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
         if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
-            object->field_0xefc |= 0x80;
+            object->reset_lighting = 1;
             LightGameObject(object, light_set);
         }
     }

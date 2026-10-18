@@ -233,9 +233,6 @@ void SetPodMergeAnims(ANIMPACKET_s *packet, i32 index) {
     a->field_0x44 = fabsf(pod_roll[index]);
 }
 
-struct AIROW_s;
-struct nunativegscene_s;
-
 // This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
 static i32 PodRaceKey[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1, -1, -1};
 
@@ -327,7 +324,9 @@ static __used__ void PodRaceSnipersReset(void) {
             do {
                 SNIPER_s *dst = &PodRace_snipers[PodRace_nsnipers];
                 dst->prev = spline->pts[npts];
-                dst->pos = spline->pts[npts + 1];
+                dst->pos.x = spline->pts[npts + 1].x;
+                dst->pos.y = spline->pts[npts + 1].y;
+                dst->pos.z = spline->pts[npts + 1].z;
                 dst->fire_timer = NuRandFloat() * PodRace_sniper_fire_time + half_time;
                 PodRace_snipers[PodRace_nsnipers++].state = 0.0f;
                 npts += 2;
@@ -371,9 +370,9 @@ static void *CreatePodRaceMine(nuvec_s *pos) {
     entry->grow_alpha = 0.0f;
     if (mine_max_tile != 0)
         entry->rotx = (u16)((u32)NuRandInt() % (u32)mine_max_tile);
+    i32 bit = (i32)(1u << slot);
     entry->roty = (u16)NuRandInt();
     mine_count++;
-    i32 bit = (i32)(1u << slot);
     pod_mines_bitfield[0] |= bit;
     pod_mines_bitfield[1] |= bit >> 31;
     i32 clear = ~bit;
@@ -414,8 +413,7 @@ static void UpdatePacemakerDisplayBody(LEVEL_OBJECT_RUNTIME_s **lev_objs) {
     GAMEMESSAGE_s *msg =
         (GAMEMESSAGE_s *)AddGameMessage(" ", (nuvec_s *)v, 0.08f, NULL, 0.0f, 0xff, 0x3f, 0x3f, 0x10083, 0);
     if (msg != NULL) {
-        i32 idx = ((i32)(16384.0f * pod_pacemaker_alpha) >> 1) & 0x7fff;
-        msg->alpha = (u8)(128.0f * pacemaker_alpha_table[idx]);
+        msg->alpha = (u8)(128.0f * NU_SIN_LUT(16384.0f * pod_pacemaker_alpha));
         msg->icon = 0x134;
         PACEMAKERDATA_s *data = (PACEMAKERDATA_s *)*lev_objs;
         if (data->enabled != 0) {
@@ -560,20 +558,19 @@ static __used__ void UpdatePodRaceMines(void) {
                 ((client->exploded_words[0] & mask) | (client->exploded_words[1] & high_mask)) != 0)
                 continue;
             float radius = mines->mine_radius;
-            NUVEC *mine_pos = &client->positions[idx];
             for (i32 i = 0; i < minecount; i++) {
                 GameObject_s *obj = minesarr[i];
                 if (obj == NULL)
                     continue;
-                delta.x = obj->apiobj.pos_x - mine_pos->x;
-                delta.z = obj->apiobj.pos_z - mine_pos->z;
+                delta.x = obj->apiobj.pos_x - client->positions[idx].x;
+                delta.z = obj->apiobj.pos_z - client->positions[idx].z;
                 float rr = obj->apiobj.field_0x1dc + radius;
                 if (!(rr * rr > delta.x * delta.x + delta.z * delta.z))
                     continue;
                 if (mines->mine_debris != -1)
-                    AddGameDebris(WORLD->debris_sys, mines->mine_debris, mine_pos);
+                    AddGameDebris(WORLD->debris_sys, mines->mine_debris, &client->positions[idx]);
                 if (mines->mine_part != -1)
-                    AddFiniteShotPART(mines->mine_part, mine_pos, 1);
+                    AddFiniteShotPART(mines->mine_part, &client->positions[idx], 1);
                 GameCam_HitJudder();
                 GameCam_NewShake(NULL, 0.75f, 1.0f, 1.0f);
                 PlaySfx("Explode1", &obj->apiobj.collision_position);
@@ -919,10 +916,16 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                     float distance_sq = NuVecDistSqr(&player->apiobj.collision_position,
                                                      &object->apiobj.collision_position, &difference);
                     if (distance_sq > 36.0f) {
-                        NUVEC target = {3.0f - NuRandFloat() * 3.0f, 0.0f, 3.0f};
+                        NUVEC target;
+                        target.x = 3.0f - NuRandFloat() * 3.0f;
+                        target.y = 0.0f;
+                        target.z = 3.0f;
                         NuVecRotateY(&target, &target, player->yrot);
                         NuVecAdd(&target, &target, &player->apiobj.collision_position);
-                        NUVEC target_velocity = {0.0f, 0.0f, CurrentSpeed};
+                        NUVEC target_velocity;
+                        target_velocity.x = 0.0f;
+                        target_velocity.y = 0.0f;
+                        target_velocity.z = CurrentSpeed;
                         NuVecRotateY(&target_velocity, &target_velocity, player->yrot);
                         MakeThrowVector(&velocity, &origin, &target, &target_velocity, 20.0f, -10.0f);
                         if (distance_sq > 100.0f) {
@@ -979,10 +982,10 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
 }
 
 void PodRacePanel(WORLDINFO_s *world) {
-    if (netclient == 0)
-        podrace_netpacket->countdown = podlapalpha;
-    else
+    if (netclient != 0)
         podlapalpha = podrace_netpacket->countdown;
+    else
+        podrace_netpacket->countdown = podlapalpha;
     if (podlapalpha > 0.0f) {
         LEVEL_OBJECT_RUNTIME_s *entry = &world->lev_objs[Lap + 0x135];
         if (entry->active != 0)
@@ -1012,7 +1015,7 @@ void PodRacePanel(WORLDINFO_s *world) {
 void UpdatePodRaceLapDisplay(float arg) {
     if (__builtin_expect(FadeSys.fade == 0.0f && MiniCutCam == 0 && CUTSTOPGAME == 0, 1)) {
         float target = 0.0f;
-        if (__builtin_expect(Paused != 0, 1))
+        if (Paused != 0)
             target = 1.0f;
         else if (WORLD->current_level == PODRACEB_LDATA && GameTimer.time_elapsed >= 1.0f &&
                  GameTimer.time_elapsed < 6.0f)
@@ -1024,7 +1027,7 @@ void UpdatePodRaceLapDisplay(float arg) {
         podstartracealpha = 0.0f;
     }
     i32 oldhurry = podhurry_i;
-    if (__builtin_expect(Paused == 0 && PodRace != NULL && PodRace->lap_display < 10.0f, 1)) {
+    if (Paused == 0 && PodRace != NULL && PodRace->lap_display < 10.0f) {
         podhurry_i = (i32)PodRace->lap_display;
         if (podhurryalpha < 1.0f) {
             podhurryalpha += arg + arg;
@@ -1660,7 +1663,7 @@ void PodDust(WORLDINFO_s *world, GameObject_s *object) {
             positions[count].y = object->apiobj.field_0x218 + 0.1f;
             positions[count].z = joint->m32;
             ++count;
-            if ((object->apiobj.flags_low & 0x80) == 0)
+            if (!object->apiobj.player_controlled)
                 continue;
             i32 key;
             if (object == Player[0])
@@ -1965,10 +1968,14 @@ speed_section:
                 }
             }
             if (Player[0] != NULL) {
-                pod_old_pos[0] = Player[0]->apiobj.position;
+                pod_old_pos[0].x = Player[0]->apiobj.position.x;
+                pod_old_pos[0].y = Player[0]->apiobj.position.y;
+                pod_old_pos[0].z = Player[0]->apiobj.position.z;
             }
             if (Player[1] != NULL) {
-                pod_old_pos[1] = Player[1]->apiobj.position;
+                pod_old_pos[1].x = Player[1]->apiobj.position.x;
+                pod_old_pos[1].y = Player[1]->apiobj.position.y;
+                pod_old_pos[1].z = Player[1]->apiobj.position.z;
             }
             ps->lap_msg->value = (float)(i8)ps->ai_state;
             PodRaceSnipersUpdate();
@@ -2315,15 +2322,12 @@ void RetakeG_Update(WORLDINFO_s *world) {
         RetakeG_GuardsToRescue_msg->value = (float)retakeg_netpacket->guard_b;
         RetakeG_TotalGuards_msg->value = (float)retakeg_netpacket->guard_a;
     }
-    GIZFORCE_s *g0 = LevGizForce[0];
-    GIZFORCE_s *g1 = LevGizForce[1];
-    if (g0 != NULL && g0->group != NULL && g1 != NULL && g1->group != NULL) {
+    if (LevGizForce[0] != NULL && LevGizForce[0]->group != NULL && LevGizForce[1] != NULL &&
+        LevGizForce[1]->group != NULL) {
         for (i32 i = 0; i < 6; i++) {
-            GIZFORCE_s *obj = (i < 3) ? g0 : g1;
-            GIZFORCEOBJ_s *obj40 = (GIZFORCEOBJ_s *)obj->group;
             PATHCNXDATA_s *cnx = (PATHCNXDATA_s *)LevPathCnx[i];
             if (cnx != NULL) {
-                if (obj40->flags & 4) {
+                if (((GIZFORCEOBJ_s *)LevGizForce[i / 3]->group)->flags & 4) {
                     cnx->flags0 &= 0x7fffffff;
                     cnx->flags4 &= 0x7fffffff;
                 } else {

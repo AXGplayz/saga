@@ -59,15 +59,6 @@ i32 SphereSphereOverlapScaleY(NUVEC *, f32, f32, NUVEC *, f32, f32);
 void GameCam_HitJudder();
 GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *, NUVEC *, i32, f32, NUVEC *, NUVEC *, BOLT_s *, u32, u8 *);
 
-#if defined(__i386__)
-#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
-#else
-#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
-#endif
-static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
-                                                             char *scene_data)
-    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
-
 void ResetExplosions() {
     memset(Explosion, 0, sizeof(Explosion));
     i_explosion = 0;
@@ -190,7 +181,7 @@ void UpdateExplosion_Generic(EXPLOSION *explosion) {
                 damage = 0;
             else if ((explosion->field_0x24 & 0x800) != 0 && (target->field_0xefb & 8) == 0)
                 damage = -1;
-            else if ((explosion->field_0x24 & 0x20) != 0 && (target->field_0xefb & 8) == 0 &&
+            else if ((explosion->field_0x24 & 0x20) != 0 && !target->is_boss &&
                      static_cast<i8>(target->current_hp) > 0)
                 damage = -1;
             else
@@ -222,9 +213,9 @@ void UpdateExplosion_Generic(EXPLOSION *explosion) {
             hit_character = 1;
         }
     }
-    if (__builtin_expect(!hit_character && (explosion->field_0x24 & 2) != 0, 1)) {
+    if (!hit_character && (explosion->field_0x24 & 2) != 0) {
         u32 hit_type;
-        if (__builtin_expect((explosion->field_0x24 & 0x10) != 0, 0))
+        if (__builtin_expect((explosion->field_0x24 & 0x10) != 0, 1))
             hit_type = 3;
         else if ((explosion->field_0x24 & 0x100) != 0)
             hit_type = 7;

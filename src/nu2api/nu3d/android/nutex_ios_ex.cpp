@@ -45,7 +45,7 @@ SAGA_HOST_HOOK void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GL
     glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
 }
 
-__attribute__((weak)) bool NuIOS_TextureFormatSupported(i32 format) {
+SAGA_HOST_HOOK bool NuIOS_TextureFormatSupported(i32 format) {
     return g_renderDevice.enabled_extensions[format];
 }
 
@@ -252,14 +252,12 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
     i32 faceLimit = isCubemap ? 6 : 1;
 
     for (i32 face = 0; face < faceLimit; face++) {
-        if (tex.mips != 0) {
-            for (i32 mip = 0; mip < tex.mips; mip++) {
-                i32 mipWidth = tex.width >> mip;
-                i32 mipHeight = tex.height >> mip;
-                i32 mipOffset = GetMipOffset(&tex, mip, face, NUTEX_UNKNOWN);
-                i32 rgbaOffset = GetMipOffset(&tex, mip, face, NUTEX_RGBA32);
-                squish::DecompressImage(outBuffer + rgbaOffset, mipWidth, mipHeight, ddsData + mipOffset, squishFlags);
-            }
+        for (u32 mip = 0; mip < tex.mips; mip++) {
+            i32 mipWidth = tex.width >> mip;
+            i32 mipHeight = tex.height >> mip;
+            i32 mipOffset = GetMipOffset(&tex, mip, face, NUTEX_UNKNOWN);
+            i32 rgbaOffset = GetMipOffset(&tex, mip, face, NUTEX_RGBA32);
+            squish::DecompressImage(outBuffer + rgbaOffset, mipWidth, mipHeight, ddsData + mipOffset, squishFlags);
         }
     }
 }
@@ -519,7 +517,7 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
     i32 bits_per_pixel = 0;
     bool compressed = false;
 
-    if (__builtin_expect(channel_bits == 0, 0)) {
+    if (__builtin_expect(channel_bits == 0, 1)) {
         static const GLenum compressed_formats[6] = {
             0x8c01, // GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
             0x8c03, // GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
@@ -847,7 +845,7 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
         targetMip = mips;
     }
 
-    bool isCompressed;
+    u8 isCompressed;
     i32 bytesPerBlockOrPixel;
     i32 blockWidth;
     i32 minBlocks;

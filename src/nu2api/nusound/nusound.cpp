@@ -135,29 +135,21 @@ void *NuSoundSystem::ReAllocMemory(NuSoundSystem::MemoryDiscipline encoded_addre
 // pool manager; SCRATCH goes through NuMemoryManager::BlockFree and accounts
 // the queried block size.
 u32 NuSoundSystem::FreeMemory(MemoryDiscipline disc, usize address, u32 size) {
-    u32 freed = size;
-
     switch (disc) {
-        case MemoryDiscipline::SAMPLE:
-            if (s_mmSample != NULL) {
-                s_mmSample->Free((NuSoundMemoryBuffer *)address);
-            }
-            break;
-        case MemoryDiscipline::DECODER:
-            if (s_mmDecoder != NULL) {
-                s_mmDecoder->Free((NuSoundMemoryBuffer *)address);
-            }
-            break;
         case MemoryDiscipline::SCRATCH:
-            freed = sScratchMemMgr->GetBlockSize((void *)address);
+            size = sScratchMemMgr->GetBlockSize((void *)address);
             sScratchMemMgr->BlockFree((void *)address, 0);
             break;
-        default:
-            return 0;
+        case MemoryDiscipline::SAMPLE:
+            s_mmSample->Free((NuSoundMemoryBuffer *)address);
+            break;
+        case MemoryDiscipline::DECODER:
+            s_mmDecoder->Free((NuSoundMemoryBuffer *)address);
+            break;
     }
 
-    sAllocdMemory[(i32)disc] = sAllocdMemory[(i32)disc] - freed;
-    return freed;
+    sAllocdMemory[(i32)disc] -= size;
+    return size;
 }
 
 void NuSoundSystem::ReleaseBus(NuSoundBus *bus) {
@@ -190,31 +182,28 @@ u32 NuSoundSystem::GetFreeMemory(MemoryDiscipline disc) {
 }
 
 void *NuSoundSystem::_AllocMemory(MemoryDiscipline disc, u32 size, u32 align, const char *name) {
-    u32 uVar1 = GetFreeMemory(disc);
-
-    void *pvVar2 = NULL;
-
-    if (size <= uVar1) {
-        switch (disc) {
-            case MemoryDiscipline::SAMPLE:
-                pvVar2 = s_mmSample->Alloc(size);
-                break;
-            case MemoryDiscipline::DECODER:
-                pvVar2 = s_mmDecoder->Alloc(size);
-                break;
-            case MemoryDiscipline::SCRATCH:
-                pvVar2 = sScratchMemMgr->_TryBlockAlloc(size, align, 1, name, 0);
-                break;
-            default:
-                return NULL;
-        }
-
-        if (pvVar2 != NULL) {
-            sAllocdMemory[(i32)disc] = sAllocdMemory[(i32)disc] + size;
-        }
+    if (GetFreeMemory(disc) < size) {
+        return NULL;
     }
 
-    return pvVar2;
+    void *ptr = NULL;
+    switch (disc) {
+        case MemoryDiscipline::SAMPLE:
+            ptr = s_mmSample->Alloc(size);
+            break;
+        case MemoryDiscipline::DECODER:
+            ptr = s_mmDecoder->Alloc(size);
+            break;
+        case MemoryDiscipline::SCRATCH:
+            ptr = sScratchMemMgr->_TryBlockAlloc(size, align, 1, name, 0);
+            break;
+    }
+
+    if (ptr != NULL) {
+        sAllocdMemory[(i32)disc] += size;
+    }
+
+    return ptr;
 }
 
 bool NuSoundSystem::Initialise(i32 size) {
@@ -311,13 +300,13 @@ i32 NuSoundSystem::GenerateHash(const char *str) {
     char buf[0x100];
     NuStrUpr(buf, str);
 
-    byte hash = 0x5;
+    i32 hash = 0x5;
 
-    for (char *c = buf; *c != '\0'; c++) {
+    for (i8 *c = (i8 *)buf; *c != '\0'; c++) {
         hash = (hash * 0x21) + *c;
     }
 
-    return hash;
+    return (u8)hash;
 }
 
 void NuSoundSystem::ReleaseSample(NuSoundSample *sample) {
@@ -544,7 +533,7 @@ NuSoundDecoder *NuSoundSystem::CreateDecoder(NuSoundSource *source) {
     const char *name = source->GetName();
     if (name != NULL) {
         const u16 length = static_cast<u16>(strlen(name) + 1);
-        if (length > name_capacity || decoded_name == theEmptyString) {
+        if (decoded_name == theEmptyString || length > name_capacity) {
             name_capacity = static_cast<u16>((length + 3) & 0xfffc);
             if (decoded_name == theEmptyString) {
                 decoded_name = static_cast<char *>(
@@ -882,9 +871,9 @@ void NuSoundSystem::Update(f32 frametime) {
 
         NuSoundVoice::PlayState state = voice->GetState();
         if (state == NuSoundVoice::PLAYSTATE_PLAYING) {
-            pthread_mutex_lock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+            pthread_mutex_lock(&NuSoundWeakPtrListNode::sPtrAccessLock.critical_section.mutex);
             voice->Update(frametime);
-            pthread_mutex_unlock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+            pthread_mutex_unlock(&NuSoundWeakPtrListNode::sPtrAccessLock.critical_section.mutex);
         } else if (state == NuSoundVoice::PLAYSTATE_STOPPED && voice->GetAutoDelete()) {
             this->ReleaseVoice(voice);
         }
@@ -897,7 +886,17 @@ void NuSoundSystem::Update(f32 frametime) {
 
 NuSoundVoice *NuSoundSystem::CreateVoice(NuSoundSource *source, bool loop) {
     NuSoundVoice *voice;
-    if (SourceRequiresDecoder(source)) {
+    if (!SourceRequiresDecoder(source)) {
+        if (!source->IsStreamOpen()) {
+            return NULL;
+        }
+        NuSoundStreamDesc *desc = source->GetStreamDesc();
+        NuSoundVoiceFactory *factory = factory_list.GetFactory(desc->GetDecodedDataFormat());
+        voice = factory->CreateVoice(source, loop);
+        if (voice == NULL) {
+            return NULL;
+        }
+    } else {
         NuSoundDecoder *decoder = CreateDecoder(source);
         decoder->OpenStream(loop);
         if (!decoder->IsStreamOpen()) {
@@ -910,16 +909,6 @@ NuSoundVoice *NuSoundSystem::CreateVoice(NuSoundSource *source, bool loop) {
         if (voice == NULL) {
             decoder->CloseStream();
             ReleaseDecoder(decoder);
-            return NULL;
-        }
-    } else {
-        if (!source->IsStreamOpen()) {
-            return NULL;
-        }
-        NuSoundStreamDesc *desc = source->GetStreamDesc();
-        NuSoundVoiceFactory *factory = factory_list.GetFactory(desc->GetDecodedDataFormat());
-        voice = factory->CreateVoice(source, loop);
-        if (voice == NULL) {
             return NULL;
         }
     }
@@ -1010,10 +999,14 @@ i32 NuSoundSystem::GetOutputChannelConfig() {
 
 i32 NuSoundSystem::GetClosestSupportedConfig(i32 config) {
     // libTTapp.so 0x31bcb0: config > 7 -> 8, config >= 6 -> 6, else 2.
-    if (config > 7) {
-        return 8;
+    i32 result = 8;
+    if (config <= 7) {
+        result = 2;
+        if (config >= 6) {
+            result = 6;
+        }
     }
-    return (config >= 6) ? 6 : 2;
+    return result;
 }
 
 i32 NuSoundSystem::GetNumAvailableOutputDevices() {
@@ -1044,59 +1037,59 @@ NuSoundEffect *NuSoundSystem::CreateEffect(NuSoundEffect::EffectType type) {
 
     switch (type) {
         case NuSoundEffect::EffectType::ATTENUATION: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectAttenuation), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1094");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectAttenuation();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectAttenuation), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1094"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectAttenuation();
             break;
         }
         case NuSoundEffect::EffectType::PITCH: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectPitch), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1100");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectPitch();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectPitch), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1100"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectPitch();
             break;
         }
         case NuSoundEffect::EffectType::FADER: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectFader), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1106");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectFader();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectFader), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1106"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectFader();
             break;
         }
         case NuSoundEffect::EffectType::PITCH_RAMP: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectPitchRamp), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1112");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectPitchRamp();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectPitchRamp), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1112"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectPitchRamp();
             break;
         }
         case NuSoundEffect::EffectType::RANDOM_VOLUME: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRandomVolume), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1118");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectRandomVolume();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRandomVolume), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1118"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectRandomVolume();
             break;
         }
         case NuSoundEffect::EffectType::RANDOM_PITCH: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRandomPitch), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1124");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectRandomPitch();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRandomPitch), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1124"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectRandomPitch();
             break;
         }
         case NuSoundEffect::EffectType::REPEAT: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRepeat), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1136");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectRepeat();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectRepeat), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1136"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectRepeat();
             break;
         }
         case NuSoundEffect::EffectType::DOPPLER: {
-            void *memory = _AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectDoppler), 4,
-                                        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1130");
-            if (memory != NULL)
-                effect = new (memory) NuSoundEffectDoppler();
+            effect = static_cast<NuSoundEffect *>(_AllocMemory(MemoryDiscipline::SCRATCH, sizeof(NuSoundEffectDoppler), 4,
+                                                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1130"));
+            if (effect != NULL)
+                new (effect) NuSoundEffectDoppler();
             break;
         }
         default:
@@ -1215,7 +1208,7 @@ void NuSoundEffectAttenuation::ProcessVoice(NuSoundVoice *voice, f32) {
 
     if (voice->GetSurroundMode() != NuSoundSystem::SurroundMode::TWO) {
         for (NuListNodeBase *node = attachments.Head(); node != attachments.Tail(); node = node->GetNext()) {
-            void *listener = static_cast<NuListNode<void *> *>(node)->value;
+            NuSoundListener *listener = static_cast<NuListNode<NuSoundVoiceListenerLink> *>(node)->value.listener;
             if (listener != NULL && listener == voice->focus_listener_link.listener) {
                 output_mix = attenuation;
                 return;

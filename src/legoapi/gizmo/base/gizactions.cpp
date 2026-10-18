@@ -66,7 +66,7 @@ static void GizAction_TurnOnFlowBox(GIZFLOW_s *flow, FLOWBOX_s *, char **params,
     if (name != NULL && flow != NULL) {
         for (i32 index = 0; index < flow->flowbox_count; ++index) {
             if (flow->flowboxes[index].name != NULL && NuStrICmp(flow->flowboxes[index].name, name) == 0)
-                flow->flowboxes[index].state_flags_low = (flow->flowboxes[index].state_flags_low & ~1) | (enabled & 1);
+                flow->flowboxes[index].active = enabled;
         }
     }
 }
@@ -108,7 +108,7 @@ static void GizActions_ChangeObstTriggerType(GIZFLOW_s *flow, FLOWBOX_s *, char 
             mode = 7;
         }
     }
-    if (mode == -1 || name == NULL) {
+    if (name == NULL || mode == -1) {
         return;
     }
     GIZMO_s *gizmo = GizmoFindByName(flow->gizmo_sys, obstacle_gizmotype_id, name);
@@ -405,6 +405,7 @@ static void GizAction_SetAIState(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
         origin = named_object->apiobj.collision_position;
     }
     for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index) {
+        i32 matching_type = type_count == 0;
         GameObject_s *object = &Obj[object_index];
         if ((object->apiobj.field_0x1f8 & (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER)) !=
                 (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER) ||
@@ -414,13 +415,12 @@ static void GizAction_SetAIState(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
         NUVEC difference;
         NuVecSub(&difference, &origin, &object->apiobj.position);
         f32 distance_squared = difference.x * difference.x + difference.y * difference.y + difference.z * difference.z;
-        i32 matching_type = type_count == 0;
         for (i32 type_index = 0; type_index < type_count; ++type_index) {
             if (object->id == types[type_index]) {
                 matching_type = 1;
             }
         }
-        if (matching_type != 0 && range_squared > distance_squared) {
+        if (range_squared > distance_squared && matching_type != 0) {
             object->ai.script_process.next_state = AIStateFind(state_name, object->ai.script_process.script);
         }
     }

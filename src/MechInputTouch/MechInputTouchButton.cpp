@@ -23,25 +23,11 @@ bool MechInputTouchButton::CouldTouchBeLockedBy(u32 touch_id) {
 }
 
 i32 MechInputTouchButton::FindPossibleTriggeringIndexFromID(u32 touch_id) {
-    if (possible_triggering_touch_ids[0] == touch_id)
-        return 0;
-    if (possible_triggering_touch_ids[1] == touch_id)
-        return 1;
-    if (possible_triggering_touch_ids[2] == touch_id)
-        return 2;
-    if (possible_triggering_touch_ids[3] == touch_id)
-        return 3;
-    if (possible_triggering_touch_ids[4] == touch_id)
-        return 4;
-    if (possible_triggering_touch_ids[5] == touch_id)
-        return 5;
-    if (possible_triggering_touch_ids[6] == touch_id)
-        return 6;
-    if (possible_triggering_touch_ids[7] == touch_id)
-        return 7;
-    if (possible_triggering_touch_ids[8] == touch_id)
-        return 8;
-    return possible_triggering_touch_ids[9] == touch_id ? 9 : -1;
+    for (i32 i = 0; i < 10; i++) {
+        if (possible_triggering_touch_ids[i] == touch_id)
+            return i;
+    }
+    return -1;
 }
 
 MechInputTouchButton::MechInputTouchButton(NuTouchInputElement::TYPE type, i32 index, i32 id)
@@ -153,32 +139,26 @@ MechInputTouchButtonFaker::MechInputTouchButtonFaker(i32 index, u32 id, float x,
 }
 
 void MechInputTouchButtonFaker::Render() {
-    if (is_pressed) {
-        if (index == 0x800) {
-            goto special_button;
-        }
-        NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width, width / height, 0x40,
-                     0.0f, 0.0f, 0.0f, 0.0f, colourWhite, g_nuMtlHandleNull);
-        NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.8f, width / height, 0x40,
-                     0.0f, 0.0f, 0.0f, 0.0f, colourWhite, g_nuMtlHandleNull);
+    u32 colour = colourWhite;
+    if (!is_pressed)
+        colour = id;
+    if (index == 0x800) {
+        NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.9f, width / height, 0x40, 0.0f, 0.0f, 0.0f, 0.0f,
+                     colourWhite, g_nuMtlHandleNull);
+        NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.7f, width / height, 0x40, 0.0f, 0.0f, 0.0f, 0.0f,
+                     is_pressed ? colourRed : colourBlack, g_nuMtlHandleNull);
+        NuRndrRect(x + width * 0.3f, y + height * 0.25f, 0.0f, width * 0.15f, height * 0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
+                   colourWhite, g_nuMtlHandleNull);
+        NuRndrRect(x + width * 0.6f, y + height * 0.25f, 0.0f, width * 0.15f, height * 0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
+                   colourWhite, g_nuMtlHandleNull);
         return;
     }
-    if (index == 0x800) {
-        goto special_button;
+    if (is_pressed) {
+        NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width, width / height, 0x40, 0.0f, 0.0f, 0.0f, 0.0f,
+                     colourWhite, g_nuMtlHandleNull);
     }
-    NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.8f, width / height, 0x40,
-                 0.0f, 0.0f, 0.0f, 0.0f, id, g_nuMtlHandleNull);
-    return;
-
-special_button:
-    NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.9f, width / height, 0x40,
-                 0.0f, 0.0f, 0.0f, 0.0f, colourWhite, g_nuMtlHandleNull);
-    NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.7f, width / height, 0x40,
-                 0.0f, 0.0f, 0.0f, 0.0f, is_pressed ? colourRed : colourBlack, g_nuMtlHandleNull);
-    NuRndrRect(x + width * 0.3f, y + height * 0.25f, 0.0f, width * 0.15f, height * 0.5f,
-               0.0f, 0.0f, 0.0f, 0.0f, colourWhite, g_nuMtlHandleNull);
-    NuRndrRect(x + width * 0.6f, y + height * 0.25f, 0.0f, width * 0.15f, height * 0.5f,
-               0.0f, 0.0f, 0.0f, 0.0f, colourWhite, g_nuMtlHandleNull);
+    NuRndrCircle(x + width * 0.5f, y + height * 0.5f, width * 0.8f, width / height, 0x40, 0.0f, 0.0f, 0.0f, 0.0f, colour,
+                 g_nuMtlHandleNull);
 }
 
 void MechInputTouchButtonFaker::Update(NuInputTouchData const *data) {
@@ -196,7 +176,7 @@ void MechInputTouchButtonFaker::Update(NuInputTouchData const *data) {
             f32 touch_x = touch.unknown_04;
             f32 touch_y = touch.unknown_08;
             if (touch.unknown_02 != 0 && touch_locked_by == 0xff) {
-                if (touch_x >= x && touch_y >= y && touch_x <= x + width && touch_y <= y + height) {
+                if (touch_y >= y && touch_x >= x && touch_x <= x + width && touch_y <= y + height) {
                     SetTouchLocked(id, false);
                 }
             }
@@ -206,7 +186,7 @@ void MechInputTouchButtonFaker::Update(NuInputTouchData const *data) {
             }
         }
     }
-    if (touch_locked_by != 0xff && !found_locked_touch) {
+    if (!found_locked_touch && touch_locked_by != 0xff) {
         ClearTouchLocked(false);
     }
 }

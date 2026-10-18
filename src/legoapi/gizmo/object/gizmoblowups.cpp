@@ -45,11 +45,6 @@
 #include "legoapi/items/fx/explosions.h"
 #include "legoapi/render/fx/edsplines.h"
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 i32 GizmoBlowup_HitMultiplier = 1;
 void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *) = NULL;
 u32 EXBLOWUPFLAGS = 0;
@@ -230,9 +225,8 @@ static void *Blowup_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
 static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     for (i32 index = 0; index < world->gizmo_blowup_count; ++index) {
-        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[index];
-        if (NuStrLen(blowup->name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, blowup);
+        if (NuStrLen(world->gizmo_blowups[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->gizmo_blowups[index]);
         }
     }
 }
@@ -405,10 +399,10 @@ void GizBlowup_Respawn(GIZMOBLOWUP_s *blowup) {
         i32 handle = -1;
         AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[2], &blowup->mid_position, 1);
     }
+    i32 handle = -1;
     if (blowup->type->particle_types[3] == -1) {
         return;
     }
-    i32 handle = -1;
     AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[3], &blowup->mid_position, 1);
 }
 
@@ -430,25 +424,25 @@ ADDGIZMOTYPE *NewBlowup_RegisterGizmo(i32 type_id) {
     addtype.name = "blowup";
     addtype.prefix = "";
     addtype.fns.unknown1 = 0x100;
-    addtype.fns.early_update_fn = GizmoBlowupEarlyUpdate;
-    addtype.fns.panel_draw_fn = NULL;
     addtype.fns.get_max_gizmos_fn = Blowup_GetMaxGizmos;
-    addtype.fns.get_visibility_fn = Blowup_GetVisibility;
-    addtype.fns.get_pos_fn = GizmoBlowup_GetPos;
-    addtype.fns.using_special_fn = NULL;
     addtype.fns.add_gizmos_fn = Blowup_AddGizmos;
-    addtype.fns.bolt_hit_plat_fn = NULL;
-    addtype.fns.get_best_bolt_target_fn = NULL;
+    addtype.fns.early_update_fn = GizmoBlowupEarlyUpdate;
     addtype.fns.late_update_fn = GizmoBlowupLateUpdate;
-    addtype.fns.bolt_hit_fn = NULL;
+    addtype.fns.draw_fn = GizmoBlowupBurstDraw;
+    addtype.fns.panel_draw_fn = NULL;
     addtype.fns.get_gizmo_name_fn = Blowup_GetGizmoName;
     addtype.fns.get_output_fn = Blowup_GetOutput;
     addtype.fns.get_output_name_fn = Blowup_GetOutputName;
-    addtype.fns.draw_fn = GizmoBlowupBurstDraw;
     addtype.fns.get_num_outputs_fn = Blowup_GetNumOutputs;
     addtype.fns.activate_fn = Blowup_Activate;
     addtype.fns.activate_rev_fn = NULL;
     addtype.fns.set_visibility_fn = Blowup_SetVisibility;
+    addtype.fns.get_visibility_fn = Blowup_GetVisibility;
+    addtype.fns.get_pos_fn = GizmoBlowup_GetPos;
+    addtype.fns.using_special_fn = NULL;
+    addtype.fns.bolt_hit_plat_fn = NULL;
+    addtype.fns.get_best_bolt_target_fn = NULL;
+    addtype.fns.bolt_hit_fn = NULL;
     addtype.fns.allocate_progress_data_fn = Blowup_AllocateProgressData;
     addtype.fns.clear_progress_fn = Blowup_ClearProgress;
     addtype.fns.store_progress_fn = Blowup_StoreProgress;
@@ -481,9 +475,8 @@ void GizmoBlowupLateUpdate(void *world_ptr, void *, float) {
 
 GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special, i32 flags, i32 *result) {
     for (i32 index = 0; index < world->gizmo_blowup_type_count; ++index) {
-        GIZMOBLOWUPTYPE_s *existing = &world->gizmo_blowup_types[index];
-        if (!(NuSpecialCompare(&existing->animated_special, special) != 0 &&
-              (flags != 0 || (existing->animation_flags & 0x20) != 0))) {
+        if (!(NuSpecialCompare(&world->gizmo_blowup_types[index].animated_special, special) != 0 &&
+              (flags != 0 || (world->gizmo_blowup_types[index].animation_flags & 0x20) != 0))) {
             continue;
         }
         *result = 0;
@@ -496,9 +489,11 @@ GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special,
 
     GIZMOBLOWUPTYPE_s *type = &world->gizmo_blowup_types[world->gizmo_blowup_type_count];
     nuhspecial_s *animated_special = &type->animated_special;
-    if (special != NULL && NuSpecialExistsFn(special)) {
-        *animated_special = *special;
-        NuStrCpy(type->name, NuSpecialGetName(animated_special));
+    if (special != NULL) {
+        if (NuSpecialExistsFn(special)) {
+            *animated_special = *special;
+            NuStrCpy(type->name, NuSpecialGetName(animated_special));
+        }
     }
     type->animation_start_frame = 1.0f;
     type->particle_types[0] = -1;
@@ -510,8 +505,7 @@ GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special,
     type->particle_types[3] = -1;
     type->effect_flags = 100;
     type->field_0xfb = 1;
-    type->type_flags = ((flags < 1) ? -1 : 0) & 0xffffe000;
-    type->type_flags += 0xe000;
+    type->type_flags = flags != 0 ? 0xe000 : 0xc000;
 
     nuinstanim_s *animation = NuSpecialGetInstAnim(animated_special);
     if (animation != NULL) {
@@ -702,10 +696,12 @@ void GizmoBlowUp_AddEffects(nuvec_s *position, GIZMOBLOWUP_s *blowup, i32 offset
 
 i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 damage, GameObject_s *object,
                       i32 hit_context) {
-    if (blowup == NULL || (blowup->state_flags & 0x80) == 0 || ((blowup->draw_flags & 0x20) && ShadowMode == 0) ||
-        !TouchHacks::CanBlowupBeBlownUp(*blowup, hit_type)) {
+    if (blowup == NULL || (blowup->state_flags & 0x80) == 0)
         return 0;
-    }
+    if ((blowup->draw_flags & 0x20) && ShadowMode == 0)
+        return 0;
+    if (!TouchHacks::CanBlowupBeBlownUp(*blowup, hit_type))
+        return 0;
     nuinstanim_s *animation = NuSpecialGetInstAnim(&blowup->type->animated_special);
     GIZMOBLOWUPTYPE_s *type = blowup->type;
     if (animation != NULL && type->animation_start_frame != type->animation_end_frame) {
@@ -821,9 +817,11 @@ i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 dama
                 NuSpecialSetVisibility(&type->animated_special, 0);
             }
         }
-        if ((blowup->draw_flags & 0x400) == 0 && NuSpecialExistsFn(&blowup->type->decal_special)) {
-            blowup->animation_time = 0.1f;
-            blowup->state_flags |= 2;
+        if ((blowup->draw_flags & 0x400) == 0) {
+            if (NuSpecialExistsFn(&blowup->type->decal_special)) {
+                blowup->animation_time = 0.1f;
+                blowup->state_flags |= 2;
+            }
         }
         if (blowup->draw_flags & 0x800) {
             GizmoBlowupCreateStuff(blowup);
@@ -1627,8 +1625,8 @@ i32 gizmoblowup_Load(void *world_ptr, void *) {
             reinterpret_cast<char *>(&blowup.platform_id)[0] = '\0';
         }
         GIZMOBLOWUPTYPE_s *type = GizmoBlowup_FindType(text, world);
-        GIZMOBLOWUP_s *destination = NULL;
         i32 skip;
+        GIZMOBLOWUP_s *destination = NULL;
         if (type == NULL) {
             skip = 1;
         } else {
@@ -1852,7 +1850,7 @@ void GizmoBlowupsFinalSetup(WORLDINFO_s *world) {
 
 GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_radius, f32 minimum_radius, i32 mode,
                                    u32 mask, u32 value, u32 secondary_mask) {
-    if (forceNextAttackOpponent.Get() != NULL && (object->apiobj.flags_low & 0x80) != 0) {
+    if (forceNextAttackOpponent.Get() != NULL && object->apiobj.player_controlled) {
         return forceNextAttackOpponent->GetGizBlowup();
     }
     GIZMOBLOWUP_s *target = WORLD->gizmo_blowups;
@@ -1862,7 +1860,7 @@ GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_ra
         GizmoBlowUpOpponent_Behind = 0;
         for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++target) {
             if ((target->status_flags & 0x80c001) != 0x80c000 ||
-                ((object->apiobj.flags_low & 0x80) != 0 && target->platform_id != -1 &&
+                (object->apiobj.player_controlled && target->platform_id != -1 &&
                  target->platform_id == object->apiobj.supporting_platform_id))
                 continue;
             u32 flags = target->draw_flags;

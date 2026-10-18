@@ -705,7 +705,9 @@ struct CABLE_s {
     u8 wrap_indices[15];
     u8 point_count;
     u8 wrap_count;
-    u8 flags_1e9;
+    u8 active : 1;
+    u8 armed : 1;
+    u8 released : 1;
     u8 unknown_1ea[2];
 };
 DECOMP_ASSERT(offsetof(CABLE_s, segment_lengths) == 0x188, "CABLE_s segment lengths offset");
@@ -719,7 +721,7 @@ DECOMP_ASSERT(offsetof(CABLE_s, velocities) == 0xc8, "CABLE_s velocities offset"
 DECOMP_ASSERT(offsetof(CABLE_s, point_count) == 0x1e7, "CABLE_s point count offset");
 DECOMP_ASSERT(offsetof(CABLE_s, target) == 0x04, "CABLE_s target offset");
 DECOMP_ASSERT(offsetof(CABLE_s, max_length) == 0x1c4, "CABLE_s max length offset");
-DECOMP_ASSERT(offsetof(CABLE_s, flags_1e9) == 0x1e9, "CABLE_s tied flags offset");
+DECOMP_ASSERT(offsetof(CABLE_s, unknown_1ea) == 0x1ea, "CABLE_s flags size");
 DECOMP_ASSERT(sizeof(CABLE_s) == 0x1ec, "CABLE_s ABI");
 struct CHARACTERDATA_s {};
 struct CHARCATEGORY {
@@ -1192,14 +1194,17 @@ struct FLOWBOX_s {
             u8 state_flags_high;
         };
         struct {
-            u8 state_low_bits : 2;
+            u8 active : 1;
+            u8 completed : 1;
             u8 start_invisible : 1;
             u8 finished_invisible : 1;
             u8 finished_deactive : 1;
             u8 state_low_bit5 : 1;
             u8 reverse : 1;
             u8 reverse_invisible : 1;
-            u8 state_high_bits : 4;
+            u8 state_high_bits : 2;
+            u8 output_state : 1;
+            u8 state_high_bit3 : 1;
             u8 output_only : 1;
             u8 freeplay : 1;
             u8 story_mode : 1;
@@ -1519,18 +1524,21 @@ DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, tick_fn) == 0x104, "game message runtime t
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).
 struct RUMBLEPACKET {
-    u32 field_0x00;
-    f32 rumble_amount; // 0x04
-    u32 field_0x08;
-    f32 rumble_time; // 0x0c
+    f32 amount;    // 0x00
+    f32 time;      // 0x04, counts down each frame
+    f32 duration;  // 0x08
+    f32 buzz_time; // 0x0c, counts down each frame
     union {
         u32 field_0x10;
         struct {
-            u8 active;
+            u8 priority; // counts down each frame
             u8 pad_0x11[3];
         };
     };
 };
+DECOMP_ASSERT(sizeof(RUMBLEPACKET) == 0x14, "RUMBLEPACKET size");
+DECOMP_ASSERT(offsetof(RUMBLEPACKET, buzz_time) == 0x0c, "RUMBLEPACKET buzz time offset");
+DECOMP_ASSERT(offsetof(RUMBLEPACKET, priority) == 0x10, "RUMBLEPACKET priority offset");
 struct GAMEPAD_s {
     nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
     union {
@@ -1585,7 +1593,14 @@ struct GAMEPAD_s {
     RUMBLEPACKET rumble_packet; // 0x40
     void *operator_data;        // 0x54
     u16 previous_input_angle;
-    u8 allocated_5a; // allocation and input-state flags
+    union {
+        u8 allocated_5a; // allocation and input-state flags
+        struct {
+            u8 : 3;
+            u8 waggled : 1;
+            u8 : 4;
+        };
+    };
     char pad_5b[0x60 - 0x5b];
 };
 enum GAMEPAD_RUNTIME_FLAGS : u8 {
@@ -2479,18 +2494,7 @@ struct STATUSPACKET_s {
     EPISODEDATA *episode;                                         // 0x18
     u32 *score;                                                   // 0x1c
     struct MISSIONDATA_s *mission;                                // 0x20
-    f32 player0_rumble_amount;                                    // 0x24
-    f32 player0_rumble_time;                                      // 0x28
-    f32 player0_rumble_duration;                                  // 0x2c
-    f32 player0_buzz_amount;                                      // 0x30
-    u8 player0_rumble_priority;                                   // 0x34
-    undefined field_0x35[0x38 - 0x35];
-    f32 player1_rumble_amount;   // 0x38
-    f32 player1_rumble_time;     // 0x3c
-    f32 player1_rumble_duration; // 0x40
-    f32 player1_buzz_amount;     // 0x44
-    u8 player1_rumble_priority;  // 0x48
-    u8 field_0x49[3];
+    RUMBLEPACKET rumble[2];                                       // 0x24
     f32 area_time;          // 0x4c
     f32 collected_score;    // 0x50
     f32 true_hero_target;   // 0x54
@@ -2509,18 +2513,11 @@ struct STATUSPACKET_s {
     u32 coins_collected[2];  // 0x8c
     i32 new_minikits;        // 0x94
     u32 field_0x98;
-    u16 player0_model; // 0x9c
-    u16 player1_model; // 0x9e
+    u16 player_model[2]; // 0x9c
     i16 area_id;       // 0xa0
     i8 episode_id;     // 0xa2
     u8 field_0xa3;
-    union {
-        u8 player_active[2];
-        struct {
-            u8 player0_active;
-            u8 player1_active;
-        };
-    };
+    u8 player_active[2];  // 0xa4
     u8 challenge_state;   // 0xa6
     u8 mission_state;     // 0xa7
     f32 superstory_time;  // 0xa8
@@ -2528,7 +2525,8 @@ struct STATUSPACKET_s {
     union {
         u8 field_0xb0;
         struct {
-            u8 : 2;
+            u8 field_0xb0_0 : 1;
+            u8 : 1;
             u8 true_hero_complete : 1;
             u8 next_area_unlocked : 1;
             u8 new_minikit_complete : 1;
@@ -2577,8 +2575,10 @@ DECOMP_ASSERT(sizeof(STATUSPACKET_s) == 0x14c, "STATUSPACKET_s size");
 DECOMP_ASSERT(offsetof(STATUSPACKET_s, field_0xb0) == 0xb0, "STATUSPACKET state flags offset");
 DECOMP_ASSERT(offsetof(STATUSPACKET_s, mode_flags) == 0xb1, "STATUSPACKET mode flags offset");
 DECOMP_ASSERT(offsetof(STATUSPACKET_s, player_active) == 0xa4, "STATUSPACKET active-player array offset");
-DECOMP_ASSERT(offsetof(STATUSPACKET_s, player0_active) == 0xa4, "STATUSPACKET player 0 activity offset");
-DECOMP_ASSERT(offsetof(STATUSPACKET_s, player1_active) == 0xa5, "STATUSPACKET player 1 activity offset");
+DECOMP_ASSERT(offsetof(STATUSPACKET_s, rumble) == 0x24, "STATUSPACKET rumble packets offset");
+DECOMP_ASSERT(offsetof(STATUSPACKET_s, area_time) == 0x4c, "STATUSPACKET area time offset");
+DECOMP_ASSERT(offsetof(STATUSPACKET_s, player_model) == 0x9c, "STATUSPACKET player models offset");
+DECOMP_ASSERT(offsetof(STATUSPACKET_s, area_id) == 0xa0, "STATUSPACKET area id offset");
 DECOMP_ASSERT(sizeof(((STATUSPACKET_s *)0)->player_active) == 2, "STATUSPACKET active-player array extent");
 struct STATUSPACKET_LSW_s {
     i32 field_0x00;
@@ -3467,7 +3467,8 @@ struct minisnowtrooper_s {
             u8 state_low_bits : 2;
             u8 step_frame : 2;
             u8 slot : 2;
-            u8 state_high_bits : 2;
+            u8 stopped : 1;
+            u8 aligned : 1;
         };
     };
     u8 reserved_002;
@@ -3736,30 +3737,37 @@ struct pushblock_s {
         struct {
             u8 runtime_flags_0c8;
             u8 runtime_flags_0c9;
-            union {
-                u8 flags_0ca;
-                struct {
-                    u8 fields_0ca_0_1 : 2;
-                    u8 push_visible : 1;
-                    u8 fields_0ca_3 : 1;
-                    u8 config_0ca_4 : 1;
-                    u8 config_0ca_5 : 1;
-                    u8 config_0ca_6 : 1;
-                    u8 config_0ca_7 : 1;
-                };
-            };
-            union {
-                u8 flags_0cb;
-                struct {
-                    u8 fields_0cb_0_1 : 2;
-                    u8 config_0cb_2 : 1;
-                    u8 config_0cb_3 : 1;
-                    u8 field_0cb_4 : 1;
-                    u8 config_0cb_5 : 1;
-                    u8 config_0cb_6 : 1;
-                    u8 field_0cb_7 : 1;
-                };
-            };
+            u8 flags_0ca;
+            u8 flags_0cb;
+        };
+        struct {
+            u32 pushed : 1;     // 0xc8
+            u32 was_pushed : 1;
+            u32 flag_0c8_2 : 1;
+            u32 moving : 1;
+            u32 was_moving : 1;
+            u32 flag_0c8_5 : 1;
+            u32 flag_0c8_6 : 1;
+            u32 knocked : 1;
+            u32 flag_0c9_0 : 1; // 0xc9
+            u32 seeking : 1;
+            u32 flag_0c9_2 : 1;
+            u32 flag_0c9_3 : 1;
+            u32 snap_position_count : 3;
+            u32 snap_index : 3; // 0xc9 bit 7 and 0xca bits 0-1
+            u32 push_visible : 1;
+            u32 fields_0ca_3 : 1;
+            u32 config_0ca_4 : 1;
+            u32 config_0ca_5 : 1;
+            u32 config_0ca_6 : 1;
+            u32 config_0ca_7 : 1;
+            u32 fields_0cb_0_1 : 2; // 0xcb
+            u32 config_0cb_2 : 1;
+            u32 config_0cb_3 : 1;
+            u32 field_0cb_4 : 1;
+            u32 config_0cb_5 : 1;
+            u32 config_0cb_6 : 1;
+            u32 field_0cb_7 : 1;
         };
         u8 state_flags[4];
         u32 packed_state_flags;
@@ -5489,7 +5497,15 @@ struct PART_s {
     }; // 0x13e
     u16 field_140;
     u8 rotation_axis_1, rotation_axis_2;
-    u8 active;
+    union {
+        u8 active;
+        struct {
+            u8 : 4;
+            u8 active_bit4 : 1;
+            u8 radius_state : 2;
+            u8 : 1;
+        };
+    };
     u8 render_flags;
     u8 reflection_flags;
     u8 pad_147;

@@ -357,13 +357,20 @@ typedef struct AIPACKET_s {
             u8 circle_clockwise : 1;
             u8 circle_active : 1;
             u8 opponent_is_threat : 1;
-            u8 packet_flags_1e5_4_6 : 3;
+            u8 field_0x1e5_bit4 : 1;
+            u8 field_0x1e5_bit5 : 1;
+            u8 field_0x1e5_bit6 : 1;
             u8 antinode_clockwise : 1;
         };
     };
     union {
         u8 runtime_flags;
         u8 field_0x1e6;
+        struct {
+            u8 : 2;
+            u8 zero_acceleration : 1;
+            u8 : 5;
+        };
     };
     union {
         u8 movement_event_flags;
@@ -508,7 +515,8 @@ typedef struct APIOBJECT_s {
                     u8 : 1;
                     // Objects with this bit are not pushed apart by 2D collision resolution.
                     u8 flags_low_bit1 : 1;
-                    u8 : 6;
+                    u8 : 5;
+                    u8 is_player : 1;
                 };
             };
             union {
@@ -1155,18 +1163,54 @@ typedef struct GameObject_s {
     union {
         struct {
             u8 field_0xe20;
-            u8 field_0xe21;
+            union {
+                u8 field_0xe21;
+                struct {
+                    u8 force_choke_target : 1;
+                    u8 force_direct_target : 1;
+                    u8 force_highlighted : 1;
+                    u8 has_attack_target : 1;
+                    u8 : 1;
+                    u8 field_0xe21_bit5 : 1;
+                    u8 idle_phase_odd : 1;
+                    u8 field_0xe21_bit7 : 1;
+                };
+            };
         };
         u16 action_flags; // 0x0e20
     };
-    u8 field_0xe22;            // 0x0e22
-    u8 field_0xe23;            // 0x0e23
-    u8 field_0xe24;            // 0x0e24
+    u8 field_0xe22; // 0x0e22
+    union {
+        u8 field_0xe23; // 0x0e23
+        struct {
+            u8 field_0xe23_bit0 : 1;
+            u8 : 2;
+            u8 drawn_last_frame : 1;
+            u8 has_movement_input : 1;
+            u8 blocked_special : 1;
+            u8 weapon_out : 1;
+            u8 tag_highlighted : 1;
+        };
+    };
+    union {
+        u8 field_0xe24; // 0x0e24
+        struct {
+            u8 : 3;
+            u8 locators_updated : 1;
+            u8 : 4;
+        };
+    };
     u8 movement_runtime_flags; // 0x0e25
     union {
         u8 pad_e26[0xe2b - 0xe26];
         struct {
-            u8 flicker_flags;
+            union {
+                u8 flicker_flags;
+                struct {
+                    u8 flicker_kind : 3;
+                    u8 : 5;
+                };
+            };
             u8 reserved_e27[4];
         };
     };
@@ -1284,50 +1328,123 @@ typedef struct GameObject_s {
     f32 field_0xeec; // 0x0eec
     f32 field_0xef0;
     f32 pause_context_state; // 0x0ef4, icon timer, also cleared when entering pause
-    u8 field_0xef8;          // 0x0ef8
-    u8 field_0xef9;          // 0x0ef9
+    union {
+        u8 field_0xef8; // 0x0ef8, GAMEOBJECT_EF8_FLAGS
+        struct {
+            u8 : 4;
+            u8 keep_weapon_out : 1;
+            u8 : 3;
+        };
+    };
+    union {
+        u8 field_0xef9; // 0x0ef9
+        struct {
+            u8 : 1;
+            u8 can_attack : 1;
+            u8 : 6;
+        };
+    };
     union {
         u8 field_0xefa; // 0x0efa
         struct {
             u8 : 4;
             u8 respawnable : 1;
             u8 respawn_at_origin : 1;
-            u8 : 2;
+            u8 portal_enabled : 1;
+            u8 portal_update_room : 1;
         };
     };
-    u8 field_0xefb; // 0x0efb, bit 3 requests the two-row hit-point layout
+    union {
+        u8 field_0xefb; // 0x0efb
+        struct {
+            u8 only_attack_players : 1;
+            u8 catch_up_forbidden : 1;
+            u8 cannot_drop_in : 1;
+            u8 is_boss : 1; // also requests the two-row hit-point layout
+            u8 can_shoot_obstructions : 1;
+            u8 use_weapon : 1;
+            u8 prefers_players : 1;
+            u8 no_gravity : 1;
+        };
+    };
     union {
         u32 field_0xefc_word;
         struct {
-            u8 field_0xefc; // 0x0efc
+            union {
+                u8 field_0xefc; // 0x0efc
+                struct {
+                    u8 ignore_shove_system : 1;
+                    u8 cannot_be_seen : 1;
+                    u8 : 1;
+                    u8 bolts_dont_get_deflected_back : 1;
+                    u8 dont_move : 1;
+                    u8 dont_set_stopped_flag : 1;
+                    u8 : 1;
+                    u8 reset_lighting : 1;
+                };
+            };
             union {
                 u8 field_0xefd;
                 struct {
                     u8 : 1;
                     u8 random_layer_variant : 1;
                     u8 snap_facing : 1;
-                    u8 : 5;
+                    u8 doomed_escape_take_damage : 1;
+                    u8 still_take_hit : 1;
+                    u8 jump_mode : 1;
+                    u8 : 2;
                 };
             }; // 0x0efd
-            u8 field_0xefe; // 0x0efe
-            u8 field_0xeff; // 0x0eff
+            union {
+                u8 field_0xefe; // 0x0efe
+                struct {
+                    u8 head_turn_restricted : 1;
+                    u8 has_shadow_matrix : 1;
+                    u8 has_been_drawn : 1;
+                    u8 camera_ray_blocked : 1;
+                    u8 camera_ray_blocked_settled : 1;
+                    u8 field_0xefe_bit5 : 1;
+                    u8 invulnerable : 1;
+                    u8 can_pull_levers : 1;
+                };
+            };
+            union {
+                u8 field_0xeff; // 0x0eff
+                struct {
+                    u8 not_with_party : 1;
+                    u8 touched_ground : 1;
+                    u8 hide_shadow : 1;
+                    u8 ignore_players : 1;
+                    u8 cannot_be_forced_back : 1;
+                    u8 can_turn : 1;
+                    u8 can_take_over : 1;
+                    u8 high_collision_priority : 1;
+                };
+            };
         };
     };
     union {
         u8 field_0xf00; // 0x0f00
         struct {
-            u8 : 7;
+            u8 : 1;
+            u8 can_be_carried : 1;
+            u8 : 3;
+            u8 time_based_update_disabled : 1;
+            u8 : 1;
             u8 awkward_shape_override : 1;
         };
     };
     union {
         u8 field_0xf01; // 0x0f01
         struct {
-            u8 : 2;
+            u8 model_drawn_last_frame : 1;
+            u8 being_towed : 1;
             u8 ignore_slide_terrain : 1;
-            u8 : 1;
+            u8 is_female : 1;
             u8 spline_follow_terrain : 1;
-            u8 : 3;
+            u8 use_one_at_once : 1;
+            u8 field_0xf01_bit6 : 1;
+            u8 field_0xf01_bit7 : 1;
         };
     };
     union {
@@ -1338,7 +1455,14 @@ typedef struct GameObject_s {
             u8 : 3;
         };
     };
-    u8 field_0xf03; // GAMEOBJECT_F03_FLAGS
+    union {
+        u8 field_0xf03; // GAMEOBJECT_F03_FLAGS
+        struct {
+            u8 ignore_last_safe_path_pos : 1;
+            u8 no_idle_speed : 1;
+            u8 : 6;
+        };
+    };
     union {
         u8 field_0xf04;
         u8 jump_input_flags; // 0x0f04, buffered airborne action inputs
@@ -1553,6 +1677,9 @@ DECOMP_ASSERT(offsetof(GameObject_s, movement_spline) == 0xe70, "GameObject move
 DECOMP_ASSERT(offsetof(GameObject_s, movement_spline_position) == 0xe70, "GameObject spline position offset");
 DECOMP_ASSERT(offsetof(GameObject_s, takeover_target) == 0xeb0, "GameObject reciprocal takeover target offset");
 DECOMP_ASSERT(sizeof(GameObject_s) == 0x10e4, "GameObject size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(GameObject_s, field_0xefb) == 0xefb, "GameObject 0xefb flags offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(GameObject_s, field_0xefc) == 0xefc, "GameObject 0xefc flags offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(GameObject_s, field_0xeff) == 0xeff, "GameObject 0xeff flags offset");
 DECOMP_ASSERT(offsetof(GameObject_s, turn_braking) == 0xd98, "GameObject turn braking offset");
 DECOMP_ASSERT(offsetof(GameObject_s, field_0xdb0) == 0xdb0, "GameObject protocol-droid movement field offset");
 DECOMP_ASSERT(sizeof(AIPACKET) == 0x208, "AIPACKET size");

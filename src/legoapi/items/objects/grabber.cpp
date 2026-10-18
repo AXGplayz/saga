@@ -177,7 +177,7 @@ void Grabber_Configure(WORLDINFO_s *world, char *config) {
     world->grabber = grabber;
     Grab_grabber = grabber;
     world->giz_buffer.addr += sizeof(*grabber);
-    grabber->special = special;
+    Grab_grabber->special = special;
 
     NUFPAR *parser = NuFParCreateMem("grabbers", config, 0xffff);
     if (parser == NULL) {
@@ -195,40 +195,40 @@ void Grabber_Configure(WORLDINFO_s *world, char *config) {
                     NuFParInterpretWord(parser);
                 }
             } else {
-                grabber->radius = 0.5f;
-                grabber->move_xy = 0;
-                grabber->flags_559 = (grabber->flags_559 & ~0x08) | 0x10;
-                grabber->invert_x = 0;
-                grabber->speed = 1.0f;
-                grabber->character_id = id_GRABMACHINE;
-                grabber->scale = 1.0f;
+                Grab_grabber->radius = 0.5f;
+                Grab_grabber->move_xy = 0;
+                Grab_grabber->flags_559 = (Grab_grabber->flags_559 & ~0x08) | 0x10;
+                Grab_grabber->invert_x = 0;
+                Grab_grabber->speed = 1.0f;
+                Grab_grabber->character_id = id_GRABMACHINE;
+                Grab_grabber->scale = 1.0f;
                 active = 1;
             }
         }
     }
     NuFParDestroy(parser);
 
-    if (grabber->character_id != -1) {
-        grabber->character_model = APICharacterLoaded(grabber->character_id);
+    if (Grab_grabber->character_id != -1) {
+        Grab_grabber->character_model = APICharacterLoaded(Grab_grabber->character_id);
     } else {
-        grabber->character_model = NULL;
+        Grab_grabber->character_model = NULL;
     }
 
-    if (grabber->character_model == NULL) {
-        NuSpecialSetVisibility(&grabber->special, 1);
-        grabber->character_id = -1;
+    if (Grab_grabber->character_model == NULL) {
+        NuSpecialSetVisibility(&Grab_grabber->special, 1);
+        Grab_grabber->character_id = -1;
     } else {
-        NuSpecialSetVisibility(&grabber->special, 0);
+        NuSpecialSetVisibility(&Grab_grabber->special, 0);
     }
 
-    grabber->matrix = *NuSpecialGetDrawMtx(&grabber->special);
+    Grab_grabber->matrix = *NuSpecialGetDrawMtx(&Grab_grabber->special);
     if (world->current_level == DEATHSTARRESCUEA_LDATA) {
-        grabber->matrix.m31 -= 0.3f;
+        Grab_grabber->matrix.m31 -= 0.3f;
     }
 
-    memmove(&grabber->initial_position, &grabber->position, sizeof(grabber->position));
-    NuSpecialFind(world->current_gscn, &grabber->shadow_special, "grabber_shadow", 1);
-    grabber->platform_id = -1;
+    memmove(&Grab_grabber->initial_position, &Grab_grabber->position, sizeof(Grab_grabber->position));
+    NuSpecialFind(world->current_gscn, &Grab_grabber->shadow_special, "grabber_shadow", 1);
+    Grab_grabber->platform_id = -1;
 }
 
 // Original 0x22aae0, 264 bytes.
@@ -273,7 +273,7 @@ static void Grabber_SetVictimPos(GRABBER_s *grabber) {
         } else {
             victim->apiobj.position = position;
         }
-        victim->field_0xeff &= ~2;
+        victim->touched_ground = 0;
         grabber->victim->saved_position = grabber->victim->apiobj.position;
     }
 }
@@ -435,7 +435,7 @@ void Grabber_Update(WORLDINFO_s *world) {
                      g->direction_switches[0]->anim_set->state == 2;
         bool plus = g->direction_switches[1] && (g->direction_switches[1]->progress_flags & 2) &&
                     g->direction_switches[1]->anim_set->state == 2;
-        if (__builtin_expect(minus && !plus, 1))
+        if (minus && !plus)
             g->target_velocity.x = -g->speed;
         else if (plus && !minus)
             g->target_velocity.x = g->speed;
@@ -445,7 +445,7 @@ void Grabber_Update(WORLDINFO_s *world) {
                 g->direction_switches[3]->anim_set->state == 2;
         if (plus && !minus)
             g->target_velocity.z = g->speed;
-        else if (__builtin_expect(minus && !plus, 0))
+        else if (minus && !plus)
             g->target_velocity.z = -g->speed;
         if (!NuSpecialGetVisibilityFn(&g->special))
             g->target_velocity.z = g->target_velocity.x = 0.0f;
@@ -525,7 +525,7 @@ void Grabber_Update(WORLDINFO_s *world) {
     if (g->flags_559 & 8)
         g->yaw = SeekRot(g->yaw, g->target_yaw, 3.0f);
     matrix = g->matrix;
-    if (__builtin_expect(!!(g->flags_559 & 8), 0))
+    if (__builtin_expect(!!(g->flags_559 & 8), 1))
         NuMtxPreRotateY(&matrix, g->yaw);
     if (__builtin_expect(g->scale != 1.0f, 0)) {
         NUVEC scale = {g->scale, g->scale, g->scale};
@@ -585,7 +585,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             break;
         case 1: {
             f32 *frame = AnimPlaying(&g->animation, 102, 1, 0);
-            if (__builtin_expect(!frame, 1))
+            if (__builtin_expect(!frame, 0))
                 break;
             g->animation_timer -= FRAMETIME;
             if (g->animation_timer <= 0) {
@@ -714,8 +714,8 @@ void Grabber_Update(WORLDINFO_s *world) {
         g->victim->apiobj.field_0x27d = 0;
     }
     if (g->character_id == id_GRABMACHINE) {
-        i32 mask = 0;
         bool found = false;
+        i32 mask = 0;
         for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
             GameObject_s *object = &Obj[i];
             if (__builtin_expect((object->apiobj.object_flags & 0x1001) != 0x1001, 0))

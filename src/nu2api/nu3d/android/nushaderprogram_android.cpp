@@ -12,7 +12,7 @@
 // The 16-byte type alignment supplies the trailing padding in the original 0x810-byte pool.
 struct __attribute__((aligned(16))) ShaderProgramPool {
     NUSHADERPROGRAM programs[64];
-    u8 occupied[8];
+    i8 occupied[8];
     i32 next;
 
     ShaderProgramPool() : next(0) {
@@ -65,7 +65,7 @@ static inline __attribute__((always_inline)) i32 GetHLSLRegisterIndexImpl(const 
     const char *constants = strstr(source, "//NU2API CONSTANTS :");
     const char *match = strstr(source, search_name);
     const char *attributes = strstr(source, "//NU2API ATTRIBS :");
-    if (constants == NULL || match == NULL || (attributes != NULL && match >= attributes)) {
+    if (match == NULL || constants == NULL || (attributes != NULL && match >= attributes)) {
         return -1;
     }
     const char *number = match + NuStrLen(search_name);
@@ -90,7 +90,7 @@ static inline __attribute__((always_inline)) i32 GetHLSLRegisterIndexImpl(const 
 #endif
     i32 index = NuAToI(const_cast<char *>(number));
     const char *declaration = strstr(number, uniform_name + 1);
-    if (declaration == NULL || declaration <= number) {
+    if (declaration <= number || declaration == NULL) {
         return -1;
     }
     for (const char *cursor = declaration - 1; *cursor != '\n'; --cursor) {
@@ -183,23 +183,25 @@ static void BuildRegisterIndexToUniformLocationMapping(NUSHADERPROGRAM *result, 
 }
 
 extern "C" NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, const char *fragment_source) {
+    const char *vertex_text = vertex_source;
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    NuStrLen(vertex_source);
-    char *precision = const_cast<char *>(strstr(vertex_source, "precision mediump float;"));
+    NuStrLen(vertex_text);
+    char *precision = const_cast<char *>(strstr(vertex_text, "precision mediump float;"));
     if (precision != NULL) {
         memcpy(precision, "precision highp float;  ", NuStrLen("precision highp float;  "));
     }
-    glShaderSource(vertex_shader, 1, &vertex_source, NULL);
+    glShaderSource(vertex_shader, 1, &vertex_text, NULL);
     glCompileShader(vertex_shader);
     GLint compiled = 0;
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &compiled);
-    if (__builtin_expect(compiled == 0, 0)) {
+    if (compiled == 0) {
         glDeleteShader(vertex_shader);
     }
 
+    const char *fragment_text = fragment_source;
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    NuStrLen(fragment_source);
-    glShaderSource(fragment_shader, 1, &fragment_source, NULL);
+    NuStrLen(fragment_text);
+    glShaderSource(fragment_shader, 1, &fragment_text, NULL);
     glCompileShader(fragment_shader);
     compiled = 0;
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &compiled);
@@ -218,8 +220,8 @@ extern "C" NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, 
     if (__builtin_expect(start <= 63, 1)) {
         i32 slot = start;
         do {
-            if ((programPool.occupied[slot / 8] & (1 << (slot & 7))) == 0) {
-                programPool.occupied[slot / 8] |= 1 << (slot & 7);
+            if ((programPool.occupied[slot >> 3] & (1 << (slot & 7))) == 0) {
+                programPool.occupied[slot >> 3] |= 1 << (slot & 7);
                 programPool.next = (slot + 1) % 64;
                 result = &programPool.programs[slot];
                 break;
@@ -229,8 +231,8 @@ extern "C" NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, 
     if (result == NULL && start > 0) {
         i32 slot = 0;
         do {
-            if ((programPool.occupied[slot / 8] & (1 << (slot & 7))) == 0) {
-                programPool.occupied[slot / 8] |= 1 << (slot & 7);
+            if ((programPool.occupied[slot >> 3] & (1 << (slot & 7))) == 0) {
+                programPool.occupied[slot >> 3] |= 1 << (slot & 7);
                 programPool.next = (slot + 1) % 64;
                 result = &programPool.programs[slot];
                 break;

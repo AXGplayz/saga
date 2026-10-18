@@ -232,6 +232,15 @@ static NuDataPort<NuProxyAttachment *> portMotionVelocityBuffer;
 static NuProxyBuffer proxyMotionVelocityBuffer;
 static VirtualStackAllocator filterAllocator(filterMem, sizeof(filterMem));
 
+template <typename T> static void DestroyPostFilter(T *&slot) {
+    NuPostFilterGen *filter = slot;
+    if (filter != NULL) {
+        filter->destroyTextureResources();
+        filter->destroyResources();
+        slot = NULL;
+    }
+}
+
 template <typename T> static T *AllocatePostFilter() {
     T *filter = reinterpret_cast<T *>(filterAllocator.cursor);
     filterAllocator.cursor += sizeof(T);
@@ -326,21 +335,6 @@ NuCriticalSection criticalSection("Texture");
 
 static inline void PostBlurSetVertexParam(nushaderprogram_s *, u32, const f32 *, i32);
 
-static inline void LightBoundsPoint(const VuVec &point, NUVEC &minimum, NUVEC &maximum) {
-    if (point.x < minimum.x)
-        minimum.x = point.x;
-    else if (point.x > maximum.x)
-        maximum.x = point.x;
-    if (point.y < minimum.y)
-        minimum.y = point.y;
-    else if (point.y > maximum.y)
-        maximum.y = point.y;
-    if (point.z < minimum.z)
-        minimum.z = point.z;
-    else if (point.z > maximum.z)
-        maximum.z = point.z;
-}
-
 static inline VuVec LightClipTransform(const VuVec &point, const NUMTX &matrix) {
     VuVec result;
     result.x = point.x * matrix.m00;
@@ -387,18 +381,6 @@ static inline NUVEC ShadowCross(const VuVec &a, const VuVec &b, const VuVec &ori
     return normal;
 }
 
-static inline void CapsuleAdd(VuVec &sum, const VuVec &point) {
-    sum.x += point.x;
-    sum.y += point.y;
-    sum.z += point.z;
-}
-static inline float CapsuleDistance(const VuVec &center, const VuVec &point, float &radius) {
-    float x = center.x - point.x, y = center.y - point.y, z = center.z - point.z;
-    float distance = x * x + y * y + z * z;
-    radius = distance > radius ? distance : radius;
-    return distance;
-}
-
 static inline VuVec WarpTransformPoint(const VuVec &point, const NUMTX &matrix) {
     NUMTX copy;
     copy.m00 = matrix.m00;
@@ -429,7 +411,9 @@ static inline void WarpAccumulatePoint(const VuVec &point, const NUMTX &matrix, 
     output.z = result.z;
     output.w = result.w;
     min_z = result.z < min_z ? result.z : min_z;
-    min_y = result.y < min_y ? result.y : min_y;
+    if (result.y < min_y) {
+        min_y = result.y;
+    }
     max_z = max_z < result.z ? result.z : max_z;
     max_y = max_y < result.y ? result.y : max_y;
 }
@@ -805,7 +789,7 @@ static inline __attribute__((always_inline)) void ResetSceneBeforeFrame(nudispla
         return;
     }
 
-    if (gated ? __builtin_expect(scene->nmtls != 0, 0) : scene->nmtls != 0) {
+    if (scene->nmtls != 0) {
         NuMemSet128(scene->mtl_used[NuDisplaySceneCurrentBuffer(scene)], 0, ((scene->nmtls + 7) >> 7) + 1);
     }
 
@@ -925,26 +909,6 @@ extern "C" {
     i32 PS2_SREZ_W = 4096;
     i32 PS2_SREZ_H = 4096;
     static i32 current_clip_scissor_to_viewport;
-    static void NuCameraBuildClipProjection(NUMTX *projection, NUCAMERA *camera, f32 x_scale, f32 y_scale) {
-        f32 far_clip;
-        if (camera->unknown_64 == 0.0f)
-            far_clip = camera->far_clip - nucamera_farclip_hack;
-        else
-            far_clip = camera->unknown_64 - nucamera_farclip_hack;
-        f32 near_clip = camera->unknown_60;
-        if (near_clip == 0.0f)
-            near_clip = camera->near_clip;
-        const i32 angle = static_cast<i32>(camera->fov * 0.5f * 10430.378f);
-        const f32 cotangent = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff] / NuTrigTable[angle >> 1 & 0x7fff];
-        const f32 x = x_scale * camera->aspect * cotangent;
-        const f32 y = cotangent * y_scale;
-        memset(projection, 0, sizeof(*projection));
-        projection->m00 = x;
-        projection->m11 = y;
-        projection->m23 = 1.0f;
-        projection->m22 = (far_clip + near_clip) / (far_clip - near_clip);
-        projection->m32 = (far_clip * -2.0f * near_clip) / (far_clip - near_clip);
-    }
 } // extern "C"
 
 extern "C" {
@@ -1045,7 +1009,6 @@ extern "C" {
     static f32 nu2api_paused;
 } // extern "C"
 
-struct nupad_s;
 struct nuframebuffer_s;
 union variptr_u;
 
@@ -1140,17 +1103,9 @@ inline void ThingManager::operator delete(void *thing, usize size) {
 
 // ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
 
-namespace {
-
-} // namespace
-
 // This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
 
 DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
-
-struct FLOWBOX_s;
-
-struct JEDIBNETPACKET_s;
 
 struct nuhspecial_s;
 struct nuvec_s;
@@ -1162,85 +1117,19 @@ DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
 
 DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
 
-struct EDAISHAREDPATHNODE_s;
 struct eduimenu_s;
 struct eduiitem_s;
 
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
-static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
-    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
-
 struct EDCREATURE_s;
-
-#if defined(__i386__)
-#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
-#else
-#define CREATURE_EDITOR_REGPARM1
-#endif
-static __used__
-    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
-                                                                                           eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
-                                                                                          eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
-                                                                                         unsigned int);
 
 extern "C" {
     struct EDCREATURE_s;
 }
 
-#if defined(__i386__)
-static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
-static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#else
-static void DestroyLocator(EDLOCATOR_s *);
-static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#endif
-static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
-
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void
-locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
-
-static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
-
-#if defined(__i386__)
-static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
-#else
-static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
-#endif
-AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
-    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
-
 extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 struct VuVec;
 
@@ -1290,12 +1179,6 @@ struct VuVec;
         NuPrim2DAddXYZ((vx), (vy), 0.0f);                                                                              \
     } while (0)
 
-struct AIPACKET_s;
-struct AISYS_s;
-
-struct GIZMOPICKUP_s;
-struct PART_s;
-
 // Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
 extern "C" {
 extern u32 flagremaptab[32][2];
@@ -1315,83 +1198,7 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-struct GameObject_s;
-struct WORLDINFO_s;
-
-namespace {
-
-} // namespace
-
 struct numtx_s;
-
-static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-
-static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
 
 static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
                                                                                 int alignment, char *format, ...)
@@ -1422,64 +1229,8 @@ static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int
 #endif
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
@@ -1539,64 +1290,8 @@ inline void EdBitControl::operator delete(void *memory) {
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -1649,10 +1344,6 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
 extern "C" {
     struct EDCREATURE_s;
 }
@@ -1661,10 +1352,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
 extern u32 flagremaptab[32][2];
@@ -1684,38 +1371,10 @@ inline SplineObject::SplineObject()
 }
 
 inline SplineObject::~SplineObject() {
-    SplinePointList *point_list = &points;
-    while (point_list->first != NULL) {
-        SplinePointBlock *block = point_list->first;
-        if (block->next != NULL)
-            block->next->previous = block->previous;
-        else
-            point_list->last = block->previous;
-        if (block->previous != NULL)
-            block->previous->next = block->next;
-        else
-            point_list->first = block->next;
-        block->next = NULL;
-        block->previous = NULL;
-        --point_list->block_count;
-        delete block;
-    }
-    SplineKnotList *knot_list = &knots;
-    while (knot_list->first != NULL) {
-        SplineKnot *knot = knot_list->first;
-        if (knot->next != NULL)
-            knot->next->previous = knot->previous;
-        else
-            knot_list->last = knot->previous;
-        if (knot->previous != NULL)
-            knot->previous->next = knot->next;
-        else
-            knot_list->first = knot->next;
-        knot->next = NULL;
-        knot->previous = NULL;
-        --knot_list->count;
-        theMemoryManager.FreePool(knot, sizeof(SplineKnot));
-    }
+}
+
+inline void SplineKnot::operator delete(void *memory) {
+    theMemoryManager.FreePool(memory, sizeof(SplineKnot));
 }
 
 inline void SplineObject::operator delete(void *memory) {
@@ -1727,10 +1386,6 @@ inline void SplinePointBlock::operator delete(void *memory) {
 }
 
 extern WORLDINFO WorldInfo[2];
-
-namespace {
-
-} // namespace
 
 void NuAnimDataChunkDestroy(nuanimdatachunk_s *chunk);
 
@@ -1749,8 +1404,6 @@ extern "C" {
     NUJOINTPROCANIMFN JointProcAnimFn;
 } // extern "C"
 
-struct bgprocinfo_s;
-
 extern i32 LevFlag[4]; // shared per-level 16-byte state scratch
 
 extern "C" {
@@ -1758,13 +1411,8 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-struct STATUSPACKET_s;
-struct TouchHolder;
-
 typedef isize __attribute__((may_alias)) NuGCutWord;
 
-struct instNUGCUTSCENE_s;
-
 extern "C" {
     struct EDCREATURE_s;
 }
@@ -1774,130 +1422,14 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -1936,130 +1468,14 @@ extern "C" {
     }
 } // extern "C"
 
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -2126,132 +1542,14 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-struct MechTouchUIElement;
-
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -2299,10 +1597,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
     struct EDCREATURE_s;
@@ -2312,10 +1606,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
 extern u32 flagremaptab[32][2];
@@ -2345,30 +1635,6 @@ static inline void SkipAni4V4Curve(u16 type, u8 *&keys, ani3_scalemin_s *&scale_
         keys += KeyStructSizes[type];
         ++scale_min;
     }
-}
-
-static inline void GetAni4SamplePosition(const ani3_animheader_s *anim, f32 frame, u32 &quarter, f32 &fraction,
-                                         i32 &key_offset) {
-    if (anim->key_count == 1) {
-        quarter = 0;
-        fraction = 0.0f;
-        key_offset = 0;
-        return;
-    }
-
-    const f32 last_key = static_cast<f32>(anim->key_count - 1);
-    f32 key = (frame - anim->first_frame) * last_key / static_cast<f32>(anim->frame_count - 1);
-    if (key < 0.0f) {
-        key = 0.0f;
-    }
-    if (last_key <= key) {
-        key = last_key;
-    }
-
-    const i32 whole_key = static_cast<i32>(key);
-    quarter = static_cast<u32>(whole_key) & 3;
-    fraction = key - static_cast<f32>(whole_key);
-    key_offset = (whole_key >> 2) * anim->key_stride;
 }
 
 static inline f32 DecodeAni4Quat3Scalar(const ani3_animheader_s *anim, i32 key_stride, const u16 *constants, u16 type,
@@ -2543,7 +1809,7 @@ extern "C" {
     i32 special_debug;
     i32 nuspecial_const_alpha_enabled;
     i32 nuspecial_const_tint_enabled;
-    i32 nuspecial_draw_state;
+    volatile i32 nuspecial_draw_state;
     i32 nuspecial_vertex_noffsets;
     VARIPTR nuspecial_vertex_offsets;
     NUSPECIALVERTEXSTATES *nuspecial_vertex_states;
@@ -3009,125 +2275,13 @@ struct NuBloomParameters;
 struct _vuv_s;
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -3171,130 +2325,14 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -3342,10 +2380,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
     struct EDCREATURE_s;
@@ -3355,10 +2389,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
 extern u32 flagremaptab[32][2];
@@ -3473,12 +2503,7 @@ extern "C" {
 
     extern nurenderscene_s currentScene;
 
-#if defined(__i386__)
-#define NUDISPLAYSCENERNDR_BODY_ATTR __attribute__((noinline, noclone, regparm(0), optimize("O2", "omit-frame-pointer")))
-#else
-#define NUDISPLAYSCENERNDR_BODY_ATTR __attribute__((noinline, noclone, optimize("O2", "omit-frame-pointer")))
-#endif
-    static NUDISPLAYSCENERNDR_BODY_ATTR void NuDisplaySceneRndrBody(NUDLDLISTSCENE *scene)
+    static __attribute__((noinline, noclone)) void NuDisplaySceneRndrBody(NUDLDLISTSCENE *scene)
         __asm__("NuDisplaySceneRndr.part.101");
 
 }
@@ -3533,13 +2558,14 @@ i32 global_GobjIsReflectedGeometry;
 i32 global_GobjIsShadowReceive;
 
 u32 rndrstream_nbuffers = 2;
+u32 rndrstream_last_used;
 i32 nurndr_maxstreamsize;
 VARIPTR rndrstream_end;
 VARIPTR rndrstream_free;
 static VARIPTR rndrstream[NURNDR_STREAM_MAX_BUFFERS];
 static i32 rndrstream_buffid;
-static i32 rndrstream_used;     // _ZL15rndrstream_used @0x11b8380
-static i32 rndrstream_max_used; // _ZL19rndrstream_max_used @0x11b8390
+static u32 rndrstream_used;     // _ZL15rndrstream_used @0x11b8380
+static u32 rndrstream_max_used; // _ZL19rndrstream_max_used @0x11b8390
 
 static NUMTL *pZClearMaterial;
 static NUMTL *pAlphaMask;
@@ -3645,10 +2671,6 @@ namespace {
     DECOMP_ASSERT(offsetof(LegacyInstanceAnimationLink, animation) == 0x48, "legacy instance animation pointer offset");
 } // namespace
 
-namespace {
-
-} // namespace
-
 #define EDBRI_USED_ITEM(name) static void name(eduimenu_s *, eduiitem_s *, u32) __attribute__((used))
 #define EDBRI_USED_MENU(name) static void name(eduimenu_s *, eduimenu_s *) __attribute__((used))
 EDBRI_USED_ITEM(edbricbFileLoad);
@@ -3722,35 +2744,7 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
-
 // Original 0x378fb0: the optimized rotating scan shares the terrain engine state.
-
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
 
 // Graphics loading flags
 i32 RemoveDirectionalMaps = 0;
@@ -3842,125 +2836,13 @@ i32 draw_octree = 1;
 void OctreeRndr(u8 *visibility, nuoctreenode_s *root, i32 enabled);
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -4004,130 +2886,14 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -4175,10 +2941,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
     struct EDCREATURE_s;
@@ -4188,10 +2950,6 @@ extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
 
 extern "C" {
 extern u32 flagremaptab[32][2];
@@ -4364,15 +3122,15 @@ static void DisplayListMaterialClipUpdate(nudisplayscene_s *scene) {
     const u8 buffer = NuDisplaySceneCurrentBuffer(scene);
     const u8 *current = scene->mtl_used[buffer];
     const u8 *previous = scene->mtl_used[buffer ^ 1];
-    const u32 count = (scene->nmtls + 7) >> 3;
+    const i32 count = (scene->nmtls + 7) >> 3;
     NUDISPLAYLIST **lists = scene->dlist_mtls;
-    for (u32 byte_index = 0, material_index = 0; byte_index < count; ++byte_index, material_index += 8) {
+    for (i32 byte_index = 0, material_index = 0; byte_index < count; ++byte_index, material_index += 8) {
         const u8 bits = current[byte_index];
         if (previous[byte_index] == bits)
             continue;
-        for (u32 bit = 0; bit < 8; ++bit) {
-            const i32 index = static_cast<i32>(material_index + bit);
-            u32 enabled = (bits >> bit) & 1;
+        for (i32 bit = 0; bit < 8; ++bit) {
+            const i32 index = material_index + bit;
+            i32 enabled = (bits >> bit) & 1;
             NUDISPLAYLIST *list = lists[index];
             NUMTL *material = scene->mtls[list->mtl_id];
             if (enabled && material != NULL && MTL_BLEND_FLAG(material) != 0)
@@ -4627,8 +3385,8 @@ extern "C++" {
             void *geometry_packet = geometry->next;
             void *lighting_packet = geometry[-2].next;
             list->items->type = geometry[-2].type;
-            list->items->id = 3;
             list->items->next = lighting_packet;
+            list->items->id = 3;
             first_and_last[0] = list->items++;
             *transform_packet = DisplayListCreateGeomTransformPS(buffer, world_matrix, list->dlist->mtls[list->mtl_id],
                                                                  geometry_packet, *transform_packet);
@@ -4669,8 +3427,8 @@ extern "C++" {
             list->items->next = skin_packet;
             first_and_last[1] = list->items++;
 
-            list->items->type = 0x98;
             list->items->id = 3;
+            list->items->type = 0x98;
             list->items->next = render_geometry;
             first_and_last[1] = list->items++;
 
@@ -4829,8 +3587,8 @@ void NuMotionFilterGen::render() {
     PostBlurSetVertexParam(programs[0], 0x808b, &weights[0][0], 28);
     NuFramebufferBind(output);
     PostDrawQuad();
-    color->texture = destination;
     color->kind = 4;
+    color->texture = destination;
     color->enabled = true;
     color->resolved = false;
     portColorBuffer.set(color);
@@ -4843,9 +3601,7 @@ void NuMotionAccumFilterGen::render() {
     nueffecttex_s *destination = NuFramebufferGetAttachedTex(output, 0, NULL, NULL);
     f32 weights[256], sum = 0.0f;
     for (i32 i = 0; i < frames; ++i) {
-        f32 exponent;
-        memcpy(&exponent, &mode, sizeof(exponent));
-        weights[i] = NuPow(static_cast<f32>(i + 1) / frames, exponent);
+        weights[i] = NuPow(static_cast<f32>(i + 1) / frames, mode);
         sum += weights[i];
     }
     if (frames > 0) {
@@ -4858,7 +3614,11 @@ void NuMotionAccumFilterGen::render() {
             weights[i] /= sum;
         }
     }
-    current_frame = current_frame + 1 == frames ? 0 : current_frame + 1;
+    if (current_frame + 1 == frames) {
+        current_frame = 0;
+    } else {
+        current_frame = current_frame + 1;
+    }
     PostBindProgram(program);
     f32 params[4] = {weights[current_frame], 0, 0, 0};
     PostBlurSetVertexParam(program, 0x808a, params, 4);
@@ -5138,16 +3898,16 @@ extern "C" void NuPostEffectMotionBlur(const NUMTX *previous, const NUMTX *curre
     motionFilter->falloff = falloff;
 }
 
-extern "C" void NuPostEffectAccumulationMotionBlur(i32 frames, f32 blend, i32 mode) {
-    if (mainFilter == NULL)
-        return;
-    mainFilter->accumulation_frames = frames;
-    mainFilter->accumulation_blend = blend;
-    mainFilter->accumulation_mode = mode;
+extern "C" void NuPostEffectAccumulationMotionBlur(i32 frames, f32 blend, f32 mode) {
+    if (mainFilter != NULL) {
+        mainFilter->accumulation_frames = frames;
+        mainFilter->accumulation_blend = blend;
+        mainFilter->accumulation_mode = mode;
+    }
     if (motionAccumFilter != NULL) {
         motionAccumFilter->frames = frames;
-        motionAccumFilter->blend = blend;
         motionAccumFilter->mode = mode;
+        motionAccumFilter->blend = blend;
     }
 }
 
@@ -5180,7 +3940,10 @@ extern "C" nueffecttex_s *NuPostEffectGetDepthBuffer(i32 frame) {
             NuFramebufferResolve(4, false);
             texture = NuFramebufferGetAttachedTex(NuFramebufferGetBound(), 4, NULL, NULL);
         } else {
-            NuPostResolve(&proxyDepthBuffer);
+            if (!proxyDepthBuffer.resolved) {
+                NuFramebufferResolve(proxyDepthBuffer.kind, proxyDepthBuffer.enabled);
+                proxyDepthBuffer.resolved = true;
+            }
             texture = proxyDepthBuffer.texture;
         }
         depthBufferCopy = texture;
@@ -5225,21 +3988,27 @@ extern "C" void NuPostEffectRender(nuframebuffer_s *output) {
         filters[count++] = speedBlurFilter;
         NuFramebufferAttachTex2D(speedBlurFilter->getInputFbo(), 0, color, 0);
     }
-    if (deferredFilter != NULL && deferredFilter->isEnabled()) {
-        filters[count++] = deferredFilter;
-        NuFramebufferAttachTex2D(deferredFilter->getInputFbo(), 0, color, 0);
+    if (deferredFilter != NULL) {
+        if (deferredFilter->isEnabled()) {
+            filters[count++] = deferredFilter;
+            NuFramebufferAttachTex2D(deferredFilter->getInputFbo(), 0, color, 0);
+        }
     }
     if (mainFilter != NULL && mainFilter->isEnabled()) {
         filters[count++] = mainFilter;
         NuFramebufferAttachTex2D(mainFilter->getInputFbo(), 0, color, 0);
     }
-    if (motionFilter != NULL && motionFilter->isEnabled()) {
-        filters[count++] = motionFilter;
-        NuFramebufferAttachTex2D(motionFilter->getInputFbo(), 0, color, 0);
+    if (motionFilter != NULL) {
+        if (motionFilter->isEnabled()) {
+            filters[count++] = motionFilter;
+            NuFramebufferAttachTex2D(motionFilter->getInputFbo(), 0, color, 0);
+        }
     }
-    if (motionAccumFilter != NULL && motionAccumFilter->isEnabled()) {
-        filters[count++] = motionAccumFilter;
-        NuFramebufferAttachTex2D(motionAccumFilter->getInputFbo(), 0, color, 0);
+    if (motionAccumFilter != NULL) {
+        if (motionAccumFilter->isEnabled()) {
+            filters[count++] = motionAccumFilter;
+            NuFramebufferAttachTex2D(motionAccumFilter->getInputFbo(), 0, color, 0);
+        }
     }
     g_boundShader = 0;
     glUseProgram(0);
@@ -5268,42 +4037,12 @@ void NuPostFilterGen::destroySharedResources() {
 
 extern "C" {
 extern "C" void NuPostEffectDestroy() {
-    NuPostFilterGen *filter = mainFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        mainFilter = NULL;
-    }
-    filter = motionFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        motionFilter = NULL;
-    }
-    filter = motionAccumFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        motionAccumFilter = NULL;
-    }
-    filter = speedBlurFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        speedBlurFilter = NULL;
-    }
-    filter = deferredFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        deferredFilter = NULL;
-    }
-    filter = copyFilter;
-    if (filter != NULL) {
-        filter->destroyTextureResources();
-        filter->destroyResources();
-        copyFilter = NULL;
-    }
+    DestroyPostFilter(mainFilter);
+    DestroyPostFilter(motionFilter);
+    DestroyPostFilter(motionAccumFilter);
+    DestroyPostFilter(speedBlurFilter);
+    DestroyPostFilter(deferredFilter);
+    DestroyPostFilter(copyFilter);
     NuPostFilterGen::destroySharedTextureResources();
     NuPostFilterGen::destroySharedResources();
     filterAllocator.cursor = filterMem;
@@ -5453,8 +4192,8 @@ void NuPostFilterGen::blur7x7Loopback(nueffecttex_s *source, i32 source_lod, nue
     }
     for (i32 lod = 0; lod < levels; ++lod) {
         i32 level = first_lod + lod;
-        nueffecttex_s *input = level == first_lod ? source : (mip_chain ? textures : textures + level - 1);
         i32 input_lod = level == first_lod ? source_lod : (mip_chain ? level - 1 : 0);
+        nueffecttex_s *input = level == first_lod ? source : (mip_chain ? textures : textures + level - 1);
         nueffecttex_s *output = mip_chain ? textures : textures + level;
         i32 output_lod = mip_chain ? level : 0;
         for (i32 pass = 0; pass < iterations; ++pass) {
@@ -5510,8 +4249,8 @@ void NuMainFilterGen::preprocessDofMotionBlur(nueffecttex_s *) {
     if (dof_enabled) {
         f32 fov, aspect, near_z, far_z;
         NuMtxGetPerspectiveD3D(reinterpret_cast<NUMTX *>(g_renderContext_projection), &fov, &aspect, &near_z, &far_z);
-        f32 projection_scale = far_z / (far_z - near_z);
         f32 strength_near = dof_strength * dof_near;
+        f32 projection_scale = far_z / (far_z - near_z);
         f32 product = strength_near * dof_far;
         f32 span = dof_far - dof_near;
         f32 denominator = near_z * projection_scale * span;
@@ -5544,7 +4283,7 @@ void NuMainFilterGen::preprocessDofMotionBlur(nueffecttex_s *) {
 }
 
 void NuMainFilterGen::preprocessBlurTextures(nueffecttex_s *color, nueffecttex_s *normal) {
-    i32 width = color->width;
+    i16 width = color->width;
     i16 height = color->height;
     if (!dof_enabled && !bloom_enabled)
         return;
@@ -5552,13 +4291,11 @@ void NuMainFilterGen::preprocessBlurTextures(nueffecttex_s *color, nueffecttex_s
         copy(color, 1, color, 0, programs[16], normal);
     else
         copy(color, 1, color, 0, copyTexProgram, NULL);
-    i32 levels = downsample_lod;
-    if (dof_enabled) {
-        if (width < height)
-            levels = static_cast<i32>(NuLog2(static_cast<f32>(width))) - 6;
-        else
-            levels = static_cast<i32>(NuLog2(static_cast<f32>(height))) - 6;
-    }
+    i32 levels;
+    if (dof_enabled)
+        levels = static_cast<i32>(NuLog2(static_cast<f32>(width < height ? width : height))) - 6;
+    else
+        levels = downsample_lod;
     blur7x7Loopback(color, 1, color, 2, 1, levels, true, 1.0f, blur7x7Program);
     if (bloom_enabled) {
         f32 threshold[4] = {bloom->threshold < 0 ? 0 : (bloom->threshold > 1 ? 1 : bloom->threshold), 0, 0, 0};
@@ -5593,7 +4330,7 @@ void NuMainFilterGen::render() {
         preprocessBlurTextures(color_texture, normal_texture);
     if (dof_enabled || motion_blur_enabled)
         preprocessDofMotionBlur(depth_texture);
-    i32 selection = (dof_enabled ? 4 : 0) | (bloom_enabled ? (bloom->directional ? 1 : 2) : 0);
+    i32 selection = (bloom_enabled ? (bloom->directional ? 1 : 2) : 0) | (dof_enabled ? 4 : 0);
     nushaderprogram_s *program = NULL;
     switch (selection) {
         case 1:
@@ -5845,8 +4582,8 @@ void NuSpeedBlurFilterGen::render() {
     PostBlurSetVertexParam(programs[0], 0x80, values.depth, 8);
     NuFramebufferBind(output);
     PostDrawQuad(true);
-    color->texture = destination;
     color->kind = 0;
+    color->texture = destination;
     color->enabled = true;
     color->resolved = false;
     portColorBuffer.set(color);
@@ -6058,11 +4795,12 @@ bool OccluderSet::IsOccludedOBB(nuvec_s const *minimum, nuvec_s const *maximum, 
     for (u32 i = 0; i < 8; ++i) {
         NUVEC4 &v = corners[i];
         NuVec4MtxTransform(&v, reinterpret_cast<NUVEC *>(&v), &transform);
-        if (v.w <= 0.0f)
+        float w = v.w;
+        if (w <= 0.0f)
             return false;
-        v.x /= v.w;
-        v.y /= v.w;
-        v.z /= v.w;
+        v.x /= w;
+        v.y /= w;
+        v.z /= w;
         min_x = v.x < min_x ? v.x : min_x;
         min_y = v.y < min_y ? v.y : min_y;
         max_x = v.x > max_x ? v.x : max_x;
@@ -6119,41 +4857,41 @@ void OccluderSet::RenderOccluders(bool depth_only) const {
             if (record.min_depth < 0.0f || record.depth < 0.0f)
                 continue;
             i32 colour = static_cast<u32>(record.vertices[0].x * record.vertices[0].z) | 0xff000000u;
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[0].x, -record.transformed[0].y, record.transformed[0].z);
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[1].x, -record.transformed[1].y, record.transformed[1].z);
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[2].x, -record.transformed[2].y, record.transformed[2].z);
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[2].x, -record.transformed[2].y, record.transformed[2].z);
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[3].x, -record.transformed[3].y, record.transformed[3].z);
-            if (g_NuPrim_NeedsOverbrightening)
-                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-            else
+            if (!g_NuPrim_NeedsOverbrightening)
                 *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                     ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+            else
+                *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
             NuPrim2DAddXYZ(record.transformed[0].x, -record.transformed[0].y, record.transformed[0].z);
         }
         NuPrim2DEnd();
@@ -6167,56 +4905,56 @@ void OccluderSet::RenderOccluders(bool depth_only) const {
             const OccluderRecord *record = occluders;
             for (u32 i = 0; i != total; ++i, ++record) {
                 i32 colour = static_cast<u32>(record->vertices[0].x * record->vertices[0].z) | 0xff000000u;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[0].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[0].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[0].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[1].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[1].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[1].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[2].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[2].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[2].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[2].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[2].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[2].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[3].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[3].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[3].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (g_NuPrim_NeedsOverbrightening)
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
-                else
+                if (!g_NuPrim_NeedsOverbrightening)
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
+                else
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[0].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[0].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[0].z;
@@ -6717,14 +5455,14 @@ void NuDynamicLight::computeWarpEffect(NuDynamicLight::RenderSet &set) {
     NuMtxInvH(&inverse_view_projection, &render_view_projection);
     NuMtxInv(&inverse_render_view, &render_view);
     NuMtxInv(&inverse_camera_view, &camera_view);
-    NUVEC light_forward = {inverse_render_view.m20, inverse_render_view.m21, inverse_render_view.m22};
-    NUVEC camera_forward = {inverse_camera_view.m20, inverse_camera_view.m21, inverse_camera_view.m22};
+    NUVEC light_forward = *NUMTX_GET_ROW_VEC(&inverse_render_view, 2);
+    NUVEC camera_forward = *NUMTX_GET_ROW_VEC(&inverse_camera_view, 2);
     NUMTX light_space, inverse_light_space;
     computeLightSpace(&light_forward, &camera_forward, &light_space, &inverse_light_space);
     VuVec points[10];
     const NUVEC4 *source = set.corners;
     VuVec *destination = points;
-    const NUVEC4 *end = set.corners + 8;
+    const NUVEC4 *end = source + 8;
     while (source < end) {
         *destination++ = VuVec(source->x, source->y, source->z, source->w);
         ++source;
@@ -6794,14 +5532,21 @@ void NuDynamicLight::refreshShadowTransform(RenderSet &set) {
 void NuDynamicLight::computeBoundingSpace(const VuVec *points, VuMtx *matrix) {
     NUVEC minimum = {FLT_MAX, FLT_MAX, FLT_MAX};
     NUVEC maximum = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-    LightBoundsPoint(points[0], minimum, maximum);
-    LightBoundsPoint(points[1], minimum, maximum);
-    LightBoundsPoint(points[2], minimum, maximum);
-    LightBoundsPoint(points[3], minimum, maximum);
-    LightBoundsPoint(points[4], minimum, maximum);
-    LightBoundsPoint(points[5], minimum, maximum);
-    LightBoundsPoint(points[6], minimum, maximum);
-    LightBoundsPoint(points[7], minimum, maximum);
+    for (i32 i = 0; i < 8; i++) {
+        const VuVec &point = points[i];
+        if (point.x < minimum.x)
+            minimum.x = point.x;
+        else if (point.x > maximum.x)
+            maximum.x = point.x;
+        if (point.y < minimum.y)
+            minimum.y = point.y;
+        else if (point.y > maximum.y)
+            maximum.y = point.y;
+        if (point.z < minimum.z)
+            minimum.z = point.z;
+        else if (point.z > maximum.z)
+            maximum.z = point.z;
+    }
     NuMtxSetOrthoBlend(&matrix->matrix, minimum.x, maximum.x, minimum.y, maximum.y, minimum.z, maximum.z);
 }
 
@@ -7002,25 +5747,21 @@ void NuDynamicLight::computeShadowFrustrumCapsule(const VuVec &direction, const 
     center.y = corners[0].y;
     center.z = corners[0].z;
     center.w = corners[0].w;
-    CapsuleAdd(center, corners[1]);
-    CapsuleAdd(center, corners[2]);
-    CapsuleAdd(center, corners[3]);
-    CapsuleAdd(center, corners[4]);
-    CapsuleAdd(center, corners[5]);
-    CapsuleAdd(center, corners[6]);
-    CapsuleAdd(center, corners[7]);
+    for (i32 i = 1; i < 8; i++) {
+        center.x += corners[i].x;
+        center.y += corners[i].y;
+        center.z += corners[i].z;
+    }
     center.x *= 0.125f;
     center.y *= 0.125f;
     center.z *= 0.125f;
     radius = 0.0f;
-    CapsuleDistance(center, corners[0], radius);
-    CapsuleDistance(center, corners[1], radius);
-    CapsuleDistance(center, corners[2], radius);
-    CapsuleDistance(center, corners[3], radius);
-    CapsuleDistance(center, corners[4], radius);
-    CapsuleDistance(center, corners[5], radius);
-    CapsuleDistance(center, corners[6], radius);
-    float distance = CapsuleDistance(center, corners[7], radius);
+    float distance;
+    for (i32 i = 0; i < 8; i++) {
+        float x = center.x - corners[i].x, y = center.y - corners[i].y, z = center.z - corners[i].z;
+        distance = x * x + y * y + z * z;
+        radius = distance > radius ? distance : radius;
+    }
     // The original takes the final corner distance here, after the maximum stores.
     radius = NuFsqrt(distance);
     VuVec result = {center.x - direction.x * 100.0f, center.y - direction.y * 100.0f, center.z - direction.z * 100.0f,
@@ -7160,37 +5901,33 @@ extern "C" {
 
         if (isBitCountTable == 0)
             buildBitCountTable();
-        animation = NuLegacyRelocatePointer(animation, delta);
-        u8 *data = static_cast<u8 *>(animation);
-        void *&name = *reinterpret_cast<void **>(data + 4);
-        name = NuLegacyRelocatePointer(name, delta);
-        void **&chunks = *reinterpret_cast<void ***>(data + 0xc);
-        chunks = static_cast<void **>(NuLegacyRelocatePointer(chunks, delta));
-        if (chunks != NULL) {
-            i32 chunk_count = *reinterpret_cast<i32 *>(data + 8);
-            for (i32 i = 0; i < chunk_count; ++i) {
-                chunks[i] = NuLegacyRelocatePointer(chunks[i], delta);
-                u8 *chunk = static_cast<u8 *>(chunks[i]);
+        nuanimdata_s *data = static_cast<nuanimdata_s *>(NuLegacyRelocatePointer(animation, delta));
+        data->node_name = static_cast<char *>(NuLegacyRelocatePointer(data->node_name, delta));
+        data->chunks = static_cast<nuanimdatachunk_s **>(NuLegacyRelocatePointer(data->chunks, delta));
+        if (data->chunks != NULL) {
+            for (i32 i = 0; i < data->chunk_count; ++i) {
+                data->chunks[i] = static_cast<nuanimdatachunk_s *>(NuLegacyRelocatePointer(data->chunks[i], delta));
+                nuanimdatachunk_s *chunk = data->chunks[i];
                 if (chunk != NULL) {
-                    void **&sets = *reinterpret_cast<void ***>(chunk + 8);
-                    sets = static_cast<void **>(NuLegacyRelocatePointer(sets, delta));
-                    if (sets != NULL) {
-                        i32 set_count = *reinterpret_cast<i32 *>(chunk);
-                        for (i32 j = 0; j < set_count; ++j) {
-                            sets[j] = NuLegacyRelocatePointer(sets[j], delta);
-                            u8 *set = static_cast<u8 *>(sets[j]);
+                    chunk->curve_sets =
+                        static_cast<nuanimcurveset_s **>(NuLegacyRelocatePointer(chunk->curve_sets, delta));
+                    if (chunk->curve_sets != NULL) {
+                        for (i32 j = 0; j < chunk->node_count; ++j) {
+                            chunk->curve_sets[j] =
+                                static_cast<nuanimcurveset_s *>(NuLegacyRelocatePointer(chunk->curve_sets[j], delta));
+                            nuanimcurveset_s *set = chunk->curve_sets[j];
                             if (set != NULL) {
-                                void *&constants = *reinterpret_cast<void **>(set + 4);
-                                constants = NuLegacyRelocatePointer(constants, delta);
-                                void **&curves = *reinterpret_cast<void ***>(set + 8);
-                                curves = static_cast<void **>(NuLegacyRelocatePointer(curves, delta));
-                                if (curves != NULL) {
-                                    for (i32 k = 0; k < *reinterpret_cast<i8 *>(set + 0xc); ++k) {
-                                        curves[k] = NuLegacyRelocatePointer(curves[k], delta);
-                                        u8 *curve = static_cast<u8 *>(curves[k]);
+                                set->constants = static_cast<f32 *>(NuLegacyRelocatePointer(set->constants, delta));
+                                set->curves =
+                                    static_cast<nuanimcurve_s **>(NuLegacyRelocatePointer(set->curves, delta));
+                                if (set->curves != NULL) {
+                                    for (i32 k = 0; k < set->curve_count; ++k) {
+                                        void *relocated = NuLegacyRelocatePointer(set->curves[k], delta);
+                                        set->curves[k] = static_cast<nuanimcurve_s *>(relocated);
+                                        nuanimcurve_s *curve = set->curves[k];
                                         if (curve != NULL) {
-                                            void *&keys = *reinterpret_cast<void **>(curve + 4);
-                                            keys = NuLegacyRelocatePointer(keys, delta);
+                                            curve->keys =
+                                                static_cast<nuanimkey_s *>(NuLegacyRelocatePointer(curve->keys, delta));
                                         }
                                     }
                                 }
@@ -7200,14 +5937,14 @@ extern "C" {
                 }
             }
         }
-        return animation;
+        return data;
     }
 
     void *NuAnimDataLoadBuff(char *path, VARIPTR *buf, VARIPTR *buf_end) {
         buf->addr = ALIGN(buf->addr, 16);
+        const i32 file_size = NuFileLoadBuffer(path, buf->void_ptr, static_cast<i32>(buf_end->addr - buf->addr));
         u8 *file_data = static_cast<u8 *>(buf->void_ptr);
-        const i32 file_size = NuFileLoadBuffer(path, file_data, static_cast<i32>(buf_end->addr - buf->addr));
-        buf->addr += static_cast<usize>(file_size);
+        buf->addr = reinterpret_cast<usize>(file_data) + file_size;
 
         const isize delta = reinterpret_cast<isize>(file_data) - *reinterpret_cast<isize *>(file_data + 4);
         *reinterpret_cast<isize *>(file_data + 4) = delta;
@@ -7602,19 +6339,18 @@ extern "C" {
 }
 
 nuanimdatachunk_s *NuAnimDataChunkCreate(i32 curve_set_count) {
-    NuMemoryManager *memory = NuMemoryGet()->GetThreadMem();
-    u8 *data = static_cast<u8 *>(memory->_BlockAlloc(0x14, 4, 1, "", 0));
-    *reinterpret_cast<i32 *>(data) = curve_set_count;
-    *reinterpret_cast<void **>(data + 4) = NULL;
-    *reinterpret_cast<void **>(data + 8) = NULL;
-    *reinterpret_cast<void **>(data + 0xc) = NULL;
-    *reinterpret_cast<void **>(data + 0x10) = NULL;
+    nuanimdatachunk_s *chunk = static_cast<nuanimdatachunk_s *>(
+        NuMemoryGet()->GetThreadMem()->_BlockAlloc(sizeof(nuanimdatachunk_s), 4, 1, "", 0));
+    chunk->node_count = curve_set_count;
+    chunk->valid_curve_set_count = 0;
+    chunk->curve_sets = NULL;
+    chunk->keys = NULL;
+    chunk->curves = NULL;
 
-    const u32 array_size = static_cast<u32>(curve_set_count) * sizeof(void *);
-    void **curve_sets = static_cast<void **>(memory->_BlockAlloc(array_size, 4, 1, "", 0));
-    *reinterpret_cast<void ***>(data + 8) = curve_sets;
-    memset(curve_sets, 0, array_size);
-    return reinterpret_cast<nuanimdatachunk_s *>(data);
+    chunk->curve_sets = static_cast<nuanimcurveset_s **>(NuMemoryGet()->GetThreadMem()->_BlockAlloc(
+        curve_set_count * sizeof(nuanimcurveset_s *), 4, 1, "", 0));
+    memset(chunk->curve_sets, 0, curve_set_count * sizeof(nuanimcurveset_s *));
+    return chunk;
 }
 
 extern "C" {
@@ -7668,9 +6404,8 @@ extern "C" {
 
         for (i32 chunk_index = 0; chunk_index < *reinterpret_cast<i32 *>(animation + 8); ++chunk_index) {
             const i32 curve_set_count = NuFileReadInt(file);
-            u8 *chunk = reinterpret_cast<u8 *>(NuAnimDataChunkCreate(curve_set_count));
             void **chunk_slot = *reinterpret_cast<void ***>(animation + 0xc) + chunk_index;
-            *chunk_slot = chunk;
+            u8 *chunk = reinterpret_cast<u8 *>(*chunk_slot = NuAnimDataChunkCreate(curve_set_count));
             *reinterpret_cast<i32 *>(chunk) = curve_set_count;
 
             u8 *curve_data = NULL;
@@ -7756,23 +6491,20 @@ extern "C" {
             return;
         }
 
-        u8 *set = static_cast<u8 *>(curve_set);
-        void **curves = *reinterpret_cast<void ***>(set + 8);
-        if (curves != NULL) {
+        nuanimcurveset_s *set = static_cast<nuanimcurveset_s *>(curve_set);
+        if (set->curves != NULL) {
             if (destroy_curves != 0) {
-                const i32 count = *reinterpret_cast<i8 *>(set + 0xc);
-                for (i32 index = 0; index < count; ++index) {
-                    if (curves[index] != NULL) {
-                        NuAnimCurveDestroy(curves[index]);
+                for (i32 index = 0; index < set->curve_count; ++index) {
+                    if (set->curves[index] != NULL) {
+                        NuAnimCurveDestroy(set->curves[index]);
                     }
                 }
             }
-            NU_FREE(curves);
+            NU_FREE(set->curves);
         }
 
-        void *curve_flags = *reinterpret_cast<void **>(set + 4);
-        if (curve_flags != NULL) {
-            NU_FREE(curve_flags);
+        if (set->constants != NULL) {
+            NU_FREE(set->constants);
         }
         NU_FREE(curve_set);
     }
@@ -7780,43 +6512,35 @@ extern "C" {
 }
 
 void NuAnimDataChunkDestroy(nuanimdatachunk_s *chunk) {
-    u8 *data = reinterpret_cast<u8 *>(chunk);
-    const i32 curve_set_count = *reinterpret_cast<i32 *>(data);
-    void **curve_sets = *reinterpret_cast<void ***>(data + 8);
-    const i32 destroy_curves = *reinterpret_cast<void **>(data + 0x10) == NULL;
+    const i32 destroy_curves = chunk->curves == NULL;
 
-    for (i32 index = 0; index < curve_set_count; ++index) {
-        if (curve_sets[index] != NULL) {
-            NuAnimCurveSetDestroy(curve_sets[index], destroy_curves);
+    for (i32 index = 0; index < chunk->node_count; ++index) {
+        if (chunk->curve_sets[index] != NULL) {
+            NuAnimCurveSetDestroy(chunk->curve_sets[index], destroy_curves);
         }
     }
 
-    void *curve_data = *reinterpret_cast<void **>(data + 0xc);
-    if (curve_data != NULL) {
-        NuMemoryGet()->GetThreadMem()->BlockFree(curve_data, 0);
+    if (chunk->keys != NULL) {
+        NuMemoryGet()->GetThreadMem()->BlockFree(chunk->keys, 0);
     }
-    void *shared_data = *reinterpret_cast<void **>(data + 0x10);
-    if (shared_data != NULL) {
-        NuMemoryGet()->GetThreadMem()->BlockFree(shared_data, 0);
+    if (chunk->curves != NULL) {
+        NuMemoryGet()->GetThreadMem()->BlockFree(chunk->curves, 0);
     }
-    if (curve_sets != NULL) {
-        NuMemoryGet()->GetThreadMem()->BlockFree(curve_sets, 0);
+    if (chunk->curve_sets != NULL) {
+        NuMemoryGet()->GetThreadMem()->BlockFree(chunk->curve_sets, 0);
     }
     NuMemoryGet()->GetThreadMem()->BlockFree(chunk, 0);
 }
 
 extern "C" {
     void NuAnimDataDestroy(void *animation) {
-        u8 *data = static_cast<u8 *>(animation);
-        const i32 chunk_count = *reinterpret_cast<i32 *>(data + 8);
-        nuanimdatachunk_s **chunks = *reinterpret_cast<nuanimdatachunk_s ***>(data + 0xc);
-        for (i32 index = 0; index < chunk_count; ++index) {
-            NuAnimDataChunkDestroy(chunks[index]);
+        nuanimdata_s *data = static_cast<nuanimdata_s *>(animation);
+        for (i32 index = 0; index < data->chunk_count; ++index) {
+            NuAnimDataChunkDestroy(data->chunks[index]);
         }
 
-        void *name = *reinterpret_cast<void **>(data + 4);
-        if (name != NULL) {
-            NU_FREE(name);
+        if (data->node_name != NULL) {
+            NU_FREE(data->node_name);
         }
         NU_FREE(animation);
     }
@@ -8086,9 +6810,9 @@ extern "C" void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_en
     if (static_cast<i32>(static_cast<u32 *>(data)[1]) > static_cast<i32>(0x414e4934)) {
         data = NuPtrBlockFix(data);
         buf->void_ptr = data;
-        buf->addr += static_cast<usize>(file_size);
         *result = data;
-        return data;
+        buf->addr += static_cast<usize>(file_size);
+        return *result;
     }
     *result = data;
     buf->addr += static_cast<usize>(file_size);
@@ -8151,13 +6875,16 @@ extern "C" void *NuAnimData2LoadBuffFromPAK(void *data, i32 file_size) {
         }
 
         u8 *lod_animation = static_cast<u8 *>(animation);
-        while (lod-- != 0) {
-            const u16 next_lod = *reinterpret_cast<u16 *>(lod_animation + 0x14);
+        if (lod == 0) {
+            return lod_animation;
+        }
+        do {
+            const i32 next_lod = *reinterpret_cast<u16 *>(lod_animation + 0x14);
             if (next_lod == 0) {
                 return NULL;
             }
             lod_animation += next_lod;
-        }
+        } while (--lod != 0);
         return lod_animation;
     }
 
@@ -8470,7 +7197,7 @@ extern "C" {
 
 }
 
-__attribute__((optimize("O2"))) void CalcValue1648Get2Values(char *data, i32 quarter, i32 stride, ani3_scalemin_s *scale_min, float *first,
+void CalcValue1648Get2Values(char *data, i32 quarter, i32 stride, ani3_scalemin_s *scale_min, float *first,
                              float *second) {
     u16 *next = reinterpret_cast<u16 *>(data + stride);
     u16 *keys = reinterpret_cast<u16 *>(data);
@@ -8529,7 +7256,7 @@ __attribute__((optimize("O2"))) void CalcValue1648Get2Values(char *data, i32 qua
     }
 }
 
-__attribute__((optimize("O2"))) float CalcValue1648(char *data, i32 quarter, i32 stride, float fraction, ani3_scalemin_s *scale_min) {
+float CalcValue1648(char *data, i32 quarter, i32 stride, float fraction, ani3_scalemin_s *scale_min) {
     u16 *next = reinterpret_cast<u16 *>(data + stride);
     u16 *keys = reinterpret_cast<u16 *>(data);
 
@@ -8693,7 +7420,27 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_anim
     f32 fraction;
     u32 quarter;
     i32 key_offset;
-    GetAni4SamplePosition(anim, frame, quarter, fraction, key_offset);
+    if (anim->key_count == 1) {
+        quarter = 0;
+        fraction = 0.0f;
+        key_offset = 0;
+    } else {
+        const f32 last_key = static_cast<f32>(anim->key_count - 1);
+        f32 key = (frame - anim->first_frame) * last_key / static_cast<f32>(anim->frame_count - 1);
+        if (key < 0.0f) {
+            key = 0.0f;
+        }
+        i32 whole_key;
+        if (last_key <= key) {
+            whole_key = static_cast<i32>(last_key);
+            fraction = last_key - static_cast<f32>(whole_key);
+        } else {
+            whole_key = static_cast<i32>(key);
+            fraction = key - static_cast<f32>(whole_key);
+        }
+        quarter = static_cast<u32>(whole_key) & 3;
+        key_offset = (whole_key / 4) * anim->key_stride;
+    }
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
     ani3_scalemin_s *scale_min = anim->scale_min;
     u8 *keys = anim->keys + key_offset;
@@ -8701,8 +7448,8 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_anim
     const u16 *curve_types = anim->curve_types;
     // The original clamps the count before applying first_joint.
     i32 count = joint_count < anim->node_count ? joint_count : anim->node_count;
-    const u8 *first_flags = node_flags + first_joint;
     u8 *joint_flags = buffer->joint_flags + first_joint;
+    const u8 *first_flags = node_flags + first_joint;
     for (; node_flags < first_flags; ++node_flags, ++joint) {
         for (i32 group = 0; group < 3; ++group) {
             i32 components = group == 1 ? 4 : 3;
@@ -8771,7 +7518,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_anim
 }
 
 extern "C" {
-extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer,
+extern "C" i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer,
                                                      i32 joint_count, i32 first_joint) {
     const u8 *node_flags = anim->node_flags;
     buffer->use_quaternions = 1;
@@ -8928,14 +7675,14 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint(ani3_
             whole_key = static_cast<i32>(last_key);
             fraction = last_key - static_cast<f32>(whole_key);
         }
-        key_offset = (whole_key / 4) * anim->key_stride;
         quarter = static_cast<u32>(whole_key) & 3;
+        key_offset = (whole_key / 4) * anim->key_stride;
     }
 
     const i32 key_stride = anim->key_stride;
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
-    u8 *keys = anim->keys + key_offset;
     ani3_scalemin_s *scale_min = anim->scale_min;
+    u8 *keys = anim->keys + key_offset;
     const u16 *curve_types = anim->curve_types;
 
     const u8 *first_flags = node_flags + first_joint;
@@ -9058,7 +7805,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3(ani3
             SkipAni4V4Curve(curve_types[1], keys, scale_min);
             SkipAni4V4Curve(curve_types[2], keys, scale_min);
         }
-        if (__builtin_expect(!!(*node_flags & 1), 1)) {
+        if (*node_flags & 1) {
             SkipAni4V4Curve(curve_types[3], keys, scale_min);
             SkipAni4V4Curve(curve_types[4], keys, scale_min);
             SkipAni4V4Curve(curve_types[5], keys, scale_min);
@@ -9225,7 +7972,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3W(ani
                 f32 sampled = DecodeAni4Quat3Scalar(anim, key_stride, constants, curve_types[0], quarter, fraction,
                                                     keys, scale_min);
                 f32 delta_x = sampled - output[0];
-                if (__builtin_expect(!!(root_translation), 0))
+                if (__builtin_expect(!!(root_translation), 1))
                     root_translation->x = sampled;
                 output[0] += delta_x * blend;
                 sampled = DecodeAni4Quat3Scalar(anim, key_stride, constants, curve_types[1], quarter, fraction, keys,
@@ -9290,11 +8037,11 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
     u8 *keys = anim->keys + key_offset;
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
     i32 count = joint_count < anim->node_count ? joint_count : anim->node_count;
-    ani3_scalemin_s *scale_min = anim->scale_min;
     const u16 *curve_types = anim->curve_types;
+    ani3_scalemin_s *scale_min = anim->scale_min;
     const u8 *first_flags = node_flags + first_joint;
     for (const u8 *skip_flags = node_flags; skip_flags < first_flags; ++skip_flags) {
-        if (__builtin_expect(!!(*skip_flags & 2), 1)) {
+        if (*skip_flags & 2) {
             SkipAni4V4Curve(curve_types[0], keys, scale_min);
             SkipAni4V4Curve(curve_types[1], keys, scale_min);
             SkipAni4V4Curve(curve_types[2], keys, scale_min);
@@ -9304,7 +8051,7 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
             SkipAni4V4Curve(curve_types[4], keys, scale_min);
             SkipAni4V4Curve(curve_types[5], keys, scale_min);
         }
-        if (__builtin_expect(!!(*skip_flags & 8), 1)) {
+        if (*skip_flags & 8) {
             SkipAni4V4Curve(curve_types[6], keys, scale_min);
             SkipAni4V4Curve(curve_types[7], keys, scale_min);
             SkipAni4V4Curve(curve_types[8], keys, scale_min);
@@ -9312,8 +8059,8 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
         curve_types += 9;
     }
     node_flags += first_joint;
-    u8 *joint_flags = buffer->joint_flags + first_joint;
     const u8 *end_flags = node_flags + count;
+    u8 *joint_flags = buffer->joint_flags + first_joint;
     nuanimbuffjoint_s *joint = buffer->joints + first_joint;
     NUVEC *root = first_joint == 0 ? root_translation : NULL;
     for (; node_flags < end_flags; ++node_flags, ++joint) {
@@ -9407,10 +8154,10 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
     return 0;
 }
 
-extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
+extern "C" i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
                                                  i32 joint_count, i32 first_joint, NUVEC *root_translation) {
     if ((anim->format_flags & ANI3_FORMAT_QUATERNION_ROTATION) != 0) {
-        if (__builtin_expect((anim->format_flags & ANI3_FORMAT_QUATERNION_STORES_W) != 0, 0)) {
+        if ((anim->format_flags & ANI3_FORMAT_QUATERNION_STORES_W) != 0) {
             return ANI_SimpleAni3PlayerV4Joint_Blend_Quat3W(anim, frame, buffer, blend, joint_count, first_joint,
                                                             root_translation);
         } else {
@@ -9425,8 +8172,8 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
 
     // Sampling advances a local cursor; the animation owns the unchanged table.
     ani3_scalemin_s *scale_min = anim->scale_min;
-    const i32 key_stride = anim->key_stride;
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
+    const u16 key_stride = anim->key_stride;
     const f32 last_key = static_cast<f32>(anim->key_count - 1);
     f32 key = (frame - anim->first_frame) * last_key / static_cast<f32>(anim->frame_count - 1);
     if (key < 0.0f) {
@@ -9516,8 +8263,8 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
                 group_values[1] *= inverse_blend;
                 group_values[2] *= inverse_blend;
                 if (root != NULL) {
-                    root->x = 0.0f;
                     root->y = 0.0f;
+                    root->x = 0.0f;
                     root->z = 0.0f;
                 }
             }
@@ -9589,8 +8336,8 @@ extern "C" __attribute__((optimize("O2"))) void ANI_Ani3ExtractAllNodeCurves(ani
             if (__builtin_expect(last_key <= key, 0)) {
                 i32 whole_key = static_cast<i32>(last_key);
                 fraction = last_key - static_cast<float>(whole_key);
-                quarter = static_cast<u32>(whole_key) & 3;
                 stride = anim->key_stride;
+                quarter = static_cast<u32>(whole_key) & 3;
                 key_offset = (whole_key / 4) * stride;
             } else {
                 i32 whole_key = static_cast<i32>(key);
@@ -9650,7 +8397,7 @@ extern "C" __attribute__((optimize("O2"))) void ANI_Ani3ExtractAllNodeCurves(ani
             }
             continue;
         }
-        if (__builtin_expect(curve_mask != NULL, 0)) {
+        if (curve_mask != NULL) {
             ++curve_mask;
         }
 
@@ -10134,8 +8881,8 @@ extern "C" i32 NuSpecialFindMulti(NUGSCN *scene, nuhspecial_s *dest, char *name,
                 if (__builtin_expect(NuStrIStr(special->name, name) != NULL, 0)) {
                     ++count;
                     dest->scene = scene;
-                    dest->special = special;
                     dest->display_special = NULL;
+                    dest->special = special;
                     ++dest;
                     if (count >= capacity) {
                         return count;
@@ -10250,8 +8997,8 @@ extern "C" i32 NuSpecialExistsFn(void *special_ptr) {
 
 extern "C" void NuSpecialMtlMap(i32 count, NUMTL **materials) {
     if (count == 0) {
-        nurndr_forced_mtl_table = NULL;
         nuspecial_draw_state &= ~NUSPECIAL_DRAW_MATERIAL_MAP;
+        nurndr_forced_mtl_table = NULL;
         return;
     } else {
         nurndr_nforced_mtls = count;
@@ -11735,10 +10482,10 @@ extern "C" nutexanimenv_s *NuTexAnimEnvCreate(VARIPTR *buffer, numtl_s *material
         env->wait_remaining = 0;
         env->texture_ids = ids;
         env->texture_index = 0;
-        if (buffer == NULL)
-            env->flags |= 1;
-        else
+        if (buffer != NULL)
             env->flags &= ~1;
+        else
+            env->flags |= 1;
     }
     return env;
 }
@@ -12147,7 +10894,8 @@ extern "C" void NuTexAnimRemoveList(void *anim) {
                 ntal_first = node->next;
             node->next = ntal_free;
             ntal_free = node;
-            break;
+            NuThreadCriticalSectionEnd(g_texAnimCriticalSection);
+            return;
         }
     }
     NuThreadCriticalSectionEnd(g_texAnimCriticalSection);
@@ -12197,15 +10945,15 @@ extern "C" nutexanim_s *NuTexAnimCreate(VARIPTR *buffer, nutexanimprog_s *progra
     nutexanim_s *animation;
     if (buffer != NULL) {
         animation = reinterpret_cast<nutexanim_s *>(ALIGN(buffer->addr, 4));
-        buffer->addr = reinterpret_cast<usize>(animation) + sizeof(nutexanim_s) + texture_count * sizeof(u16);
+        buffer->addr = reinterpret_cast<usize>(reinterpret_cast<u16 *>(animation + 1) + texture_count);
     } else {
         animation =
             static_cast<nutexanim_s *>(NU_ALLOC(sizeof(nutexanim_s) + texture_count * sizeof(u16), 4, 1, "", 0));
     }
     animation->texture_count = texture_count;
     animation->material = material;
-    animation->next = NULL;
     animation->previous = NULL;
+    animation->next = NULL;
     animation->name = NULL;
     animation->texture_ids = reinterpret_cast<u16 *>(animation + 1);
     memcpy(animation->texture_ids, texture_ids, texture_count * sizeof(u16));
@@ -12454,8 +11202,8 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
             f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
             weights_by_render[render] = weights;
             i32 curve_offset = animation->curve_count * node;
-            i8 *types = reinterpret_cast<i8 *>(animation->curve_types) + curve_offset;
             nuanimcurve2_s *curves = animation->curves + curve_offset;
+            i8 *types = reinterpret_cast<i8 *>(animation->curve_types) + curve_offset;
             if (weights == NULL) {
                 continue;
             }
@@ -13023,7 +11771,7 @@ extern "C" {
                 if (exclusion_mask != 0 && (*reinterpret_cast<u32 *>(&group->ellipses[i][4]) & exclusion_mask) != 0) {
                     continue;
                 }
-                i32 n = counts[index];
+                i16 n = counts[index];
                 if (n != 0) {
                     if (matrix_ready == 0) {
                         NuMtxMulVU0(&combined, &joint_matrices[group->joint_index], world_matrix);
@@ -13129,7 +11877,7 @@ extern "C" void NuTextureBlendEffect(i32 arg0, i32 arg1, NUVEC4 *parameters) {
         currentScene.motion_falloff = falloff;
     }
 
-    void NuAccumulationMotionBlurParams(i32 frames, f32 blend, i32 mode) {
+    void NuAccumulationMotionBlurParams(i32 frames, f32 blend, f32 mode) {
         currentScene.accumulation_blend = blend;
         currentScene.unknown_174 = 1;
         currentScene.accumulation_frames = frames;
@@ -13140,7 +11888,7 @@ extern "C" void NuTextureBlendEffect(i32 arg0, i32 arg1, NUVEC4 *parameters) {
     // Rendering / materials / effects (host has GL paths elsewhere)
     // ---------------------------------------------------------------------------
 
-    void NuAccumulationMotionBlurEffect(i32 frames, f32 blend, i32 mode) {
+    void NuAccumulationMotionBlurEffect(i32 frames, f32 blend, f32 mode) {
         currentScene.accumulation_blend = blend;
         currentScene.unknown_174 = 1;
         currentScene.unknown_178 = 1;
@@ -13408,7 +12156,7 @@ extern "C" {
         NUVEC corners[8];
         NUVEC view[8];
         u8 results[8];
-        if (__builtin_expect(far_clip == 0.0f, 0))
+        if (far_clip == 0.0f)
             far_clip = global_camera.far_clip;
         if (__builtin_expect(world_mtx == NULL || world_mtx == &numtx_identity, 0))
             transform = vmtx;
@@ -13441,10 +12189,11 @@ extern "C" {
         for (i32 i = 0; i < 8; ++i)
             NuVecMtxTransform(&view[i], &corners[i], &transform);
         *min_depth = 3.4028234663852886e+38f;
-        for (i32 i = 0; i < 8; ++i) {
+        for (i32 i = 0; i < 8; ++i)
             results[i] = 0;
+        for (i32 i = 0; i < 8; ++i) {
             *min_depth = view[i].z < *min_depth ? view[i].z : *min_depth;
-            if ((flags & NUCAMERA_EXTENTS_SKIP_NEAR) == 0 && view[i].z < global_camera.near_clip)
+            if (view[i].z < global_camera.near_clip && (flags & NUCAMERA_EXTENTS_SKIP_NEAR) == 0)
                 results[i] |= NUCAMERA_OUT_NEAR;
             if (view[i].z > far_clip)
                 results[i] |= NUCAMERA_OUT_FAR;
@@ -13465,9 +12214,10 @@ extern "C" {
             return 1;
         if ((flags & NUCAMERA_EXTENTS_SKIP_SCISSOR) != 0)
             return 2;
-        for (i32 i = 0; i < 8; ++i) {
+        for (i32 i = 0; i < 8; ++i)
             results[i] = 0;
-            if ((flags & NUCAMERA_EXTENTS_SKIP_NEAR) == 0 && view[i].z < global_camera.near_clip)
+        for (i32 i = 0; i < 8; ++i) {
+            if (view[i].z < global_camera.near_clip && (flags & NUCAMERA_EXTENTS_SKIP_NEAR) == 0)
                 results[i] |= NUCAMERA_OUT_NEAR;
             if (view[i].z > far_clip)
                 results[i] |= NUCAMERA_OUT_FAR;
@@ -13580,7 +12330,7 @@ void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
     NuVecSub(&forward, &camera_position, v);
     NuVecCross(&right, &world_up, &forward);
     NuVecNorm(&right, &right);
-    NuVecCross(&up, &forward, &right);
+    NuVecCross(&up, &world_up, &right);
     NuVecNorm(&up, &up);
 
     m->m00 = right.x;
@@ -13595,10 +12345,10 @@ void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
     m->m33 = 1.0f;
     m->m23 = 0.0f;
     m->m13 = 0.0f;
+    m->m03 = 0.0f;
     m->m30 = v->x;
     m->m31 = v->y;
     m->m32 = v->z;
-    m->m03 = 0.0f;
 }
 
 NUMTX *NuCameraGetViewMtx(void) {
@@ -14728,7 +13478,8 @@ extern "C" void NuTimeBarSlotSetEx(i32 set, i32 slot, i32 value, const char *nam
 }
 
 extern "C" i32 NuTimeBarSlotLastValue(i32 set, i32 slot) {
-    u32 elapsed = static_cast<u32>(NuTimeBarSlotLastValueMicroseconds(set, slot));
+    TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+    u32 elapsed = static_cast<u32>(timebar->accumulators[timebar->toggle_flags[slot]][slot]);
     return static_cast<i32>((static_cast<f32>(elapsed) * 60.0f / 1000000.0f) * 262.5f);
 }
 
@@ -14807,9 +13558,7 @@ extern "C" void BuildWorldSpaceClipPlanes(void) {
     NuMtxMulH(&ScissorPlanes, &vmtx, &CamSpaceScissorPlanes);
     f32 dot = global_camera.mtx.m30 * global_camera.mtx.m20 + global_camera.mtx.m31 * global_camera.mtx.m21 +
               global_camera.mtx.m32 * global_camera.mtx.m22;
-    NearPlane.x = global_camera.mtx.m20;
-    NearPlane.y = global_camera.mtx.m21;
-    NearPlane.z = global_camera.mtx.m22;
+    NearPlane = *reinterpret_cast<NUVEC4 *>(&global_camera.mtx.m20);
     NearPlane.w = -dot;
     AbsNearPlane.x = NuFabs(NearPlane.x);
     AbsNearPlane.y = NuFabs(NearPlane.y);
@@ -15061,7 +13810,7 @@ extern "C" {
             NUROOM &first = scene->rooms[candidates[0]];
             NUROOM &second = scene->rooms[candidates[1]];
             if (candidate_count == 2) {
-                if (__builtin_expect(!(first.priority < second.priority), 1)) {
+                if (!(first.priority < second.priority)) {
                     candidates[1] = static_cast<i16>(room_index);
                 } else {
                     candidates[0] = static_cast<i16>(room_index);
@@ -15174,9 +13923,6 @@ extern "C" i32 NuPortalClipTestBox(NUVEC *center, NUVEC *extent, NUFRUSTRUM *fru
         if (scene == NULL || scene->max_portals == 0) {
             return 1;
         }
-        if (scene->num_portal_frusta <= 0) {
-            return 0;
-        }
         for (i32 i = 0; i < scene->num_portal_frusta; ++i) {
             if (scene->portal_frusta[i]->room_id == room_id) {
                 return 1;
@@ -15202,13 +13948,17 @@ extern "C" i32 NuPortalClipTestBox(NUVEC *center, NUVEC *extent, NUFRUSTRUM *fru
     }
 
     i32 NuPortalClipTest(NUGSCN *scene, NUVEC *position, f32 radius, i16 room_id) {
-        if (scene->max_portals == 0 || scene->camera_room == room_id) {
+        if (scene->max_portals == 0 || room_id == scene->camera_room) {
             return 1;
         }
         for (i32 i = 0; i < scene->num_portal_frusta; ++i) {
             NUFRUSTRUM *frustum = scene->portal_frusta[i];
             if (frustum != NULL && frustum->room_id == room_id) {
-                NUPORTALSPHERE sphere = {*position, radius};
+                NUPORTALSPHERE sphere;
+                sphere.center.x = position->x;
+                sphere.center.y = position->y;
+                sphere.center.z = position->z;
+                sphere.radius = radius;
                 i32 result = clipTestSphere(&sphere, frustum);
                 if (result != 0) {
                     return result;
@@ -15624,7 +14374,9 @@ extern "C" {
 i32 NuCameraClipHGobj(nugscn_s *scene, numtx_s *world_matrix, numtx_s *root_matrix) {
     nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(scene);
     if (CutSceneBoundingBoxTrackRoot == 0) {
-        return NuCameraClipTestExtents(&object->bounds_min, &object->bounds_max, world_matrix, 0.0f, 0);
+        NUVEC min = object->bounds_min;
+        NUVEC max = object->bounds_max;
+        return NuCameraClipTestExtents(&min, &max, world_matrix, 0.0f, 0);
     }
 
     NUVEC half_extents;
@@ -15877,7 +14629,24 @@ extern "C" {
         static NUMTX cmtx;
         if (fast == 0) {
             NUVIEWPORT *viewport = NuVpGetCurrentViewport();
-            NuCameraBuildClipProjection(&cmtx, camera, viewport->scissor_width, viewport->scissor_height);
+            f32 far_clip;
+            if (camera->unknown_64 == 0.0f)
+                far_clip = camera->far_clip - nucamera_farclip_hack;
+            else
+                far_clip = camera->unknown_64 - nucamera_farclip_hack;
+            f32 near_clip = camera->unknown_60;
+            if (near_clip == 0.0f)
+                near_clip = camera->near_clip;
+            const i32 angle = static_cast<i32>(camera->fov * 0.5f * 10430.378f);
+            const f32 cotangent = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff] / NuTrigTable[angle >> 1 & 0x7fff];
+            const f32 x = viewport->scissor_width * camera->aspect * cotangent;
+            const f32 y = cotangent * viewport->scissor_height;
+            memset(&cmtx, 0, sizeof(cmtx));
+            cmtx.m00 = x;
+            cmtx.m11 = y;
+            cmtx.m23 = 1.0f;
+            cmtx.m22 = (far_clip + near_clip) / (far_clip - near_clip);
+            cmtx.m32 = (far_clip * -2.0f * near_clip) / (far_clip - near_clip);
         }
         NuMtxMulVU0(out, view, &cmtx);
     }
@@ -15885,7 +14654,24 @@ extern "C" {
     void NuCameraSetVPortClipMtx(NUMTX *out, NUMTX *view, NUCAMERA *camera, i32 fast) {
         if (fast == 0) {
             NUVIEWPORT *viewport = NuVpGetCurrentViewport();
-            NuCameraBuildClipProjection(&pc_vport_mtx, camera, viewport->clip_width, viewport->clip_height);
+            f32 far_clip;
+            if (camera->unknown_64 == 0.0f)
+                far_clip = camera->far_clip - nucamera_farclip_hack;
+            else
+                far_clip = camera->unknown_64 - nucamera_farclip_hack;
+            f32 near_clip = camera->unknown_60;
+            if (near_clip == 0.0f)
+                near_clip = camera->near_clip;
+            const i32 angle = static_cast<i32>(camera->fov * 0.5f * 10430.378f);
+            const f32 cotangent = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff] / NuTrigTable[angle >> 1 & 0x7fff];
+            const f32 x = camera->aspect * cotangent * viewport->clip_width;
+            const f32 y = cotangent * viewport->clip_height;
+            memset(&pc_vport_mtx, 0, sizeof(pc_vport_mtx));
+            pc_vport_mtx.m00 = x;
+            pc_vport_mtx.m11 = y;
+            pc_vport_mtx.m23 = 1.0f;
+            pc_vport_mtx.m22 = (far_clip + near_clip) / (far_clip - near_clip);
+            pc_vport_mtx.m32 = (far_clip * -2.0f * near_clip) / (far_clip - near_clip);
         }
         NuMtxMulVU0(out, view, &pc_vport_mtx);
     }
@@ -15899,8 +14685,8 @@ extern "C" {
         }
 
         if (camfx == 0) {
-            NuMtxInv(&vmtx, &global_camera.mtx);
-            NuMtxScale(&vmtx, &global_camera.scale);
+            NuMtxInvVU0(&vmtx, &global_camera.mtx);
+            NuMtxScaleVU0(&vmtx, &global_camera.scale);
         } else {
             NUMTX camera_inverse;
             NUMTX reflect_inverse;
@@ -16177,9 +14963,9 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
         }
     }
     f32 w = static_cast<f32>(PS2_REZ_W), h = static_cast<f32>(PS2_REZ_H);
-    i32 width = static_cast<i32>(xPos == xTiles - 1.0f ? scale * w - ((xTiles - 1.0f) * 0.75f) * w : 0.75f * w);
     f32 full_height = scale * h;
-    i32 height = static_cast<i32>(yPos == yTiles - 1.0f ? full_height - ((yTiles - 1.0f) * 0.75f) * h : 0.75f * h);
+    i32 width = static_cast<i32>(xPos != xTiles - 1.0f ? 0.75f * w : scale * w - ((xTiles - 1.0f) * 0.75f) * w);
+    i32 height = static_cast<i32>(yPos != yTiles - 1.0f ? 0.75f * h : full_height - ((yTiles - 1.0f) * 0.75f) * h);
     u8 *data = pixels + static_cast<u32>(((static_cast<f32>(static_cast<i32>(params.width)) * 3.0f) * 0.125f) * h) +
                static_cast<u32>((0.125f * w) * 3.0f) +
                static_cast<u32>(((static_cast<f32>(xOffsetHack * 3) * w) / static_cast<f32>(PS2_VREZ_W)) * scale);
@@ -16558,8 +15344,8 @@ static void drawClippedPortal(NUPORTAL *portal, NUPLANE **planes, u8 *plane_coun
     NuCameraUnlock();
 
     const f32 left = minimum->x * 0.5f + 0.5f;
-    const f32 right = maximum->x * 0.5f + 0.5f;
     const f32 top = 0.5f - minimum->y * 0.5f;
+    const f32 right = maximum->x * 0.5f + 0.5f;
     const f32 bottom = 0.5f - maximum->y * 0.5f;
     NuPortalLineVertex2D lines[8];
     lines[0].x = left;
@@ -16594,7 +15380,7 @@ static void drawClippedPortal(NUPORTAL *portal, NUPLANE **planes, u8 *plane_coun
         NuVecNorm(&rays[i], &rays[i]);
         if (*plane_count != 0) {
             f32 nearest_distance = FLT_MAX;
-            for (i32 plane_index = 0; plane_index < *plane_count; ++plane_index) {
+            for (u32 plane_index = 0; plane_index < *plane_count; ++plane_index) {
                 NUVEC point;
                 const f32 distance = NuPlnLine3(&(*planes)[plane_index], &hits[i], &rays[i], &point);
                 if (distance > 0.0f && distance < nearest_distance) {
@@ -17352,10 +16138,10 @@ extern "C" __attribute__((force_align_arg_pointer)) i32 NuRndrCircle(f32 x, f32 
         f32 cosine = NuCosf(angle);
         f32 half_cosine = 0.5f * cosine;
         f32 half_sine = 0.5f * sine;
-        f32 next_y = cosine * radius + y;
         f32 next_x = sine * radius * aspect + x;
-        f32 next_v = v1 * (0.5f - half_cosine) + v0;
+        f32 next_y = cosine * radius + y;
         f32 next_u = (half_sine + 0.5f) * u1 + u0;
+        f32 next_v = v1 * (0.5f - half_cosine) + v0;
         NuRndrPrimSetColour(colour);
         NuRndrPrimUV(0.5f * u1 + u0, 0.5f * v1 + v0);
         NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * x, static_cast<f32>(PS2_VREZ_H) * y, 0.0f);
@@ -17532,13 +16318,15 @@ extern "C" {
 // original 0x2e6e90 — rotate to the next stream buffer, recording the high
 // watermark. The infinite-loop tail is the original's buffer-overflow trap.
 extern "C" void NuRndrSwapStreamBuffers(void) {
-    i32 last_used;
+    u32 last_used;
 
-    last_used = (i32)((i64)rndrstream_free.addr - (i64)rndrstream[rndrstream_buffid].addr);
-    if (rndrstream_max_used < last_used) {
+    last_used = rndrstream_free.addr - rndrstream[rndrstream_buffid].addr;
+    rndrstream_used = last_used;
+    rndrstream_last_used = last_used;
+    if (last_used > rndrstream_max_used) {
         rndrstream_max_used = last_used;
     }
-    if (last_used > nurndr_maxstreamsize) {
+    if (static_cast<u32>(nurndr_maxstreamsize) < last_used) {
         for (;;) {
         }
     }
@@ -17548,7 +16336,6 @@ extern "C" void NuRndrSwapStreamBuffers(void) {
     }
     rndrstream_free.addr = ALIGN(rndrstream[rndrstream_buffid].addr, 16);
     rndrstream_end.addr = rndrstream[rndrstream_buffid].addr + nurndr_maxstreamsize;
-    rndrstream_used = last_used;
 }
 
 }
@@ -17647,28 +16434,35 @@ extern "C" {
             NuVec4MtxTransformVU0(&vertices[5], &vertices[5], &clip_matrix);
             if (!(vertices[4].w >= 0.5f) && !(vertices[5].w >= 0.5f))
                 continue;
-            i32 green = (laser->colour >> 8) & 0xff;
-            i32 red = laser->colour & 0xff;
-            i32 blue = (laser->colour >> 16) & 0xff;
-            i32 alpha = laser->colour >> 24;
+            i32 red, green, blue, alpha;
             if (vertices[4].w < 0.5f) {
                 f32 numerator = vertices[5].w - 0.5f;
                 f32 denominator = vertices[5].w - vertices[4].w;
-                if (laser->arc) {
-                    red = (i32)((f32)red * numerator / denominator);
-                    green = (i32)((f32)green * numerator / denominator);
-                    blue = (i32)((f32)blue * numerator / denominator);
-                    alpha = (i32)((f32)alpha * numerator / denominator);
+                if (!laser->arc) {
+                    green = (laser->colour >> 8) & 0xff;
+                    blue = (laser->colour >> 16) & 0xff;
+                    red = laser->colour & 0xff;
+                    alpha = (laser->colour >> 24) & 0xff;
+                } else {
+                    red = (i32)((f32)(laser->colour & 0xff) * numerator / denominator);
+                    green = (i32)((f32)((laser->colour >> 8) & 0xff) * numerator / denominator);
+                    blue = (i32)((f32)((laser->colour >> 16) & 0xff) * numerator / denominator);
+                    alpha = (i32)((f32)((laser->colour >> 24) & 0xff) * numerator / denominator);
                 }
                 vertices[6].x = (laser->start.x - laser->end.x) * numerator / denominator + laser->end.x;
                 vertices[6].y = (laser->start.y - laser->end.y) * numerator / denominator + laser->end.y;
                 vertices[6].z = (laser->start.z - laser->end.z) * numerator / denominator + laser->end.z;
+                vertices[6].w = 1.0f;
             } else {
+                green = (laser->colour >> 8) & 0xff;
+                blue = (laser->colour >> 16) & 0xff;
+                red = laser->colour & 0xff;
+                alpha = (laser->colour >> 24) & 0xff;
                 vertices[6].x = laser->start.x;
                 vertices[6].y = laser->start.y;
                 vertices[6].z = laser->start.z;
+                vertices[6].w = 1.0f;
             }
-            vertices[6].w = 1.0f;
             f32 dx = vertices[6].x - laser->end.x;
             f32 dy = vertices[6].y - laser->end.y;
             f32 dz = vertices[6].z - laser->end.z;
@@ -17679,12 +16473,13 @@ extern "C" {
                 vertices[7].x = (laser->end.x - laser->start.x) * numerator / denominator + laser->start.x;
                 vertices[7].y = (laser->end.y - laser->start.y) * numerator / denominator + laser->start.y;
                 vertices[7].z = (laser->end.z - laser->start.z) * numerator / denominator + laser->start.z;
+                vertices[7].w = 1.0f;
             } else {
                 vertices[7].x = laser->end.x;
                 vertices[7].y = laser->end.y;
                 vertices[7].z = laser->end.z;
+                vertices[7].w = 1.0f;
             }
-            vertices[7].w = 1.0f;
             NuVec4MtxTransformVU0(&vertices[4], &vertices[6], &clip_matrix);
             NuVec4ScaleXYZVU0(&vertices[4], &vertices[4], 1.0f / vertices[4].w);
             NuVec4MtxTransformVU0(&vertices[5], &vertices[7], &clip_matrix);
@@ -17849,19 +16644,18 @@ void NuLgtArcLaserEx(i32 type, NUVEC *start, NUVEC *end, NUVEC *bend, f32 width,
     i32 index = NuLgtArcLaserCnt;
     if (index >= 16)
         return;
-    NULGTARCLASER *laser = &NuLgtArcLaserData[index];
-    laser->type = (u8)type;
-    laser->start = *start;
-    laser->end = *end;
-    laser->bend = *bend;
-    laser->width = width;
-    laser->wobble = wobble;
-    laser->bend_amount = bend_amount;
-    laser->segment_length = segment_length;
+    NuLgtArcLaserData[index].type = (u8)type;
+    NuLgtArcLaserData[index].start = *start;
+    NuLgtArcLaserData[index].end = *end;
+    NuLgtArcLaserData[index].bend = *bend;
+    NuLgtArcLaserData[index].width = width;
+    NuLgtArcLaserData[index].wobble = wobble;
+    NuLgtArcLaserData[index].bend_amount = bend_amount;
+    NuLgtArcLaserData[index].segment_length = segment_length;
     u32 green = ((u32)colour & 0xff00) * 2;
+    u32 blue = ((u32)colour & 0xff0000) >> 15;
     u32 red = ((u32)colour & 0xff) * 2;
     u32 alpha = ((u32)colour >> 24) * 2;
-    u32 blue = ((u32)colour & 0xff0000) >> 15;
     if (red > 255)
         red = 255;
     if (green > 0xff00)
@@ -17870,9 +16664,9 @@ void NuLgtArcLaserEx(i32 type, NUVEC *start, NUVEC *end, NUVEC *bend, f32 width,
         blue = 255;
     if (alpha > 255)
         alpha = 255;
-    laser->colour = (blue | (red << 16)) | (green | (alpha << 24));
-    laser->flags = flags;
-    if ((NuLgtArcLaserFrame & 1) == 0 || laser->seed == 0)
+    NuLgtArcLaserData[index].colour = (blue | (red << 16)) | (green | (alpha << 24));
+    NuLgtArcLaserData[index].flags = flags;
+    if ((NuLgtArcLaserFrame & 1) == 0 || NuLgtArcLaserData[index].seed == 0)
         NuLgtArcLaserData[index].seed = NuLgtRand();
     for (i32 i = 0; i < 6; ++i)
         NuLgtRand();
@@ -17887,7 +16681,7 @@ extern "C" {
 
 }
 
-__attribute__((optimize("O2"))) void NuDisplayListSetInstSurfGeom(void *) {
+void NuDisplayListSetInstSurfGeom(void *) {
     STUBBED();
 }
 
@@ -18063,8 +16857,8 @@ extern "C" {
             nop[1].type = 0x87;
             nop[1].id = 0;
             nop[1].next = nullptr;
-            item = nop + 2;
             list->state->tex_id = mtl->tex_id;
+            item = nop + 2;
         }
 
         item[0].type = 0x80;
@@ -18151,7 +16945,7 @@ void DisplayListLinkDynamicMtls(void) {
 
         {
             sp->nmtls--;
-            if (__builtin_expect(sp->nmtls == 0, 1)) {
+            if (sp->nmtls == 0) {
                 // Unlink empty sortpri.
                 if (mgr->sort_list != sp) {
                     nusortpri_s *cur = mgr->sort_list;
@@ -18252,9 +17046,11 @@ void DisplayListLinkDynamicMtls(void) {
         // Insertion position — before first used material with key >= ours.
         i32 insert = pos;
         for (i32 j = 0; j < static_cast<i32>(mgr->dyn_mtl_dlist.nmtls); ++j) {
-            if (__builtin_expect(mgr->material_used[j] != 0 && key <= MtlSortKey(mgr->dyn_mtl_dlist.mtls[j]), 1)) {
-                insert = j;
-                break;
+            if (mgr->material_used[j] != 0) {
+                if (key <= MtlSortKey(mgr->dyn_mtl_dlist.mtls[j])) {
+                    insert = j;
+                    break;
+                }
             }
         }
 
@@ -18270,7 +17066,7 @@ void DisplayListLinkDynamicMtls(void) {
 
         {
             for (i32 i = 0; i < static_cast<i32>(mgr->dyn_mtl_dlist.nmtls); ++i) {
-                if (__builtin_expect(mgr->material_used[i] != 0, 1)) {
+                if (mgr->material_used[i] != 0) {
                     mgr->dyn_mtl_dlist.mtls[i]->display_list->mtl_id = i;
                 }
             }
@@ -18348,7 +17144,7 @@ void DisplayListLinkDynamicMtls(void) {
                 if (sp->nmtls == 0)
                     continue;
                 for (u32 k = 0; k < total; ++k) {
-                    if (__builtin_expect(MtlSortKey(mgr->dyn_mtl_dlist.mtls[k]) == sp->sort_pri, 0)) {
+                    if (MtlSortKey(mgr->dyn_mtl_dlist.mtls[k]) == sp->sort_pri) {
                         sp->mtl_first = static_cast<u16>(k);
                         break;
                     }
@@ -18833,15 +17629,13 @@ extern "C" void NuSpecialSetDrawPos(nuhspecial_s *special, NUVEC *pos) {
         }
         NuSpecialLegacyRuntimeLayout *legacy = static_cast<NuSpecialLegacyRuntimeLayout *>(handle->special);
         if (legacy != NULL) {
-            if (legacy->instance != NULL) {
-                *reinterpret_cast<NUMTX *>(legacy->instance) = *mtx;
-            }
+            *reinterpret_cast<NUMTX *>(legacy->instance) = *mtx;
             return;
         }
-        NuSpecialBoundsDisplayLayout *display = static_cast<NuSpecialBoundsDisplayLayout *>(handle->display_special);
-        if (display != NULL) {
-            display->draw_mtx = *mtx;
-            display->flags |= 0x400;
+        static_cast<NuSpecialBoundsDisplayLayout *>(handle->display_special)->draw_mtx = *mtx;
+        if ((handle->scene->display_list->instance_visibility_enabled & 1) != 0) {
+            NuDisplayListUpdateSpecial(static_cast<nuhspecial_s *>(special));
+            static_cast<NuSpecialBoundsDisplayLayout *>(handle->display_special)->flags |= 0x400;
         }
     }
 
@@ -18952,7 +17746,7 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
     nuglobalrndrstate_s *last_local = nullptr;
 
     auto linkSceneGeometry = [](NUDISPLAYLIST *dl) {
-        if (__builtin_expect(dl->scene_first[dl->scene_buffer] != dl->scene_next, 0)) {
+        if (dl->scene_first[dl->scene_buffer] != dl->scene_next) {
             dl->dyn_geom->next = dl->scene_first[dl->scene_buffer];
             dl->scene_next->type = kItemType_Link;
             dl->scene_next->next = dl->dyn_geom + 1;
@@ -18984,8 +17778,8 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
         if ((sc->flags & 6) == 0 || sp->nmtls == 0)
             continue;
 
-        for (u32 m = 0; m < sp->nmtls; ++m) {
-            i32 mi = static_cast<i32>(static_cast<u32>(sp->mtl_first) + m);
+        for (i32 m = 0; m < sp->nmtls; ++m) {
+            i32 mi = sp->mtl_first + m;
             NUDISPLAYLIST *dl = sc->dlist_mtls[mi];
             if (dl->mtl_item->id != kItemId_Cnt)
                 continue;
@@ -19204,8 +17998,8 @@ extern "C" void NuDisplayListBurstRndrSpecial(nuhspecial_s *handle, u32 count, N
                     list->items->next = transform;
                     list->items->type = 0x8c;
                     NUDISPLAYLISTITEM *first = list->items++;
-                    list->items->next = geometry_data;
                     list->items->id = 3;
+                    list->items->next = geometry_data;
                     list->items->type = 0x82;
                     NUDISPLAYLISTITEM *last = list->items++;
                     DisplayListSetAlphaPS(first, last, 1);
@@ -19839,7 +18633,7 @@ static inline void NuLgtArcVertex(NUVEC4 *position, i32 colour, f32 u, f32 v) {
     NuPrim2DAddXYZ(position->x, position->y, position->z);
 }
 
-__attribute__((optimize("O2", "tree-vectorize"))) void NuLgtArcLaserDraw(i32 paused) {
+void NuLgtArcLaserDraw(i32 paused) {
     f32 v0 = NuLgtArcMtl[0].v0, v1 = NuLgtArcMtl[0].v1;
     if (paused)
         NuLgtArcLaserCnt = NuLgtArcLaserOldCnt;
@@ -20365,21 +19159,27 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
     const usize clip_base = (buffer->addr + 15) & ~static_cast<usize>(15);
     scene->clip_used[0] = reinterpret_cast<u8 *>(clip_base);
     scene->clip_used[1] = reinterpret_cast<u8 *>(clip_base + static_cast<usize>(clip_bytes));
-    buffer->addr = clip_base + static_cast<usize>(clip_bytes) * 2;
-    memset(scene->clip_used[0], 0, clip_bytes);
+    buffer->addr = reinterpret_cast<usize>(scene->clip_used[1]) + clip_bytes;
+    memset(reinterpret_cast<void *>(clip_base), 0, clip_bytes);
     memset(scene->clip_used[1], 0, clip_bytes);
     u32 mtl_bytes = (((source->nmtls + 7) >> 7) + 1) * 16;
-    scene->mtl_used[0] = CloneSceneAllocate<u8>(buffer, mtl_bytes, 16);
-    scene->mtl_used[1] = CloneSceneAllocate<u8>(buffer, mtl_bytes, 1);
-    memset(scene->mtl_used[0], 0, mtl_bytes);
+    const usize mtl_base = (buffer->addr + 15) & ~static_cast<usize>(15);
+    scene->mtl_used[0] = reinterpret_cast<u8 *>(mtl_base);
+    scene->mtl_used[1] = reinterpret_cast<u8 *>(mtl_base + mtl_bytes);
+    buffer->addr = reinterpret_cast<usize>(scene->mtl_used[1]) + mtl_bytes;
+    memset(reinterpret_cast<void *>(mtl_base), 0, mtl_bytes);
     memset(scene->mtl_used[1], 0, mtl_bytes);
-    NUDISPLAYLIST *lists = CloneSceneAllocate<NUDISPLAYLIST>(buffer, source->nmtls);
+    NUDISPLAYLIST *lists = reinterpret_cast<NUDISPLAYLIST *>((buffer->addr + 3) & ~static_cast<usize>(3));
     NUDISPLAYLIST *first_list = lists;
-    scene->dlist_mtls = CloneSceneAllocate<NUDISPLAYLIST *>(buffer, source->nmtls);
-    NURNDRSTATE *states = CloneSceneAllocate<NURNDRSTATE>(buffer, source->nmtls);
-    memset(states, 0, sizeof(NURNDRSTATE) * source->nmtls);
-    NUDISPLAYLISTITEM *heads = CloneSceneAllocate<NUDISPLAYLISTITEM>(buffer, source->nmtls);
-    memset(heads, 0, sizeof(NUDISPLAYLISTITEM) * source->nmtls);
+    scene->dlist_mtls = reinterpret_cast<NUDISPLAYLIST **>(lists + source->nmtls);
+    NURNDRSTATE *states = reinterpret_cast<NURNDRSTATE *>(scene->dlist_mtls + source->nmtls);
+    const usize states_size = sizeof(NURNDRSTATE) * source->nmtls;
+    buffer->addr = reinterpret_cast<usize>(states) + states_size;
+    memset(states, 0, states_size);
+    const usize heads_size = sizeof(NUDISPLAYLISTITEM) * source->nmtls;
+    NUDISPLAYLISTITEM *heads = reinterpret_cast<NUDISPLAYLISTITEM *>((buffer->addr + 3) & ~static_cast<usize>(3));
+    buffer->addr = reinterpret_cast<usize>(heads) + heads_size;
+    memset(heads, 0, heads_size);
     for (i32 i = 0; i < static_cast<i32>(source->nmtls); ++i, ++lists, ++states, ++heads) {
         scene->dlist_mtls[i] = lists;
         memcpy(scene->dlist_mtls[i], source->dlist_mtls[i], sizeof(NUDISPLAYLIST));
@@ -20454,8 +19254,8 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
     global_dlist_manager.dlists[global_dlist_manager.ndisplay_lists++] = scene;
     DisplayListBeforeFrameReset(scene);
     if (scene->nsort_pris > 0) {
-        NUSORTPRI *sort = scene->sort_pris;
         NUSORTPRI *sort_list = global_dlist_manager.sort_list;
+        NUSORTPRI *sort = scene->sort_pris;
         i32 render_plane = numtl_renderplane;
         i32 render_plane_offset = render_plane * 0x20000;
         i32 used_sort_pris = global_dlist_manager.nused_sort_pris;
@@ -21010,12 +19810,27 @@ extern "C" void NuMtlRegisterForOverride(NUMTL *original, NUVERTEXDESCRIPTOR *de
 }
 
 extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
-    NUMTL *material = FindOverrideMaterial(original, source->shader_desc.vtx_desc);
-    if (material != NULL) {
-        return material;
+    NULNKHDR *node;
+    MTL_OVERRIDE_RECORD *entry;
+
+    for (node = NuLstGetNext(g_overrideList, NULL); node != NULL; node = NuLstGetNext(g_overrideList, node)) {
+        entry = reinterpret_cast<MTL_OVERRIDE_RECORD *>(node);
+        if (original == entry->original &&
+            entry->material->shader_desc.vtx_desc.flags == source->shader_desc.vtx_desc.flags) {
+            return entry->material;
+        }
     }
+
     NuMtlRegisterForOverride(original, &source->shader_desc.vtx_desc, 1);
-    return FindOverrideMaterial(original, source->shader_desc.vtx_desc);
+
+    const NUVERTEXDESCRIPTOR descriptor = source->shader_desc.vtx_desc;
+    for (node = NuLstGetNext(g_overrideList, NULL); node != NULL; node = NuLstGetNext(g_overrideList, node)) {
+        entry = reinterpret_cast<MTL_OVERRIDE_RECORD *>(node);
+        if (entry->original == original && entry->material->shader_desc.vtx_desc.flags == descriptor.flags) {
+            return entry->material;
+        }
+    }
+    return NULL;
 }
 
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special_handle, NUMTX *mtx, i32 skinned, NUMTX *skin_matrices,
@@ -21121,8 +19936,8 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
                         void *faceon = DisplayListCreateFaceonTransformPS(buffer, mtx, list->dlist->mtls[list->mtl_id],
                                                                           geometry->next);
                         NUDISPLAYLISTITEM *first = list->items;
-                        first->id = 3;
                         first->type = 0x90;
+                        first->id = 3;
                         first->next = faceon;
                         list->items = first + 1;
                         void *packet = NuDisplayListPrepareFaceonPS(buffer, geometry->next, mtx);
@@ -21167,7 +19982,7 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
                         const i32 render_set_count = NuDynamicLightGetActiveRenderSetCount(light);
                         const u32 visible_sets = static_cast<u32>(NuSpecialGetShadowClipTestResult(light_index));
                         for (i32 render_set = 0; render_set < render_set_count; ++render_set) {
-                            if ((visible_sets & (1u << (render_set & 31))) == 0)
+                            if ((visible_sets & (1 << render_set)) == 0)
                                 continue;
                             NUDISPLAYLIST *shadow_list = NuDynamicLightGetDList(light, render_set, material);
                             shadow_list->dlist = scene;
@@ -21212,8 +20027,8 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
                                     buffer, mtx, shadow_list->dlist->mtls[shadow_list->mtl_id], geometry->next,
                                     transform_packet);
                                 NUDISPLAYLISTITEM *first = shadow_list->items;
-                                first->id = 3;
                                 first->type = 0x8c;
+                                first->id = 3;
                                 first->next = packet;
                                 shadow_list->items = first + 1;
                                 NUDISPLAYLISTITEM *last = shadow_list->items;
@@ -21242,8 +20057,8 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
         RndrStateCopyGlobalState(scene->local_state);
         NuVisibilityResult *visibility =
             static_cast<NuVisibilityResult *>(NuVisiEvaluate(scene->gscene, visibility_context));
-        if (visibility == NULL || (visibility->state & 1) == 0) {
-            if (currentScene.unknown_3c != NULL) {
+        if (currentScene.unknown_3c != NULL) {
+            if (visibility == NULL || (visibility->state & 1) == 0) {
                 i32 instance = 0;
                 for (i32 clip = 0; clip < scene->nclip_objects; ++instance) {
                     if ((scene->visibility_flags[instance] & NUDL_INSTANCE_FLAG_CASTS_SHADOW) != 0) {
@@ -21258,36 +20073,36 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
                     }
                     clip = DisplaySceneNextInstance(scene, clip);
                 }
-            } else {
-                scene->alpha_values = NULL;
-                if (scene->fade_ranges != NULL) {
-                    VARIPTR *buffer = NuDisplayListGetBuffer();
-                    scene->alpha_values = buffer->f32_ptr;
-                    buffer->addr += static_cast<usize>(scene->nclip_objects) * sizeof(f32);
+            }
+        } else if (visibility == NULL || (visibility->state & 1) == 0) {
+            scene->alpha_values = NULL;
+            if (scene->fade_ranges != NULL) {
+                VARIPTR *buffer = NuDisplayListGetBuffer();
+                scene->alpha_values = buffer->f32_ptr;
+                buffer->addr += static_cast<usize>(scene->nclip_objects) * sizeof(f32);
+            }
+            i32 instance = 0;
+            for (i32 clip = 0; clip < scene->nclip_objects; ++instance) {
+                const u8 flags = scene->visibility_flags[instance];
+                bool visible = visibility == NULL || visibility->instance_tree_bits == NULL ||
+                               (visibility->instance_tree_bits[instance >> 3] & (1 << (instance & 7))) != 0;
+                if (visibility != NULL && visibility->portal_marker != NULL && portals_enabled != 0) {
+                    visible = (flags & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) != 0 ||
+                              (visibility->portal_bits[instance >> 3] & (1 << (instance & 7))) != 0;
                 }
-                i32 instance = 0;
-                for (i32 clip = 0; clip < scene->nclip_objects; ++instance) {
-                    const u8 flags = scene->visibility_flags[instance];
-                    bool visible = visibility == NULL || visibility->instance_tree_bits == NULL ||
-                                   (visibility->instance_tree_bits[instance >> 3] & (1U << (instance & 7))) != 0;
-                    if (visibility != NULL && visibility->portal_marker != NULL && portals_enabled != 0) {
-                        visible = (flags & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) != 0 ||
-                                  (visibility->portal_bits[instance >> 3] & (1U << (instance & 7))) != 0;
+                if (visible && (flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+                    NUCLIPBOUNDS &bounds = scene->clip_bounds[instance];
+                    const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
+                    clip = DisplaySceneSelectLod(scene, clip, distance_sqr);
+                    const f32 far_clip = DisplaySceneFarClip(scene, instance, clip);
+                    const i32 result = NuCameraClipTestExtentsAxisAligned(&bounds.center, &bounds.extent, far_clip);
+                    if (result != 0) {
+                        if (scene->alpha_values != NULL)
+                            scene->alpha_values[clip] = DisplaySceneDistanceFade(scene, instance, distance_sqr);
+                        DisplaySceneSetClipResult(scene, clip, result);
                     }
-                    if (visible && (flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
-                        NUCLIPBOUNDS &bounds = scene->clip_bounds[instance];
-                        const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
-                        clip = DisplaySceneSelectLod(scene, clip, distance_sqr);
-                        const f32 far_clip = DisplaySceneFarClip(scene, instance, clip);
-                        const i32 result = NuCameraClipTestExtentsAxisAligned(&bounds.center, &bounds.extent, far_clip);
-                        if (result != 0) {
-                            if (scene->alpha_values != NULL)
-                                scene->alpha_values[clip] = DisplaySceneDistanceFade(scene, instance, distance_sqr);
-                            DisplaySceneSetClipResult(scene, clip, result);
-                        }
-                    }
-                    clip = DisplaySceneNextInstance(scene, clip);
                 }
+                clip = DisplaySceneNextInstance(scene, clip);
             }
         }
         if (scene->nclip_objects != 0)
@@ -21300,8 +20115,8 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
             temporary_scene.display_list = scene;
             gscene = &temporary_scene;
         }
-        const bool portal_filter = visibility != NULL && portal_special_objects != 0 &&
-                                   visibility->portal_marker != NULL && portals_enabled != 0;
+        const bool portal_filter =
+            portal_special_objects != 0 && visibility->portal_marker != NULL && portals_enabled != 0;
         if ((scene->instance_visibility_enabled & NUDL_SCENE_INSTANCE_VISIBILITY_ENABLED) == 0 &&
             noscenespecials == 0) {
             nuhspecial_s handle = {gscene, NULL, NULL};
@@ -21312,12 +20127,13 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
                 handle.display_special = special;
                 const i32 instance = special->instance_ix;
                 if (portal_filter && (scene->visibility_flags[instance] & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0 &&
-                    (visibility->portal_bits[instance >> 3] & (1U << (instance & 7))) == 0)
+                    (visibility->portal_bits[instance >> 3] & (1 << (instance & 7))) == 0)
                     continue;
                 NUMTX *draw_mtx = special->draw_mtx_ptr;
-                if (draw_mtx == NULL || draw_mtx == reinterpret_cast<NUMTX *>(-1))
-                    draw_mtx = &special->draw_mtx;
-                NuDisplayListRndrSpecial(&handle, draw_mtx, 0, NULL, NULL);
+                if (draw_mtx != reinterpret_cast<NUMTX *>(-1) && draw_mtx != NULL)
+                    NuDisplayListRndrSpecial(&handle, draw_mtx, 0, NULL, NULL);
+                else
+                    NuDisplayListRndrSpecial(&handle, &special->draw_mtx, 0, NULL, NULL);
             }
         }
     }
@@ -21407,11 +20223,11 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
     i32 instance = 0;
     for (i32 lod = 0; lod < dl->nclip_objects; ++instance, ++lod) {
         if ((dl->visibility_flags[instance] & 0x21) == 0x21) {
-            if (__builtin_expect(dl->lod_ranges[lod] != 0.0f, 1)) {
-                f32 dx = global_camera.mtx.m30 - dl->clip_bounds[instance].center.x;
-                f32 dy = global_camera.mtx.m31 - dl->clip_bounds[instance].center.y;
-                f32 dz = global_camera.mtx.m32 - dl->clip_bounds[instance].center.z;
-                f32 distance = dx * dx + dy * dy + dz * dz;
+            f32 dx = global_camera.mtx.m30 - dl->clip_bounds[instance].center.x;
+            f32 dy = global_camera.mtx.m31 - dl->clip_bounds[instance].center.y;
+            f32 dz = global_camera.mtx.m32 - dl->clip_bounds[instance].center.z;
+            f32 distance = dx * dx + dy * dy + dz * dz;
+            if (dl->lod_ranges[lod] != 0.0f) {
                 while (dl->lod_ranges[lod] > distance)
                     ++lod;
             }
@@ -21423,8 +20239,8 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
                 f32 sy = set.capsule_end.y - set.capsule_center.y;
                 f32 sz = set.capsule_end.z - set.capsule_center.z;
                 f32 radius = set.capsule_radius + box.first_w;
-                f32 length = sy * sy + sx * sx + sz * sz;
                 f32 ox = box.first.x - set.capsule_center.x;
+                f32 length = sy * sy + sx * sx + sz * sz;
                 f32 oy = box.first.y - set.capsule_center.y;
                 f32 oz = box.first.z - set.capsule_center.z;
                 f32 dot = sx * ox + sy * oy + sz * oz;
@@ -21446,7 +20262,9 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
                 }
                 for (i32 j = 0; j < object->nmaterials; ++j) {
                     NUMTL *material = scene->mtls[object->material_ids[j]];
-                    i32 channel = material->shader_desc.unknown_1b4 != 0;
+                    NUDISPLAYLIST *list =
+                        material->shader_desc.unknown_1b4 ? &set.display_lists[1] : &set.display_lists[0];
+                    i32 channel = list - set.display_lists;
                     if ((usize)set.scene_cursor[channel] >= (usize)set.scene_end[channel]) {
                         NUDISPLAYLISTITEM *cursor =
                             (NUDISPLAYLISTITEM *)((display_list_buffer->addr + 15) & ~(usize)15);
@@ -21454,8 +20272,8 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
                         display_list_buffer->addr = (usize)(cursor + 49);
                         if (set.scene_end[channel]) {
                             set.scene_end[channel]->next = cursor;
-                            set.scene_end[channel]->type = 0x8d;
                             set.scene_end[channel]->id = 1;
+                            set.scene_end[channel]->type = 0x8d;
                         } else
                             set.scene_first[channel] = cursor;
                         set.scene_end[channel] = cursor + 48;
@@ -21482,8 +20300,8 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
             NUDISPLAYLIST *list = &set.display_lists[0];
             NuDisplayListLinkItems(list, 1);
             NUMTL *material = scene->mtls[0];
-            list->items->next = material;
             list->items->id = 3;
+            list->items->next = material;
             list->items->type = 0x80;
             ++list->items;
             NuDisplayListLinkList(list, set.scene_first[0], set.scene_cursor[0]);
@@ -22371,18 +21189,20 @@ extern "C" void NuTimeBarSetRender(i32 set) {
                         value = 9999;
                     text_y += static_cast<i32>(NuQFntHeight(system_qfont)) * (value > 999 ? 5 : 4);
                     const f32 column = static_cast<f32>(text_width) * 0.025f;
-                    const i32 text_x =
-                        (static_cast<i32>(column) * (column_index * 3) + static_cast<i32>(column * 0.5f)) * 16;
                     // Retail stacks three digits bottom-up, plus a fourth for
                     // values >= 1000; the final height query occurs either way.
                     for (i32 digit = 0; digit < 3; ++digit) {
                         text_y -= static_cast<i32>(NuQFntHeight(system_qfont));
+                        const i32 text_x =
+                            (static_cast<i32>(column) * (column_index * 3) + static_cast<i32>(column * 0.5f)) * 16;
                         NuQFntPrintEx(system_qfont, text_x, text_y, 0x40, "%d", value % 10);
                         value /= 10;
                     }
                     const f32 last_height = NuQFntHeight(system_qfont);
                     if (value != 0) {
                         text_y -= static_cast<i32>(last_height);
+                        const i32 text_x =
+                            (static_cast<i32>(column) * (column_index * 3) + static_cast<i32>(column * 0.5f)) * 16;
                         NuQFntPrintEx(system_qfont, text_x, text_y, 0x40, "%d", value % 10);
                     }
                 }
@@ -22502,7 +21322,7 @@ f32 NuQFntPrintJustifiedRSW(RNDRSTREAM *stream, void *font_ptr, u16 *text, f32 x
                     }
                     ++length;
                 } else {
-                    const u16 following = next[1];
+                    const i32 following = next[1];
                     if (following != '?' && following != '!' && following != '.' && following != ',')
                         break;
                     ++extra_spaces;
@@ -22795,16 +21615,16 @@ extern "C" i32 NuTexResolveReference(NUGSCN *scene, i32 tex_id) {
     }
 
     const i32 reference_index = tex_id & 0x3fff;
-    NUNATIVETEX *reference = scene->textures[reference_index];
     i32 newest_texture_id = 0;
     i32 newest_texture_order = 0;
 
-    for (i32 index = 0; index < max_textures; ++index) {
+    for (u32 index = 0; index < static_cast<u32>(max_textures); ++index) {
         NUNATIVETEX *texture = texture_list[index];
         if (texture == NULL || texture->ref_count < 0) {
             continue;
         }
 
+        NUNATIVETEX *reference = scene->textures[reference_index];
         bool checksum_matches = true;
         for (i32 byte = 0; byte < 16; ++byte) {
             if (texture->checksum[byte] != reference->checksum[byte]) {
@@ -22896,7 +21716,7 @@ static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, ch
     void **fixed = (void **)NuPtrBlockFix((char *)scene + 0x18);
     NUGSCN *fixed_scene = (NUGSCN *)*fixed;
     if (fixed_scene != NULL) {
-        if (__builtin_expect(*reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(fixed_scene) + 0x168) > 0, 0)) {
+        if (__builtin_expect(*reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(fixed_scene) + 0x168) > 0, 1)) {
             if (version < 0 || version > 2) {
                 NuSevereWarning("Your Character version is %d, whereas the Engine only accepts Character versions "
                                 "from %d to %d",
@@ -22926,7 +21746,7 @@ static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, ch
             if (animation_texture_count < end)
                 animation_texture_count = end;
         }
-        for (u32 i = 0; i < animation_texture_count; ++i) {
+        for (i32 i = 0; i < animation_texture_count; ++i) {
             fixed_scene->texture_anim_ids[i] = fixed_scene->texture_ids[fixed_scene->texture_anim_ids[i]];
         }
         for (i32 i = 0; i < fixed_scene->num_texture_anims; ++i) {
@@ -23110,8 +21930,8 @@ extern "C" void NuGScnRemove(nugscn_s *scene) {
     }
 
     if (scene->additional_scenes != nullptr) {
-        for (NUGSCN **additional = scene->additional_scenes; *additional != nullptr; ++additional) {
-            NuDisplaySceneDestroy((*additional)->display_list);
+        for (i32 i = 0; scene->additional_scenes[i] != nullptr; ++i) {
+            NuDisplaySceneDestroy(scene->additional_scenes[i]->display_list);
         }
     }
     NuDisplaySceneDestroy(scene->display_list);

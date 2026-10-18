@@ -98,7 +98,7 @@ static NUFPCOMJMP cfgtab_Gizmo[] = {
     {NULL, NULL},
 };
 
-static __used__ void xGizmo(nufpar_s *parser) {
+static void xGizmo(nufpar_s *parser) {
     if (load_flowbox == NULL)
         return;
     FLOWBOXGIZMODATA_s *data = load_flowbox->data;
@@ -170,9 +170,9 @@ static i32 load_parents[16];
 static i32 load_children[32];
 static u8 load_parent_output_ix[16];
 
-static __used__ void remapChildren(i32 id) {
+static void remapChildren(i32 id) {
     for (i32 i = 0; load_nchildren < 32 && remap[~id].children[i] != id; ++i) {
-        i32 child = remap[~id].children[i];
+        i16 child = remap[~id].children[i];
         if (child < 0)
             remapChildren(child);
         else
@@ -182,7 +182,7 @@ static __used__ void remapChildren(i32 id) {
 
 static void remapParent(i32 id) {
     for (i32 i = 0; load_nparents < 16 && remap[~id].parents[i] != id; ++i) {
-        i32 parent = remap[~id].parents[i];
+        i16 parent = remap[~id].parents[i];
         if (parent < 0)
             remapParent(parent);
         else {
@@ -878,11 +878,11 @@ static i32 CheckOutputActionFlowBox(GIZFLOW_s *, FLOWBOX_s *box, u8) {
 
 static i32 CheckOutputConditionFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8) {
     if ((box->state_flags_high & 2) == 0)
-        return (box->state_flags_low & 2) != 0;
-    u8 saved = box->state_flags_high & 4;
-    box->state_flags_high |= 4;
+        return box->completed;
+    u8 saved = box->output_state;
+    box->output_state = 1;
     i32 result = flowboxtypes[box->type].process(system, box, 0) != 0;
-    box->state_flags_high = (box->state_flags_high & ~4) | saved;
+    box->output_state = saved;
     return result;
 }
 
@@ -908,7 +908,7 @@ static u8 getNextLoopChecksum() {
 static i32 Loop_CountLoopingInputs(FLOWBOX_s *box) {
     u8 checksum = getNextLoopChecksum();
     i32 count = 0;
-    for (i32 child = 0; child < box->child_count; ++child) {
+    for (u32 child = 0; child < box->child_count; ++child) {
         count = Loop_CountLoopingInputsEx(box, box->children[child], count, checksum);
     }
     return count;
@@ -977,13 +977,13 @@ void ResetGizFlow(GIZFLOW_s *system, GIZFLOWPROGRESS_s *progress) {
         if (progress != NULL && progress->valid != 0) {
             i32 word = i >> 5;
             u32 bit = 1u << (i & 31);
-            box->state_flags_low = (box->state_flags_low & ~1) | ((progress->active[word] & bit) != 0);
+            box->active = (progress->active[word] & bit) != 0;
             const u8 completed = static_cast<u8>((progress->completed[word] & bit) != 0);
-            box->state_flags_low = (box->state_flags_low & ~2) | (completed << 1);
+            box->completed = completed;
             const u8 latched = static_cast<u8>((progress->latched[word] & bit) != 0);
             box->state_flags_low |= latched << 5;
             const u8 output_state = static_cast<u8>((progress->output_state[word] & bit) != 0);
-            box->state_flags_high = (box->state_flags_high & ~4) | (output_state << 2);
+            box->output_state = output_state;
             if (box->type == 1 && box->condition_data[0] == 4) {
                 box->loop_parent_count = Loop_CountLoopingInputs(box);
             }
@@ -1000,7 +1000,7 @@ void ResetGizFlow(GIZFLOW_s *system, GIZFLOWPROGRESS_s *progress) {
             } else
                 box->state_flags_low &= ~1;
         } else {
-            box->state_flags_low = (box->state_flags_low & ~1) | (box->parent_count == 0);
+            box->active = box->parent_count == 0;
         }
 
         if (flowboxtypes[box->type].reset != NULL && (box->state_flags_high & 0x10) == 0)

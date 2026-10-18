@@ -83,10 +83,6 @@
 #include "legoapi/misc/legoapi_status.h"
 #include "legogame/game.h"
 
-struct AIROW_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 extern "C" {
     i32 DEVCDDVDROM_Interrogate(NUFILE_DEVICE *device) {
         device->status = 1;
@@ -130,22 +126,8 @@ extern i16 tTRUEJEDI, tSTORY, tFREEPLAY;
 extern "C" i32 reset_area;
 extern i16 tMAP, tRESTART, tFINISHSTORY, tCONTINUESTORY, tFINALCHAPTERLOCKED, tNEXTCHAPTERLOCKED;
 
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
-struct GAMEMESSAGE_s;
-struct HINT_s;
 struct MENU_s;
-struct NuBloomParameters;
 struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
-struct nuhspecial_s;
-struct ripple_node_s;
-struct ripple_set_s;
-struct VuVec;
 
 extern i16 tNONEWBESTTIME, tNEWBESTTIME;
 
@@ -153,8 +135,6 @@ extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
-
-struct AISYS_s;
 
 extern i16 tLEVELCOMPLETE, tFREEPLAYUNLOCKED, tSUPERSTORYCOMPLETE, tBONUSUNLOCKED;
 extern i16 tEPISODEVUNLOCKED, tEPISODEVIUNLOCKED, tCHALLENGECOMPLETE, tOUTOFTIME;
@@ -164,7 +144,7 @@ extern i16 tMINIKIT;
 extern i16 tALLMINIKITSBUILT;
 extern NUCOLOUR3 panelcol[3], panelamb;
 
-STATUSMINIKITPART_s KitPart[10];
+static STATUSMINIKITPART_s KitPart[10];
 
 f32 slideseek;
 f32 pop_timer;
@@ -317,56 +297,22 @@ void StatusStage_Reset(STATUS_STAGE_s *stage) {
 }
 
 void NewStatusRumbleBuzz(i32 player, float amount, float buzz, i32 priority) {
-    if (amount > 0.0f) {
-        if (StatusPacket.player0_active != 0 && StatusRumbleTargetsPlayer(player, 0)) {
-            if (__builtin_expect(StatusPacket.player0_rumble_time <= 0.0f, 0) ||
-                __builtin_expect(amount > StatusPacket.player0_rumble_time /
-                                              StatusPacket.player0_rumble_duration *
-                                              StatusPacket.player0_rumble_amount,
-                                 0)) {
-                StatusPacket.player0_rumble_amount = amount;
-                StatusPacket.player0_rumble_duration = amount;
-                StatusPacket.player0_rumble_time = amount;
-            }
-            if (buzz > StatusPacket.player0_buzz_amount) {
-                StatusPacket.player0_buzz_amount = buzz;
-            }
-            if (priority > 0 && ++priority > StatusPacket.player0_rumble_priority) {
-                StatusPacket.player0_rumble_priority = static_cast<u8>(priority);
-            }
-        }
-        if (StatusPacket.player1_active != 0 && StatusRumbleTargetsPlayer(player, 1)) {
-            if (__builtin_expect(StatusPacket.player1_rumble_time <= 0.0f, 0) ||
-                __builtin_expect(amount > StatusPacket.player1_rumble_time /
-                                              StatusPacket.player1_rumble_duration *
-                                              StatusPacket.player1_rumble_amount,
-                                 0)) {
-                StatusPacket.player1_rumble_amount = amount;
-                StatusPacket.player1_rumble_duration = amount;
-                StatusPacket.player1_rumble_time = amount;
-            }
-            if (buzz > StatusPacket.player1_buzz_amount) {
-                StatusPacket.player1_buzz_amount = buzz;
-            }
-            if (priority > 0 && ++priority > StatusPacket.player1_rumble_priority) {
-                StatusPacket.player1_rumble_priority = static_cast<u8>(priority);
-            }
-        }
-    } else {
-        if (StatusPacket.player0_active != 0 && StatusRumbleTargetsPlayer(player, 0)) {
-            if (buzz > StatusPacket.player0_buzz_amount) {
-                StatusPacket.player0_buzz_amount = buzz;
-            }
-            if (priority > 0 && ++priority > StatusPacket.player0_rumble_priority) {
-                StatusPacket.player0_rumble_priority = static_cast<u8>(priority);
-            }
-        }
-        if (StatusPacket.player1_active != 0 && StatusRumbleTargetsPlayer(player, 1)) {
-            if (buzz > StatusPacket.player1_buzz_amount) {
-                StatusPacket.player1_buzz_amount = buzz;
-            }
-            if (priority > 0 && ++priority > StatusPacket.player1_rumble_priority) {
-                StatusPacket.player1_rumble_priority = static_cast<u8>(priority);
+    for (i32 i = 0; i < 2; ++i) {
+        if (StatusPacket.player_active[i] != 0) {
+            if (StatusRumbleTargetsPlayer(player, i)) {
+                RUMBLEPACKET *rumble = &StatusPacket.rumble[i];
+                if (amount > 0.0f && (__builtin_expect(rumble->time <= 0.0f, 0) ||
+                                      __builtin_expect(amount > rumble->time / rumble->duration * rumble->amount, 0))) {
+                    rumble->amount = amount;
+                    rumble->duration = amount;
+                    rumble->time = amount;
+                }
+                if (buzz > rumble->buzz_time) {
+                    rumble->buzz_time = buzz;
+                }
+                if (priority > 0 && ++priority > rumble->priority) {
+                    rumble->priority = static_cast<u8>(priority);
+                }
             }
         }
     }
@@ -407,8 +353,8 @@ void NextStatusStage(STATUSPACKET_s *packet) {
     status_prompt = 0;
 
     if ((packet->stage != NULL && packet->stage->type == 11) || packet->stage->type == 10) {
-        ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&packet->player0_rumble_amount));
-        ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&packet->player1_rumble_amount));
+        ResetRumble(&packet->rumble[0]);
+        ResetRumble(&packet->rumble[1]);
     }
     if (packet->stage != NULL && packet->stage->type == 11) {
         ReCalculateCompletionPoints();
@@ -433,15 +379,15 @@ void AddStatusStage(STATUSPACKET_s *packet, i32 type, i32 gold_brick_enabled) {
 
 i32 newCharactersCollected(STATUSPACKET_s *) {
     i32 count = 0;
-    for (i16 *player_id = Area_PlayerIDList; *player_id != -1 && count < 7; ++player_id) {
-        const i16 player = *player_id;
+    for (i32 i = 0; Area_PlayerIDList[i] != -1 && count < 7; ++i) {
+        const i16 player = Area_PlayerIDList[i];
         const i32 id = player;
         i32 previous = 0;
         while (previous < count && StatusCollectList.ids[previous] != id) {
             ++previous;
         }
         if (previous == count) {
-            if (__builtin_expect(Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0, 1)) {
+            if (__builtin_expect(Game_CharacterSave != NULL && (Game_CharacterSave[id] & 1) != 0, 0)) {
                 continue;
             }
             const i32 index = InCollectList_Index(id, MasterCollection.list, MasterCollection.count_y);
@@ -489,27 +435,21 @@ void InitStatusScreen(WORLDINFO_s *world) {
     icon_y = STATSPOSY;
     newminikitcount = 0;
     currentminikit = 0;
-    p.field_0xb0 &= 0xfe;
-    ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&p.player0_rumble_amount));
-    ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&p.player1_rumble_amount));
+    p.field_0xb0_0 = 0;
+    ResetRumble(&p.rumble[0]);
+    ResetRumble(&p.rumble[1]);
     CoinTotalScale = 1.0f;
     goldbrickmsgcount = 0;
     if (netclient == 0) {
-        if (Player[0] == NULL) {
-            p.player0_model = 0xffff;
-        } else {
-            p.player0_model = Player[0]->id;
-            p.player0_active = Player[0]->apiobj.player_controlled;
-            p.coins_remaining[0] = Player[0]->coinpacket == NULL ? 0 : Player[0]->coinpacket->coins;
-            ++p.status_flags;
-        }
-        if (Player[1] == NULL) {
-            p.player1_model = 0xffff;
-        } else {
-            p.player1_model = Player[1]->id;
-            p.player1_active = Player[1]->apiobj.player_controlled;
-            p.coins_remaining[1] = Player[1]->coinpacket == NULL ? 0 : Player[1]->coinpacket->coins;
-            ++p.status_flags;
+        for (i32 i = 0; i < 2; ++i) {
+            if (Player[i] == NULL) {
+                p.player_model[i] = 0xffff;
+            } else {
+                p.player_model[i] = Player[i]->id;
+                p.player_active[i] = Player[i]->apiobj.player_controlled;
+                p.coins_remaining[i] = Player[i]->coinpacket == NULL ? 0 : Player[i]->coinpacket->coins;
+                ++p.status_flags;
+            }
         }
     }
     if (p.status_flags == 0) {
@@ -567,7 +507,7 @@ void InitStatusScreen(WORLDINFO_s *world) {
     if (p.init_callback(world, &p) != 0) {
         return;
     }
-    if ((p.mode_flags & 4) != 0) {
+    if (p.super_story_mode) {
         if (NewLData == STATUS_LDATA || WORLD->current_level == STATUS_LDATA) {
             const u32 previous_score = Game.episode_save[episode].superstory_score_target;
             p.previous_best_score = previous_score;
@@ -779,7 +719,7 @@ void InitStatusScreen(WORLDINFO_s *world) {
     p.coins_collected[1] = p.coins_remaining[1];
     draw_player_icons = 0;
     if (area != -1) {
-        if ((p.field_0xb0 & 0x40) == 0 && p.episode != NULL && p.chapter < p.episode->regular_areas) {
+        if (!p.free_play && p.episode != NULL && p.chapter < p.episode->regular_areas) {
             p.next_area = p.episode->area_ids[p.chapter + 1];
             if (p.chapter < p.episode->regular_areas - 1)
                 p.field_0xb0 |= 8;
@@ -795,7 +735,7 @@ void InitStatusScreen(WORLDINFO_s *world) {
         }
         i32 gold;
         i32 completed_episode;
-        if ((p.field_0xb0 & 0x40) == 0 && Game.area_save[area].area_complete == 0 && (p.area->flags & 0x26) == 0) {
+        if (!p.free_play && Game.area_save[area].area_complete == 0 && (p.area->flags & 0x26) == 0) {
             Game.area_save[area].area_complete = 1;
             p.newly_completed = 1;
             AddToCompletionPoints(POINTS_PER_STORY);
@@ -850,11 +790,11 @@ void InitStatusScreen(WORLDINFO_s *world) {
     if (p.newly_completed != 0 && newCharactersCollected(&p) > 0) {
         AddStatusStage(&p, 35, 0);
         AddStatusStage(&p, 36, 0);
-        RememberPlayerIDs(1, static_cast<i16>(p.player0_model), static_cast<i16>(p.player1_model));
+        RememberPlayerIDs(1, static_cast<i16>(p.player_model[0]), static_cast<i16>(p.player_model[1]));
     }
     if (area != -1 && ((p.area->flags & 0x136) == 0x10 || (p.area->flags & 0x4000) != 0)) {
         if (BOTHTRUEJEDIGOLDBRICKS != 0) {
-            u8 &complete = Game.area_save[area].true_hero_complete[(p.field_0xb0 >> 6) & 1];
+            u8 &complete = Game.area_save[area].true_hero_complete[p.free_play];
             if (complete == 0) {
                 if ((p.field_0xb0 & 4) != 0) {
                     complete = 1;
@@ -922,9 +862,9 @@ void EndOfDemo(i32) {
 
 void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
     const f32 x = ICONX;
-    const f32 icon_alpha = (status->player0_active == 0 ? 0.25f : 1.0f) * alpha;
+    const f32 icon_alpha = (status->player_active[0] == 0 ? 0.25f : 1.0f) * alpha;
     const f32 size = ICONSIZE;
-    DrawCharIcon(static_cast<i16>(status->player0_model), -x, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
+    DrawCharIcon(static_cast<i16>(status->player_model[0]), -x, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
 }
 
 f32 StatusIconsOnOff(f32 progress) {
@@ -1111,7 +1051,10 @@ void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_s
 }
 
 void AddStatusMiniKitParts() {
-    NUVEC target_position = {0.0f, STATSPOSY, 1.0f};
+    NUVEC target_position;
+    target_position.x = 0.0f;
+    target_position.y = STATSPOSY;
+    target_position.z = 1.0f;
     for (i32 i = 0; i < 3; ++i) {
         KitPartRTL.intensity[i] = panelcol[i];
         KitPartRTL.direction[i] = paneldir[i];
@@ -1125,7 +1068,10 @@ void AddStatusMiniKitParts() {
         if (KitPart[i].enabled == 0) {
             continue;
         }
-        NUVEC velocity = {0.0f, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.25f + 0.25f, 0.0f};
+        NUVEC velocity;
+        velocity.x = 0.0f;
+        velocity.y = (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.25f + 0.25f;
+        velocity.z = 0.0f;
         NuVecRotateZ(&velocity, &velocity, qrand());
         ADDPART_s part = Default_ADDPART;
         part.matrix = &KitPart[i].matrix;
@@ -1138,7 +1084,10 @@ void AddStatusMiniKitParts() {
         AddPart(&part);
 
         for (i32 coin = 0; coin < 5; ++coin) {
-            NUVEC position = {0.0f, (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.1f, 1.0f};
+            NUVEC position;
+            position.x = 0.0f;
+            position.y = (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 0.1f;
+            position.z = 1.0f;
             NuVecRotateZ(&position, &position, qrand());
             ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
             message.position = &position;
@@ -1428,7 +1377,7 @@ void DrawStatusScreen(WORLDINFO_s *) {
 void FinishStatusPacket(i32 choice) {
     LOG_INFO("level results choice=%d flags=%x challenge=%d mission=%d", choice, StatusPacket.mode_flags,
              StatusPacket.challenge_state, StatusPacket.mission_state);
-    RememberPlayerIDs(1, static_cast<i16>(StatusPacket.player0_model), static_cast<i16>(StatusPacket.player1_model));
+    RememberPlayerIDs(1, static_cast<i16>(StatusPacket.player_model[0]), static_cast<i16>(StatusPacket.player_model[1]));
     if (StatusPacket.finish_callback(WORLD, &StatusPacket, choice) != 0) {
         return;
     }
@@ -1491,7 +1440,7 @@ void UpdateStatusScreen(WORLDINFO_s *) {
                 return;
             }
             for (i32 player = 0; player < 2; ++player) {
-                if (__builtin_expect((player == 0 ? StatusPacket.player0_active : StatusPacket.player1_active) == 0, 1)) {
+                if (__builtin_expect(StatusPacket.player_active[player] == 0, 1)) {
                     continue;
                 }
                 if ((GamePad[player].buttons_pressed & GAMEPAD_MENUSELECT) != 0) {
@@ -1539,8 +1488,8 @@ void UpdateStatusScreen(WORLDINFO_s *) {
             MechInputTouchMenuController::AnyTouchesThisFrame = 0;
         } else {
             const u32 button = __builtin_expect(Text_Language != 0, 0) ? GAMEPAD_JUMP : GAMEPAD_MENUSELECT;
-            skip = (StatusPacket.player0_active != 0 && (GamePad[0].buttons_pressed & button) != 0) ||
-                   (StatusPacket.player1_active != 0 && (GamePad[1].buttons_pressed & button) != 0);
+            skip = (StatusPacket.player_active[0] != 0 && (GamePad[0].buttons_pressed & button) != 0) ||
+                   (StatusPacket.player_active[1] != 0 && (GamePad[1].buttons_pressed & button) != 0);
         }
         if (skip) {
             if (StatusPacket.stage == NULL) {

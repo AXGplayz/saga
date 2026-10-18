@@ -237,29 +237,12 @@ f32 gunshipb_seekmomseek = 5.0f;
 f32 gunshipb_seekmom = 5.0f;
 f32 gunshipb_seekrange = 4.0f;
 
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
-struct GAMEMESSAGE_s;
-struct HINT_s;
-struct MENU_s;
-struct NuBloomParameters;
-struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
 struct nuhspecial_s;
-struct ripple_node_s;
-struct ripple_set_s;
-struct VuVec;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
-
-struct FLOWBOX_s;
 
 i32 PAINTPUZZLESTAGE;
 i32 played_sound;
@@ -813,7 +796,7 @@ void JediB_Update(WORLDINFO_s *world) {
                             }
                             GameObject_s *object = jedi_b.goodies[jedi_b.goody_count].object;
                             jedi_b.goodies[jedi_b.goody_count].id = *entry->id;
-                            object->field_0xefb |= 1;
+                            object->only_attack_players = 1;
                             object->ai.locator = locator;
                             object->field_0xeb4 = JediBKilledCallback;
                             jedi_b.goody_count = static_cast<i16>(jedi_b.goody_count + 1);
@@ -1046,7 +1029,7 @@ void JediB_Update(WORLDINFO_s *world) {
                         if (baddie->two_row_hp == 0) {
                             object->field_0xefd &= static_cast<u8>(~2);
                         } else {
-                            object->field_0xefd |= 2;
+                            object->random_layer_variant = 1;
                         }
                         object = baddie->object;
                     }
@@ -1396,14 +1379,10 @@ void FactoryG_Init(WORLDINFO_s *world) {
 void FactoryG_Update(WORLDINFO_s *world) {
     if (netclient == 0) {
         i32 complete = 0;
-        if (GizForce_Complete(force_array[0]))
-            complete++;
-        if (GizForce_Complete(force_array[1]))
-            complete++;
-        if (GizForce_Complete(force_array[2]))
-            complete++;
-        if (GizForce_Complete(force_array[3]))
-            complete++;
+        for (i32 i = 0; i < 4; i++) {
+            if (GizForce_Complete(force_array[i]))
+                complete++;
+        }
         if (ObiWan != NULL) {
             if (complete == 4) {
                 if (FreePlay == 0) {
@@ -1609,21 +1588,23 @@ void KaminoC_Update(WORLDINFO_s *world) {
             if (old_state != kaminodisco.tile_state[kaminodisco.second_tile] &&
                 kaminodisco.tile_state[kaminodisco.second_tile] == 2)
                 kaminoc_netpacket->sound_mask |= 1u << (kaminodisco.second_tile & 31);
-            if (first_occupied && second_occupied) {
-                kaminodisco.timer = 0.0f;
-                kaminodisco.tile_state[kaminodisco.first_tile] = 3;
-                kaminodisco.tile_state[kaminodisco.second_tile] = 3;
-                kaminodisco.first_tile = KaminoDiscoChooseTile(-1, 0);
-                kaminodisco.second_tile = KaminoDiscoChooseTile(kaminodisco.first_tile, 0);
-                if (!(kaminodisco.first_tile != -1 && kaminodisco.second_tile != -1)) {
-                    kaminodisco.phase = 2;
-                    for (i32 i = 0; i < kaminodisco.tile_count; ++i)
-                        kaminodisco.tile_state[i] = 0;
-                } else {
-                    kaminodisco.tile_state[kaminodisco.first_tile] = 1;
-                    kaminodisco.tile_state[kaminodisco.second_tile] = 1;
+            if (first_occupied) {
+                if (second_occupied) {
+                    kaminodisco.timer = 0.0f;
+                    kaminodisco.tile_state[kaminodisco.first_tile] = 3;
+                    kaminodisco.tile_state[kaminodisco.second_tile] = 3;
+                    kaminodisco.first_tile = KaminoDiscoChooseTile(-1, 0);
+                    kaminodisco.second_tile = KaminoDiscoChooseTile(kaminodisco.first_tile, 0);
+                    if (!(kaminodisco.first_tile != -1 && kaminodisco.second_tile != -1)) {
+                        kaminodisco.phase = 2;
+                        for (i32 i = 0; i < kaminodisco.tile_count; ++i)
+                            kaminodisco.tile_state[i] = 0;
+                    } else {
+                        kaminodisco.tile_state[kaminodisco.first_tile] = 1;
+                        kaminodisco.tile_state[kaminodisco.second_tile] = 1;
+                    }
+                    break;
                 }
-                break;
             }
             kaminodisco.timer += FRAMETIME;
             if (__builtin_expect(kaminodisco.timer > 2.5f, 1)) {

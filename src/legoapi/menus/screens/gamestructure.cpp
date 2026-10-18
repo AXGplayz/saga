@@ -46,7 +46,6 @@
 #include "nu2api/nucore/nu2api_nucore_misc.h"
 
 struct GameObject_s;
-struct LEVEL_PROGRESS_s;
 struct WORLDINFO_s;
 struct NuIOS_InAppProduct;
 i32 NuIOS_AreInAppPurchasesAvailable();
@@ -587,110 +586,33 @@ bool Store_IsPackAvailable(i32, char *reason) {
 }
 
 i32 Store_FindPack(i32 id, char *name) {
-    if (id == -1) {
-        if (name == NULL) {
-            return -1;
+    for (i32 i = 0; i < 11; ++i) {
+        if (id != -1 && StorePack[i].id != NULL && *StorePack[i].id == id) {
+            return i;
         }
-
-        if (NuStrCmp(StorePack[0].name, name) == 0) {
-            return 0;
-        } else if (NuStrCmp(StorePack[1].name, name) == 0) {
-            return 1;
-        } else if (NuStrCmp(StorePack[2].name, name) == 0) {
-            return 2;
-        } else if (NuStrCmp(StorePack[3].name, name) == 0) {
-            return 3;
-        } else if (NuStrCmp(StorePack[4].name, name) == 0) {
-            return 4;
-        } else if (NuStrCmp(StorePack[5].name, name) == 0) {
-            return 5;
-        } else if (NuStrCmp(StorePack[6].name, name) == 0) {
-            return 6;
-        } else if (NuStrCmp(StorePack[7].name, name) == 0) {
-            return 7;
-        } else if (NuStrCmp(StorePack[8].name, name) == 0) {
-            return 8;
-        } else if (NuStrCmp(StorePack[9].name, name) == 0) {
-            return 9;
-        } else if (NuStrCmp(StorePack[10].name, name) == 0) {
-            return 10;
-        } else {
-            return -1;
+        if (name != NULL && NuStrCmp(StorePack[i].name, name) == 0) {
+            return i;
         }
     }
-
-    if (name == NULL) {
-        if (StorePack[0].id != NULL && *StorePack[0].id == id) {
-            return 0;
-        } else if (StorePack[1].id != NULL && *StorePack[1].id == id) {
-            return 1;
-        } else if (StorePack[2].id != NULL && *StorePack[2].id == id) {
-            return 2;
-        } else if (StorePack[3].id != NULL && *StorePack[3].id == id) {
-            return 3;
-        } else if (StorePack[4].id != NULL && *StorePack[4].id == id) {
-            return 4;
-        } else if (StorePack[5].id != NULL && *StorePack[5].id == id) {
-            return 5;
-        } else if (StorePack[6].id != NULL && *StorePack[6].id == id) {
-            return 6;
-        } else if (StorePack[7].id != NULL && *StorePack[7].id == id) {
-            return 7;
-        } else if (StorePack[8].id != NULL && *StorePack[8].id == id) {
-            return 8;
-        } else if (StorePack[9].id != NULL && *StorePack[9].id == id) {
-            return 9;
-        } else if (StorePack[10].id != NULL && *StorePack[10].id == id) {
-            return 10;
-        } else {
-            return -1;
-        }
-    }
-
-    if ((StorePack[0].id != NULL && *StorePack[0].id == id) || NuStrCmp(StorePack[0].name, name) == 0) {
-        return 0;
-    } else if ((StorePack[1].id != NULL && *StorePack[1].id == id) || NuStrCmp(StorePack[1].name, name) == 0) {
-        return 1;
-    } else if ((StorePack[2].id != NULL && *StorePack[2].id == id) || NuStrCmp(StorePack[2].name, name) == 0) {
-        return 2;
-    } else if ((StorePack[3].id != NULL && *StorePack[3].id == id) || NuStrCmp(StorePack[3].name, name) == 0) {
-        return 3;
-    } else if ((StorePack[4].id != NULL && *StorePack[4].id == id) || NuStrCmp(StorePack[4].name, name) == 0) {
-        return 4;
-    } else if ((StorePack[5].id != NULL && *StorePack[5].id == id) || NuStrCmp(StorePack[5].name, name) == 0) {
-        return 5;
-    } else if ((StorePack[6].id != NULL && *StorePack[6].id == id) || NuStrCmp(StorePack[6].name, name) == 0) {
-        return 6;
-    } else if ((StorePack[7].id != NULL && *StorePack[7].id == id) || NuStrCmp(StorePack[7].name, name) == 0) {
-        return 7;
-    } else if ((StorePack[8].id != NULL && *StorePack[8].id == id) || NuStrCmp(StorePack[8].name, name) == 0) {
-        return 8;
-    } else if ((StorePack[9].id != NULL && *StorePack[9].id == id) || NuStrCmp(StorePack[9].name, name) == 0) {
-        return 9;
-    } else if ((StorePack[10].id != NULL && *StorePack[10].id == id) || NuStrCmp(StorePack[10].name, name) == 0) {
-        return 10;
-    } else {
-        return -1;
-    }
+    return -1;
 }
 
 void Store_HubInitFloorTargets(WORLDINFO_s *world) {
     for (i32 i = 0; i < 11; ++i) {
-        STOREPACK &pack = StorePack[i];
-        pack.floor_target_door = Door_FindByName(world, pack.floor_target_door_name);
-        if (pack.floor_target_door != NULL) {
-            NUVEC *points = pack.floor_target_door->spline->pts;
+        StorePack[i].floor_target_door = Door_FindByName(world, StorePack[i].floor_target_door_name);
+        if (StorePack[i].floor_target_door != NULL) {
+            NUVEC *points = StorePack[i].floor_target_door->spline->pts;
             NUVEC direction;
             NuVecSub(&direction, &points[6], &points[4]);
-            pack.custodian_angle = static_cast<u16>(NuAtan2D(direction.x, direction.z) + 0x4000);
-            NuVecAdd(&pack.custodian_position, &points[4], &points[6]);
-            NuVecScale(&pack.custodian_position, &pack.custodian_position, 0.5f);
-            if (pack.offset_floor_target != 0) {
-                pack.custodian_position.x += NU_SIN_LUT(pack.custodian_angle) * 0.5f;
-                pack.custodian_position.z += NU_COS_LUT(pack.custodian_angle) * 0.5f;
+            StorePack[i].custodian_angle = static_cast<u16>(NuAtan2D(direction.x, direction.z) + 0x4000);
+            NuVecAdd(&StorePack[i].custodian_position, &points[4], &points[6]);
+            NuVecScale(&StorePack[i].custodian_position, &StorePack[i].custodian_position, 0.5f);
+            if (StorePack[i].offset_floor_target != 0) {
+                StorePack[i].custodian_position.x += NU_SIN_LUT(StorePack[i].custodian_angle) * 0.5f;
+                StorePack[i].custodian_position.z += NU_COS_LUT(StorePack[i].custodian_angle) * 0.5f;
             }
         }
-        pack.custodian_position.y = NewShadowEx(&pack.custodian_position, 0, 1.0f, 1.0f, 0) + 0.005f;
+        StorePack[i].custodian_position.y = NewShadowEx(&StorePack[i].custodian_position, 0, 1.0f, 1.0f, 0) + 0.005f;
     }
 }
 
@@ -722,37 +644,36 @@ void Store_HubDrawFloorTargets(WORLDINFO_s *world) {
     const f32 frame_alpha = NU_SIN_LUT(alpha_angle) * 0.2f + 0.8f;
 
     for (i32 i = 0; i < 11; ++i) {
-        STOREPACK &pack = StorePack[i];
-        if (pack.floor_target_door == NULL && (pack.id == NULL || *pack.id == -1)) {
+        if (StorePack[i].floor_target_door == NULL && (StorePack[i].id == NULL || *StorePack[i].id == -1)) {
             continue;
         }
         if (Store_IsPackUnlocked(i) ||
-            (pack.field44_0x32 != 0xff && pack.field44_0x32 != GameCam->sock_position.location.sock)) {
+            (StorePack[i].field44_0x32 != 0xff && StorePack[i].field44_0x32 != GameCam->sock_position.location.sock)) {
             continue;
         }
 
         const u16 frame_rotation = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.5f) / 1.5f * 65536.0f);
-        Draw3DObjectAlpha(world, LEGOOBJ_ICON_FRAME_GREEN, &pack.custodian_position, 0x4000, frame_rotation, 0, 0.9f,
-                          0.9f, 0.9f, 0, frame_alpha);
+        Draw3DObjectAlpha(world, LEGOOBJ_ICON_FRAME_GREEN, &StorePack[i].custodian_position, 0x4000, frame_rotation, 0,
+                          0.9f, 0.9f, 0.9f, 0, frame_alpha);
 
-        if (g_lowEndLevelBehaviour == 0 || Hub_LowEnd_IconsInsteadOfModels == 0 || pack.id == NULL ||
-            APICharacterLoaded(*pack.id) != NULL || big_icon_scene == NULL) {
+        if (g_lowEndLevelBehaviour == 0 || Hub_LowEnd_IconsInsteadOfModels == 0 || StorePack[i].id == NULL ||
+            APICharacterLoaded(*StorePack[i].id) != NULL || big_icon_scene == NULL) {
             continue;
         }
 
-        const i32 object_id = CDataList[*pack.id].field20_0x42;
+        const i32 object_id = CDataList[*StorePack[i].id].field20_0x42;
         if (object_id == -1) {
             continue;
         }
 
         NUVEC position;
-        position.x = pack.custodian_position.x;
+        position.x = StorePack[i].custodian_position.x;
         position.x +=
             NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.3f) / 2.3f * 65536.0f) + i * 0x2000) * 0.01f;
-        position.y = CDataList[*pack.id].bounds_max_y * 0.75f + pack.custodian_position.y - 0.01f;
+        position.y = CDataList[*StorePack[i].id].bounds_max_y * 0.75f + StorePack[i].custodian_position.y - 0.01f;
         position.y +=
             NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.0f) * 0.5f * 65536.0f) + i * 0x2aaa) * 0.01f;
-        position.z = pack.custodian_position.z;
+        position.z = StorePack[i].custodian_position.z;
         position.z +=
             NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.4f) / 2.4f * 65536.0f) + i * 0x2000 + 0x4000) *
             0.01f;
@@ -891,20 +812,13 @@ void MenuDrawStore(MENU_s *) {
         return;
     }
 
-#define DRAW_STORE_PANEL(INDEX)                                                                                        \
-    if (StoreIAP[INDEX].text[0] != 0) {                                                                                \
-        const i32 alpha = ((MenuA * 7) / 8) << 24;                                                                     \
-        DrawRectRGBA(0.0f, StoreIAP[INDEX].title_y, 2.1f, StoreIAP[INDEX].title_y - StoreIAP[INDEX].bottom_y + 0.02f,  \
-                     static_cast<u32>(alpha), FadeMtl2, 1, 1.0f);                                                      \
+    for (i32 i = 0; i < 3; ++i) {
+        if (StoreIAP[i].text[0] == 0)
+            break;
+        const i32 alpha = ((MenuA * 7) / 8) << 24;
+        DrawRectRGBA(0.0f, StoreIAP[i].title_y, 2.1f, StoreIAP[i].title_y - StoreIAP[i].bottom_y + 0.02f,
+                     static_cast<u32>(alpha), FadeMtl2, 1, 1.0f);
     }
-    if (StoreIAP[0].text[0] != 0) {
-        DRAW_STORE_PANEL(0);
-        if (StoreIAP[1].text[0] != 0) {
-            DRAW_STORE_PANEL(1);
-            DRAW_STORE_PANEL(2);
-        }
-    }
-#undef DRAW_STORE_PANEL
 
     const f32 icon_alpha = (pulse * 0.2f + 0.8f) * menu_alpha;
     DrawCharIcon(selected_id, 0.0f, 0.65f, 0.0f, ICONSIZE, 0xa5, icon_alpha, icon_alpha, 1, NULL);
@@ -937,11 +851,10 @@ void MenuDrawStore(MENU_s *) {
 
     i32 slot = 1;
     for (i32 bundle_index = 0; bundle_index < 3; ++bundle_index) {
-        STOREBUNDLE &bundle = StoreBundle[bundle_index];
-        if ((bundle.pack_mask & (1u << menu_i_pack)) == 0) {
+        if ((StoreBundle[bundle_index].pack_mask & (1 << menu_i_pack)) == 0) {
             continue;
         }
-        if (NuIOS_IsProductPurchased(bundle.name) != 0 ||
+        if (NuIOS_IsProductPurchased(StoreBundle[bundle_index].name) != 0 ||
             (SuperOptions.store_bundle_flags & (1u << bundle_index)) != 0) {
             StoreIAP[0].text[0] = 'x';
             return;
@@ -950,40 +863,29 @@ void MenuDrawStore(MENU_s *) {
         product.description[0] = 0;
         product.price_text[0] = 0;
         product.price = 0.0f;
-        NuIOS_GetInAppProductByID(bundle.name, reinterpret_cast<NuIOS_InAppProduct *>(&product));
+        NuIOS_GetInAppProductByID(StoreBundle[bundle_index].name, reinterpret_cast<NuIOS_InAppProduct *>(&product));
         const f32 bundle_price = product.price;
         f32 separate_price = 0.0f;
         i32 character_ids[11];
         i32 already_owned[11];
         i32 count = 0;
-#define ADD_BUNDLE_PACK(INDEX)                                                                                         \
-    if ((bundle.pack_mask & (1u << INDEX)) != 0) {                                                                     \
-        character_ids[count] = *StorePack[INDEX].id;                                                                   \
-        if (Store_IsPackUnlocked(INDEX)) {                                                                             \
-            already_owned[count] = 1;                                                                                  \
-        } else {                                                                                                       \
-            already_owned[count] = 0;                                                                                  \
-            STORE_PRODUCT_s pack_product;                                                                              \
-            char *pack_product_id = *reinterpret_cast<char **>(&StorePack[INDEX].field1_0x4);                          \
-            if (NuIOS_GetInAppProductByID(pack_product_id, reinterpret_cast<NuIOS_InAppProduct *>(&pack_product)) !=   \
-                0) {                                                                                                   \
-                separate_price += pack_product.price;                                                                  \
-            }                                                                                                          \
-        }                                                                                                              \
-        ++count;                                                                                                       \
-    }
-        ADD_BUNDLE_PACK(0);
-        ADD_BUNDLE_PACK(1);
-        ADD_BUNDLE_PACK(2);
-        ADD_BUNDLE_PACK(3);
-        ADD_BUNDLE_PACK(4);
-        ADD_BUNDLE_PACK(5);
-        ADD_BUNDLE_PACK(6);
-        ADD_BUNDLE_PACK(7);
-        ADD_BUNDLE_PACK(8);
-        ADD_BUNDLE_PACK(9);
-        ADD_BUNDLE_PACK(10);
-#undef ADD_BUNDLE_PACK
+        for (i32 pack = 0; pack < 11; ++pack) {
+            if ((StoreBundle[bundle_index].pack_mask & (1 << pack)) == 0)
+                continue;
+            character_ids[count] = *StorePack[pack].id;
+            if (Store_IsPackUnlocked(pack)) {
+                already_owned[count] = 1;
+            } else {
+                already_owned[count] = 0;
+                STORE_PRODUCT_s pack_product;
+                char *pack_product_id = *reinterpret_cast<char **>(&StorePack[pack].field1_0x4);
+                if (NuIOS_GetInAppProductByID(pack_product_id, reinterpret_cast<NuIOS_InAppProduct *>(&pack_product)) !=
+                    0) {
+                    separate_price += pack_product.price;
+                }
+            }
+            ++count;
+        }
 
         if (!(bundle_price < separate_price)) {
             continue;
@@ -1006,7 +908,8 @@ void MenuDrawStore(MENU_s *) {
             x += step;
         }
         y -= 0.1f;
-        sprintf(line, "%s ~0%.2f~~", TTab[static_cast<i16>(bundle.text_index)], static_cast<double>(bundle_price));
+        sprintf(line, "%s ~0%.2f~~", TTab[static_cast<i16>(StoreBundle[bundle_index].text_index)],
+                static_cast<double>(bundle_price));
         Text3DEx(line, 0.0f, y, 1.0f, 0.4f, 0.4f, 0.4f, 1, 255, 191, 0, static_cast<u8>(MenuA));
         StoreIAP[slot].title_y = y;
         y += text3d_height;
@@ -1024,7 +927,7 @@ void MenuDrawStore(MENU_s *) {
             }
         }
         sprintf(discount, "~0%.2f~~", static_cast<double>(separate_price - bundle_price));
-        const i16 save_text = bundle.pack_mask == 0xffffffffu ? tSAVE_SUPERBUNDLE : tSAVE_BUNDLE;
+        const i16 save_text = StoreBundle[bundle_index].pack_mask == 0xffffffffu ? tSAVE_SUPERBUNDLE : tSAVE_BUNDLE;
         sprintf(line, TTab[save_text], discount);
         SmartTextEx(line, 0.0f, y, 1.0f, 0.3f, 0.3f, 0.3f, 1, 0, 191, 255, 1.9f, 1, &text_box, 0, MenuA);
         y += text3d_height;
@@ -1050,52 +953,30 @@ void MenuUpdateStore(MENU_s *menu) {
 
     const f32 time = NuFmod(menu->menu_time, 12.0f);
     i32 hit;
-#define CHECK_STORE_TOUCH_POINT(INDEX)                                                                                 \
-    if (MenuAlpha >= 1.0f && MechInputTouchMenuController::AnyTouchesThisFrame > 0) {                                  \
-        const f32 dx = StoreTouchLastPos.x - entry_x;                                                                  \
-        const f32 dy = StoreTouchLastPos.y - entry_y;                                                                  \
-        if (__builtin_expect(dx * dx + dy * dy < 0.01f, 0)) {                                                          \
-            hit = INDEX;                                                                                               \
-            goto store_touch_selected;                                                                                 \
-        }                                                                                                              \
+    for (hit = 0; hit < 3; ++hit) {
+        STOREIAP_s &entry = StoreIAP[hit];
+        if (entry.text[0] == 0) {
+            return;
+        }
+        VuVec position __attribute__((aligned(16)));
+        position.x = entry.x;
+        position.y = entry.y;
+        if (time < 8.0f) {
+            const f32 trigger = 8.0f - (position.y + 1.0f) * 4.0f;
+            if (time >= trigger && time - FRAMETIME < trigger) {
+                position.z = 1.0f;
+                position.w = 1.0f;
+                MechSystems::Get()->NewRadarPulse(position, false);
+            }
+        }
+        if (MenuAlpha >= 1.0f && MechInputTouchMenuController::AnyTouchesThisFrame > 0) {
+            const f32 dx = StoreTouchLastPos.x - position.x;
+            const f32 dy = StoreTouchLastPos.y - position.y;
+            if (__builtin_expect(dx * dx + dy * dy < 0.01f, 0)) {
+                goto store_touch_selected;
+            }
+        }
     }
-#define CHECK_STORE_TOUCH(INDEX)                                                                                       \
-    do {                                                                                                               \
-        STOREIAP_s &entry = StoreIAP[INDEX];                                                                           \
-        if (entry.text[0] == 0) {                                                                                      \
-            return;                                                                                                    \
-        }                                                                                                              \
-        const f32 entry_x = entry.x;                                                                                   \
-        const f32 entry_y = entry.y;                                                                                   \
-        CHECK_STORE_TOUCH_POINT(INDEX);                                                                                \
-    } while (0)
-#define CHECK_STORE_PULSE(INDEX)                                                                                       \
-    do {                                                                                                               \
-        STOREIAP_s &entry = StoreIAP[INDEX];                                                                           \
-        if (entry.text[0] == 0) {                                                                                      \
-            return;                                                                                                    \
-        }                                                                                                              \
-        const f32 entry_x = entry.x;                                                                                   \
-        const f32 entry_y = entry.y;                                                                                   \
-        const f32 trigger = 8.0f - (entry_y + 1.0f) * 4.0f;                                                            \
-        if (time >= trigger && time - FRAMETIME < trigger) {                                                           \
-            VuVec pulse __attribute__((aligned(16))) = VuVec(entry_x, entry_y, 1.0f, 1.0f);                            \
-            MechSystems::Get()->NewRadarPulse(pulse, false);                                                           \
-        }                                                                                                              \
-        CHECK_STORE_TOUCH_POINT(INDEX);                                                                                \
-    } while (0)
-    if (time < 8.0f) {
-        CHECK_STORE_PULSE(0);
-        CHECK_STORE_PULSE(1);
-        CHECK_STORE_PULSE(2);
-    } else {
-        CHECK_STORE_TOUCH(0);
-        CHECK_STORE_TOUCH(1);
-        CHECK_STORE_TOUCH(2);
-    }
-#undef CHECK_STORE_PULSE
-#undef CHECK_STORE_TOUCH
-#undef CHECK_STORE_TOUCH_POINT
     return;
 
 store_touch_selected:
@@ -1225,7 +1106,7 @@ void MenuDrawStoreRestoring(MENU_s *menu) {
             y += text3d_height;
         }
     }
-    for (i32 i = 0; i < restoring_bundle_count; ++i) {
+    for (u32 i = 0; i < restoring_bundle_count; ++i) {
         if (NuIOS_GetInAppProductByID(StoreBundle[restoring_bundle_list[i]].name,
                                       reinterpret_cast<NuIOS_InAppProduct *>(&product)) != 0) {
             SmartTextEx(product.name, 0.0f, y, 1.0f, 0.3f, 0.3f, 0.3f, 0, 255, 255, 255, 1.9f, 1, NULL, 0, MenuA);
@@ -1235,25 +1116,11 @@ void MenuDrawStoreRestoring(MENU_s *menu) {
 }
 
 void MenuExitStoreRestoring(MENU_s *) {
-    u8 pack_count = restoring_pack_count;
-    if (pack_count != 0) {
-        u8 *item = restoring_pack_list;
-        u8 *end = item + pack_count;
-        i32 flags = SuperOptions.store_pack_flags;
-        do {
-            flags |= 1u << *item++;
-        } while (item != end);
-        SuperOptions.store_pack_flags = flags;
+    for (i32 i = 0; i < restoring_pack_count; ++i) {
+        SuperOptions.store_pack_flags |= 1 << restoring_pack_list[i];
     }
-    u8 bundle_count = restoring_bundle_count;
-    if (bundle_count != 0) {
-        u8 *item = restoring_bundle_list;
-        u8 *end = item + bundle_count;
-        i32 flags = SuperOptions.store_bundle_flags;
-        do {
-            flags |= 1u << *item++;
-        } while (item != end);
-        SuperOptions.store_bundle_flags = flags;
+    for (i32 i = 0; i < restoring_bundle_count; ++i) {
+        SuperOptions.store_bundle_flags |= 1 << restoring_bundle_list[i];
     }
     Store_RestorePurchases();
 }
@@ -1274,7 +1141,7 @@ void Store_RootPackCustodian(i32, GameObject_s *custodian) {
     u8 flags = custodian->field_0xefc;
     custodian->apiobj.flags_low |= 2;
     flags |= 0x12;
-    custodian->field_0xefe |= 0x40;
+    custodian->invulnerable = 1;
     custodian->field_0xefc = flags;
     u32 object_flags = custodian->apiobj.field_0x1f4;
     object_flags &= ~1u;
@@ -1285,9 +1152,9 @@ void Store_RootPackCustodian(i32, GameObject_s *custodian) {
 void Store_UprootPackCustodian(i32, GameObject_s *custodian) {
     CHARACTERDATA **character_list = &CDataList;
     u8 flags = custodian->field_0xefc;
-    custodian->apiobj.flags_low &= ~2u;
+    custodian->apiobj.flags_low_bit1 = 0;
     flags &= ~0x12u;
-    custodian->field_0xefe &= ~0x40u;
+    custodian->invulnerable = 0;
     custodian->field_0xefc = flags;
 
     CHARACTERDATA *characters = *character_list;
@@ -1307,22 +1174,11 @@ void MenuUpdateStorePurchase(MENU_s *) {
         GameAudio_PlaySfx(0x26, NULL, 0, 0);
         if (menu_i_bundle != -1) {
             SuperOptions.store_bundle_flags |= 1u << menu_i_bundle;
-#define UNLOCK_BUNDLE_PACK(INDEX)                                                                                      \
-    if ((StoreBundle[menu_i_bundle].pack_mask & (1u << INDEX)) != 0) {                                                 \
-        Store_UnlockPack(INDEX, false);                                                                                \
-    }
-            UNLOCK_BUNDLE_PACK(0);
-            UNLOCK_BUNDLE_PACK(1);
-            UNLOCK_BUNDLE_PACK(2);
-            UNLOCK_BUNDLE_PACK(3);
-            UNLOCK_BUNDLE_PACK(4);
-            UNLOCK_BUNDLE_PACK(5);
-            UNLOCK_BUNDLE_PACK(6);
-            UNLOCK_BUNDLE_PACK(7);
-            UNLOCK_BUNDLE_PACK(8);
-            UNLOCK_BUNDLE_PACK(9);
-            UNLOCK_BUNDLE_PACK(10);
-#undef UNLOCK_BUNDLE_PACK
+            for (i32 i = 0; i < 11; ++i) {
+                if ((StoreBundle[menu_i_bundle].pack_mask & (1 << i)) != 0) {
+                    Store_UnlockPack(i, false);
+                }
+            }
         } else {
             Store_UnlockPack(menu_i_pack, false);
         }
@@ -1332,8 +1188,7 @@ void MenuUpdateStorePurchase(MENU_s *) {
             if (static_cast<i32>(custodian->apiobj.field_0x1f4) < 0) {
                 Store_UprootPackCustodian(menu_i_pack, custodian);
             }
-            if (__builtin_expect(NuVecXZDistSqr(&player->apiobj.position, &custodian->apiobj.position, NULL) < 4.0f,
-                                 0)) {
+            if (NuVecXZDistSqr(&player->apiobj.position, &custodian->apiobj.position, NULL) < 4.0f) {
                 TagCharacter(player, custodian, 1);
             }
         }

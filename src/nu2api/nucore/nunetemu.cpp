@@ -154,7 +154,7 @@ NuNetEmu::EmuPacket *NuNetEmu::FindPacket(nunetaddr_s *, i32 size) {
     u32 now = UtilGetFrameStartTime();
     size += 2;
     while (packet != NULL) {
-        if (size <= 0xbb8 - packet->payload_size &&
+        if (size <= (i32)(0xbb8 - packet->payload_size) &&
             (packet->flush_time >= packet->send_time || now <= packet->flush_time)) {
             break;
         }
@@ -164,7 +164,7 @@ NuNetEmu::EmuPacket *NuNetEmu::FindPacket(nunetaddr_s *, i32 size) {
 }
 
 i32 NuNetEmu::RecvFrom(void *data, i32 size, nunetaddr_s &address) {
-    if (__builtin_expect(field_10 == 0, 0)) {
+    if (field_10 == 0) {
         return NuNetSessionRecvFrom(data, size, &address);
     }
 
@@ -271,7 +271,7 @@ void NuNetEmu::Update() {
         u32 budget = bandwidth / 30;
         u32 sent = 0;
         EmuPacket *packet = field_04;
-        while (sent < budget && packet != NULL) {
+        while (packet != NULL && sent < budget) {
             if (now >= packet->send_time && (now >= packet->flush_time || packet->payload_size >= field_38)) {
                 EmuPacket *next = packet->next;
                 raw_stats.total.values[0] += packet->payload_size;

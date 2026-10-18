@@ -56,10 +56,7 @@
 #include "legoapi/ai/game/lsw_hub_ai.h"
 #include "legoapi/ai/game/starwars_gameai.h"
 
-struct AIROW_s;
 struct AISYS_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
 
 typedef i32 (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
 typedef void (*HUBCALLBACK)(WORLDINFO_s *);
@@ -123,22 +120,7 @@ MIDSPECIALMOVEFN starwars_midspecialmovefns[] = {
 
 f32 jump_stuck_time = 0.1f;
 
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
 struct GAMEMESSAGE_s;
-struct HINT_s;
-struct MENU_s;
-struct NuBloomParameters;
-struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
-struct nuhspecial_s;
-struct ripple_node_s;
-struct ripple_set_s;
-struct VuVec;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
@@ -608,7 +590,8 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
     packet->movement_stopping_distance = 0.0f;
     f32 jump_distance = ((flags & capabilities) & 0x20) != 0 ? 1.5f : (((flags & capabilities) & 2) != 0 ? 1.2f : 0.8f);
     connection = packet->path_info.connection;
-    flags = connection->traversal_flags[packet->path_info.direction];
+    u32 direction = packet->path_info.direction;
+    flags = connection->traversal_flags[direction];
     if ((flags & 0x800) != 0) {
         packet->path_connection_state = 1;
         packet->runtime_flags |= 0x80;
@@ -616,18 +599,17 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
     switch (packet->path_connection_state) {
         case 1:
             if (ready != 0) {
+                const u32 connection_flags = connection->traversal_flags[direction];
+                const u32 node = destination_index;
                 const bool skip_ahead =
-                    (packet->path_info.connection->traversal_flags[packet->path_info.direction] & 0x200) == 0 &&
-                    packet->inside_path_node != destination_index &&
-                    ((packet->path_info.path->previous_inside_node_bits[destination_index >> 3] >>
-                      (destination_index & 7)) &
-                     1) != 0;
+                    (connection_flags & 0x200) == 0 && packet->inside_path_node != destination_index &&
+                    ((packet->path_info.path->previous_inside_node_bits[node / 8] >> (node % 8)) & 1) != 0;
                 if (skip_ahead) {
                     if (TryToTeleportToNextNode(owner, destination, 0) != 0) {
                         return 1;
                     }
-                } else if ((packet->path_info.connection->traversal_flags[packet->path_info.direction] & 0x800) == 0) {
-                    if ((packet->path_info.connection->traversal_flags[packet->path_info.direction] & 0x400) != 0 ||
+                } else if ((connection_flags & 0x800) == 0) {
+                    if ((connection_flags & 0x400) != 0 ||
                         ((destination->runtime_flags | source->runtime_flags) & 2) == 0 ||
                         NuSpecialCompare(&source->special_handle, &destination->special_handle) != 0) {
                         packet->path_connection_state = 4;
@@ -645,10 +627,10 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
                 if (((destination->runtime_flags | source->runtime_flags) & 2) == 0 ||
                     distance - destination->radius > jump_distance) {
                     packet->path_connection_state = 3;
-                    if ((destination->runtime_flags & 2) != 0)
-                        owner->jump_destination_distance = 0.0f;
-                    else
+                    if ((destination->runtime_flags & 2) == 0)
                         owner->jump_destination_distance = distance;
+                    else
+                        owner->jump_destination_distance = 0.0f;
                 }
             }
             break;

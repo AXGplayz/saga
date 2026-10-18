@@ -157,7 +157,7 @@ namespace {
     void StreamListRemove(NuEList<NuSound3Voice> *list, NuSound3Voice *voice) {
         NuSound3Voice *previous = voice->intrusive_prev;
         NuSound3Voice *next = voice->intrusive_next;
-        if (next == NULL && previous == NULL) {
+        if (previous == NULL && next == NULL) {
             return;
         }
         list->length--;
@@ -257,23 +257,13 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-struct STATUSPACKET_s;
-struct TouchHolder;
 struct VuVec;
 
-struct GameObject_s;
 struct nuvec_s;
-struct WORLDINFO_s;
-struct BOLT_s;
 
 struct EDCREATURE_s;
 
-struct GIZMOPICKUP_s;
-struct PART_s;
-
 typedef isize __attribute__((may_alias)) NuGCutWord;
-
-struct instNUGCUTSCENE_s;
 
 extern AIACTIONDEF api_aiactiondefs[55];
 extern AICONDITIONDEF api_aiconditiondefs[50];
@@ -284,156 +274,19 @@ DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size
 
 struct nupad_s;
 
-struct EDAISHAREDPATHNODE_s;
 struct eduimenu_s;
 struct eduiitem_s;
-
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
-static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
-    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
-
-#if defined(__i386__)
-#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
-#else
-#define CREATURE_EDITOR_REGPARM1
-#endif
-static __used__
-    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
-                                                                                           eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
-                                                                                          eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
-                                                                                         unsigned int);
 
 extern "C" {
     struct EDCREATURE_s;
 }
-
-#if defined(__i386__)
-static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
-static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#else
-static void DestroyLocator(EDLOCATOR_s *);
-static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#endif
-static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
-
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void
-locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
-
-static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
-
-#if defined(__i386__)
-static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
-#else
-static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
-#endif
-AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
-    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
 
 extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
 
-namespace {
-
-} // namespace
-
-struct AIPACKET_s;
-struct AISYS_s;
 struct nufpar_s;
-
-static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-
-static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -468,64 +321,8 @@ static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int
 #endif
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
@@ -585,64 +382,8 @@ inline void EdBitControl::operator delete(void *memory) {
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -700,130 +441,14 @@ extern "C" {
     }
 } // extern "C"
 
-namespace {
-
-} // namespace
-
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
-static __used__ void cbMMCancel(eduimenu_s *, eduimenu_s *);
-static __used__ i32 cbInteractMenuCancelChild(edui_interact_s *interact);
-static __used__ void cbMMReturnToApp(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void cbmcfgCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32);
-static __used__ void cbMMEditorConfig(eduimenu_s *menu, eduiitem_s *, u32);
-static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact);
-static __used__ i32 eduicbInteractExpander(edui_interact_s *interact);
-static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact);
-static __used__ i32 eduicbInteractSel(edui_interact_s *interact);
-static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item);
-static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item);
-static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *);
-static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad);
-static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
-static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad);
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected);
-static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderProp(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale,
-                                           i32 selected);
-static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width,
-                                                      i32);
-static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32);
-static __used__ void eduicbSelectDirectoryEntry(eduimenu_s *menu, eduiitem_s *item, u32 value);
-static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32);
 }
 
 extern "C" {
@@ -895,19 +520,8 @@ extern "C" {
     }
 } // extern "C"
 
-static __attribute__((noinline, noclone)) i32 Bolt_HitPlat(BOLT_s *bolt, u8 *hit_flags)
-    __asm__("_ZL12Bolt_HitPlatP6BOLT_sPhP11WORLDINFO_s.isra.38");
-
 // The original caller appears to treat this u16-returning function as i32;
 // correcting this declaration lowers its match.
-
-namespace {
-
-} // namespace
-
-namespace {
-
-} // namespace
 
 extern "C" {
     extern "C++" {
@@ -994,14 +608,14 @@ NuMusic *NuMusic::GetPlayer() {
 // GamePlayMusic consults this option byte (original: SuperOptions field 0x14).
 // Non-zero selects the quiet/action attack tracks instead of the plain theme.
 NuMusic::NuMusic() {
-    for (i32 i = 0; i < 6; i++) {
-        this->class_volumes[i] = 1.0f;
-    }
     this->albums = NULL;
     this->album_count = 0;
     this->fileinfo = NULL;
     this->file_count = 0;
     this->track_index = 0;
+    for (i32 i = 0; i < 6; i++) {
+        this->class_volumes[i] = 1.0f;
+    }
 }
 
 NuMusic::~NuMusic() {
@@ -1135,41 +749,13 @@ NuMusic::Track *NuMusic::Album::GetTrack(u32 clazz) {
 
 i32 NuMusic::Album::GetTracks(u32 class_mask, Track **out_tracks) {
     i32 count = 0;
-    if ((class_mask & TRACK_CLASS_QUIET) == 0) {
-        out_tracks[0] = NULL;
-    } else {
-        out_tracks[0] = tracks[0];
-        ++count;
-    }
-    if ((class_mask & TRACK_CLASS_ACTION) == 0) {
-        out_tracks[1] = NULL;
-    } else {
-        out_tracks[1] = tracks[1];
-        ++count;
-    }
-    if ((class_mask & TRACK_CLASS_4) == 0) {
-        out_tracks[2] = NULL;
-    } else {
-        out_tracks[2] = tracks[2];
-        ++count;
-    }
-    if ((class_mask & TRACK_CLASS_8) == 0) {
-        out_tracks[3] = NULL;
-    } else {
-        out_tracks[3] = tracks[3];
-        ++count;
-    }
-    if ((class_mask & TRACK_CLASS_CUTSCENE) == 0) {
-        out_tracks[4] = NULL;
-    } else {
-        out_tracks[4] = tracks[4];
-        ++count;
-    }
-    if ((class_mask & TRACK_CLASS_NOMUSIC) == 0) {
-        out_tracks[5] = NULL;
-    } else {
-        out_tracks[5] = tracks[5];
-        ++count;
+    for (i32 index = 0; index < 6; ++index) {
+        if (class_mask & (1 << index)) {
+            out_tracks[index] = tracks[index];
+            ++count;
+        } else {
+            out_tracks[index] = NULL;
+        }
     }
     return count;
 }
@@ -1206,7 +792,7 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
                 // the album being selected (see header note on handle packing).
                 if ((((i32)((char *)album - (char *)this->albums) >> 2) * (u32)0x38e38e39 - (trackHandle >> 0xb) ==
                      0) &&
-                    ((trackHandle & 0x7ff) < (u32)album->tracks_count)) {
+                    ((trackHandle & 0x7ff) < album->tracks_count)) {
                     album->tracks[index] = &album->tracks_source[trackHandle & 0x7ff];
                     return true;
                 }
@@ -1283,8 +869,10 @@ int NuMusic::GetStatus(u32 clazz, i32 *class_status) {
             }
         }
         i32 class_index = ClassToIX(track->clazz);
-        if (class_status != NULL && class_index != -1) {
-            class_status[class_index] |= result;
+        if (class_status != NULL) {
+            if (class_index != -1) {
+                class_status[class_index] |= result;
+            }
         }
     }
 
@@ -1506,13 +1094,15 @@ void NuMusic::ParseTrack(u32 category, nufpar_s *fpar) {
     }
 
     NuFParPushComCTX(fpar, track_jmp_tab);
-    if (*fpar->word_buf != '\0' && *fpar->word_buf != ';') {
-        do {
-            NuFParGetWord(fpar);
-            NuFParInterpretWordCTX(fpar, this);
-            if (*fpar->word_buf == ';')
-                break;
-        } while (*fpar->word_buf != '\0');
+    if (*fpar->word_buf != '\0') {
+        if (*fpar->word_buf != ';') {
+            do {
+                NuFParGetWord(fpar);
+                NuFParInterpretWordCTX(fpar, this);
+                if (*fpar->word_buf == ';')
+                    break;
+            } while (*fpar->word_buf != '\0');
+        }
     }
     NuFParPopCom(fpar);
 
@@ -1669,8 +1259,8 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     i32 count = this->album_count;
     if (count == 0 || (track_count = this->track_count, track_count == 0)) {
         *buffer_start = buffer_original;
-        this->album_count = 0;
         this->albums = NULL;
+        this->album_count = 0;
         this->tracks = NULL;
         this->track_count = 0;
         return;
@@ -2172,7 +1762,7 @@ void NuSound3PauseStereoStream(i32 stream_index) {
     }
 }
 
-__attribute__((optimize("O2"))) i32 NuMusic::PauseTrack(u32 clazz) {
+i32 NuMusic::PauseTrack(u32 clazz) {
     if (this == NULL || the_music_player == NULL || this->album == NULL) {
         return 0;
     }
@@ -2183,27 +1773,18 @@ __attribute__((optimize("O2"))) i32 NuMusic::PauseTrack(u32 clazz) {
     }
 
     i32 result = 0;
-#define PAUSE_MUSIC_TRACK(index)                                                                                       \
-    do {                                                                                                               \
-        Track *track = tracks[index];                                                                                  \
-        if (track == NULL)                                                                                             \
-            break;                                                                                                     \
-        Voice *voice = FindVoiceByTrack(track);                                                                        \
-        if (voice == NULL || static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) > 1)                               \
-            break;                                                                                                     \
-        if ((voice->flags & 2) == 0) {                                                                                 \
-            NuSound3PauseStereoStream(voice->stream_index);                                                            \
-            voice->flags |= 2u;                                                                                        \
-            result = 1;                                                                                                \
-        }                                                                                                              \
-    } while (0)
-    PAUSE_MUSIC_TRACK(0);
-    PAUSE_MUSIC_TRACK(1);
-    PAUSE_MUSIC_TRACK(2);
-    PAUSE_MUSIC_TRACK(3);
-    PAUSE_MUSIC_TRACK(4);
-    PAUSE_MUSIC_TRACK(5);
-#undef PAUSE_MUSIC_TRACK
+    for (i32 i = 0; i < 6; i++) {
+        Track *track = tracks[i];
+        if (track == NULL) {
+            continue;
+        }
+        Voice *voice = FindVoiceByTrack(track);
+        if (voice != NULL && static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) <= 1 && (voice->flags & 2) == 0) {
+            NuSound3PauseStereoStream(voice->stream_index);
+            voice->flags |= 2u;
+            result = 1;
+        }
+    }
 
     return result;
 }
@@ -2215,7 +1796,7 @@ void NuSound3ResumeStereoStream(i32 stream_index) {
     }
 }
 
-__attribute__((optimize("O2"))) i32 NuMusic::ResumeTrack(u32 clazz) {
+i32 NuMusic::ResumeTrack(u32 clazz) {
     if (this == NULL || the_music_player == NULL || this->album == NULL) {
         return 0;
     }
@@ -2226,27 +1807,18 @@ __attribute__((optimize("O2"))) i32 NuMusic::ResumeTrack(u32 clazz) {
     }
 
     i32 result = 0;
-#define RESUME_MUSIC_TRACK(index)                                                                                      \
-    do {                                                                                                               \
-        Track *track = tracks[index];                                                                                  \
-        if (track == NULL)                                                                                             \
-            break;                                                                                                     \
-        Voice *voice = FindVoiceByTrack(track);                                                                        \
-        if (voice == NULL || static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) > 1)                               \
-            break;                                                                                                     \
-        if ((voice->flags & 2) != 0) {                                                                                 \
-            NuSound3ResumeStereoStream(voice->stream_index);                                                           \
-            voice->flags &= ~2u;                                                                                       \
-            result = 1;                                                                                                \
-        }                                                                                                              \
-    } while (0)
-    RESUME_MUSIC_TRACK(0);
-    RESUME_MUSIC_TRACK(1);
-    RESUME_MUSIC_TRACK(2);
-    RESUME_MUSIC_TRACK(3);
-    RESUME_MUSIC_TRACK(4);
-    RESUME_MUSIC_TRACK(5);
-#undef RESUME_MUSIC_TRACK
+    for (i32 i = 0; i < 6; i++) {
+        Track *track = tracks[i];
+        if (track == NULL) {
+            continue;
+        }
+        Voice *voice = FindVoiceByTrack(track);
+        if (voice != NULL && static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) <= 1 && (voice->flags & 2) != 0) {
+            NuSound3ResumeStereoStream(voice->stream_index);
+            voice->flags &= ~2u;
+            result = 1;
+        }
+    }
 
     return result;
 }
@@ -2658,7 +2230,7 @@ void NuSound3StopStereoStream(i32 stream_index) {
     if (NuSound3Stream::mVoice.obj != NULL && stream->field_0xd != 0) {
         ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->Stop(true);
         NuSound.ReleaseVoice((NuSoundVoice *)NuSound3Stream::mVoice.obj);
-        NuSound3Stream::mVoice.Set(NULL);
+        NuSound3Stream::mVoice.Assign(NULL);
         stream->field_0xd = 0;
     }
 
@@ -2684,7 +2256,7 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
     i32 sample_index = 0;
     i32 volume_bits = 0;
     f32 start_offset = 0.0f;
-    i32 voice_loop = 0;
+    bool voice_loop = false;
     bool start_voice = true;
 
     while (token != NUSOUNDPLAYTOK_END) {
@@ -2710,7 +2282,7 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
                 break;
             }
             case NUSOUNDPLAYTOK_LOOPTYPE: {
-                voice_loop = va_arg(args, i32);
+                voice_loop = va_arg(args, i32) != 0;
                 break;
             }
             case NUSOUNDPLAYTOK_ONESHOT: {
@@ -2729,14 +2301,12 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
     if (streaming_sample->GetThreadQueueCount() < 1) {
         NuSoundStream *stream_ptr = g_NuSoundStreams[stream_index];
         if (stream_ptr != NULL) {
-            NuSoundStreamingSample *stream = stream_ptr->stream;
-            if (stream != streaming_sample) {
+            if (stream_ptr->stream != streaming_sample) {
                 NuSound3StopStereoStream(stream_index);
-                stream = stream_ptr->stream;
             }
 
-            NuSoundSample::LoadState load_state = stream->GetLoadState();
-            if ((load_state == NuSoundSample::LoadState::NOT_LOADED) && stream->GetResourceCount() == 0) {
+            NuSoundSample::LoadState load_state = stream_ptr->stream->GetLoadState();
+            if ((load_state == NuSoundSample::LoadState::NOT_LOADED) && stream_ptr->stream->GetResourceCount() == 0) {
                 delete stream_ptr;
                 g_NuSoundStreams[stream_index] = NULL;
             } else if (g_NuSoundStreams[stream_index] != NULL) {
@@ -2745,20 +2315,20 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
         }
 
         if (streaming_sample != NULL && streaming_sample->GetResourceCount() == 0) {
-            NuSoundStream *node = new NuSoundStream();
+            NuSoundStream *node = new NuSoundStream;
 
-            node->field_0xc = (u8)(voice_loop != 0);
-            node->ps2volume = volume_bits;
-            node->pending_start = start_voice;
             node->field_0xd = 0;
             g_NuSoundStreams[stream_index] = node;
+            node->field_0xc = voice_loop;
             node->stream = streaming_sample;
+            node->ps2volume = volume_bits;
+            node->pending_start = start_voice;
 
             streaming_sample->sound_buffer1 = &g_NuSoundStreamBuffers[stream_index * 2];
             streaming_sample->sound_buffer2 = &g_NuSoundStreamBuffers[stream_index * 2 + 1];
 
             streaming_sample->Reference();
-            g_NuSoundStreamer->RequestCue(streaming_sample, node->field_0xc != 0, start_offset, false);
+            g_NuSoundStreamer->RequestCue(streaming_sample, voice_loop, start_offset, false);
 
             return 1;
         }
@@ -2854,7 +2424,7 @@ void NuMusic::Voice::Cue() {
     Play();
 }
 
-__attribute__((optimize("O2"))) i32 NuMusic::StopTrack(u32 clazz, i32 fade) {
+i32 NuMusic::StopTrack(u32 clazz, i32 fade) {
     if (this == NULL || the_music_player == NULL || this->album == NULL) {
         return 0;
     }
@@ -2865,48 +2435,30 @@ __attribute__((optimize("O2"))) i32 NuMusic::StopTrack(u32 clazz, i32 fade) {
     }
 
     i32 result = 0;
-#define STOP_MUSIC_TRACK(index, fading)                                                                                \
-    do {                                                                                                               \
-        Track *track = tracks[index];                                                                                  \
-        if (track == NULL) {                                                                                           \
-            break;                                                                                                     \
-        }                                                                                                              \
-        Voice *voice = FindVoiceByTrack(track);                                                                        \
-        if (voice == NULL) {                                                                                           \
-            break;                                                                                                     \
-        }                                                                                                              \
-        if (static_cast<u32>(voice->status - VOICE_STATUS_STOPPING) <= 1) {                                            \
-            NuSound3StopStereoStream(voice->stream_index);                                                             \
-            voice->SetStatusFn(VOICE_STATUS_NONE, 0x46a);                                                              \
-            result = 1;                                                                                                \
-        } else if (__builtin_expect(static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) <= 1, 1)) {                                      \
-            if (fading) {                                                                                              \
-                voice->fade_rate = 2.0f;                                                                               \
-                voice->flags |= 1u;                                                                                    \
-                result = 1;                                                                                            \
-            } else {                                                                                                   \
-                NuSound3StopStereoStream(voice->stream_index);                                                         \
-                voice->SetStatusFn(VOICE_STATUS_NONE, 0x464);                                                          \
-                result = 1;                                                                                            \
-            }                                                                                                          \
-        }                                                                                                              \
-    } while (0)
-    if ((fade & 1) != 0) {
-        STOP_MUSIC_TRACK(0, true);
-        STOP_MUSIC_TRACK(1, true);
-        STOP_MUSIC_TRACK(2, true);
-        STOP_MUSIC_TRACK(3, true);
-        STOP_MUSIC_TRACK(4, true);
-        STOP_MUSIC_TRACK(5, true);
-    } else {
-        STOP_MUSIC_TRACK(0, false);
-        STOP_MUSIC_TRACK(1, false);
-        STOP_MUSIC_TRACK(2, false);
-        STOP_MUSIC_TRACK(3, false);
-        STOP_MUSIC_TRACK(4, false);
-        STOP_MUSIC_TRACK(5, false);
+    for (i32 i = 0; i < 6; i++) {
+        Track *track = tracks[i];
+        if (track == NULL) {
+            continue;
+        }
+        Voice *voice = FindVoiceByTrack(track);
+        if (voice == NULL) {
+            continue;
+        }
+        if (static_cast<u32>(voice->status - VOICE_STATUS_STOPPING) <= 1) {
+            NuSound3StopStereoStream(voice->stream_index);
+            voice->SetStatusFn(VOICE_STATUS_NONE, 0x46a);
+            result = 1;
+        } else if (__builtin_expect(static_cast<u32>(voice->status - VOICE_STATUS_PLAYING) <= 1, 1)) {
+            if (fade & 1) {
+                voice->fade_rate = 2.0f;
+                voice->flags |= 1u;
+            } else {
+                NuSound3StopStereoStream(voice->stream_index);
+                voice->SetStatusFn(VOICE_STATUS_NONE, 0x464);
+            }
+            result = 1;
+        }
     }
-#undef STOP_MUSIC_TRACK
 
     return result;
 }
@@ -2960,7 +2512,7 @@ i32 NuMusic::StopAll(i32 toggle) {
     return 1;
 }
 
-__attribute__((optimize("O2"))) void NuMusic::Process(f32 delta) {
+void NuMusic::Process(f32 delta) {
     if (this == NULL || the_music_player == NULL) {
         return;
     }
@@ -2988,24 +2540,16 @@ __attribute__((optimize("O2"))) void NuMusic::Process(f32 delta) {
     this->duck_gain = 1.0f;
     this->duck_rate = 1.0f;
 
-    Track *track0 = this->voices[0].tracks[this->voices[0].track_index];
     f32 duck_target = 1.0f;
-    if (track0 != NULL && this->voices[0].status == VOICE_STATUS_PLAYING_LOADED) {
-        duck_target = MIN(1.0f, track0->duck_volume);
-        this->duck_gain = duck_target;
+    for (i32 vi = 0; vi < 2; ++vi) {
+        Track *track = this->voices[vi].tracks[this->voices[vi].track_index];
+        if (track != NULL && this->voices[vi].status == VOICE_STATUS_PLAYING_LOADED) {
+            duck_target = MIN(duck_target, track->duck_volume);
+            this->duck_gain = duck_target;
 
-        f32 rate = 1.0f / track0->duck_fade;
-        this->duck_rate = MAX(rate, 1.0f);
-    }
-
-    Track *track1 = this->voices[1].tracks[this->voices[1].track_index];
-    if (track1 != NULL && this->voices[1].status == VOICE_STATUS_PLAYING_LOADED) {
-        f32 vol = track1->duck_volume;
-        duck_target = MIN(duck_target, vol);
-        this->duck_gain = duck_target;
-
-        f32 rate = 1.0f / track1->duck_fade;
-        this->duck_rate = MAX(rate, this->duck_rate);
+            f32 rate = 1.0f / track->duck_fade;
+            this->duck_rate = MAX(rate, this->duck_rate);
+        }
     }
 
     // Ramp duck_current toward duck_gain without overshooting.
@@ -3018,54 +2562,50 @@ __attribute__((optimize("O2"))) void NuMusic::Process(f32 delta) {
         this->duck_current = MIN(duck_target, duck_current);
     }
 
-#define PROCESS_MUSIC_VOICE(vi)                                                                                        \
-    do {                                                                                                               \
-        Voice *voice = &this->voices[vi];                                                                              \
-        Track *track = this->voices[vi].tracks[this->voices[vi].track_index];                                          \
-        i32 key_status = NuSound3StreamKeyStatus(voice->stream_index);                                                 \
-        if (key_status == NUSOUND_STEREO_STREAM_INACTIVE) {                                                            \
-            NuSound3StopStereoStream(voice->stream_index);                                                             \
-            voice->SetStatusFn(VOICE_STATUS_READY, 0x246);                                                             \
-        } else if (key_status == NUSOUND_STEREO_STREAM_FINISHED) {                                                     \
-            voice->SetStatusFn(VOICE_STATUS_ENDED, 0x24a);                                                             \
-        } else if (key_status == NUSOUND_STEREO_STREAM_PLAYING) {                                                      \
-            voice->SetStatusFn(VOICE_STATUS_PLAYING_LOADED, 0x24e);                                                    \
-        }                                                                                                              \
-        if (voice->status == VOICE_STATUS_PLAYING_LOADED && voice->fade_rate != 0.0f) {                                \
-            f32 gain = voice->fade_rate * delta + voice->gain;                                                         \
-            voice->gain = MAX(0.0f, MIN(gain, 1.0f));                                                                  \
-            if (voice->gain == 0.0f) {                                                                                 \
-                voice->fade_rate = 0.0f;                                                                               \
-                NuSound3StopStereoStream(voice->stream_index);                                                         \
-                voice->SetStatusFn(VOICE_STATUS_READY, 0x25e);                                                         \
-                voice->fade_rate = 1.0f;                                                                               \
-                Track *cur = this->voices[vi].tracks[this->voices[vi].track_index];                                    \
-                ((u8 *)&cur->flags)[1] = 1;                                                                            \
-            }                                                                                                          \
-        }                                                                                                              \
-        f32 duck = this->duck_current;                                                                                 \
-        f32 attenuation = 1.0f;                                                                                        \
-        f32 class_volume = 1.0f;                                                                                       \
-        if (track != NULL) {                                                                                           \
-            if (((track->flags & 1) != 0) || track->duck_volume != 1.0f) {                                             \
-                duck = 1.0f;                                                                                           \
-            }                                                                                                          \
-            i32 index = ClassToIX(track->clazz);                                                                       \
-            attenuation = track->attenuation;                                                                          \
-            class_volume = this->class_volumes[index];                                                                 \
-        }                                                                                                              \
-        f32 volume = duck * this->master_volume * voice->gain * class_volume * this->fader_current * attenuation *     \
-                     this->global_attenuation;                                                                         \
-        voice->volume = volume;                                                                                        \
-        if (volume != voice->last_volume) {                                                                            \
-            NuSound3SetStereoStreamVolume(voice->stream_index, (i32)(volume * 16383.0f));                              \
-            voice->last_volume = voice->volume;                                                                        \
-        }                                                                                                              \
-        voice->play_time = delta + voice->play_time;                                                                   \
-    } while (0)
-    PROCESS_MUSIC_VOICE(0);
-    PROCESS_MUSIC_VOICE(1);
-#undef PROCESS_MUSIC_VOICE
+    for (i32 vi = 0; vi < 2; ++vi) {
+        Voice *voice = &this->voices[vi];
+        Track *track = this->voices[vi].tracks[this->voices[vi].track_index];
+        i32 key_status = NuSound3StreamKeyStatus(voice->stream_index);
+        if (key_status == NUSOUND_STEREO_STREAM_INACTIVE) {
+            NuSound3StopStereoStream(voice->stream_index);
+            voice->SetStatusFn(VOICE_STATUS_READY, 0x246);
+        } else if (key_status == NUSOUND_STEREO_STREAM_FINISHED) {
+            voice->SetStatusFn(VOICE_STATUS_ENDED, 0x24a);
+        } else if (key_status == NUSOUND_STEREO_STREAM_PLAYING) {
+            voice->SetStatusFn(VOICE_STATUS_PLAYING_LOADED, 0x24e);
+        }
+        if (voice->status == VOICE_STATUS_PLAYING_LOADED && voice->fade_rate != 0.0f) {
+            f32 gain = voice->fade_rate * delta + voice->gain;
+            voice->gain = MAX(0.0f, MIN(gain, 1.0f));
+            if (voice->gain == 0.0f) {
+                voice->fade_rate = 0.0f;
+                NuSound3StopStereoStream(voice->stream_index);
+                voice->SetStatusFn(VOICE_STATUS_READY, 0x25e);
+                voice->fade_rate = 1.0f;
+                Track *cur = this->voices[vi].tracks[this->voices[vi].track_index];
+                ((u8 *)&cur->flags)[1] = 1;
+            }
+        }
+        f32 duck = this->duck_current;
+        f32 class_volume = 1.0f;
+        f32 attenuation = 1.0f;
+        if (track != NULL) {
+            if (((track->flags & 1) != 0) || track->duck_volume != 1.0f) {
+                duck = 1.0f;
+            }
+            i32 index = ClassToIX(track->clazz);
+            attenuation = track->attenuation;
+            class_volume = this->class_volumes[index];
+        }
+        f32 volume = duck * this->master_volume * voice->gain * class_volume * this->fader_current * attenuation *
+                     this->global_attenuation;
+        voice->volume = volume;
+        if (volume != voice->last_volume) {
+            NuSound3SetStereoStreamVolume(voice->stream_index, (i32)(volume * 16383.0f));
+            voice->last_volume = voice->volume;
+        }
+        voice->play_time = delta + voice->play_time;
+    }
 }
 
 i32 NuMusic::Voice::Unload() {

@@ -151,22 +151,9 @@ extern f32 hackFlashTimer;
 extern GAMEANIMSET_s *hackFlashingGameAnimSet;
 extern nuhspecial_s *hackFlashingSpecial;
 
-namespace {
-
-} // namespace
-
 struct TouchHolder;
 struct nuhspecial_s;
 struct VuVec;
-
-#if defined(__i386__)
-#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone, regparm(2)))
-#else
-#define NU_READ_GRAPHICS_DATA_ATTR __attribute__((noinline, noclone))
-#endif
-static NU_READ_GRAPHICS_DATA_ATTR NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path,
-                                                             char *scene_data)
-    __asm__("_ZL18NuReadGraphicsDataP9variptr_uS0_PcS1_S1_.isra.104");
 
 // DrawPanel HUD globals referenced by the cantina-bar-patrons WIP. Initial
 // red-brick positions come from the Game init values in legogame/game.cpp.
@@ -201,23 +188,11 @@ inline void ThingManager::operator delete(void *thing, usize size) {
     theMemoryManager.FreePool(thing, size);
 }
 
-struct MechTouchUIElement;
-
 // ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
-
-namespace {
-
-} // namespace
 
 // This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
 
 DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
-
-struct FLOWBOX_s;
-
-struct JEDIBNETPACKET_s;
-
-struct nuvec_s;
 
 extern AIACTIONDEF api_aiactiondefs[55];
 extern AICONDITIONDEF api_aiconditiondefs[50];
@@ -226,91 +201,16 @@ DECOMP_ASSERT(sizeof(api_aiactiondefs) == 0x294, "API action registry size");
 
 DECOMP_ASSERT(sizeof(api_aiconditiondefs) == 0x258, "API condition registry size");
 
-struct EDAISHAREDPATHNODE_s;
-struct eduimenu_s;
-struct eduiitem_s;
-
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *, u32);
-static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *, u32);
-static __used__ __attribute__((optimize("peel-loops"))) void routeEditor_cbRenameRoute(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *);
-static __used__ void routeEditor_cbSetRouteUsers(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *);
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *);
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) __asm__(
-    "_ZL22routeEditor_AddToRouteP14EDAIPATHNODE_sS0_.part.7");
-
-static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other);
-
 struct EDCREATURE_s;
-
-#if defined(__i386__)
-#define CREATURE_EDITOR_REGPARM1 __attribute__((regparm(1)))
-#else
-#define CREATURE_EDITOR_REGPARM1
-#endif
-static __used__
-    __attribute__((always_inline)) CREATURE_EDITOR_REGPARM1 void creatureEditor_Updated(EDCREATURE_s *creature);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbResetParams(eduimenu_s *menu,
-                                                                                           eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbVisionMenu(eduimenu_s *parent,
-                                                                                          eduiitem_s *, unsigned int);
-
-static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbSetScript(eduimenu_s *, eduiitem_s *item,
-                                                                                         unsigned int);
 
 extern "C" {
     struct EDCREATURE_s;
 }
 
-#if defined(__i386__)
-static void __attribute__((regparm(1))) DestroyLocator(EDLOCATOR_s *);
-static unsigned int __attribute__((regparm(2))) AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#else
-static void DestroyLocator(EDLOCATOR_s *);
-static unsigned int AddLocatorToSet(EDLOCATORSET_s *, EDLOCATOR_s *, EDLOCATOR_s *);
-#endif
-static __used__ void locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *, u32);
-
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void
-locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32);
-static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator);
-
-static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before);
-
-#if defined(__i386__)
-static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
-#else
-static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
-#endif
-AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
-    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
-
 extern "C" {
 extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 }
-
-namespace {
-
-} // namespace
-
-struct AIPACKET_s;
-struct AISYS_s;
-
-struct GIZMOPICKUP_s;
-struct PART_s;
 
 // Original writable flagremaptab at 0x668520, 32 pairs of 32-bit masks.
 extern "C" {
@@ -454,28 +354,28 @@ void HudRadarPulse::Process(float delta) {
             active = 1;
     }
     for (i32 i = 0; i < 3; ++i) {
-        HudRadarPulseStage &pulse = pulses[i];
-        if (!pulse.delay_finished) {
-            pulse.delay -= delta;
-            if (pulse.delay <= 0.0f)
-                pulse.delay_finished = 1;
+        if (!pulses[i].delay_finished) {
+            pulses[i].delay -= delta;
+            if (pulses[i].delay <= 0.0f)
+                pulses[i].delay_finished = 1;
         }
-        if (pulse.delay_finished && !pulse.finished) {
-            pulse.radius += pulse.speed * delta;
-            float speed = pulse.speed - 0.4f * delta;
-            pulse.speed = speed > 0.0f ? speed : 0.0f;
-            pulse.angle += static_cast<i32>(32768.0f * delta);
-            if (pulse.angle > 0x7fff)
-                pulse.finished = 1;
+        if (pulses[i].delay_finished && !pulses[i].finished) {
+            pulses[i].radius += pulses[i].speed * delta;
+            float speed = pulses[i].speed - 0.4f * delta;
+            pulses[i].speed = speed > 0.0f ? speed : 0.0f;
+            pulses[i].angle += static_cast<i32>(32768.0f * delta);
+            if (pulses[i].angle > 0x7fff)
+                pulses[i].finished = 1;
         }
     }
 }
 
 u8 HudRadarPulse::IsFinished() {
-    if (pulses[0].delay_finished && pulses[0].finished && pulses[1].delay_finished && pulses[1].finished &&
-        pulses[2].delay_finished)
-        return pulses[2].finished;
-    return 0;
+    for (i32 i = 0; i < 3; ++i) {
+        if (!pulses[i].delay_finished || !pulses[i].finished)
+            return 0;
+    }
+    return 1;
 }
 
 SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDecalRenderer::Style style) {
@@ -817,35 +717,17 @@ MechSystems *MechSystems::Get() {
 
 void HudRadarPulse::Render() {
     if (active) {
-        if (pulses[0].delay_finished && !pulses[0].finished) {
-            f32 x = position.x + 1.0f;
-            f32 y = 1.0f - position.y;
-            numtl_s *material = MechSystems::Get()->radar_pulse_material;
-            i32 alpha = static_cast<i32>(90.0f * NU_SIN_LUT(pulses[0].angle));
-            f32 radius = pulses[0].radius;
-            f32 width = GetAspectRatio() * radius;
-            RndrTexQuad(x * 0.5f, y * 0.5f, width, radius, static_cast<i32>((static_cast<u32>(alpha) << 24) | 0x808080),
-                        material, 0);
-        }
-        if (pulses[1].delay_finished && !pulses[1].finished) {
-            f32 x = position.x + 1.0f;
-            f32 y = 1.0f - position.y;
-            numtl_s *material = MechSystems::Get()->radar_pulse_material;
-            i32 alpha = static_cast<i32>(90.0f * NU_SIN_LUT(pulses[1].angle));
-            f32 radius = pulses[1].radius;
-            f32 width = GetAspectRatio() * radius;
-            RndrTexQuad(x * 0.5f, y * 0.5f, width, radius, static_cast<i32>((static_cast<u32>(alpha) << 24) | 0x808080),
-                        material, 0);
-        }
-        if (pulses[2].delay_finished && !pulses[2].finished) {
-            f32 x = position.x + 1.0f;
-            f32 y = 1.0f - position.y;
-            numtl_s *material = MechSystems::Get()->radar_pulse_material;
-            i32 alpha = static_cast<i32>(90.0f * NU_SIN_LUT(pulses[2].angle));
-            f32 radius = pulses[2].radius;
-            f32 width = GetAspectRatio() * radius;
-            RndrTexQuad(x * 0.5f, y * 0.5f, width, radius, static_cast<i32>((static_cast<u32>(alpha) << 24) | 0x808080),
-                        material, 0);
+        for (i32 i = 0; i < 3; ++i) {
+            if (pulses[i].delay_finished && !pulses[i].finished) {
+                f32 x = position.x + 1.0f;
+                f32 y = 1.0f - position.y;
+                numtl_s *material = MechSystems::Get()->radar_pulse_material;
+                i32 alpha = static_cast<i32>(90.0f * NU_SIN_LUT(pulses[i].angle));
+                f32 radius = pulses[i].radius;
+                f32 width = GetAspectRatio() * radius;
+                RndrTexQuad(x * 0.5f, y * 0.5f, width, radius,
+                            static_cast<i32>((static_cast<u32>(alpha) << 24) | 0x808080), material, 0);
+            }
         }
     }
 }
@@ -1004,40 +886,24 @@ MoveToMarker *MechSystems::FindMoveToMarkerAtPos(VuVec const &position, bool act
 }
 
 void MechSystems::NewSwipeMarker(TouchHolder &holder, i32 direction, SwipeDecalRenderer::Style style) {
-    i32 slot;
-    if (swipe_markers[0] != NULL) {
-        if (swipe_markers[1] == NULL) {
-            slot = 1;
-        } else if (swipe_markers[2] == NULL) {
-            slot = 2;
-        } else if (swipe_markers[3] == NULL) {
-            slot = 3;
-        } else {
+    for (i32 slot = 0; slot < 4; slot++) {
+        if (swipe_markers[slot] == NULL) {
+            swipe_markers[slot] = new SwipeDecalRenderer(holder, direction, style);
             return;
         }
-    } else {
-        slot = 0;
     }
-    swipe_markers[slot] = new SwipeDecalRenderer(holder, direction, style);
 }
 
 void MechSystems::NewRadarPulse(VuVec const &position, bool paused) {
-    i32 slot;
-    if (radar_pulses[0] == NULL) {
-        slot = 0;
-    } else if (radar_pulses[1] == NULL) {
-        slot = 1;
-    } else if (radar_pulses[2] == NULL) {
-        slot = 2;
-    } else if (radar_pulses[3] == NULL) {
-        slot = 3;
-    } else {
-        return;
-    }
-    HudRadarPulse *pulse = new HudRadarPulse(position);
-    radar_pulses[slot] = pulse;
-    if (paused) {
-        pulse->paused = 1;
+    for (i32 slot = 0; slot < 4; slot++) {
+        if (radar_pulses[slot] == NULL) {
+            HudRadarPulse *pulse = new HudRadarPulse(position);
+            radar_pulses[slot] = pulse;
+            if (paused) {
+                pulse->paused = 1;
+            }
+            return;
+        }
     }
 }
 

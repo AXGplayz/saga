@@ -81,8 +81,10 @@ void SpecialMove_VictimCode(GameObject_s *object) {
             }
             GameObject_s *victim = static_cast<GameObject_s *>(object->field_0x780);
             i32 damage = -1;
-            if (victim->apiobj.player_controlled && Player_HasInvincibility(victim) != 0) {
-                damage = 1;
+            if (victim->apiobj.player_controlled) {
+                if (Player_HasInvincibility(victim) != 0) {
+                    damage = 1;
+                }
             }
             victim = static_cast<GameObject_s *>(object->field_0x780);
             ObjHitObj(victim, object, damage, 0x1000, 0, 1);
@@ -181,8 +183,10 @@ i32 SpecialMove_ReleaseVictim(GameObject_s *object) {
         }
         GameObject_s *target = static_cast<GameObject_s *>(victim->field_0x780);
         i32 damage = -1;
-        if (target->apiobj.player_controlled && Player_HasInvincibility(target) != 0) {
-            damage = 1;
+        if (target->apiobj.player_controlled) {
+            if (Player_HasInvincibility(target) != 0) {
+                damage = 1;
+            }
         }
         target = static_cast<GameObject_s *>(victim->field_0x780);
         ObjHitObj(target, victim, damage, 0x1000, 0, 1);
@@ -210,7 +214,7 @@ i32 SpecialMove_GetAttackerAction(i32 index) {
 // Original 0x498410, 198 bytes.
 void SpecialMove_Attacker_SetTargetMom(GameObject_s *object) {
     f32 distance = SpecialMove_GetDistanceApart(object->field_0x7a7);
-    u16 angle = object->apiobj.movement_facing_angle;
+    i32 angle = object->apiobj.movement_facing_angle;
     f32 z = object->force_target->apiobj.position.z - NU_COS_LUT(angle) * distance;
     f32 x = object->force_target->apiobj.position.x - NU_SIN_LUT(angle) * distance;
     object->target_velocity.z = (z - object->apiobj.position.z) * 10.0f;

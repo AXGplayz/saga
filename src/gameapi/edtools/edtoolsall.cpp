@@ -364,75 +364,6 @@ inline void EdBitControl::operator delete(void *memory) {
 static HSV2RGB_BODY_ATTR void
 HSV2RGBBody(f32 hue, f32 saturation, f32 value, f32 *red, f32 *green, f32 *blue) __asm__("_ZL7HSV2RGBfffPfS_S_.part.18");
 
-static __attribute__((used)) void edanimcbCubeMap(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardType(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelOptMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelMCTBMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetSoundTiming(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetSwitchDelay(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-
-static __attribute__((used)) void edanimcbCancelSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetParticleRate(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelBouncyMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardLoadSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardSaveSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbMCTBCardUnFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyDamping(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbSetBouncyTension(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardFreeSpace(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardSlotsUsed(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalSoundType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardDeleteSlot(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckFormat(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetBouncyPlayerGrav(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbCancelLocalSoundMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbMCTBCardCheckKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBCardWriteKeyCard(eduimenu_s *menu, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbToggleParticleSwitch(eduimenu_s *, eduiitem_s *item, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbCancelParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalSoundTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbCancelLocalParticleTypeMenu(eduimenu_s *, eduimenu_s *);
-static __attribute__((used)) void edanimcbBouncyMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
-
 // Editor UI callbacks retained in the original editor's menu code.
 #pragma GCC push_options
 #pragma GCC optimize("O2", "omit-frame-pointer")
@@ -526,27 +457,6 @@ extern "C" {
 }
 
 void cbFileSaveEffects(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbClipboardMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbOrphanListMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbDeleteOrphans(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbGhostMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbStarMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbChangeDistortX(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbChangeDistortY(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetScaleFactor(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSoundIDMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeGenRate(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeETime(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlRepeatBoxMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbChangeRampTime(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetSwitchType(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbCutClipboard(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbPasteClipboard(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbEmptyClipboard(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeIvalOn(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeIvalOnRan(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeIvalOff(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeIvalOffRan(eduimenu_s *, eduiitem_s *, u32);
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -557,16 +467,6 @@ extern "C" {
     extern NUMTL *DebMat[];
 }
 
-static void cbPtlChangeGrav(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeSScale(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlDamageFlagMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *);
-static void cbPtlChangeTextureSelect(eduimenu_s *, eduiitem_s *, u32);
-
 extern "C" {
     extern u32 edblack[4];
     extern u32 edgrey[4];
@@ -575,150 +475,13 @@ extern "C" {
     extern DEBRISMOMENTUMADJUSTER gencodetab[7];
 }
 
-static void cbPtlQuickDeleteType(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlSelTextureType(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlTextureSelectMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlAddEffect(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlCopyEffect(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlDeleteEffect(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeNameMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlQuickDeleteMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlReadoutMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbFileLoadEffects(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlSelType(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlToggleDynamicPriority(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbScaleEffectMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlEmitVelMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlGravMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlVarStartMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlStartVelMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlVarEmitMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeGenRateMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeETimeMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlEmitTimeMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlCutOffMenu(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlCopySize(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbApplyScaleFactor(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeRepeatFlag(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeCutOff(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeCutOn(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeDrawCutOff(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeSoundCutOff(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeNumCollSpheres(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlDefaultCollEnv(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeTorusLife(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeTorusRad1(eduimenu_s *, eduiitem_s *, u32);
-static void cbChangeTorusRad2(eduimenu_s *, eduiitem_s *, u32);
-
 // Particle-list editor UI/menu callbacks.
-
-static void edptlcbScaleEffectMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbApplyScaleFactor(eduimenu_s *menu, eduiitem_s *, u32);
 
 // Particle editor UI/menu callbacks.
 
-static void cbPtlSelType(eduimenu_s *menu, eduiitem_s *item, u32);
-static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlGravMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlAddEffect(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlTorusMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlChangeGrav(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlCopyEffect(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlCutOffMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *item, u32);
-static void cbChangeNameMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlChangeCutOn(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlEmitVelMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlReadoutMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbChangeETimeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbChangeTorusLife(eduimenu_s *, eduiitem_s *item, u32);
-static void cbChangeTorusRad1(eduimenu_s *, eduiitem_s *item, u32);
-static void cbChangeTorusRad2(eduimenu_s *, eduiitem_s *item, u32);
-static void cbFileLoadEffects(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlChangeCutOff(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeSScale(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlDeleteEffect(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlEmitTimeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlStartVelMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlVarStartMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *item, u32);
-static void cbChangeGenRateMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlDamageFlagMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlDefaultCollEnv(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlSelTextureType(eduimenu_s *menu, eduiitem_s *item, u32);
-static void cbPtlQuickDeleteMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlQuickDeleteType(eduimenu_s *menu, eduiitem_s *item, u32);
-static void cbPtlChangeDrawCutOff(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeRepeatFlag(eduimenu_s *, eduiitem_s *item, u32);
-static void cbChangeNumCollSpheres(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeSoundCutOff(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlTextureSelectMenu(eduimenu_s *menu, eduiitem_s *, u32);
-static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeTextureSelect(eduimenu_s *menu, eduiitem_s *item, u32);
-static void cbPtlToggleDynamicPriority(eduimenu_s *, eduiitem_s *item, u32);
-static void cbCancelChangeNameMenu(eduimenu_s *menu, eduimenu_s *);
-
 void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32);
 
-static void edptlChangeRepeatBox(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbDrawflagMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbApplyStarRatio(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbApplyGhostTime(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbApplyNumGhosts(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetMasterGroup(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetMaxThin(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbTestDetailMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetSwitchId(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSetSwitchVar(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbStartPage(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbStopPage(eduimenu_s *, eduiitem_s *, u32);
-static void edptlcbClearPage(eduimenu_s *, eduiitem_s *, u32);
-static void cbPtlRepeatBoxMenu(eduimenu_s *parent, eduiitem_s *, u32);
-
 // Particle list editor subsystem stubs (static, internal linkage).
-
-static void edptlcbStarMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbStopPage(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbClearPage(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbGhostMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbStartPage(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbSetMaxThin(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbSoundIDMenu(eduimenu_s *parent, eduiitem_s *item, u32);
-static void edptlcbCutClipboard(eduimenu_s *menu, eduiitem_s *, u32);
-static void edptlcbDrawflagMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlChangeRepeatBox(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbClipboardMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbDeleteOrphans(eduimenu_s *menu, eduiitem_s *, u32);
-static void edptlcbSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32);
-static void edptlcbApplyGhostTime(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbApplyNumGhosts(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeIvalOffRan(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeIvalOff(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeIvalOnRan(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeIvalOn(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeETime(eduimenu_s *, eduiitem_s *item, u32);
-static void cbPtlChangeGenRate(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbApplyStarRatio(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbChangeDistortX(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbChangeDistortY(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbChangeRampTime(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbEmptyClipboard(eduimenu_s *menu, eduiitem_s *, u32);
-static void edptlcbOrphanListMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbPasteClipboard(eduimenu_s *menu, eduiitem_s *, u32);
-static void edptlcbSetMasterGroup(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbSetScaleFactor(eduimenu_s *, eduiitem_s *item, u32);
-static void edptlcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
-static void edptlcbTestDetailMenu(eduimenu_s *parent, eduiitem_s *, u32);
 
 extern "C" {
     __attribute__((visibility("hidden"))) void tpentOnEnter(eduimenu_s *, eduiitem_s *, u32);
@@ -1129,11 +892,6 @@ __attribute__((visibility("hidden"), optimize("O3"))) void tpentPropOnEnter(edui
                                                                                 unsigned int buttons);
 }
 
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 extern f32 HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING;
 extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
@@ -1166,7 +924,6 @@ void MenuSetPreDrawFn(void (*draw_fn)(MENU *));
 void MenuSetHeaderDrawFn(void (*draw_fn)(void));
 } // extern "C"
 
-struct ani3_animheader_s;
 struct nuanimdatachunk_s;
 
 extern "C" {
@@ -1273,8 +1030,6 @@ void NuRegisterEndFrameCallBackFn(void (*callback)(void));
 } // extern "C"
 
 struct nupad_s;
-struct nuframebuffer_s;
-struct nushaderobject_s;
 union variptr_u;
 
 extern "C" {
@@ -1393,23 +1148,8 @@ void SaveSystemInitialiseEx(i32 slots, void *makeSaveHash, void *save, i32 saveS
 void SetSaveSuccessFn(void (*callback)(void));
 } // extern "C"
 
-struct starfighter_s;
-struct rtl_s;
-struct rtlidata_s;
-
 extern f32 HUB_EPISODETITLEY;
 
-struct GAMEMESSAGE_s;
-struct HINT_s;
-struct MENU_s;
-struct NuBloomParameters;
-struct STATUSPACKET_s;
-struct TouchHolder;
-struct _vum_s;
-struct _vuv_s;
-struct nuhspecial_s;
-struct ripple_node_s;
-struct ripple_set_s;
 struct VuVec;
 
 extern f32 MENUBOTY;
@@ -1480,7 +1220,7 @@ extern "C" {
         pick->uv_y[corner] = y;
         i32 left = pad->analog_l1 ? pad->analog_l1 : pad->analog_l2;
         i32 right = pad->analog_r1 ? pad->analog_r1 : pad->analog_r2;
-        if (__builtin_expect(!!(left), 0)) {
+        if (left) {
             f32 zoom = pick->zoom - left / 4192.0f;
             if (!(zoom < 1.0f)) {
                 pick->zoom = zoom;
@@ -1784,15 +1524,17 @@ static __used__ void eduiFntPrintClipEx(void *font, float x, float y, int alignm
 extern "C" {
     static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
         edui_graph_s *graph_item = static_cast<edui_graph_s *>(item);
+        i32 stick_x = pad->analog_left_x;
+        i32 stick_y = pad->analog_left_y;
         show_y_scale_help = show_y_scale_help > 1 ? show_y_scale_help - 1 : 0;
         show_x_scale_help = show_x_scale_help > 1 ? show_x_scale_help - 1 : 0;
-        f32 x = eduiPickerDeadZone32(pad->analog_left_x) * (1.0f / 8192.0f);
-        f32 y = -eduiPickerDeadZone32(pad->analog_left_y) * (1.0f / 8192.0f);
+        f32 x = eduiPickerDeadZone32(stick_x) * (1.0f / 8192.0f);
+        f32 y = -eduiPickerDeadZone32(stick_y) * (1.0f / 8192.0f);
         x += graph_item->cursor_x;
         y += graph_item->cursor_y;
         x = MIN(1.0f, (MAX(0.0f, x)));
-        y = MIN(1.0f, (MAX(0.0f, y)));
         graph_item->cursor_x = x;
+        y = MIN(1.0f, (MAX(0.0f, y)));
         graph_item->cursor_y = y;
 
         u32 left = pad->analog_l2;
@@ -1818,8 +1560,8 @@ extern "C" {
         right = pad->analog_r1;
         if (left) {
             if (__builtin_expect(!!(right), 0)) {
-                show_y_scale_help = 60;
                 graph_item->graph->y_scale = 1.0f;
+                show_y_scale_help = 60;
                 return 1;
             }
             if (__builtin_expect(!!(left), 0)) {
@@ -2008,8 +1750,8 @@ static void eduiFntPrintClipEx(void *font, i32 x, i32 y, i32, i32 clip_x, i32 cl
 extern "C" {
     static __attribute__((noinline)) void eduiRenderGraphLine(nugraph_s *graph, i32 x, i32 y, i32 width, i32 height,
                                                               u32 colour) {
-        i32 previous_x = 0;
         i32 previous_y = height - static_cast<i32>(height * graph->y[0]);
+        i32 previous_x = 0;
         f32 fraction = 0.0f;
         for (i32 sample = 0; sample < 101; ++sample) {
             i32 current_x = static_cast<i32>(width * fraction);
@@ -2035,8 +1777,8 @@ extern "C" {
         i32 first_alpha = static_cast<i32>(first >> 24) - 0x80;
         i32 second_red = second & 0xff;
         i32 second_green = (second >> 8) & 0xff;
-        i32 second_blue = (second >> 16) & 0xff;
         i32 second_alpha = static_cast<i32>(second >> 24) - 0x80;
+        i32 second_blue = (second >> 16) & 0xff;
         struct {
             i32 top_left;
             i32 top_right;
@@ -2070,24 +1812,17 @@ extern "C" {
         colours.top_left = *reinterpret_cast<i32 *>(colours.bottom_left);                                              \
         colours.top_right = *reinterpret_cast<i32 *>(colours.bottom_right);                                            \
     }
-        EDUI_DRAW_VALUE_STRIP(0);
-        EDUI_DRAW_VALUE_STRIP(1);
-        EDUI_DRAW_VALUE_STRIP(2);
-        EDUI_DRAW_VALUE_STRIP(3);
-        EDUI_DRAW_VALUE_STRIP(4);
-        EDUI_DRAW_VALUE_STRIP(5);
-        EDUI_DRAW_VALUE_STRIP(6);
-        EDUI_DRAW_VALUE_STRIP(7);
+        for (i32 strip = 0; strip < edui_grad_steps; ++strip)
+            EDUI_DRAW_VALUE_STRIP(strip);
 #undef EDUI_DRAW_VALUE_STRIP
     }
 
     static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width, i32) {
         NuQFntHeight(edui_font);
         NuQFntBaseline(edui_font);
-        numtl_s *background_material = uimtls[ui_bgmtl];
         item->y = y;
         item->x = x;
-        eduiDrawRect(x << 4, y << 3, width << 4, 64, item->colours[2 + item->highlighted], background_material);
+        eduiDrawRect(x << 4, y << 3, width << 4, 64, item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
         eduiDrawLine((x + 4) << 4, (y << 3) + 32, ((x + width) << 4) - 64, (y << 3) + 32, 0xff000000, uimtls[ui_bgmtl]);
         return 8;
     }
@@ -2180,7 +1915,7 @@ extern "C" {
         return height * 2;
     }
 
-    __attribute__((optimize("O2", "tree-vectorize"))) static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32) {
+    static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32) {
         u32 colours[2] = {0x807f7f7f, 0x807f7f7f};
         (void)menu;
         edui_texture_pick_s *picker = static_cast<edui_texture_pick_s *>(item);
@@ -2199,44 +1934,38 @@ extern "C" {
             origin_v = maximum < 0.0f ? maximum : 0.0f;
         else if (maximum < origin_v)
             origin_v = maximum;
-        f32 point_u[2] = {
-            (picker->uv_x[0] - origin_u) / uv_span,
-            (picker->uv_x[1] - origin_u) / uv_span,
-        };
-        f32 point_v[2] = {
-            (picker->uv_y[0] - origin_v) / uv_span,
-            (picker->uv_y[1] - origin_v) / uv_span,
-        };
+        f32 point_u[2];
+        f32 point_v[2];
         for (i32 corner = 0; corner < 2; ++corner) {
+            point_u[corner] = (picker->uv_x[corner] - origin_u) / uv_span;
             if (point_u[corner] < 0.0f)
                 point_u[corner] = 0.0f;
             else if (point_u[corner] > 1.0f)
                 point_u[corner] = 1.0f;
+            point_v[corner] = (picker->uv_y[corner] - origin_v) / uv_span;
             if (point_v[corner] < 0.0f)
                 point_v[corner] = 0.0f;
             else if (point_v[corner] > 1.0f)
                 point_v[corner] = 1.0f;
         }
         colours[picker->selected_corner] = 0x80ffffff;
-        if (!edui_donotdraw) {
+        if (!edui_donotdraw)
             NuRndrRectUV2di(x << 4, y << 3, width << 4, width << 3, origin_u, origin_v, origin_u + uv_span,
                             origin_v + uv_span, 0x80808080, picker->material);
-            for (i32 corner = 0; corner < 2; ++corner) {
-                i32 vertical = static_cast<i32>(x + size * point_u[corner]) << 4;
-                i32 horizontal = static_cast<i32>(y + size * point_v[corner]) << 3;
-                NuRndrLine2di(x << 4, horizontal, (x + width - 1) << 4, horizontal, colours[corner], uimtls[0]);
-                NuRndrLine2di(vertical, y << 3, vertical, (y + width) * 8 - 8, colours[corner], uimtls[0]);
-            }
+        for (i32 corner = 0; corner < 2; ++corner) {
+            eduiDrawLine(x << 4, static_cast<i32>(y + size * point_v[corner]) << 3, (x + width - 1) << 4,
+                         static_cast<i32>(y + size * point_v[corner]) << 3, colours[corner], uimtls[0]);
+            eduiDrawLine(static_cast<i32>(x + size * point_u[corner]) << 4, y << 3,
+                         static_cast<i32>(x + size * point_u[corner]) << 4, (y + width) * 8 - 8, colours[corner],
+                         uimtls[0]);
         }
         i32 label_y = y + width;
         i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
         i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
-        if (!edui_donotdraw) {
-            NuRndrRect2di(x << 4, label_y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
-                          uimtls[ui_bgmtl]);
-            NuQFntSet(edui_font);
-            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
-        }
+        eduiDrawRect(x << 4, label_y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
+                     uimtls[ui_bgmtl]);
+        eduiDrawFontSet(edui_font);
+        eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (label_y << 3) + baseline, 64, "%1.03f,%1.03f",
                        picker->uv_x[picker->selected_corner] * 256.0f, picker->uv_y[picker->selected_corner] * 256.0f);
         return width + height;
@@ -2275,19 +2004,18 @@ extern "C" {
         return height;
     }
 
-    __attribute__((optimize("O2", "tree-vectorize"))) static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected) {
+    static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width, i32 selected) {
         (void)menu;
         edui_graph_s *picker = static_cast<edui_graph_s *>(item);
         f32 cursor_y = picker->cursor_y;
-        f32 cursor_x = picker->cursor_x;
         item->x = x;
         item->y = y;
         i32 total_width = picker->width;
         i32 graph_width = total_width - 60;
         i32 total_height = picker->height;
-        i32 graph_height = total_height - 60;
         i32 plot_x = x + 30;
         i32 plot_y = y + 30;
+        i32 graph_height = total_height - 60;
         i32 plot_bottom = plot_y + graph_height;
         eduiDrawRect(x << 4, y << 3, total_width << 4, total_height << 3, 0x80000000, uimtls[0]);
         eduiDrawRect(plot_x << 4, plot_y << 3, graph_width << 4, graph_height << 3, 0x80100000, uimtls[0]);
@@ -2297,7 +2025,7 @@ extern "C" {
             eduiFntPrintEx(edui_font, (x + total_width) << 3, (y + total_height) << 2, 64, "Invalid Graph Pointer");
             return total_height;
         }
-        eduiDrawFontSetLikely(edui_font);
+        eduiDrawFontSet(edui_font);
         eduiSetFontColour(edui_font, 0x80808080);
         if (picker->x_scale > 0.0f) {
             f32 tick_count = picker->graph->x_extent * picker->graph->x_scale / picker->x_scale;
@@ -2345,13 +2073,13 @@ extern "C" {
         i32 cursor_line_y = static_cast<i32>(plot_y + (1.0f - cursor_y) * graph_height) << 3;
         eduiDrawLine(plot_x << 4, cursor_line_y, (plot_x + graph_width - 1) << 4, cursor_line_y, cursor_colour,
                      uimtls[0]);
-        i32 cursor_line_x = static_cast<i32>(plot_x + cursor_x * graph_width) << 4;
+        i32 cursor_line_x = static_cast<i32>(plot_x + picker->cursor_x * graph_width) << 4;
         eduiDrawLine(cursor_line_x, plot_y << 3, cursor_line_x, (plot_bottom << 3) - 8, cursor_colour, uimtls[0]);
         picker->selected_point = -1;
         f32 closest = 1.0f;
         for (i32 point = 0; point < picker->graph->point_count; ++point) {
-            i32 px = plot_x + static_cast<i32>(picker->graph->x[point] * graph_width);
             i32 py = plot_bottom - static_cast<i32>(picker->graph->y[point] * graph_height);
+            i32 px = plot_x + static_cast<i32>(picker->graph->x[point] * graph_width);
             eduiDrawLine((px - 10) << 4, py << 3, (px + 10) << 4, py << 3, 0x80505050, uimtls[0]);
             eduiDrawLine(px << 4, (py << 3) - 80, px << 4, (py << 3) + 80, 0x80505050, uimtls[0]);
             f32 distance =
@@ -2361,22 +2089,10 @@ extern "C" {
                 closest = distance;
             }
         }
-        if (picker->onion_skins[0])
-            eduiRenderGraphLine(picker->onion_skins[0], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[1])
-            eduiRenderGraphLine(picker->onion_skins[1], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[2])
-            eduiRenderGraphLine(picker->onion_skins[2], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[3])
-            eduiRenderGraphLine(picker->onion_skins[3], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[4])
-            eduiRenderGraphLine(picker->onion_skins[4], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[5])
-            eduiRenderGraphLine(picker->onion_skins[5], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[6])
-            eduiRenderGraphLine(picker->onion_skins[6], plot_x, plot_y, graph_width, graph_height, 0x80402000);
-        if (picker->onion_skins[7])
-            eduiRenderGraphLine(picker->onion_skins[7], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        for (i32 skin = 0; skin < 8; ++skin) {
+            if (picker->onion_skins[skin])
+                eduiRenderGraphLine(picker->onion_skins[skin], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        }
         eduiRenderGraphLine(picker->graph, plot_x, plot_y, graph_width, graph_height, 0x80800000);
         if (picker->selected_point >= 0 && !edui_donotdraw) {
             i32 point = picker->selected_point;
@@ -2385,8 +2101,8 @@ extern "C" {
                               96, 0x80ffffff, uimtls[ui_outmtl]);
         }
         if (show_x_scale_help || show_y_scale_help) {
-            eduiDrawFontSet(edui_font);
             i32 help_x = (plot_x + (graph_width >> 1)) << 4;
+            eduiDrawFontSet(edui_font);
             i32 help_y = plot_y << 3;
             help_y += static_cast<i32>(NuQFntHeight(edui_font));
             eduiSetFontColour(edui_font, 0x80808080);
@@ -2458,8 +2174,8 @@ extern "C" {
         i32 right = left + ((height - 2) << 4) - 16;
         i32 bottom = top + ((height - 2) << 3) - 8;
         if (item->highlighted) {
-            i32 middle_y = (top + bottom) >> 1;
             i32 quarter_x = (left + ((left + right) >> 1)) >> 1;
+            i32 middle_y = (top + bottom) >> 1;
             i32 lower_y = (bottom + middle_y) >> 1;
             i32 points[8] = {left, middle_y, quarter_x, lower_y, quarter_x, bottom, right, top};
             eduiDrawTriStrip(points, NULL, 4, item->colours[0], uimtls[0]);
@@ -2639,8 +2355,8 @@ extern "C" {
         NuStrCat(format, slider->format);
         eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format, slider->value);
         if (slider->normalized_value >= 0.0f && slider->normalized_value <= 1.0f) {
-            i32 top = (y + height) << 3;
             i32 bottom = (y + height + height - 1) << 3;
+            i32 top = (y + height) << 3;
             f32 span = width - 2;
             i32 marker_x = static_cast<i32>(x + 1 + slider->normalized_value * span) << 4;
             eduiDrawLine(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
@@ -2708,8 +2424,8 @@ extern "C" {
                 if (__builtin_expect(property_flags & 1, 0)) {
                     if (edui_cursor_x >= interact->x + property->label_width + 1.0f && edui_cursor_y >= interact->y &&
                         edui_cursor_x < property->button_x && edui_cursor_y < interact->y + interact->height) {
-                        property_flags |= 1;
                         eduiPropTextPos = -1;
+                        property_flags |= 1;
                         handled = true;
                     }
                 } else {
@@ -2799,8 +2515,8 @@ extern "C" {
             else
                 rep_timer = 0;
             if (!rep_timer || (pad->digital_buttons_pressed & 0x08)) {
-                f32 value = slider->value + slider->granularity;
                 f32 maximum = slider->minimum + slider->range;
+                f32 value = slider->value + slider->granularity;
                 value = maximum < value ? maximum : value;
                 f32 rounded = value > 0.0f ? value + slider->granularity * 0.5f : value - slider->granularity * 0.5f;
                 slider->value = static_cast<i32>(rounded / slider->granularity) * slider->granularity;
@@ -2840,9 +2556,9 @@ extern "C" {
                 f32 value = slider->normalized_value + static_cast<u32>(pad->analog_r2) * scale;
                 if (value > 1.0f)
                     value = 1.0f;
-                slider->normalized_value = value;
                 slider->value = value * slider->range + slider->minimum;
                 slider->change_timer = 60;
+                slider->normalized_value = value;
                 if (slider->changed)
                     slider->changed(menu, item, pad->digital_buttons);
             } else {
@@ -2887,8 +2603,8 @@ extern "C" {
               edui_cursor_y < interact->y + interact->height * 0.75f) ||
              pick->dragging_colour) &&
             !pick->dragging_saturation) {
-            pick->cursor_y = (edui_cursor_y - interact->y) / (interact->height * 0.75f);
             pick->cursor_x = (edui_cursor_x - interact->x) / interact->width;
+            pick->cursor_y = (edui_cursor_y - interact->y) / (interact->height * 0.75f);
             pick->dragging_colour = (edui_cursor_buttons & EDUI_CURSOR_PRIMARY) != 0;
         }
         if (((edui_cursor_x >= interact->x && edui_cursor_y >= interact->y + interact->height * 0.75f &&
@@ -2985,13 +2701,16 @@ extern "C" {
             eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         }
         eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, item->text);
-        f32 green = clipg;
-        f32 red = clipg;
-        f32 blue = clipg;
-        if (item->type == 7)
+        f32 red, green, blue;
+        if (item->type != 7) {
+            red = clipg;
+            green = clipg;
+            blue = clipg;
+        } else {
             eduiHSVToRGB(cliph, clips, clipv, red, green, blue);
-        u32 colour = 0x80000000u | (static_cast<i32>(blue * 255.0f) << 16) | (static_cast<i32>(green * 255.0f) << 8) |
-                     static_cast<i32>(red * 255.0f);
+        }
+        u32 colour = (static_cast<i32>(blue * 255.0f) << 16) + (static_cast<i32>(green * 255.0f) << 8) +
+                     static_cast<i32>(red * 255.0f) + 0x80000000u;
         i32 colours[4] = {static_cast<i32>(colour), static_cast<i32>(colour), static_cast<i32>(colour),
                           static_cast<i32>(colour)};
         eduiDrawGradRect((x + width - 45) << 4, y << 3, 40 << 4, height << 3, colours, uimtls[ui_bgmtl]);
@@ -3095,8 +2814,8 @@ extern "C" {
         uimtls[1]->attribs.alpha_mode = 3;
         NuMtlUpdate(uimtls[1]);
         uimtls[2] = NuMtlCreate(1);
-        uimtls[2]->opacity = 0.999f;
         uimtls[2]->diffuse_color.r = 0.2f;
+        uimtls[2]->opacity = 0.999f;
         uimtls[2]->diffuse_color.g = 0.2f;
         uimtls[2]->diffuse_color.b = 0.2f;
         uimtls[2]->attribs.cull_mode = 2;
@@ -3104,8 +2823,8 @@ extern "C" {
         uimtls[2]->attribs.alpha_mode = 2;
         NuMtlUpdate(uimtls[2]);
         uimtls[3] = NuMtlCreate(1);
-        uimtls[3]->opacity = 0.999f;
         uimtls[3]->diffuse_color.r = 0.2f;
+        uimtls[3]->opacity = 0.999f;
         uimtls[3]->diffuse_color.g = 0.2f;
         uimtls[3]->diffuse_color.b = 0.2f;
         uimtls[3]->attribs.cull_mode = 2;
@@ -3129,9 +2848,9 @@ extern "C" {
         item->previous = menu->last;
         item->next = NULL;
         menu->field_0c = menu->first;
-        menu->field_10 = 0;
         menu->last = item;
         edui_last_item = item;
+        menu->field_10 = 0;
         return item;
     }
 
@@ -3143,9 +2862,9 @@ extern "C" {
         item->next = menu->first;
         item->previous = NULL;
         menu->first = item;
-        menu->field_10 = 0;
-        menu->field_0c = item;
         edui_last_item = item;
+        menu->field_0c = item;
+        menu->field_10 = 0;
     }
 
     void eduiMenuAddItemLast(eduimenu_s *menu, eduiitem_s *item) {
@@ -3157,8 +2876,8 @@ extern "C" {
         item->next = NULL;
         menu->field_10 = 0;
         menu->last = item;
-        menu->field_0c = item;
         edui_last_item = item;
+        menu->field_0c = item;
     }
 
     void eduiMenuAddItemAfter(eduimenu_s *menu, eduiitem_s *item, eduiitem_s *after) {
@@ -3382,9 +3101,11 @@ extern "C" {
     }
 
     i32 eduiItemSetText(eduiitem_s *item, char *text) {
-        if (item->text && NuStrLen(item->text) < NuStrLen(text)) {
-            NU_FREE(item->text);
-            item->text = NULL;
+        if (item->text) {
+            if (NuStrLen(item->text) < NuStrLen(text)) {
+                NU_FREE(item->text);
+                item->text = NULL;
+            }
         }
         if (!item->text) {
             u32 size = NuStrLen(text) + 1;
@@ -3428,14 +3149,14 @@ extern "C" {
         item->type = 0;
         item->data = data;
         memcpy(item->colours, colours, sizeof(item->colours));
+        item->selection_group = group;
+        item->highlighted = selected;
+        item->text_alignment = 0x40;
+        item->text = NULL;
         item->process = eduicbProcessSel;
         item->render = eduicbRenderSel;
         item->destroy = eduicbItemDestroy;
         item->interact = eduicbInteractSel;
-        item->highlighted = selected;
-        item->selection_group = group;
-        item->text = NULL;
-        item->text_alignment = 0x40;
         eduiItemSetText(item, text ? text : (char *)"<no name>");
         item->selected = callback;
         item->held = NULL;
@@ -3674,9 +3395,9 @@ extern "C" {
         for (; node; node = node->next, ++count) {
             if (count < capacity) {
                 edui_gradient_stage_s *stage = &stages[count];
-                stage->time = node->time;
                 stage->hue = node->hue;
                 stage->value = node->value;
+                stage->time = node->time;
                 stage->saturation = node->saturation;
                 eduiHSVToRGB(node->hue, node->saturation, node->value, red, green, blue);
                 stage->red = red;
@@ -3792,10 +3513,10 @@ extern "C" {
         memcpy(item->colours, colours, sizeof(item->colours));
         item->process = eduicbProcessColourPick;
         item->render = eduicbRenderColourPick;
+        item->destroy = eduicbItemDestroy;
         item->interact = eduicbInteractColourPick;
         item->text_alignment = 0x40;
         item->selection_group = 0;
-        item->destroy = eduicbItemDestroy;
         eduiItemSetText(item, text);
         item->cursor_x = 0.5f;
         item->cursor_y = 0.5f;
@@ -3961,11 +3682,11 @@ extern "C" {
         item->type = 6;
         item->data = data;
         memcpy(item->colours, colours, sizeof(item->colours));
+        item->selection_group = group;
         item->process = eduicbProcessSlider;
-        item->interact = eduicbInteractSlider;
         item->render = eduicbRenderSlider;
         item->destroy = eduicbItemSliderDestroy;
-        item->selection_group = group;
+        item->interact = eduicbInteractSlider;
         item->text_alignment = 0x40;
         eduiItemSetText(item, text);
         item->granularity = 0.001f;
@@ -4008,8 +3729,8 @@ extern "C" {
         item->type = 6;
         item->data = data;
         memcpy(item->colours, colours, sizeof(item->colours));
-        item->process = eduicbProcessSlider;
         item->interact = eduicbInteractSlider;
+        item->process = eduicbProcessSlider;
         item->render = eduicbRenderTextSelector;
         item->destroy = eduicbItemSliderDestroy;
         item->selection_group = group;
@@ -4026,9 +3747,11 @@ extern "C" {
     }
 
     i32 eduiItemPropSetText(edui_prop_s *item, char *text) {
-        if (item->property_text && NuStrLen(item->property_text) < NuStrLen(text)) {
-            NU_FREE(item->property_text);
-            item->property_text = NULL;
+        if (item->property_text) {
+            if (NuStrLen(item->property_text) < NuStrLen(text)) {
+                NU_FREE(item->property_text);
+                item->property_text = NULL;
+            }
         }
         if (!item->property_text) {
             u32 size = NuStrLen(text) + 1;
@@ -4058,6 +3781,7 @@ extern "C" {
     }
 
     static i32 eduicbProcessPropKeyboard(eduimenu_s *menu, edui_prop_s *property) {
+        u32 modifiers = 0;
         if (!(property->unknown_property_flags & 1))
             return 0;
         i32 length = NuStrLen(eduiPropTextEdit);
@@ -4065,7 +3789,6 @@ extern "C" {
             eduiPropTextPos = 0;
         if (eduiPropTextPos > length)
             eduiPropTextPos = length;
-        u32 modifiers = 0;
         i32 key = NuKeyGet(&modifiers);
         if (key == -1)
             return 0;
@@ -4121,8 +3844,8 @@ extern "C" {
         char letter = NuKeyToAscii(key, modifiers & 1);
         if (letter) {
             eduiPropTextEdit[length + 1] = '\0';
-            char *cursor = eduiPropTextEdit + length;
             char *insertion = eduiPropTextEdit + eduiPropTextPos;
+            char *cursor = eduiPropTextEdit + length;
             if (insertion < cursor) {
                 do {
                     *cursor = cursor[-1];
@@ -4141,8 +3864,8 @@ extern "C" {
         u8 *property_flags = reinterpret_cast<u8 *>(property) + 0x4c;
         if (__builtin_expect(!!(*property_flags & 2), 1)) {
             property->label_width = edui_cursor_x - static_cast<f32>(item->x);
-            if (property->label_width < 1.0f)
-                property->label_width = 1.0f;
+            if (property->label_width < 5.0f)
+                property->label_width = 5.0f;
             for (eduiitem_s *other = menu->first; other; other = other->next) {
                 if (other->type == 17 && other != item)
                     static_cast<edui_prop_s *>(other)->label_width = property->label_width;
@@ -4199,7 +3922,7 @@ extern "C" {
     }
 
     eduiitem_s *eduiItemSeparatorCreate(usize data, const void *colours) {
-        eduiitem_s *item = static_cast<eduiitem_s *>(NU_ALLOC(sizeof(eduiitem_s), 4, 1, "", 0));
+        edui_separator_s *item = static_cast<edui_separator_s *>(NU_ALLOC(sizeof(edui_separator_s), 4, 1, "", 0));
         if (item) {
             memset(item, 0, sizeof(*item));
             item->type = 18;
@@ -4208,9 +3931,10 @@ extern "C" {
             item->process = eduicbProcessSeparator;
             item->render = eduicbRenderSeparator;
             item->text_alignment = 0x40;
+            item->selection_group = 0;
             item->highlighted = 0;
             item->destroy = eduicbItemDestroy;
-            item->selection_group = 0;
+            item->interact = NULL;
         }
         return item;
     }
@@ -4437,8 +4161,8 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
         memcpy(item->colours, colours, sizeof(item->colours));
         item->process = eduicbProcessExpander;
         item->render = eduicbRenderExpander;
-        item->interact = eduicbInteractExpander;
         item->destroy = eduicbItemDestroyExpander;
+        item->interact = eduicbInteractExpander;
         item->highlighted = 0;
         item->text_alignment = 0x40;
         item->selection_group = 0;
@@ -4499,10 +4223,12 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
         if (!(!*query)) {
             for (eduiitem_s *candidate = menu->first; candidate;) {
                 eduiitem_s *next = candidate->next;
-                if (candidate->type != 18 && candidate->type != 20 && !NuStrIStr(candidate->text, query)) {
-                    eduiMenuRemoveItem(menu, candidate);
-                    eduiItemFilterAddItem(filter, candidate);
-                    changed = 1;
+                if (candidate->type != 18 && candidate->type != 20) {
+                    if (!NuStrIStr(candidate->text, query)) {
+                        eduiMenuRemoveItem(menu, candidate);
+                        eduiItemFilterAddItem(filter, candidate);
+                        changed = 1;
+                    }
                 }
                 candidate = next;
             }
@@ -4541,8 +4267,8 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
         memcpy(item->colours, colours, sizeof(item->colours));
         item->process = eduicbProcessFilter;
         item->render = eduicbRenderFilter;
-        item->interact = eduicbInteractFilter;
         item->destroy = eduicbItemDestroyFilter;
+        item->interact = eduicbInteractFilter;
         item->highlighted = 0;
         item->text_alignment = 0x40;
         item->selection_group = 0;
@@ -4711,12 +4437,11 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
             return 1;
         f32 lower = stage->previous ? stage->previous->time : 0.0f;
         f32 upper = stage->next ? stage->next->time : 1.0f;
-        u8 right2 = pad->analog_r2;
+        i32 right2 = pad->analog_r2;
         u8 left2 = pad->analog_l2;
-        u8 left1 = pad->analog_l1;
-        u8 right1 = pad->analog_r1;
+        i32 left1 = pad->analog_l1;
         i32 decrease = left1 ? left1 : left2;
-        i32 increase = right1 ? right1 : right2;
+        i32 increase = pad->analog_r1 ? pad->analog_r1 : right2;
         if (!(increase && !decrease)) {
             if (decrease) {
                 f32 time = stage->time - static_cast<f32>(decrease) / 15360.0f;
@@ -4847,7 +4572,7 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
         NuStrLen(picker->value);
 
         auto delete_previous = [&]() {
-            if (__builtin_expect(picker->cursor == 0, 0))
+            if (picker->cursor == 0)
                 return;
             if (picker->value[picker->cursor]) {
                 --picker->cursor;
@@ -4928,9 +4653,9 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
 
         if (__builtin_expect(!!(pad->digital_buttons_pressed & 0x4000), 0))
             next_row();
-        if (__builtin_expect(!!(pad->digital_buttons_pressed & 0x1000), 0))
+        if (pad->digital_buttons_pressed & 0x1000)
             previous_row();
-        if (__builtin_expect(!!(pad->digital_buttons_pressed & 0x8000), 1))
+        if (pad->digital_buttons_pressed & 0x8000)
             previous_column();
         if (pad->digital_buttons_pressed & 0x2000)
             next_column();
@@ -4952,7 +4677,7 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
         if (pad->digital_buttons_pressed & 4)
             picker->cursor = picker->cursor > 0 ? picker->cursor - 1 : 0;
         if (pad->digital_buttons_pressed & 8) {
-            if (__builtin_expect(picker->cursor < NuStrLen(picker->value), 0))
+            if (picker->cursor < NuStrLen(picker->value))
                 ++picker->cursor;
             else
                 picker->cursor = NuStrLen(picker->value);
@@ -5007,8 +4732,8 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
                 entry->menu = menu;
                 entry->item = item;
                 entry->callback = callback;
-                entry->buttons = buttons;
                 entry->y = static_cast<f32>(y) * 0.5f;
+                entry->buttons = buttons;
                 entry->width = static_cast<f32>(width);
                 entry->height = static_cast<f32>(height) * 0.5f;
                 entry->field_20 = field_20;
@@ -5050,9 +4775,9 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
                 if (!menu->child)
                     interact(x, y, menu->width, scroll_height, menu, NULL, cbInteractMenuScrollUp, 0x40, 0);
                 rect(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000, uimtls[ui_bgmtl]);
+                i32 centre = (x * 2 + menu->width) << 3;
                 const i32 top = (y << 3) + 8;
                 const i32 bottom = ((y + scroll_height) << 3) - 16;
-                i32 centre = (x * 2 + menu->width) << 3;
                 line(centre, top, centre - ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 centre = (x * 2 + menu->width) << 3;
                 line(centre, top, centre + ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
@@ -5061,18 +4786,11 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
 
             while (item) {
                 menu->field_10 = item;
-                i32 is_selected;
-                if (__builtin_expect(item != menu->selected, 0)) {
-                    is_selected = 0;
-                } else {
+                if (item == menu->selected)
                     find_selected = 0;
-                    if (menu->child)
-                        is_selected = 0;
-                    else
-                        is_selected = 1;
-                }
 
-                const i32 item_height = eduiItemRender(item, menu, x, y, menu->width, is_selected);
+                const i32 item_height =
+                    eduiItemRender(item, menu, x, y, menu->width, item == menu->selected && !menu->child);
                 if (item_height > max_item_height)
                     max_item_height = item_height;
 
@@ -5081,10 +4799,10 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
                              0x40, 0);
 
                 item = item->next;
-                if (!(menu->flags & 2))
-                    y += item_height;
-                else
+                if (menu->flags & 2)
                     x += menu->width;
+                else
+                    y += item_height;
 
                 if (!item)
                     break;
@@ -5222,8 +4940,8 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
                               static_cast<i32>(caret_x * 16.0f), static_cast<i32>((draw_y + height) * 8.0f), 0xff000000,
                               uimtls[0]);
         } else {
-            property->button_size = indent_width;
             property->button_y = draw_y + 1.0f;
+            property->button_size = indent_width;
             property->button_x = draw_x + draw_width - (1.0f + indent_width);
             for (eduimenu_s *descendant = menu; descendant; descendant = descendant->child) {
                 if (descendant == eduiGetActiveMenu()) {
@@ -5271,9 +4989,9 @@ extern "C" void eduiMenuDestroyItems(eduimenu_s *menu) {
                 points[1] = static_cast<i32>((property->button_y + property->button_size * 0.1f) * 8.0f);
                 points[2] = static_cast<i32>((property->button_x + property->button_size * 0.9f) * 16.0f);
                 points[3] = static_cast<i32>((property->button_y + property->button_size * 0.5f) * 8.0f);
+                u32 colour = button_colours[(property->unknown_property_flags >> 4) & 1];
                 points[4] = static_cast<i32>((property->button_x + property->button_size * 0.1f) * 16.0f);
                 points[5] = static_cast<i32>((property->button_y + property->button_size * 0.9f) * 8.0f);
-                u32 colour = button_colours[(property->unknown_property_flags >> 4) & 1];
                 if (!edui_donotdraw)
                     NuRndrTriStrip2di(points, NULL, 3, colour, uimtls[0]);
             }
@@ -5492,9 +5210,7 @@ extern "C" {
         const bool over_button = edui_cursor_x >= expander->button_x && edui_cursor_y >= expander->button_y * 0.5f &&
                                  edui_cursor_x < expander->button_x + expander->button_size &&
                                  edui_cursor_y < (expander->button_y + expander->button_size) * 0.5f;
-        // The original updates only the byte containing open and hover at offset 0x54.
-        u8 *hover_flags = reinterpret_cast<u8 *>(expander) + 0x54;
-        *hover_flags = (*hover_flags & ~2u) | static_cast<u8>(over_button) << 1;
+        expander->hover = over_button;
 
         {
             eduiDrawFontSet(edui_font);
@@ -5510,33 +5226,32 @@ extern "C" {
                 break;
             }
         }
-        const f32 button_size = row_height - 2.0f;
         for (i32 depth = 0; depth < expander->depth; ++depth) {
             if (__builtin_expect(!edui_donotdraw, 1)) {
-                const i32 guide_x = static_cast<i32>((item_x + (static_cast<f32>(depth) + 0.5f) * button_size) * 16.0f);
+                const i32 guide_x =
+                    static_cast<i32>((item_x + (static_cast<f32>(depth) + 0.5f) * (row_height - 2.0f)) * 16.0f);
                 NuRndrLine2di(guide_x, static_cast<i32>(item_y * 8.0f), guide_x,
                               static_cast<i32>((item_y + row_height) * 8.0f), 0xff000000, uimtls[0]);
             }
         }
-        expander->button_size = button_size;
-        expander->button_x = item_x + static_cast<f32>(expander->depth) * button_size + 1.0f;
+        expander->button_size = row_height - 2.0f;
+        expander->button_x = item_x + static_cast<f32>(expander->depth) * expander->button_size + 1.0f;
         expander->button_y = item_y + 1.0f;
         if (expander->first_child) {
             eduiDrawLineRect(static_cast<i32>(expander->button_x * 16.0f), static_cast<i32>(expander->button_y * 8.0f),
                              static_cast<i32>(expander->button_size * 16.0f),
                              static_cast<i32>(expander->button_size * 8.0f), 0xff000000, uimtls[ui_outmtl]);
-            const u8 button_flags = *hover_flags;
             eduiDrawLine(static_cast<i32>((expander->button_x + 2.0f) * 16.0f),
                          static_cast<i32>((expander->button_y + expander->button_size * 0.5f) * 8.0f),
                          static_cast<i32>((expander->button_x + expander->button_size - 2.0f) * 16.0f),
                          static_cast<i32>((expander->button_y + expander->button_size * 0.5f) * 8.0f),
-                         button_colours[(button_flags >> 1) & 1], uimtls[0]);
-            if ((button_flags & 1) == 0 && !edui_donotdraw)
+                         button_colours[expander->hover], uimtls[0]);
+            if (!expander->open && !edui_donotdraw)
                 NuRndrLine2di(static_cast<i32>((expander->button_x + expander->button_size * 0.5f) * 16.0f),
                               static_cast<i32>((expander->button_y + 2.0f) * 8.0f),
                               static_cast<i32>((expander->button_x + expander->button_size * 0.5f) * 16.0f),
                               static_cast<i32>((expander->button_y + expander->button_size - 2.0f) * 8.0f),
-                              button_colours[(button_flags >> 1) & 1], uimtls[0]);
+                              button_colours[expander->hover], uimtls[0]);
         }
         const f32 text_x = expander->button_x + expander->button_size + 2.0f;
         eduiFntPrintClipEx(edui_font, text_x, item_y + baseline, 16, text_x,
@@ -6610,7 +6325,10 @@ extern "C" {
     }
 
     void edcamMtx(NUMTX *matrix) {
-        NUVEC distance = {0.0f, 0.0f, gp_cam.distance};
+        NUVEC distance;
+        distance.x = 0.0f;
+        distance.y = 0.0f;
+        distance.z = gp_cam.distance;
         NuMtxSetTranslation(matrix, &distance);
         NuMtxRotateX(matrix, gp_cam.pitch);
         NuMtxRotateY(matrix, gp_cam.yaw);
@@ -7032,15 +6750,15 @@ static void RenderFileSel3Body(i32 draw_title) {
 
     f32 text_x;
     if (draw_title) {
-        const f32 box_width = full_width + 4.0f;
         const f32 box_height = height * 17.0f / 16.0f + 6.0f;
+        const f32 box_width = full_width + 4.0f;
         NuRndrRect2d(x, y, 0.0f, box_width, box_height, 0xff808080, NULL);
         FS_W = box_width;
         FS_H = box_height;
         x += 2.0f;
-        text_x = (x + 4.0f) * 16.0f;
         y += 1.0f;
         const f32 title_height = height / 16.0f;
+        text_x = (x + 4.0f) * 16.0f;
         NuRndrRect2d(x, y, 0.0f, full_width, title_height, 0xff404040, NULL);
         NuRndrLine3dDbg(x, y, 0.0f, width + x, y, 0.0f, 0xff808080);
         const f32 title_y = y * 16.0f + baseline;
@@ -7050,8 +6768,8 @@ static void RenderFileSel3Body(i32 draw_title) {
         NuQFntPrintU(system_qfont, FS_Title);
         y += title_height + 2.0f;
     } else {
-        const f32 box_width = full_width + 4.0f;
         const f32 box_height = height * 16.0f / 16.0f + 4.0f;
+        const f32 box_width = full_width + 4.0f;
         NuRndrRect2d(x, y, 0.0f, box_width, box_height, 0xff808080, NULL);
         FS_W = box_width;
         FS_H = box_height;
@@ -7211,7 +6929,7 @@ void FS_MoveCursorDown(i32 steps) {
 }
 
 i32 FS_PrevNameLen(char *name) {
-    if (__builtin_expect(name == FS_FileList, 0)) {
+    if (__builtin_expect(name == FS_FileList, 1)) {
         return 0;
     }
     char *previous = name - 2;
@@ -7331,73 +7049,37 @@ i32 FS_FileNameFilter(char *name) {
     }
 
     for (i32 i = 0; i < numfilterblocks; ++i) {
-        const char *block = filterblocks[i];
         char *scan = lower;
         do {
             char *match;
-            if (block[0] != '\0') {
-                match = strstr(scan, block);
-                if (match == NULL) {
-                    break;
-                }
-                scan = match + 1;
-            } else {
+            if (filterblocks[i][0] == '\0') {
                 match = scan;
                 scan = NULL;
-                goto eligible_filter;
+            } else {
+                match = strstr(scan, filterblocks[i]);
+                if (match == NULL)
+                    break;
+                scan = match + 1;
+                i32 slot;
+                for (slot = 1; slot < 6; ++slot) {
+                    if (filterblocks[i][slot * 12] == '\0')
+                        break;
+                    match = strstr(match, filterblocks[i] + slot * 12);
+                    if (match == NULL)
+                        break;
+                }
+                if (match == NULL || (slot == 6 && filterblocks[i][72] != '\0'))
+                    continue;
             }
-
-            if (block[12] == '\0') {
-                goto eligible_filter;
-            }
-            match = strstr(match, block + 12);
-            if (match == NULL) {
-                continue;
-            }
-            if (block[24] == '\0') {
-                goto eligible_filter;
-            }
-            match = strstr(match, block + 24);
-            if (match == NULL) {
-                continue;
-            }
-            if (block[36] == '\0') {
-                goto eligible_filter;
-            }
-            match = strstr(match, block + 36);
-            if (match == NULL) {
-                continue;
-            }
-            if (block[48] == '\0') {
-                goto eligible_filter;
-            }
-            match = strstr(match, block + 48);
-            if (match == NULL) {
-                continue;
-            }
-            if (block[60] == '\0') {
-                goto eligible_filter;
-            }
-            match = strstr(match, block + 60);
-            if (match == NULL) {
-                continue;
-            }
-            if (block[72] != '\0') {
-                continue;
-            }
-
-        eligible_filter:
             i32 dots = 0;
             for (char *p = match; *p != '\0'; ++p) {
                 if (*p == '.') {
-                    if (++dots > 1) {
+                    if (++dots > 1)
                         break;
-                    }
                 }
             }
-            if (dots < 2) {
+            if (dots < 2)
                 return 1;
-            }
         } while (scan != NULL);
     }
     return 0;
@@ -7860,9 +7542,9 @@ extern "C" void AddColourPick(eduimenu_s *parent, eduiitem_s *item, f32 *red, f3
         cp_g = &cpt_g;
         cp_b = &cpt_b;
     } else {
-        cp_r = red;
         cp_g = green;
         cp_b = blue;
+        cp_r = red;
         red_value = *red;
         green_value = *green;
         blue_value = *blue;
@@ -7883,19 +7565,18 @@ extern "C" void CreateColourPicker(void) {
 
     initialised = 1;
     colourmenu = eduiMenuCreate(200, 70, 180, 250, nullptr, cbCancelSubMenu, const_cast<char *>("Pick Colour"));
-    if (colourmenu == nullptr)
-        return;
-
-    cp_item = static_cast<edui_colour_pick_s *>(
-        eduiMenuAddItem(colourmenu, eduiItemColourPickCreate(0, colours, cbColourPickSel, const_cast<char *>(""))));
-    cp_process = cp_item->process;
-    cp_item->process = cbProcessColourPick;
-    cp_info = eduiMenuAddItem(
-        colourmenu, eduiItemSelCreate(1, colours, 0, 0, cbToggleIndicatorMode, const_cast<char *>("R:?? G:?? B:??")));
-    cp_copy = eduiMenuAddItem(colourmenu,
-                              eduiItemSelCreate(1, colours, 0, 0, cbCopy, const_cast<char *>("Copy To Clipboard")));
-    cp_paste = eduiMenuAddItem(
-        colourmenu, eduiItemSelCreate(1, colours, 0, 0, cbPaste, const_cast<char *>("Paste From Clipboard")));
+    if (colourmenu != nullptr) {
+        cp_item = static_cast<edui_colour_pick_s *>(
+            eduiMenuAddItem(colourmenu, eduiItemColourPickCreate(0, colours, cbColourPickSel, const_cast<char *>(""))));
+        cp_process = cp_item->process;
+        cp_item->process = cbProcessColourPick;
+        cp_info = eduiMenuAddItem(colourmenu, eduiItemSelCreate(1, colours, 0, 0, cbToggleIndicatorMode,
+                                                                const_cast<char *>("R:?? G:?? B:??")));
+        cp_copy = eduiMenuAddItem(colourmenu,
+                                  eduiItemSelCreate(1, colours, 0, 0, cbCopy, const_cast<char *>("Copy To Clipboard")));
+        cp_paste = eduiMenuAddItem(
+            colourmenu, eduiItemSelCreate(1, colours, 0, 0, cbPaste, const_cast<char *>("Paste From Clipboard")));
+    }
 }
 
 extern "C" void RndrOSphere(NUVEC *centre, f32 radius, i32 colour, i32 segments, i32) {

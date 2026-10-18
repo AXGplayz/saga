@@ -69,7 +69,7 @@ void InitPartTable(char **names) {
 
 void *InitPartDebris(VARIPTR *buf, VARIPTR *, i32 capacity, i32 named_count, char **names, i32 page) {
     PARTDEBSYS_s *system = static_cast<PARTDEBSYS_s *>(BUFFER_ALLOC(buf, sizeof(PARTDEBSYS_s), 16));
-    if (__builtin_expect(system == NULL, 0))
+    if (system == NULL)
         return system;
     system->entries = NULL;
     system->capacity = capacity;
@@ -176,8 +176,8 @@ i32 PartDraw_Flickerer(PART_s *part) {
 PART_s *FindIncomingPart(void *owner, NUVEC *position, f32 radius, u32 flags, f32 range) {
     PART_s *part = Part;
     radius *= radius;
-    f32 nearest_distance = range > 0.0f ? range : 100.0f;
     PART_s *nearest = NULL;
+    f32 nearest_distance = range > 0.0f ? range : 100.0f;
     for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
         if ((part->active & 1) == 0 || part->owner == owner || (part->flags & flags) != flags)
             continue;

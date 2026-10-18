@@ -60,15 +60,11 @@ MemoryManager theMemoryManager;
 BIGBUFFER_s BigBuffer;
 void *theThingManager = NULL;
 
-struct AIROW_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 void bgProcClose() {
 }
 
 void CloakMovement(GameObject_s *object) {
-    const u8 index = object->field_0x1089;
+    const i32 index = object->field_0x1089;
     if (index > 2) {
         return;
     }
@@ -155,8 +151,6 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
                   "complete game AI condition registry");
 
 }
-
-struct CUTSCENEPLAYERCLIP;
 
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 

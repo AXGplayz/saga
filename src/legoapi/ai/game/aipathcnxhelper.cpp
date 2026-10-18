@@ -11,9 +11,6 @@
 #include <stdint.h>
 #include "nu2api/nucore/nulist.h"
 
-struct AIROW_s;
-struct nunativegscene_s;
-
 extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
 
 void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *) = NULL;
@@ -37,15 +34,13 @@ AIPATHCNXHELPER_s *AIPathCnxHelperSys_Find(AIPATHCNXHELPERSYS_s *system, GameObj
         connection = object->ai.path_info.connection;
         direction = object->ai.path_info.direction;
     }
-    if (connection == NULL || system == NULL) {
-        return NULL;
-    }
-
-    AIPATHCNXHELPER_s *helper = system->helpers;
-    for (i32 index = 0; index < system->helper_count; ++index, ++helper) {
-        if (helper->connection == connection && (helper->direction == 0xff || helper->direction == direction) &&
-            helper->type == type && (filter == NULL || filter(helper, object, connection, direction, type) == 0)) {
-            return helper;
+    if (connection != NULL && system != NULL) {
+        AIPATHCNXHELPER_s *helper = system->helpers;
+        for (i32 index = 0; index < system->helper_count; ++index, ++helper) {
+            if (helper->connection == connection && (helper->direction == 0xff || helper->direction == direction) &&
+                helper->type == type && (filter == NULL || filter(helper, object, connection, direction, type) == 0)) {
+                return helper;
+            }
         }
     }
     return NULL;
@@ -57,28 +52,34 @@ AIPATHCNXHELPER_s *AIPathCnxHelperSys_AddHelper(AIPATHCNXHELPERSYS_s *system, AI
         return NULL;
     }
 
+    AIPATHCNXHELPER_s *helper = NULL;
     i16 helper_count = system->helper_count;
-    if (helper_count >= system->field_0x00 || target == NULL || connection == NULL) {
-        return NULL;
-    }
+    if (helper_count < system->field_0x00) {
+        if (target == NULL || connection == NULL) {
+            return NULL;
+        }
 
-    AIPATHCNXHELPER_s *helper = system->helpers;
-    for (i32 index = 0; index < helper_count; ++index, ++helper) {
-        if (helper->connection == connection && helper->type == type && helper->target == target) {
-            if (helper->direction != direction) {
-                helper->direction = 0xff;
+        AIPATHCNXHELPER_s *existing = system->helpers;
+        for (i32 index = 0; index < helper_count; ++index, ++existing) {
+            if (existing->connection == connection && existing->type == type && existing->target == target) {
+                if (existing->direction != direction) {
+                    existing->direction = 0xff;
+                }
+                helper = existing;
+                break;
             }
-            return helper;
+        }
+
+        if (helper == NULL) {
+            helper = &system->helpers[helper_count];
+            ++helper_count;
+            system->helper_count = helper_count;
+            helper->connection = connection;
+            helper->direction = direction;
+            helper->target = target;
+            helper->type = type;
         }
     }
-
-    helper = &system->helpers[helper_count];
-    ++helper_count;
-    system->helper_count = helper_count;
-    helper->connection = connection;
-    helper->direction = direction;
-    helper->target = target;
-    helper->type = type;
     return helper;
 }
 

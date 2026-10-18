@@ -51,9 +51,6 @@
 
 extern "C" ripple_set_s *ripples;
 
-struct AIROW_s;
-struct nunativegscene_s;
-
 extern "C" i16 id_LANDSPEEDER;
 
 void NewRumble(nupad_s *pad, f32 strength, i32 mode);
@@ -66,19 +63,18 @@ void DebrisKillPlayers() {
 #define CHECK_DEBRIS_PLAYER(player_index)                                                                              \
     do {                                                                                                               \
         GameObject_s *player = Player[player_index];                                                                   \
-        if (player == NULL || (player->apiobj.flags_high & 0x10) == 0 || player->apiobj.field_0x287 != 0 ||            \
-            !(player->field_0x1024 <= 0.0f) || !(player->spawn_protection_timer <= 0.0f) ||                            \
-            (player->field_0xefe & 0x40) != 0 || CannotKill(player) != 0 || Player_HasInvincibility(player) != 0 ||    \
-            (player->apiobj.character_data->game_character->flags_090 & 0x04008000) != 0) {                            \
-            break;                                                                                                     \
-        }                                                                                                              \
-        if (DebrisCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,            \
-                                       player->collision_y_scale) != -1) {                                             \
-            ObjHitObj(NULL, player, 1, 0, 0, 1);                                                                       \
-        }                                                                                                              \
-        if (DebrisTorusCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,       \
-                                            player->collision_y_scale) != -1) {                                        \
-            ObjHitObj(NULL, player, 1, 0, 0, 1);                                                                       \
+        if (player != NULL && (player->apiobj.flags_high & 0x10) != 0 && player->apiobj.field_0x287 == 0 &&            \
+            player->field_0x1024 <= 0.0f && !(player->spawn_protection_timer > 0.0f) &&                               \
+            (player->field_0xefe & 0x40) == 0 && CannotKill(player) == 0 && Player_HasInvincibility(player) == 0 &&    \
+            (player->apiobj.character_data->game_character->flags_090 & 0x04008000) == 0) {                            \
+            if (DebrisCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,        \
+                                           player->collision_y_scale) != -1) {                                         \
+                ObjHitObj(NULL, player, 1, 0, 0, 1);                                                                   \
+            }                                                                                                          \
+            if (DebrisTorusCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,   \
+                                                player->collision_y_scale) != -1) {                                    \
+                ObjHitObj(NULL, player, 1, 0, 0, 1);                                                                   \
+            }                                                                                                          \
         }                                                                                                              \
     } while (0)
 
@@ -98,7 +94,7 @@ void AddSurfaceDebris(GameObject_s *object) {
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
     if (object->field_0x7a5 == 0x2b)
         return;
-    i32 layer = static_cast<i8>(object->apiobj.field_0x27f);
+    i8 layer = object->apiobj.field_0x27f;
     if (layer != -1 && (TerLayer[layer].flags & 1) != 0)
         return;
     f32 surface_y = object->apiobj.field_0x218;

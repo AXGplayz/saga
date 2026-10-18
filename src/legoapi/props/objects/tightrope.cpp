@@ -106,8 +106,8 @@ static i32 TightRope_MoveUpdate(GameObject_s *object, i32 jumping) {
             speed = 0.6f;
         } else {
             rope = static_cast<TIGHTROPE *>(object->field_0x788);
-            object->context_animation = 0x89;
             object->apiobj.movement_facing_angle = rope->rotation;
+            object->context_animation = 0x89;
             speed = AnimSpeed(object->apiobj.character_model, 0x89);
         }
         direction = 1.0f;
@@ -116,8 +116,8 @@ static i32 TightRope_MoveUpdate(GameObject_s *object, i32 jumping) {
             speed = 0.6f;
         } else {
             rope = static_cast<TIGHTROPE *>(object->field_0x788);
-            object->context_animation = 0x89;
             object->apiobj.movement_facing_angle = rope->rotation + 0x8000;
+            object->context_animation = 0x89;
             speed = AnimSpeed(object->apiobj.character_model, 0x89);
         }
         direction = -1.0f;
@@ -497,10 +497,10 @@ i32 TightRope_SnapTo(GameObject_s *object, NUVEC *position) {
     } else {
         object->apiobj.position.y = object->tightrope_position.y - object->field_0x1000 * object->apiobj.field_0xa8;
     }
-    u8 origin_flag = (object->field_0xe24 >> 3) & 1;
-    object->field_0xe24 &= ~8;
+    u8 origin_flag = object->locators_updated;
+    object->locators_updated = 0;
     GameObjectOrigin(object);
-    object->field_0xe24 = (object->field_0xe24 & ~8) | (origin_flag << 3);
+    object->locators_updated = origin_flag;
     return 1;
 }
 

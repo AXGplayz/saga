@@ -94,19 +94,12 @@ void TouchHacks::PlaySmartBombBuildupEffects(GameObject_s &, float elapsed, floa
 }
 
 bool TouchHacks::CanThrowBountyBomb(GameObject_s &object) {
-    if (WORLD->lev_objs[0xe9].active == 0 || !object.apiobj.player_controlled) {
-        return false;
-    }
-    if ((object.apiobj.character_data->model_flags & 0x01000000) == 0 && object.field_0x108e != 6 &&
-        SuperWeirdo(&object) == 0) {
-        return false;
-    }
-    if (object.apiobj.field_0x27d == 0 && object.field_0xe31 != 1) {
-        return false;
-    }
-
-    const i8 context = object.character_context;
-    return context == 6 || context == -1 || context == 7 || (CInfo[context].flags & 4) != 0;
+    return WORLD->lev_objs[0xe9].active != 0 && object.apiobj.player_controlled &&
+           ((object.apiobj.character_data->model_flags & 0x01000000) != 0 || object.field_0x108e == 6 ||
+            SuperWeirdo(&object) != 0) &&
+           (object.apiobj.field_0x27d != 0 || object.field_0xe31 == 1) &&
+           (object.character_context == 6 || object.character_context == -1 || object.character_context == 7 ||
+            (CInfo[object.character_context].flags & 4) != 0);
 }
 
 // The original advances the probe position with one packed vector store.
@@ -115,9 +108,9 @@ typedef f32 LandingProbeVec4 __attribute__((vector_size(16)));
 bool TouchHacks::CheckJumpForLandingSpot(GameObject_s &object, float maximum_drop) {
     VuVec position __attribute__((aligned(16)))(object.apiobj.position.x, object.apiobj.position.y,
                                                 object.apiobj.position.z, 1.0f);
+    const f32 step_x = object.apiobj.velocity.x * 0.2f;
     const f32 minimum_height = object.apiobj.position.y - maximum_drop;
     const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
-    const f32 step_x = object.apiobj.velocity.x * 0.2f;
     const f32 step_z = object.apiobj.velocity.z * 0.2f;
     f32 vertical_velocity = character->jump_speed + object.apiobj.velocity.y;
 
@@ -127,10 +120,12 @@ bool TouchHacks::CheckJumpForLandingSpot(GameObject_s &object, float maximum_dro
         if (GameRayCast(&position.xyz, &displacement.xyz, 0.0f, 0) != 0) {
             VuVec normal = VuVec_Zero;
             NewRayCastGetImpactNormal(&normal.xyz);
-            if (!(normal.y <= 0.8f) && GameShadow(&object, &position.xyz, 5.0f, -1) != 2000000.0f) {
-                const u32 layer = EShadowInfo();
-                if (layer <= 16 && (TerLayer[layer].flags & 1) == 0) {
-                    return true;
+            if (!(normal.y <= 0.8f)) {
+                if (GameShadow(&object, &position.xyz, 5.0f, -1) != 2000000.0f) {
+                    const u32 layer = EShadowInfo();
+                    if (layer <= 16 && (TerLayer[layer].flags & 1) == 0) {
+                        return true;
+                    }
                 }
             }
         }
@@ -169,8 +164,7 @@ bool TouchHacks::CheckForAboutToRunIntoKillTerrain(GameObject_s &object, float t
 bool TouchHacks::CheckForAboutToRunOffAnEdge(GameObject_s &object, float time) {
     VuVec position(object.apiobj.position.x + object.apiobj.velocity.x * time, object.apiobj.position.y + 0.3f,
                    object.apiobj.position.z + object.apiobj.velocity.z * time, 1.0f);
-    const f32 minimum_height = object.apiobj.position.y - 0.3f;
-    if (minimum_height <= GameShadow(&object, &position.xyz, 5.0f, -1)) {
+    if (object.apiobj.position.y - 0.3f <= GameShadow(&object, &position.xyz, 5.0f, -1)) {
         return false;
     }
 
@@ -179,80 +173,82 @@ bool TouchHacks::CheckForAboutToRunOffAnEdge(GameObject_s &object, float time) {
     const f32 radius = object.apiobj.collision_radius * 0.8f;
     position.x += direction.x * radius;
     position.z += direction.z * radius;
-    return GameShadow(&object, &position.xyz, 5.0f, -1) < minimum_height;
+    return GameShadow(&object, &position.xyz, 5.0f, -1) < object.apiobj.position.y - 0.3f;
 }
 
 bool TouchHacks::SolveRoot(float a, float b, float c, float &root1, float &root2) {
-    if (a == 0.0f) {
-        return false;
+    if (a != 0.0f) {
+        const f32 discriminant = b * b - 4.0f * a * c;
+        if (discriminant >= 0.0f) {
+            const f32 square_root = NuFsqrt(discriminant);
+            const f32 denominator = a + a;
+            root1 = (-b - square_root) / denominator;
+            root2 = (square_root - b) / denominator;
+            return true;
+        }
     }
-
-    const f32 discriminant = b * b - 4.0f * a * c;
-    if (discriminant < 0.0f) {
-        return false;
-    }
-
-    const f32 square_root = NuFsqrt(discriminant);
-    const f32 denominator = a + a;
-    root1 = (-b - square_root) / denominator;
-    root2 = (square_root - b) / denominator;
-    return true;
+    return false;
 }
 
 VuVec TouchHacks::CalculateJumpVelToHitPoint(GameObject_s &object, VuVec const &target) {
     const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
-    const VuVec position(object.apiobj.position.x, object.apiobj.position.y, object.apiobj.position.z, 1.0f);
-    return CalculateXZVelForArcToHitPoint(position, target, character->jump_speed, character->gravity);
+    return CalculateXZVelForArcToHitPoint(
+        VuVec(object.apiobj.position.x, object.apiobj.position.y, object.apiobj.position.z, 1.0f), target,
+        character->jump_speed, character->gravity);
 }
 
 VuVec TouchHacks::CalculateJumpVelToHitPointDblJump(GameObject_s &object, VuVec const &target) {
     const GAMECHARACTERDATA *player_character = player->apiobj.character_data->game_character;
     const f32 player_jump_height = -(player_character->jump_speed * player_character->jump_speed) /
                                    (player_character->gravity + player_character->gravity);
-    const f32 half_gravity = object.apiobj.character_data->game_character->gravity * 0.5f;
+    const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
+    const f32 half_gravity = character->gravity * 0.5f;
+    const f32 jump_speed = character->jump_speed;
     const f32 height = -(player_jump_height * 0.7f);
     f32 first_time;
     f32 unused_time;
-    if (!SolveRoot(half_gravity, object.apiobj.character_data->game_character->jump_speed, height, first_time,
-                   unused_time)) {
+    if (!SolveRoot(half_gravity, jump_speed, height, first_time, unused_time)) {
         return VuVec_Zero;
     }
 
     f32 second_time;
-    if (!SolveRoot(half_gravity, object.apiobj.character_data->game_character->jump_speed, height, second_time,
-                   unused_time)) {
+    if (!SolveRoot(half_gravity, jump_speed, height, second_time, unused_time)) {
         return VuVec_Zero;
     }
 
     const f32 total_time = first_time + second_time;
-    return VuVec((target.x - object.apiobj.position.x) / total_time, 0.0f,
-                 (target.z - object.apiobj.position.z) / total_time, 1.0f);
+    VuVec velocity = VuVec_Zero;
+    velocity.x = (target.x - object.apiobj.position.x) / total_time;
+    velocity.z = (target.z - object.apiobj.position.z) / total_time;
+    return velocity;
 }
 
 bool TouchHacks::CanJumpToPoint(GameObject_s &object, AIPATHNODE_s const &node) {
-    VuVec direction(node.position.x - object.apiobj.position.x, node.position.y - object.apiobj.position.y,
-                    node.position.z - object.apiobj.position.z, 1.0f);
-    const f32 distance = NuVecMag(&direction.xyz) - node.radius;
-    NuVecNorm(&direction.xyz, &direction.xyz);
-    const VuVec target(object.apiobj.position.x + direction.x * distance,
-                       object.apiobj.position.y + direction.y * distance,
-                       object.apiobj.position.z + direction.z * distance, 1.0f);
-    return CanJumpToPoint(object, target);
+    VuVec point(node.position.x - object.apiobj.position.x, node.position.y - object.apiobj.position.y,
+                node.position.z - object.apiobj.position.z, 1.0f);
+    const f32 distance = NuVecMag(&point.xyz) - node.radius;
+    NuVecNorm(&point.xyz, &point.xyz);
+    point = VuVec(object.apiobj.position.x + point.x * distance, object.apiobj.position.y + point.y * distance,
+                  object.apiobj.position.z + point.z * distance, 1.0f);
+    return CanJumpToPoint(object, point);
 }
 
 bool TouchHacks::CanJumpToPoint(GameObject_s &object, VuVec const &target) {
+    const VuVec flat_target(target.x, 0.0f, target.z, 1.0f);
+    const VuVec flat_start(object.apiobj.position.x, 0.0f, object.apiobj.position.z, 1.0f);
     const GAMECHARACTERDATA *character = object.apiobj.character_data->game_character;
     f32 second_time;
     f32 first_time;
-    if (!SolveRoot(character->gravity * 0.5f, character->jump_speed, object.apiobj.position.y - target.y, first_time,
-                   second_time)) {
+    if (!SolveRoot(character->gravity * 0.5f, character->jump_speed, -(target.y - object.apiobj.position.y),
+                   first_time, second_time)) {
         return false;
     }
 
-    const f32 dz = target.z - object.apiobj.position.z;
-    const f32 dx = target.x - object.apiobj.position.x;
+    const f32 dx = flat_target.x - flat_start.x;
+    const f32 dy = flat_target.y - flat_start.y;
+    const f32 dz = flat_target.z - flat_start.z;
     const f32 range = first_time * 1.4f;
-    return range * range > dx * dx + dz * dz;
+    return range * range > dx * dx + dy * dy + dz * dz;
 }
 
 bool TouchHacks::CanLunge(GameObject_s &object) {
@@ -271,10 +267,11 @@ bool TouchHacks::CanShoot(GameObject_s &object) {
 }
 
 bool TouchHacks::InParty(GameObject_s &object) {
-    return (Player[0] != NULL && Player[0] == &object) || (Player[1] != NULL && Player[1] == &object) ||
-           (Player[2] != NULL && Player[2] == &object) || (Player[3] != NULL && Player[3] == &object) ||
-           (Player[4] != NULL && Player[4] == &object) || (Player[5] != NULL && Player[5] == &object) ||
-           (Player[6] != NULL && Player[6] == &object) || (Player[7] != NULL && Player[7] == &object);
+    for (i32 i = 0; i < 8; ++i) {
+        if (Player[i] != NULL && &object == Player[i])
+            return true;
+    }
+    return false;
 }
 
 bool TouchHacks::CanTagTo(GameObject_s &source, GameObject_s &target) {
@@ -365,8 +362,11 @@ bool TouchHacks::CanTagVehicle(GameObject_s &object, GameObject_s &vehicle) {
 }
 
 bool TouchHacks::CanUseTeleport(GameObject_s &object) {
-    return object.apiobj.character_data != NULL &&
-           ((object.apiobj.character_data->model_flags & 0x40000) != 0 || SuperWeirdo(&object));
+    if (object.apiobj.character_data != NULL &&
+        ((object.apiobj.character_data->model_flags & 0x40000) != 0 || SuperWeirdo(&object))) {
+        return true;
+    }
+    return false;
 }
 
 bool TouchHacks::CanUseZipup(GameObject_s &object) {
@@ -377,8 +377,10 @@ bool TouchHacks::CanUseZipup(GameObject_s &object) {
         return false;
     if ((object.apiobj.character_data->model_flags & 0x100000) != 0 || SuperWeirdo(&object))
         return true;
-    return (object.apiobj.character_data->model_flags & 8) != 0 &&
-           (object.apiobj.character_data->game_character->flags_094[1] & 0x80) == 0 && Cheat_IsOn(13) != 0;
+    if ((object.apiobj.character_data->model_flags & 8) != 0 &&
+        (object.apiobj.character_data->game_character->flags_094[1] & 0x80) == 0 && Cheat_IsOn(13) != 0)
+        return true;
+    return false;
 }
 
 bool TouchHacks::ShouldKeepWeaponOut(GameObject_s &object) {
@@ -527,17 +529,18 @@ VuVec TouchHacks::CalculateXZVelForArcToHitPoint(VuVec const &position, VuVec co
 
     f32 first_time;
     f32 second_time;
-    VuVec velocity = VuVec_Zero;
-    if (SolveRoot(gravity * 0.5f, jump_speed, vertical_distance, first_time, second_time)) {
-        velocity.x = (target.x - position.x) / first_time;
-        velocity.z = (target.z - position.z) / first_time;
+    if (!SolveRoot(gravity * 0.5f, jump_speed, vertical_distance, first_time, second_time)) {
+        return VuVec_Zero;
     }
+    VuVec velocity = VuVec_Zero;
+    velocity.x = (target.x - position.x) / first_time;
+    velocity.z = (target.z - position.z) / first_time;
     return velocity;
 }
 
-i32 TouchHacks::CanBlowupBeBlownUp(GIZMOBLOWUP_s &blowup, i32 hit_type) {
+bool TouchHacks::CanBlowupBeBlownUp(GIZMOBLOWUP_s &blowup, i32 hit_type) {
     if (hit_type != 1) {
-        return 1;
+        return true;
     }
     return (blowup.draw_flags >> 7) & 1;
 }
@@ -552,60 +555,75 @@ bool TouchHacks::CanUseHatMachine(GameObject_s &object) {
 }
 
 void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *world) {
-    if (world == NULL) {
-        return;
-    }
-
     GIZMOBLOWUP_s *blowup = world->gizmo_blowups;
-    auto world_gizmo_blowup_count = world->gizmo_blowup_count;
-    for (i32 i = 0; i < world_gizmo_blowup_count; ++i, ++blowup) {
-        blowup->ClearMechObjectInterface();
+    for (i32 i = 0; i < world->gizmo_blowup_count; ++i, ++blowup) {
+        if (blowup != NULL) {
+            blowup->ClearMechObjectInterface();
+        }
     }
-    if (world->giz_buildit_sys != NULL) {
-        GIZBUILDIT_s *buildit = world->giz_buildit_sys->buildits;
-        auto world_giz_buildit_sys = world->giz_buildit_sys;
-        for (i32 i = 0; i < world_giz_buildit_sys->count; ++i, ++buildit) {
-            buildit->ClearMechObjectInterface();
+    GIZBUILDITSYS_s *buildit_sys = world->giz_buildit_sys;
+    if (buildit_sys != NULL) {
+        GIZBUILDIT_s *buildit = buildit_sys->buildits;
+        for (i32 i = 0; i < buildit_sys->count; ++i, ++buildit) {
+            if (buildit != NULL) {
+                buildit->ClearMechObjectInterface();
+            }
         }
     }
     LEVER_s *lever = world->levers;
     for (i32 i = 0; i < world->nlevers; ++i, ++lever) {
-        lever->ClearMechObjectInterface();
+        if (lever != NULL) {
+            lever->ClearMechObjectInterface();
+        }
     }
     if (world->hat_machine_sys != NULL) {
         HATMACHINE_s *machine = world->hat_machine_sys->machines;
-        auto world_hat_machine_sys = world->hat_machine_sys;
-        for (i32 i = 0; i < world_hat_machine_sys->count; ++i, ++machine) {
-            machine->ClearMechObjectInterface();
+        for (i32 i = 0; i < world->hat_machine_sys->count; ++i, ++machine) {
+            if (machine != NULL) {
+                machine->ClearMechObjectInterface();
+            }
         }
     }
     TELEPORT_s *teleport = world->teleports;
     for (i32 i = 0; i < world->teleport_count; ++i, ++teleport) {
-        teleport->ClearMechObjectInterface();
-    }
-    if (world->giz_panel_sys != NULL) {
-        GIZPANEL_s *panel = world->giz_panel_sys->panels;
-        for (i32 i = 0; i < world->giz_panel_sys->count; ++i, ++panel) {
-            panel->ClearMechObjectInterface();
+        if (teleport != NULL) {
+            teleport->ClearMechObjectInterface();
         }
     }
-    if (world->giz_turret_sys != NULL) {
-        GIZTURRET_s *turret = world->giz_turret_sys->turrets;
-        auto world_giz_turret_sys = world->giz_turret_sys;
-        for (i32 i = 0; i < world_giz_turret_sys->count; ++i, ++turret) {
-            turret->ClearMechObjectInterface();
+    GIZPANELSYS_s *panel_sys = world->giz_panel_sys;
+    if (panel_sys != NULL) {
+        GIZPANEL_s *panel = panel_sys->panels;
+        for (i32 i = 0; i < panel_sys->count; ++i, ++panel) {
+            if (panel != NULL) {
+                panel->ClearMechObjectInterface();
+            }
         }
     }
-    if (WORLD != NULL && WORLD->giz_obstacle_sys != NULL) {
-        GIZOBSTACLE_s *obstacle = WORLD->giz_obstacle_sys->obstacles;
-        for (i32 i = 0; i < WORLD->giz_obstacle_sys->count; ++i, ++obstacle) {
-            obstacle->ClearMechObjectInterface();
+    GIZTURRETSYS_s *turret_sys = world->giz_turret_sys;
+    if (turret_sys != NULL) {
+        GIZTURRET_s *turret = turret_sys->turrets;
+        for (i32 i = 0; i < turret_sys->count; ++i, ++turret) {
+            if (turret != NULL) {
+                turret->ClearMechObjectInterface();
+            }
         }
     }
-    if (world->giz_force_sys != NULL) {
-        GIZFORCE_s *force = world->giz_force_sys->forces;
-        for (i32 i = 0; i < world->giz_force_sys->count; ++i, ++force) {
-            force->ClearMechObjectInterface();
+    GIZOBSTACLESYS_s *obstacle_sys = WORLD->giz_obstacle_sys;
+    if (obstacle_sys != NULL) {
+        GIZOBSTACLE_s *obstacle = obstacle_sys->obstacles;
+        for (i32 i = 0; i < obstacle_sys->count; ++i, ++obstacle) {
+            if (obstacle != NULL) {
+                obstacle->ClearMechObjectInterface();
+            }
+        }
+    }
+    GIZFORCESYS_s *force_sys = world->giz_force_sys;
+    if (force_sys != NULL) {
+        GIZFORCE_s *force = force_sys->forces;
+        for (i32 i = 0; i < force_sys->count; ++i, ++force) {
+            if (force != NULL) {
+                force->ClearMechObjectInterface();
+            }
         }
     }
     if (Part != NULL) {
