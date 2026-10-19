@@ -442,9 +442,7 @@ void GameTiming(WORLDINFO_s *world, float *game_time) {
         UpdateTimer(&AreaTimer);
         UpdatePickupFlicker();
         UpdateTimer(&JoinInTimer);
-        if (CUTSTOPGAME != 0) {
-            DoubleScoreTime = 0.0f;
-        } else {
+        if (CUTSTOPGAME == 0) {
             if (world->current_level != NULL && (world->current_level->flags & LEVEL_GAMEPLAY) != 0 &&
                 pause_rndr_on == 0 && (Player[0] != NULL || Player[1] != NULL)) {
                 UpdateTimer(&GamePlayTimer);
@@ -460,7 +458,7 @@ void GameTiming(WORLDINFO_s *world, float *game_time) {
                     if (ChallengeMode == 1) {
                         UpdateTimer(&ChallengeTimer);
                         if (Game_AreaSave != NULL &&
-                            !(ChallengeTimer.time_elapsed < Game_AreaSave[world->level_sub_id].challenge_trial_time))
+                            ChallengeTimer.time_elapsed >= Game_AreaSave[world->level_sub_id].challenge_trial_time)
                             EndChallenge(3, 1);
                     } else {
                         if (Mission_CurrentState(NULL) == 1) {
@@ -475,6 +473,8 @@ void GameTiming(WORLDINFO_s *world, float *game_time) {
             UpdateGameMessages();
             DoubleScoreTime =
                 SeekLinearF(DoubleScoreTime, (DoubleScore != 0 && GetMenuID() == -1) ? 1.0f : 0.0f, FRAMETIME);
+        } else {
+            DoubleScoreTime = 0.0f;
         }
     }
     UpdateTimer(&GlobalTimer);

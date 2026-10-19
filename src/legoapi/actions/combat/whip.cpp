@@ -14,8 +14,7 @@
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
-
-void SetWeaponIn(GameObject_s *object);
+#include "legoapi/actions/movement/climbing.h"
 
 void Whip_MoveCode(GameObject_s *object) {
     if (LEGOCONTEXT_WHIP == -1) {
@@ -66,7 +65,7 @@ void Whip_MoveCode(GameObject_s *object) {
     }
 
     if (object->field_0x7a3 == 0) {
-        if (AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) == NULL) {
+        if (__builtin_expect(AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) == NULL, 1)) {
             return;
         }
 
@@ -136,7 +135,7 @@ void Whip_MoveCode(GameObject_s *object) {
         }
         if (object->context_animation_timer >= object->airborne_action_duration) {
             object->character_context = -1;
-            if ((object->context_flags & 0x40) == 0) {
+            if (__builtin_expect((object->context_flags & 0x40) == 0, 1)) {
                 activate = 1;
             }
         }

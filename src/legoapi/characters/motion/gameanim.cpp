@@ -785,11 +785,11 @@ GAMEANIMOBJ_s *GameAnimSet_AddObject(GAMEANIMSET_s *set, nuhspecial_s *special, 
             object->end_frame = last_frame;
         } else {
             object->end_frame = end_frame;
-            if (object->end_frame < 1.0f) {
+            if (!(object->end_frame >= 1.0f)) {
                 object->end_frame = 1.0f;
             }
         }
-        if (start_frame > last_frame) {
+        if (!(start_frame <= last_frame)) {
             object->start_frame = last_frame;
         } else {
             object->start_frame = start_frame;
@@ -1222,7 +1222,7 @@ void GameAnimSet_JumpToAnimPos(GAMEANIMSET_s *set, float position) {
         f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
         f32 scaled_frame = frame * direction;
         f32 scaled_end = object->end_frame * direction;
-        if (scaled_frame <= scaled_end) {
+        if (!(scaled_frame > scaled_end)) {
             animation->ltime = frame;
         } else {
             animation->ltime = object->end_frame;
@@ -1408,7 +1408,6 @@ void GameAnimSet_DrawReflection(GAMEANIMSET_s *set, i32 axis, float offset, numt
         if ((object->flags & 2) == 0) {
             if (NuSpecialGetVisibilityFn(&object->special) != 0) {
                 NUMTX_ALIGNED16 reflection;
-                extern i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
                 NUMTX *draw_matrix = NuSpecialGetDrawMtx(&object->special);
                 if (MatrixReflection(draw_matrix, axis, plane, WORLD->current_level->unknown_0cc, &reflection) != 0) {
                     NuSpecialDrawAt(&object->special, &reflection);

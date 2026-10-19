@@ -525,16 +525,7 @@ static NUVEC PercentHint_TriggerPos = {-28.421f, 0.0f, -52.462f};
 
 extern i16 tCHAPTER;
 
-extern void (*CutScene_OverrideConfigFileNameFn)(char *, i32, i32);
-
 typedef isize __attribute__((may_alias)) NuGCutWord;
-
-extern "C" {
-extern void *(*DefragCreateInstFn)(void *, NUGCUTSCENE_s *, VARIPTR *);
-
-}
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
 
 extern "C" {
     extern "C++" {
@@ -573,30 +564,6 @@ union variptr_u;
 
 extern i16 id_GAMORREANGUARD, id_PRINCESSLEIASLAVE, id_LAMASU, id_TAUNWE;
 
-i32 GizmoFileReadGameAnimSet(GAMEANIMSET_s *set, void *world_ptr,
-                             void (*read_object_data)(GAMEANIMOBJ_s *, unsigned char), unsigned char version,
-                             char *prefix, char *suffix);
-
-extern "C" {
-extern void (*checkantinodefns[3])(APIOBJECT *, AIANTINODE *, NUVEC *, f32);
-    extern void (*checkantinodefns[3])(APIOBJECT_s *, AIANTINODE_s *, NUVEC *, f32);
-}
-
-extern "C" {
-void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
-} // extern "C"
-
-// Callback storage is declared in reverse linked-BSS order because the
-// original GCC 4.7 -O3 object emits these definitions in reverse source order.
-extern "C" {
-void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
-} // extern "C"
-
-extern "C" {
-void NuSetCutSceneDestroyCharactersFn(void (*callback)(NUGCUTSCENE_s *));
-
-}
-
 extern f32 HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING;
 extern i16 tBACK;
@@ -604,15 +571,6 @@ extern i16 tSTORY;
 extern i16 tFREEPLAY;
 extern i16 tREPLAYSTORY;
 extern i16 tLOCKED;
-
-extern void (*drawslotinfofn)(f32, f32, i32, i32);
-extern void (*drawslotsfn)(MENU *, f32);
-
-void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
-
-void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
 
 extern f32 HUB_EPISODESUBTITLEY;
 extern f32 HUB_EPISODETITLEY;
@@ -626,7 +584,6 @@ extern f32 PANEL_MINIKITCOUNTSCALE;
 extern f32 PANEL_MINIKITCOUNTY;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 extern i16 tMAP;
@@ -636,27 +593,6 @@ extern i16 tNO;
 extern "C" {
     extern "C++" FadeSystem FadeSys;
 }
-
-void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
-                          void (*drawSaveIcon)(void), void *extradata, i32 extradataSize);
-
-extern void (*FS_Callback)(char *, char *);
-
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
-
-extern "C" {
-void TextRegisterButtonMapFn(void (*fn)(char *, char *));
-void TextRegisterPulseTimerFn(f32 (*fn)(f32));
-}
-
-extern "C" {
-    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
-}
-
-extern "C" {
-extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
-} // extern "C"
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -771,8 +707,6 @@ __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(e
                                                                                    i32 x, i32 y, i32 width, i32);
 }
 
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
-
 extern "C" {
     extern "C++" {
         static __attribute__((noinline, noclone)) void
@@ -800,17 +734,6 @@ DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 extern "C" i16 id_LANDSPEEDER;
 extern f32 newgamecamtime, cutscenecam_focalLength, CamStopBlend, EMPERORFIGHTA_CAMDYHACK;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
-
-extern "C" {
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
-
-}
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
-
 extern "C" {
     extern "C++" {
         static __attribute__((noinline, noclone)) void
@@ -830,13 +753,6 @@ extern "C" {
 
 #include "nu2api/nucore/nucore_plain_types.h"
 } // extern "C"
-
-extern "C" {
-void TextRegisterButtonMapFn(void (*fn)(char *, char *));
-
-void TextRegisterPulseTimerFn(f32 (*fn)(f32));
-
-}
 
 static void Hub_DrawBonusModeMenu(int selected, float alpha) {
     char text[3][128];
@@ -860,7 +776,7 @@ static void Hub_DrawBonusModeMenu(int selected, float alpha) {
                     NuStrCat(text[0], TTab[area->name_id]);
                 else
                     NuStrCat(text[0], "?");
-            } else if (i == 1) {
+            } else if (__builtin_expect(i == 1, 1)) {
                 if (text[0][0])
                     NuStrCat(text[0], ": ");
                 char *mode_text = TTab[*Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].text];
@@ -1019,7 +935,9 @@ static void Hub_DrawMiniKitCount(f32 x, f32 y, i32 count, i32 total, f32 alpha) 
 static void Hub_DrawSelectModeMenu(int selected, float alpha) {
     const i32 area = LDataList[hub_new_level].area_index;
     const i32 complete = Game.area_save[area].area_complete;
-    const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
+    i32 lost_temple = 0;
+    if (LOSTTEMPLE_ADATA != NULL)
+        lost_temple = area == LOSTTEMPLE_ADATA->index;
     i32 unlocked = FreePlayUnlocked();
     if (unlocked != 1 && area != -1) {
         unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
@@ -1191,7 +1109,7 @@ static void Hub_DrawIconCursors(COLLECTION_s *collection, f32 scale) {
     }
     f32 size = Game_OptionsSave != NULL && Game_OptionsSave->widescreen != 0 ? 0.14f : 0.16f;
     size *= collection->field_10 / 0.675f;
-    if (freeplay_time[player] <= 0.0f) {
+    if (!(freeplay_time[player] > 0.0f)) {
         if (freeplay_selected[player] != 0)
             size = 0.0f;
     } else {
@@ -1562,23 +1480,21 @@ static __used__ void Hub_UpdateSelectMode() {
             const u32 up_mask = GAMEPAD_DUP;
             const u32 down_mask = GAMEPAD_DDOWN;
             i32 confirm = 0, cancel = 0, up = 0, down = 0;
-            for (i32 i = 0; i < 2; ++i) {
+            for (i32 i = 0; i < 2 && !confirm && !cancel; ++i) {
                 if (!MenuPacket.active_player[i])
                     continue;
                 const u32 pressed = GamePad[i].buttons_pressed;
                 if ((pressed & select_mask) != 0) {
                     confirm = true;
-                    break;
-                }
-                if ((pressed & cancel_mask) != 0) {
+                } else if ((pressed & cancel_mask) != 0) {
                     cancel = true;
-                    break;
-                }
-                const u32 directions = pressed | GamePad[i].left_directions;
-                if ((directions & up_mask) != 0) {
-                    up = true;
-                } else if ((directions & down_mask) != 0) {
-                    down = true;
+                } else {
+                    const u32 directions = pressed | GamePad[i].left_directions;
+                    if ((directions & up_mask) != 0) {
+                        up = true;
+                    } else if ((directions & down_mask) != 0) {
+                        down = true;
+                    }
                 }
             }
             if (menu->input_activity != 0) {
@@ -2554,7 +2470,7 @@ void Hub_DrawFreePlaySelect() {
                 size = (COLLECTION_ICONSIZE - base_size) * eased + base_size;
                 y = (STATSPOSY - 0.7f) * eased + 0.7f;
                 if (opacity > 0.0f) {
-                    if (freeplay_time[0] > 0.0f || opacity != 1.0f) {
+                    if (!(freeplay_time[0] <= 0.0f) || opacity != 1.0f) {
                         radarpulsetimer = 2.0f;
                     } else if (radarpulsetimer < 0.0f) {
                         const VuVec position{x, y, 0.0f, 1.0f};
@@ -2566,7 +2482,7 @@ void Hub_DrawFreePlaySelect() {
                     f32 grow = 1.0f;
                     if (!TestForController()) {
                         const f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + 2.0f);
-                        if (elapsed > 4.0f) {
+                        if (!(elapsed <= 4.0f)) {
                             f32 wave = NU_SIN_LUT(static_cast<i32>(NuFmod(elapsed, 4.0f) * 0.25f * 65536.0f)) - 0.8f;
                             if (wave < 0.0f)
                                 wave = 0.0f;
@@ -2630,10 +2546,10 @@ void Hub_DrawFreePlaySelect() {
                 list[count++] = fplist[i];
             list[count].model_id = -1;
             f32 alpha = 0.0f;
-            if (freeplaytime < freeplayduration - 0.1f)
+            if (!(freeplaytime >= freeplayduration - 0.1f))
                 alpha = 1.0f - freeplaytime / (freeplayduration - 0.1f);
             Collection_Draw(collection, 0.0f, COLLECTION_Y_HUB, collection->field_10, list, alpha, 1);
-            if (alpha >= 0.0f)
+            if (!(alpha < 0.0f))
                 Hub_DrawIconCursors(collection, alpha);
         }
         return;
@@ -2861,13 +2777,13 @@ __attribute__((optimize("O2", "tree-vectorize"))) i32 Percent_UpdateHint(HINT_s 
     GameObject_s *object = Player[0];
     if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0) {
         active_players++;
-        if (NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) < 4.0f)
+        if (!(NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) >= 4.0f))
             nearby_players++;
     }
     object = Player[1];
     if (object != NULL && object->apiobj.player_controlled) {
         active_players++;
-        if (NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) < 4.0f)
+        if (!(NuVecXZDistSqr(&object->apiobj.position, &PercentHint_TriggerPos, NULL) >= 4.0f))
             nearby_players++;
     }
     if (active_players <= 0 || active_players != nearby_players)
@@ -3017,11 +2933,11 @@ void Hub_DrawPanel(WORLDINFO_s *) {
         f32 alpha = 0.0f;
         if (newgamecamtime < 2.0f)
             alpha = 0.0f;
-        else if (newgamecamtime < 2.5f)
+        else if (!(newgamecamtime >= 2.5f))
             alpha = (newgamecamtime - 2.0f) * 2.0f;
         else if (newgamecamtime < 7.5f)
             alpha = 1.0f;
-        else if (newgamecamtime < 8.0f)
+        else if (!(newgamecamtime >= 8.0f))
             alpha = 1.0f - (newgamecamtime - 7.5f) * 2.0f;
         if (alpha > 0.0f)
             SmartTextEx(TTab[tMAP], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, 0.8f, 0.8f, 0.8f, 0,
@@ -3258,7 +3174,7 @@ void Hub_DrawPanel(WORLDINFO_s *) {
             Hub_DrawMiniKitCount(0.0f, HUB_EPISODETITLEY, 0, 10, phase);
             sprintf(title, "%s, %s %i", TTab[EDataList[episode].name_id], TTab[tCHAPTER],
                     static_cast<i8>(ADataList[index].area_index) + 1);
-            if (scale > 0.0f)
+            if (!(scale <= 0.0f))
                 SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, HUB_EPISODER, HUB_EPISODEG,
                             HUB_EPISODEB, 1.7f, 1, NULL, 0, alpha);
         }
@@ -3307,7 +3223,7 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                     }
                 }
                 // Touch selection and the other entries share the normal menu pulse.
-                if (menu_pulse > 0.0f) {
+                if (!(menu_pulse <= 0.0f)) {
                     red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
                                            static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
                     green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
@@ -3538,7 +3454,7 @@ static void DrawEpisodesMenu(i32 selected, f32 alpha) {
             for (i32 column = 0; column < 3; ++column, x += dx) {
                 const i32 episode = row * 3 + column;
                 u32 red, green, blue;
-                if (selected && episode == i_episodes && TestForController()) {
+                if (__builtin_expect(selected && episode == i_episodes && TestForController(), 0)) {
                     if (menu_pulsate > 0.0f) {
                         red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
                                                static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate));
@@ -3642,27 +3558,25 @@ void MenuUpdateEpisodes(MENU_s *) {
     switch (episodesmode) {
         case 0: {
             i32 up = 0, down = 0, left = 0, right = 0, confirm = 0, cancel = 0;
-            for (i32 player = 0; player < 2; ++player) {
-                if (__builtin_expect(!MenuPacket.active_player[player], 0))
+            for (i32 player = 0; player < 2 && !confirm && !cancel; ++player) {
+                if (!MenuPacket.active_player[player])
                     continue;
                 const u32 pressed = GamePad[player].buttons_pressed;
-                if (__builtin_expect(!!(pressed & GAMEPAD_MENUSELECT), 0)) {
+                if (pressed & GAMEPAD_MENUSELECT) {
                     confirm = 1;
-                    break;
-                }
-                if (pressed & GAMEPAD_MENUCANCEL) {
+                } else if (pressed & GAMEPAD_MENUCANCEL) {
                     cancel = 1;
-                    break;
+                } else {
+                    const u32 directions = pressed | GamePad[player].left_directions;
+                    if (directions & GAMEPAD_DUP)
+                        up = 1;
+                    else if (directions & GAMEPAD_DDOWN)
+                        down = 1;
+                    else if (directions & GAMEPAD_DLEFT)
+                        left = 1;
+                    else if (directions & GAMEPAD_DRIGHT)
+                        right = 1;
                 }
-                const u32 directions = pressed | GamePad[player].left_directions;
-                if (directions & GAMEPAD_DUP)
-                    up = 1;
-                else if (directions & GAMEPAD_DDOWN)
-                    down = 1;
-                else if (directions & GAMEPAD_DLEFT)
-                    left = 1;
-                else if (directions & GAMEPAD_DRIGHT)
-                    right = 1;
             }
             if (menu->input_activity) {
                 if (menu->confirm_pressed) {
@@ -3671,7 +3585,7 @@ void MenuUpdateEpisodes(MENU_s *) {
                     else
                         i_episodes = menu->selected_item;
                 }
-                if (__builtin_expect(!!(menu->cancel_pressed), 0))
+                if (menu->cancel_pressed)
                     cancel = 1;
             }
             if (confirm) {
@@ -3714,7 +3628,7 @@ void MenuUpdateEpisodes(MENU_s *) {
         case 2: {
             const i32 all = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
             const u16 count = CutScenePlayer_CountEpisodeClips(i_episodes, all, clips);
-            if (__builtin_expect(i_clip[i_episodes] >= count, 1))
+            if (i_clip[i_episodes] >= count)
                 i_clip[i_episodes] = count - 1;
             const i32 previous = i_clip[i_episodes];
             bool confirm = false, cancel = false;
@@ -3799,7 +3713,7 @@ void MenuUpdateEpisodes(MENU_s *) {
                 lastepisodesmode = episodesmode;
                 episodesmode = 0;
                 episodesduration = 0.6f;
-                if (__builtin_expect(hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1, 0))
+                if (hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1)
                     episodesmode = 1;
             } else if (previous != i_clip[i_episodes]) {
                 GameAudio_PlaySfx(0x2f, NULL, 0, 0);
@@ -3853,7 +3767,7 @@ void MenuDrawEpisodes(MENU_s *) {
         const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
         DrawEpisodesMenu(0, menu_alpha * alpha);
     }
-    if (MainRenderTime <= 0.0f && alpha == 1.0f)
+    if (!(MainRenderTime > 0.0f) && alpha == 1.0f)
         DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
                               MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
 }
@@ -3894,7 +3808,7 @@ void MenuDrawSelectMode(MENU_s *) {
         if (FadeSys.fade > 0.0f)
             return;
     } else if (selectmodemode == 4) {
-        if (pFadeInfo->fade > 0.0f)
+        if (!(pFadeInfo->fade <= 0.0f))
             return;
     }
     f32 alpha = 1.0f;
@@ -4004,16 +3918,14 @@ void MenuUpdateBonusMode(MENU_s *) {
     }
 
     i32 confirm = 0, cancel = 0, up = 0, down = 0, left = 0, right = 0;
-    for (i32 i = 0; i < 2; ++i) {
+    for (i32 i = 0; i < 2 && !confirm && !cancel; ++i) {
         if (!MenuPacket.active_player[i])
             continue;
         const u32 pressed = GamePad[i].buttons_pressed;
         if (pressed & GAMEPAD_MENUSELECT) {
             confirm = 1;
-            break;
         } else if (pressed & GAMEPAD_MENUCANCEL) {
             cancel = 1;
-            break;
         } else {
             const u32 direction = pressed | GamePad[i].left_directions;
             if (direction & GAMEPAD_DUP)
@@ -4028,12 +3940,7 @@ void MenuUpdateBonusMode(MENU_s *) {
     }
 
     if (menu->input_activity) {
-        if (!bonusmodearcade) {
-            if (menu->confirm_pressed) {
-                hub_bonusmode = menu->selected_item;
-                confirm = 1;
-            }
-        } else {
+        if (bonusmodearcade) {
             const i32 item = menu->selected_item;
             const u8 choices = reinterpret_cast<u8 *>(&ArcadeItem)[item * 8 + 5];
             if (menu->left_pressed && choices >= 2)
@@ -4051,6 +3958,9 @@ void MenuUpdateBonusMode(MENU_s *) {
                     menu->confirm_pressed = 0;
                 }
             }
+        } else if (menu->confirm_pressed) {
+            hub_bonusmode = menu->selected_item;
+            confirm = 1;
         }
         if (menu->cancel_pressed)
             cancel = 1;
@@ -4058,7 +3968,7 @@ void MenuUpdateBonusMode(MENU_s *) {
 
     if (player_up[0])
         BlipU[0] = 0.1f;
-    if (player_down[0])
+    if (__builtin_expect(!!(player_down[0]), 0))
         BlipD[0] = 0.1f;
     if (player_left[0])
         BlipL[0] = 0.1f;
@@ -4277,7 +4187,7 @@ void Hub_Update(WORLDINFO_s *world) {
             i32 loaded = 0;
             for (i32 pack = 0; pack < 11; ++pack) {
                 STOREPACK &store_pack = StorePack[pack];
-                if (Store_IsPackUnlocked(pack) != 0 || store_pack.id == NULL) {
+                if (__builtin_expect(Store_IsPackUnlocked(pack) != 0 || store_pack.id == NULL, 0)) {
                     continue;
                 }
                 const i32 id = *store_pack.id;
@@ -4353,9 +4263,9 @@ void Hub_Update(WORLDINFO_s *world) {
         NU_SIN_LUT(static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f))) * 16.0f + 80.0f);
     if (menu == 8) {
         hub_jabbaawake = 1.0f;
-    } else if (hub_jabbaawake > 0.0f) {
+    } else if (!(hub_jabbaawake <= 0.0f)) {
         hub_jabbaawake -= FRAMETIME * 0.333f;
-        if (__builtin_expect(hub_jabbaawake < 0.0f, 0)) {
+        if (hub_jabbaawake < 0.0f) {
             hub_jabbaawake = 0.0f;
         }
     }
@@ -4378,8 +4288,9 @@ void Hub_Update(WORLDINFO_s *world) {
             if (player != NULL && player->apiobj.player_controlled &&
                 __builtin_expect(player->apiobj.field_0x27d != 0, 1) && player->pad_gamepad->input_magnitude == 0.0f &&
                 player->pad_gamepad->previous_input_magnitude == 0.0f &&
-                (player->field_0x7a5 == 0xff || player->field_0x7a5 == 0x31 || player->field_0x7a5 == 0x32)) {
-                shop_available = player->apiobj.field_0x281 == 0x0e;
+                (player->field_0x7a5 == 0xff || player->field_0x7a5 == 0x31 || player->field_0x7a5 == 0x32) &&
+                player->apiobj.field_0x281 == 0x0e) {
+                shop_available = true;
             }
         }
         if (shop_available && !HubShopUnlocked()) {
@@ -4601,7 +4512,7 @@ void Hub_Update(WORLDINFO_s *world) {
             }
         }
         static NUVEC minikit_hubpos = {-27.0f, 0.0f, -24.6f};
-        if (E1VEHICLE_ADATA != NULL && NuVecXZDistSqr(&player->apiobj.position, &minikit_hubpos, NULL) < 0.25f) {
+        if (E1VEHICLE_ADATA != NULL && !(NuVecXZDistSqr(&player->apiobj.position, &minikit_hubpos, NULL) >= 0.25f)) {
             selected_area = E1VEHICLE_ADATA->index;
             if (__builtin_expect(!HubMinikitViewerUnlocked(), 0)) {
                 if (GetHintFromUIButton() != NULL ||
@@ -4647,7 +4558,7 @@ void Hub_Update(WORLDINFO_s *world) {
             break;
         }
         if (Player[1] != NULL && Player[1]->apiobj.player_controlled &&
-            NuVecDistSqr(&Player[1]->apiobj.position, position, NULL) < 0.25f) {
+            !(NuVecDistSqr(&Player[1]->apiobj.position, position, NULL) >= 0.25f)) {
             break;
         }
     }
@@ -4665,7 +4576,11 @@ void Hub_Update(WORLDINFO_s *world) {
     } else if (LevTime[4] > 0.0f) {
         LevTime[4] -= FRAMETIME;
     }
-    if (FadeSys.fade == 0.0f) {
+    if (FadeSys.fade != 0.0f) {
+        hub_minikitarea = -1;
+        hub_minikitarea_time = 0.0f;
+        hub_minikitarea_opentime = 0.0f;
+    } else {
         if (LevLock[4] == 0) {
             i32 selected_minikit = -1;
             if (__builtin_expect(!(hub_episode != -1 && hub_episode_time > 0.0f) &&
@@ -4703,10 +4618,6 @@ void Hub_Update(WORLDINFO_s *world) {
                 PlaySfxAndSetPitch(const_cast<char *>("JForcePush"), NULL, 1.5f);
             }
         }
-    } else {
-        hub_minikitarea = -1;
-        hub_minikitarea_time = 0.0f;
-        hub_minikitarea_opentime = 0.0f;
     }
     Hub_UpdateMiniKits(world);
 

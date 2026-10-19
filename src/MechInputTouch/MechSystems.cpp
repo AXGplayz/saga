@@ -3,6 +3,7 @@
 
 #include "decomp.h"
 #include "MechInputTouch/MechInputTouch_types.h"
+#include "MechInputTouch/MechTouchUIElements.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/items/base/apiobject.h"
@@ -360,8 +361,9 @@ void HudRadarPulse::Process(float delta) {
                 pulses[i].delay_finished = 1;
         }
         if (pulses[i].delay_finished && !pulses[i].finished) {
-            pulses[i].radius += pulses[i].speed * delta;
-            float speed = pulses[i].speed - 0.4f * delta;
+            float speed = pulses[i].speed;
+            pulses[i].radius += speed * delta;
+            speed -= 0.4f * delta;
             pulses[i].speed = speed > 0.0f ? speed : 0.0f;
             pulses[i].angle += static_cast<i32>(32768.0f * delta);
             if (pulses[i].angle > 0x7fff)
@@ -803,7 +805,6 @@ void MoveToMarker::Render() {
             NuMtxScale(&ping_matrix, &ping_scale);
             draw_position.y += 0.01f;
             NuMtxTranslate(&ping_matrix, &draw_position);
-            extern void RndrTexQuad3D(VuMtx const &, i32, numtl_s *);
             const i32 ping_colour = (static_cast<i32>(alpha.value * 255.0f) << 24) | 0xffffff;
             RndrTexQuad3D(reinterpret_cast<VuMtx const &>(ping_matrix), ping_colour, systems->location_ping_material);
         }
@@ -824,9 +825,9 @@ void MoveToMarker::Render() {
         NuQFntSet(QFont3DZ);
         NuQFntSetMtx(QFont3DZ, &text_matrix);
         NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
-        const i32 colour = static_cast<u8>(static_cast<i32>(this->colour.value.x)) |
-                           (static_cast<u8>(static_cast<i32>(this->colour.value.y)) << 8) |
-                           (static_cast<u8>(static_cast<i32>(this->colour.value.z)) << 16) |
+        const i32 colour = static_cast<u8>(this->colour.value.x) |
+                           (static_cast<u8>(this->colour.value.y) << 8) |
+                           (static_cast<u8>(this->colour.value.z) << 16) |
                            (static_cast<i32>(scale.value * 255.0f) << 24);
         NuQFntSetColour(QFont3DZ, colour);
         NuQFntSetScale(QFont3DZ, 0.0375f, 0.05f);

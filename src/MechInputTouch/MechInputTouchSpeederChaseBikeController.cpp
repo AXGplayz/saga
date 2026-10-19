@@ -4,10 +4,9 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "globals.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/misc/utilities.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/numath/nutrig.h"
-
-i32 RotDiff(u16, u16);
 
 void MechInputTouchSpeederChaseController::Activate() {
     if (!active) {
@@ -127,13 +126,7 @@ void MechInputTouchSpeederChaseController::Update(NuInputTouchData const *) {
                 swipe_direction = false;
             }
         }
-        float x = touch_holder->touch_position.x;
-        if (x < 1.0f) {
-            x = x > -1.0f ? x : -1.0f;
-        } else {
-            x = x < 1.0f ? x : 1.0f;
-        }
-        stick_values[0] = x;
+        stick_values[0] = MAX(-1.0f, MIN(touch_holder->touch_position.x, 1.0f));
         button_was_pressed[0] = 1;
     }
     UpdateButtons();

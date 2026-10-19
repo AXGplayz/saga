@@ -747,7 +747,7 @@ extern "C" {
         }
         NUGCUTRIGIDSYS_s *rigid_system = cutscene->rigid_system;
         if (rigid_system != NULL) {
-            if (scene != NULL) {
+            if (__builtin_expect(scene != NULL, 1)) {
                 NUGCUTLOCATORSYS_s *locator_system = cutscene->locator_system;
                 for (i32 i = 0; i < rigid_system->count; ++i) {
                     NUGCUTRIGID_s *rigid = &rigid_system->rigids[i];
@@ -1074,7 +1074,7 @@ extern "C" {
         }
 
         NUVEC *bounds = static_cast<NUVEC *>(instance->cutscene->bounds);
-        if (bounds == NULL) {
+        if (__builtin_expect(bounds == NULL, 0)) {
             instance->transformed_bounds_center.x = 0.0f;
             instance->transformed_bounds_center.y = 0.0f;
             instance->transformed_bounds_center.z = 0.0f;
@@ -1772,7 +1772,7 @@ static void instNuGCutCamSysUpdate(instNUGCUTSCENE_s *instance, float frame) {
     NUGCUTCAMERASYS_s *system = instance->cutscene->camera_system;
     u8 focus_index;
     u8 next_camera_index;
-    if (static_cast<u8>(instance->cutscene->version) > 4 && system->focus_state_animation != NULL) {
+    if ((instance->cutscene->version & 0xff) > 4 && system->focus_state_animation != NULL) {
         if (StateAnimEvaluate(system->focus_state_animation, &camera_instance->focus_state_index, &focus_index,
                               frame) != 0) {
             if (focus_index == 0xff) {
@@ -1805,7 +1805,7 @@ static void instNuGCutCamSysUpdate(instNUGCUTSCENE_s *instance, float frame) {
         }
     }
 
-    while (camera_instance->next_target_index < camera_instance->target_count &&
+    while (camera_instance->target_count > camera_instance->next_target_index &&
            frame >= camera_instance->targets[camera_instance->next_target_index].start_frame) {
         const i8 mapped_camera =
             system->target_camera_map[camera_instance->targets[camera_instance->next_target_index].target_index];
@@ -1837,7 +1837,7 @@ static void instNuGCutCamSysUpdate(instNUGCUTSCENE_s *instance, float frame) {
         system->cameras[camera_index].animation_node >= NuAnimNumNodes(system->animation)) {
         cutscenecammtx = system->cameras[camera_index].base_matrix;
     } else {
-        if (static_cast<u8>(instance->cutscene->version) > 4 && system->focus_animation != NULL &&
+        if ((instance->cutscene->version & 0xff) > 4 && system->focus_animation != NULL &&
             *reinterpret_cast<u32 *>(system->focus_animation) - ANI3_MAGIC_VERSION_4 < 2) {
             f32 *values = NuAnimCurveExtractAllNodeCurves_3(
                 reinterpret_cast<ani3_animheader_s *>(system->focus_animation),
@@ -1873,7 +1873,7 @@ static void instNuGCutCamSysUpdate(instNUGCUTSCENE_s *instance, float frame) {
         }
     }
 
-    if (static_cast<i8>(instance->flags_88) < 0) {
+    if (__builtin_expect(static_cast<i8>(instance->flags_88) < 0, 1)) {
         NuMtxMul(&cutscenecammtx, &cutscenecammtx, &instance->matrix);
     }
     set_cutscenecammtx = 1;
@@ -2492,7 +2492,6 @@ i32 instNuGCutGetNextRigidInfo(instNUGCUTSCENE_s *instance, float frame, i32 ind
     NUGCUTRIGID_s *rigid = &rigid_system->rigids[index];
     instNUGCUTRIGID_s *instance_rigids = instance_rigid_system->rigids;
     if ((rigid->flags & 6) != 0) {
-        extern void NuGCutRigidCalcMtx(NUGCUTRIGID_s *, float, numtx_s *);
         NuGCutRigidCalcMtx(rigid, frame, matrix);
         if ((instance->flags_88 & 0x80) != 0)
             NuMtxMul(matrix, matrix, &instance->matrix);
@@ -2740,7 +2739,7 @@ static void instNuGCutLookAtLocatorUpdate(i32 *effect_handle, NUGCUTLOCATOR_s *l
     {
         NUMTX matrix;
         values = NuGCutLocatorCalcMtx(locator, frame, &matrix, NULL);
-        if (__builtin_expect((locator->flags & 4) != 0, 0)) {
+        if ((locator->flags & 4) != 0) {
             NuMtxPreTranslate(&matrix, &locator->pivot);
         }
         if (parent_mtx != NULL) {
@@ -2805,8 +2804,8 @@ static void instNuGCutLookAtLocatorUpdate(i32 *effect_handle, NUGCUTLOCATOR_s *l
         numtl_s *material = scene->mtls[state->secondary_material_index - 1];
         // The vertical range narrows as the eyes turn sideways.
         const f32 limit = (NU_COS_LUT(NuFabs(look_x) / 0.24f * 8192.0f) - 0.7f) * 0.18f / 0.3f;
-        look_y = look_y < limit ? look_y : limit;
-        look_y = -limit > look_y ? -limit : look_y;
+        look_y = MIN(limit, look_y);
+        look_y = MAX(-limit, look_y);
         material->delta_u += (look_x - material->delta_u) * 0.125f;
         material->delta_v += (-look_y - material->delta_v) * 0.125f;
         closed = material->delta_v < -0.15f;
@@ -2908,7 +2907,7 @@ extern "C" {
                 }
                 return;
             }
-            if ((locator->flags & 0x20) != 0) {
+            if (__builtin_expect((locator->flags & 0x20) != 0, 0)) {
                 if (inst_locator->effect_handle >= 0) {
                     DebFreeInstantly(&inst_locator->effect_handle);
                 }
@@ -3882,7 +3881,7 @@ extern "C" {
         NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_PS2);
         NuPrim2DBegin(4, 5, NULL);
 
-        if (DefragInstBaseMem != NULL) {
+        if (__builtin_expect(DefragInstBaseMem != NULL, 1)) {
             const u32 cut_span = static_cast<u32>(reinterpret_cast<usize>(DefragCutSceneEndMem) -
                                                   reinterpret_cast<usize>(DefragCutSceneBaseMem));
             const f32 cut_scale = 580.0f / static_cast<f32>(cut_span);
@@ -3933,7 +3932,7 @@ extern "C" {
 
             CutSceneCleanUpEntry *const list_end = DefragCutSceneListBase + DefragCutSceneListSize;
             for (CutSceneCleanUpEntry *entry = DefragCutSceneListBase; entry < list_end; ++entry) {
-                if ((entry->flags & 4) == 0) {
+                if (__builtin_expect((entry->flags & 4) == 0, 1)) {
                     continue;
                 }
                 instNUGCUTSCENE_s *instance = DefragGetInstFn(entry->handle);

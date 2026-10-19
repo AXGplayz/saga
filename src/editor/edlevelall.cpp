@@ -145,15 +145,16 @@ static void cbEdLevelSettingsMenu(eduimenu_s *, eduiitem_s *, u32);
                                                        ClassEditor::cbEdFilterLED, scene->name));                      \
     } while (0)
 
-static inline i32 get_class_object_attribute(EdClass *ed_class, void *object, EdRef *reference, i32 attribute, i32 type,
-                                             void *data, i32 size) {
-    if (reference != NULL) {
-        if (reference->GetAttributeData(object, attribute, type, data, size)) {
+// Reads an attribute of an object through its reference, falling back to the class member lookup.
+template <typename Object>
+static inline i32 get_class_object_attribute(Object &object, i32 attribute, i32 type, void *data, i32 size) {
+    if (object.reference != NULL) {
+        if (object.reference->GetAttributeData(object.object, attribute, type, data, size)) {
             return 1;
         }
     }
     EdMember member;
-    if (ed_class->FindMember(&member, object, attribute, 1)) {
+    if (object.ed_class->FindMember(&member, object.object, attribute, 1)) {
         return member.reference->GetAttributeData(member.object, attribute, type, data, size) != 0;
     }
     return 0;
@@ -210,7 +211,6 @@ extern "C" VuVec SpherePos2;
 VuVec SpherePos1;
 VuVec SpherePos2;
 extern EdInputContext * Input;
-extern "C" eduiitem_s *eduiItemColourPickCreate(usize, const void *, EdUiItemCallback, char *);
 i32 EdType_Char;
 i32 EdType_Short;
 i32 EdType_Int;
@@ -234,7 +234,10 @@ static i32 NewMtl;
 static const VuMtx *NewMtx;
 
 template <i32 Axis> static inline void EdDrawCircle(VuVec const &centre, float radius, i32 colour, i32 segments) {
-    VuVec base(0.0f, Axis == 2 ? radius : 0.0f, Axis == 2 ? 0.0f : radius, 0.0f);
+    VuVec base;
+    base.x = 0.0f;
+    base.y = Axis == 2 ? radius : 0.0f;
+    base.z = Axis == 2 ? 0.0f : radius;
     VuVec point(base.x + centre.x, base.y + centre.y, base.z + centre.z, 0.0f);
     for (i32 i = 1; i <= segments; i++) {
         VuVec previous(point.x, point.y, point.z, point.w);
@@ -396,8 +399,6 @@ extern "C" {
 }
 
 extern "C" {
-eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
-
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
     static void eduiDrawHueValueBand(i32 x, i32 y, i32 width, i32 height, f32 start, f32 end, u32 first, u32 second)
@@ -457,11 +458,6 @@ DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 
 struct nuhspecial_s;
 struct VuVec;
-
-extern "C" {
-eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
-
-}
 
 i16 Placeable::CurrentLedFile;
 static EdStringControl *edObjectNameControl;
@@ -1291,7 +1287,7 @@ void EdMatrixControl::SetMenuItemAttr(i32 mask, eduiitem_s *menu_item, eduiiattr
             memcpy(menu_item->colours, unselected, sizeof(*selected));
     }
     if (menu_item == components[3] || menu_item == components[4] || menu_item == components[5]) {
-        if (mask && (mask & 0x10))
+        if (__builtin_expect(mask && (mask & 0x10), 0))
             memcpy(menu_item->colours, unselected, sizeof(*selected));
         else
             memcpy(menu_item->colours, selected, sizeof(*selected));
@@ -2884,7 +2880,7 @@ void EdMatrixControl::AddMenuItem(eduimenu_s *menu, EdRef *member, void *target)
         ADD_MATRIX_COMPONENT(4, "rot y", static_cast<f32>(y) * (360.0f / 65536.0f));
         ADD_MATRIX_COMPONENT(5, "rot z", static_cast<f32>(z) * (360.0f / 65536.0f));
     }
-    if (member->attributes & 0x20) {
+    if (__builtin_expect((member->attributes & 0x20) != 0, 1)) {
         f32 x = NuVecMag(reinterpret_cast<NUVEC *>(&matrix.matrix.m00));
         f32 y = NuVecMag(reinterpret_cast<NUVEC *>(&matrix.matrix.m10));
         f32 z = NuVecMag(reinterpret_cast<NUVEC *>(&matrix.matrix.m20));
@@ -3215,10 +3211,10 @@ void EdDrawLineCircleY(VuVec const &centre, float radius, i32 colour, i32 segmen
 
 void KnotHelper::Render(void *object, i32) {
     SplineKnot *knot = static_cast<SplineKnot *>(object);
+    i32 colours[3] = {static_cast<i32>(0x80808080), static_cast<i32>(0x80800000), static_cast<i32>(0x80000080)};
     EdDrawBegin(0);
-    EdDrawLineCircleY(knot->position, 0.25f * EdManipulator::Scale, static_cast<i32>(0x80808080), 8);
-    EdDrawLineCircleY(knot->in_tangent, 0.25f * EdManipulator::Scale, static_cast<i32>(0x80800000), 8);
-    EdDrawLineCircleY(knot->out_tangent, 0.25f * EdManipulator::Scale, static_cast<i32>(0x80000080), 8);
+    for (i32 index = 0; index < 3; index++)
+        EdDrawLineCircleY((&knot->position)[index], 0.25f * EdManipulator::Scale, colours[index], 8);
     EdDrawLineSegment(knot->position, knot->in_tangent, -1);
     EdDrawLineSegment(knot->position, knot->out_tangent, -1);
     EdDrawEnd();
@@ -3368,12 +3364,12 @@ void EdDrawPolySector(VuVec const &center, float radius, i32 axis, i32 first_ang
             return;
         angle = last_angle;
     }
-    if (remaining <= 0)
+    if (__builtin_expect(remaining <= 0, 0))
         return;
     const float negative_radius = -radius;
     do {
         const i32 previous_angle = angle;
-        if (remaining > step) {
+        if (__builtin_expect(remaining > step, 1)) {
             angle += step;
             remaining -= step;
         } else {
@@ -3547,7 +3543,7 @@ void EdDrawPolyArrow(VuVec const &start, VuVec const &end, i32 sides, i32 colour
     }
     angles.z = 0;
     const float draw_radius = radius > minimum_radius ? radius : minimum_radius;
-    const float draw_limit = limit < draw_radius ? limit : draw_radius;
+    const float draw_limit = !(limit >= draw_radius) ? limit : draw_radius;
 
     VuMtx transform;
     VuVec center(start.x + displacement.x * 0.4f, start.y + displacement.y * 0.4f, start.z + displacement.z * 0.4f,
@@ -4680,15 +4676,15 @@ void *PlaceableHelper::GetNextObject(void *object, i32 (*filter)(void *)) {
 }
 
 void EdSpecialObjectControl::cbButton(eduimenu_s *parent, eduiitem_s *item, u32) {
-    EdSpecialObjectControl *control = static_cast<EdSpecialObjectControl *>(item->data_ptr);
-    active_special_object_control = control;
+    active_special_object_control = static_cast<EdSpecialObjectControl *>(item->data_ptr);
     eduimenu_s *choices =
         eduiMenuCreate(item->x + parent->width, item->y, 180, 250,
                        reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbEdLevelDestroy, NULL);
     if (choices == NULL)
         return;
     nuhspecial_s selected;
-    control->reference->GetMemberData(control->object, EdType_NuHSpecial, &selected, 0);
+    active_special_object_control->reference->GetMemberData(active_special_object_control->object,
+                                                            EdType_NuHSpecial, &selected, 0);
     eduiMenuAddItem(choices, eduiItemSelCreate(static_cast<usize>(-1), item->colours, 0, 0, cbSelectObject,
                                                const_cast<char *>("None")));
     for (Placeable *object = static_cast<Placeable *>(thePlaceableHelper.GetNextObject(NULL, SpecialObjectFilter));
@@ -5009,7 +5005,7 @@ __attribute__((force_align_arg_pointer)) i32 EdControl::SelectSubObject() {
         i32 mode = static_cast<i32>(Input->GetHold(16)) != 0 ? 1 : 2;
         selection.reference = reference;
         theClassEditor.SelectObject(selection, mode);
-        if (!theClassEditor.selected_objects.IsInList(selection.object, NULL))
+        if (!theClassEditor.selected_objects.IsInList(object, NULL))
             theClassEditor.SelectObject(selection, 1);
     }
     return 1;
@@ -6232,7 +6228,7 @@ void EdRegistry::Serialise(EdStream &stream) {
 
 EdRef *EdClass::FindTypeRef(char *member_name, i32 recursive) {
     for (EdRef *member = members; member != NULL; member = member->next) {
-        if (recursive != 0 && member->attributes < 0) {
+        if (__builtin_expect(recursive != 0 && member->attributes < 0, 0)) {
             EdRef *reference = theRegistry.GetClass(member->type_id)->FindTypeRef(member_name, 1);
             if (reference != NULL) {
                 return reference;
@@ -6364,19 +6360,19 @@ i32 EdClass::FindMember(EdMember *result, void *object, i32 attributes, i32 recu
         return 0;
     if (recursive == 0) {
         do {
-            if (member->attributes >= 0 && (member->attributes & attributes) != 0)
+            if (__builtin_expect(member->attributes >= 0 && (member->attributes & attributes) != 0, 0))
                 goto found;
             member = member->next;
         } while (member != NULL);
         return 0;
     }
     do {
-        if (member->attributes < 0) {
+        if (__builtin_expect(member->attributes < 0, 0)) {
             EdClass *member_class = theRegistry.GetClass(member->type_id);
             void *member_object = member->GetMemberObject(object);
             if (member_class->FindMember(result, member_object, attributes, 1) != 0)
                 return 1;
-        } else if ((member->attributes & attributes) != 0)
+        } else if (__builtin_expect((member->attributes & attributes) != 0, 0))
             goto found;
         member = member->next;
     } while (member != NULL);
@@ -6429,7 +6425,7 @@ void ClassObject::Set(char *name) {
     NuStrCpy(object_name, separator + 1);
 
     ed_class = theRegistry.GetClass(class_name);
-    if (ed_class == NULL || !(ed_class->flags & 2) || ed_class->interface == NULL) {
+    if (__builtin_expect(ed_class == NULL || !(ed_class->flags & 2) || ed_class->interface == NULL, 0)) {
         return;
     }
 
@@ -6553,11 +6549,8 @@ i32 ClassEditor::CreateObject(ClassObject &source) {
     }
     Placeable::CurrentLedFile = theLevelEditor.current_led_file;
     EdClassInterface *interface;
-    if (created.ed_class->flags & 0x04000000) {
-        created.object = theRegistry.CreateObject(created.ed_class->interface, source.object, 4, 0, 2);
-    } else {
-        created.object = theRegistry.CreateObject(created.ed_class->interface, NULL, 4, 0, 2);
-    }
+    created.object = theRegistry.CreateObject(created.ed_class->interface,
+                                              created.ed_class->flags & 0x04000000 ? source.object : NULL, 4, 0, 2);
     if (created.object == NULL)
         return 0;
 
@@ -6622,7 +6615,7 @@ void ClassEditor::cbEdClassNewObject(eduimenu_s *parent, eduiitem_s *item, u32) 
     const char *error_text = "Unknown class id";
     if (ed_class != NULL)
         error_text = "No selected objects to clone";
-    if (ed_class == NULL || (ed_class->flags & 0x04000000))
+    if (__builtin_expect(ed_class == NULL || (ed_class->flags & 0x04000000), 0))
         eduiMenuAddItem(error_menu, eduiItemSelCreate(1, &EdLevelAttr, 0, 0, cbEdLevelDestroyOnSelect,
                                                       const_cast<char *>(error_text)));
     eduiMenuFitWidth(error_menu, 5);
@@ -6645,15 +6638,14 @@ i32 ClassObjectList::GetAveragePosition(VuVec &average) {
         // The original's local vector is 16-byte aligned.
         VuVec position __attribute__((aligned(16)));
         i32 position_type = EdType_VuVec;
-        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference, 8, position_type, &position,
-                                       0)) {
+        if (get_class_object_attribute(*entry, 8, position_type, &position, 0)) {
             average.x += position.x;
             average.y += position.y;
             average.z += position.z;
             ++position_count;
         }
     }
-    if (position_count != 0) {
+    if (__builtin_expect(position_count != 0, 1)) {
         float scale = 1.0f / position_count;
         average.x *= scale;
         average.y *= scale;
@@ -6682,15 +6674,13 @@ i32 ClassObjectList::GetAveragePosition(VuVec &average, float &radius) {
     for (ClassObjectListEntry *entry = first; entry != NULL && position_count < 64; entry = entry->next) {
         VuVec &position = positions[position_count];
         i32 position_type = EdType_VuVec;
-        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference, 8, position_type, &position,
-                                       0)) {
+        if (get_class_object_attribute(*entry, 8, position_type, &position, 0)) {
             average.x += position.x;
             average.y += position.y;
             average.z += position.z;
             radii[position_count] = 1.0f;
             i32 radius_type = EdType_Float;
-            get_class_object_attribute(entry->ed_class, entry->object, entry->reference, 64, radius_type,
-                                       &radii[position_count], 0);
+            get_class_object_attribute(*entry, 64, radius_type, &radii[position_count], 0);
             ++position_count;
         }
     }
@@ -6758,7 +6748,8 @@ i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject 
     i32 candidate_count = 0;
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
-        if (!Editable(NULL, ed_class, class_index) || ed_class->interface == NULL || (ed_class->flags & 8) == 0)
+        if (__builtin_expect(
+                !Editable(NULL, ed_class, class_index) || ed_class->interface == NULL || (ed_class->flags & 8) == 0, 0))
             continue;
         for (void *object = ed_class->interface->vtable->get_next_object(ed_class->interface, NULL); object != NULL;
              object = ed_class->interface->vtable->get_next_object(ed_class->interface, object)) {
@@ -6974,7 +6965,7 @@ i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, i32 filter
             if (nearest_class->FindMember(&member, nearest_object, 0x40, 1))
                 member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0);
         }
-        if (nearest_radius > radius) {
+        if (!(nearest_radius <= radius)) {
             nearest_class = NULL;
             nearest_object = NULL;
         }
@@ -7043,8 +7034,7 @@ i32 CursorTool::Process(EdInputContext &input) {
         }
         char text[128] __attribute__((aligned(16)));
         char name[128] __attribute__((aligned(16)));
-        if (!get_class_object_attribute(hover.ed_class, hover.object, hover.reference, 2, EdType_String, name,
-                                        sizeof(name))) {
+        if (!get_class_object_attribute(hover, 2, EdType_String, name, sizeof(name))) {
             theLevelEditor.AddInfoText(const_cast<char *>("object : no name"));
         } else {
             sprintf(text, "object : %s", name);
@@ -7072,17 +7062,14 @@ i32 CursorTool::Process(EdInputContext &input) {
 }
 
 __attribute__((force_align_arg_pointer)) void ClassObject::GetName(char *destination, i32 size) {
-    if (object == NULL) {
+    if (__builtin_expect(object == NULL, 0)) {
         NuStrNCpy(destination, "None", size);
         return;
     }
 
     char name[128];
-    EdMember member;
     i32 string_type = EdType_String;
-    if ((reference == NULL || !reference->GetAttributeData(object, 2, string_type, name, sizeof(name))) &&
-        (!ed_class->FindMember(&member, object, 2, 1) ||
-         !member.reference->GetAttributeData(member.object, 2, string_type, name, sizeof(name)))) {
+    if (!get_class_object_attribute(*this, 2, string_type, name, sizeof(name))) {
         NuStrCpy(name, "NoName");
     }
     sprintf(destination, "%s.%s", ed_class->name, name);
@@ -7139,7 +7126,7 @@ void PropertyTool::RenderMenu(PropertyMenu *property_menu) {
                     (static_cast<f32>(menu->y) + static_cast<f32>(menu->height) * 0.125f) / 448.0f, &start.xyz,
                     &end.xyz, NULL);
     ClassObject &object = property_menu->objects[0];
-    get_class_object_attribute(object.ed_class, object.object, object.reference, 8, EdType_VuVec, &end, 0);
+    get_class_object_attribute(object, 8, EdType_VuVec, &end, 0);
     EdDrawBegin(0);
     EdDrawLineSegment(start, end, static_cast<i32>(reinterpret_cast<usize>(&selected_attr)));
     EdDrawEnd();
@@ -7177,14 +7164,8 @@ PropertyMenu *PropertyTool::CreatePropertyMenu(ClassObject &object) {
     char title[128];
 
     i32 name_type = EdType_String;
-    if (__builtin_expect(object.reference == NULL ||
-                             !object.reference->GetAttributeData(object.object, 2, name_type, name, sizeof(name)),
-                         1)) {
-        EdMember member;
-        if (!object.ed_class->FindMember(&member, object.object, 2, 1) ||
-            !member.reference->GetAttributeData(member.object, 2, name_type, name, sizeof(name)))
-            NuStrCpy(name, const_cast<char *>("no name"));
-    }
+    if (!get_class_object_attribute(object, 2, name_type, name, sizeof(name)))
+        NuStrCpy(name, const_cast<char *>("no name"));
     sprintf(title, "%s - %s", object.ed_class->name, name);
     eduimenu_s *menu = eduiMenuCreate(metrics.x, metrics.y, metrics.width, metrics.height,
                                       reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), NULL, title);
@@ -7277,7 +7258,7 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
     while (active_menu != NULL) {
         PropertyMenu *menu = active_menu;
         PropertyMenu *next = menu->next;
-        if (next != NULL) {
+        if (__builtin_expect(next != NULL, 0)) {
             next->previous = menu->previous;
         } else {
             last_menu = menu->previous;
@@ -7345,7 +7326,7 @@ void ClassEditor::Process(EdInputContext &input) {
         if (menu != NULL)
             return;
     }
-    if (input.GetHold(13) != 0.0f)
+    if (__builtin_expect(input.GetHold(13) != 0.0f, 0))
         return;
     field_3c = 0xff808080;
     theLevelEditor.field_0x30 = 1;
@@ -7603,7 +7584,7 @@ void ClassEditor::Render() {
         }
     }
 
-    if (menu != NULL)
+    if (__builtin_expect(menu != NULL, 0))
         eduiMenuRender(menu);
 }
 
@@ -7681,7 +7662,7 @@ void EdRegistry::SerialiseObjects(EdStream &stream, EdRegistry *source_registry)
                 object = theRegistry.CreateObject(object_class->interface, NULL, 4, 0, 2);
             }
             object_class->SerialiseObject(stream, object, source_class, source_registry);
-            if (object != NULL)
+            if (__builtin_expect(object != NULL, 1))
                 theRegistry.NotifyCreateObject(object, object_class, NULL, 0, 0, 0);
         }
     };
@@ -7933,7 +7914,7 @@ void SceneObjectHelper::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
             *count_slot = NuGScnNumSpecials(scene);
             const usize bytes = *count_slot * sizeof(SceneObject);
             SceneObject *objects = NULL;
-            if (bytes < *theMemoryManager.end_cell - *theMemoryManager.cursor_cell) {
+            if (__builtin_expect(bytes < *theMemoryManager.end_cell - *theMemoryManager.cursor_cell, 0)) {
                 const usize aligned = ALIGN(*theMemoryManager.cursor_cell, 0x10);
                 *theMemoryManager.cursor_cell = aligned + bytes;
                 objects = reinterpret_cast<SceneObject *>(aligned);
@@ -8374,7 +8355,7 @@ void SplineObject::ReverseKnots() {
             knot->next->previous = knot->previous;
         else
             old.last = knot->previous;
-        if (knot->previous != NULL)
+        if (__builtin_expect(knot->previous != NULL, 1))
             knot->previous->next = knot->next;
         else
             old.first = knot->next;
@@ -8387,7 +8368,7 @@ void SplineObject::ReverseKnots() {
         if (knots.last != NULL)
             knots.last->next = knot;
         knots.last = knot;
-        if (knots.first == NULL)
+        if (__builtin_expect(knots.first == NULL, 1))
             knots.first = knot;
         ++knots.count;
     }
@@ -8396,12 +8377,16 @@ void SplineObject::ReverseKnots() {
 void SplineObject::Draw(i32, i32 colour_mode, i32 straight, float show_points) {
     i32 colour = colour_mode == 0 ? static_cast<i32>(0x80808080) : static_cast<i32>(0x80008080);
     EdDrawBegin(0);
-    for (SplineKnot *knot = knots.first; knot != NULL && knot->next != NULL; knot = knot->next) {
-        SplineKnot *next = knot->next;
-        if (straight != 0 || step < 0.1f)
-            EdDrawLineSegment(knot->position, next->position, colour);
-        else
-            DrawBezierLine(knot->position, knot->out_tangent, next->position, next->in_tangent, edLevel3dMtl, colour);
+    SplineKnot *knot = knots.first;
+    if (knot != NULL) {
+        for (; knot->next != NULL; knot = knot->next) {
+            SplineKnot *next = knot->next;
+            if (straight != 0 || step < 0.1f)
+                EdDrawLineSegment(knot->position, next->position, colour);
+            else
+                DrawBezierLine(knot->position, knot->out_tangent, next->position, next->in_tangent, edLevel3dMtl,
+                               colour);
+        }
     }
     u32 show_points_bits;
     __builtin_memcpy(&show_points_bits, &show_points, sizeof(show_points_bits));
@@ -8710,7 +8695,7 @@ void LevelEditor::ProcessEvenWhenPaused(ThingProcessData *data) {
         ++editable_scene_count;
     if (scenes[5].editable)
         ++editable_scene_count;
-    if (scenes[6].editable)
+    if (__builtin_expect(scenes[6].editable, 1))
         ++editable_scene_count;
     if (scenes[7].editable)
         ++editable_scene_count;
@@ -9013,7 +8998,7 @@ void SplineObject::GenBezierPoints() {
         distance -= length;
         start = end;
         end = end->next;
-        if (closing)
+        if (__builtin_expect(closing, 0))
             return;
         if (end == NULL && closed != 0) {
             closing = 1;
@@ -9166,7 +9151,7 @@ void SplineHelper::cbEdSplineSmoothKnot(eduimenu_s *, eduiitem_s *, u32) {
         i32 index = 0;
         while (index < changed_count && changed_splines[index] != knot->spline)
             ++index;
-        if (index == changed_count)
+        if (__builtin_expect(index == changed_count, 0))
             changed_splines[changed_count++] = knot->spline;
     }
     for (i32 index = 0; index < changed_count; ++index)
@@ -9206,7 +9191,7 @@ void *KnotHelper::CreateObject(void *, i32, i32) {
         spline = new (theMemoryManager.AllocPool(sizeof(SplineObject), 1)) SplineObject();
         theClassEditor.MakeUniqueName("NewSpline", spline->name, sizeof(spline->name));
         spline->previous = theSplineHelper.last_object;
-        if (theSplineHelper.last_object != NULL)
+        if (__builtin_expect(theSplineHelper.last_object != NULL, 0))
             theSplineHelper.last_object->next = spline;
         else
             theSplineHelper.first_object = spline;
@@ -9325,7 +9310,7 @@ i32 EdManipulator::Process(EdInputContext &input, ClassObjectList &selected) {
     if (input.GetHold(14) != 0.0f)
         Scale += step * input.delta_time;
     if (input.GetHold(15) != 0.0f) {
-        if (!(Scale <= 0.1f))
+        if (Scale > 0.1f)
             Scale -= step * input.delta_time;
         else
             Scale = 0.1f;
@@ -9440,9 +9425,10 @@ f32 KnotHelper::DistanceToObject(VuVec &origin, VuVec &direction, void *object, 
         nearest = out_tangent_ref;
     }
     distance -= 0.25f * EdManipulator::Scale;
+    distance = distance < 0.0f ? 0.0f : distance;
     if (reference != NULL)
         *reference = nearest;
-    return distance < 0.0f ? 0.0f : distance;
+    return distance;
 }
 
 // The original realigns the stack for its local locator vectors.
@@ -9794,7 +9780,7 @@ i32 LineToSphereIntersection(VuVec &origin, VuVec &direction, VuVec &center, f32
     f32 origin_center = (origin.x * center.x + origin.y * center.y) + origin.z * center.z;
     f32 c = ((center_squared + origin_squared) - (origin_center + origin_center)) - radius * radius;
     f32 discriminant = b * b - (4.0f * a) * c;
-    if (discriminant < 0.0f)
+    if (!(discriminant >= 0.0f))
         return 0;
     f32 far_root = NuFsqrt(discriminant);
     f32 denominator = a + a;
@@ -9805,7 +9791,7 @@ i32 LineToSphereIntersection(VuVec &origin, VuVec &direction, VuVec &center, f32
         *far_intersection =
             VuVec(origin.x + direction.x * far_t, origin.y + direction.y * far_t, origin.z + direction.z * far_t, 0.0f);
     }
-    if (near_intersection != NULL) {
+    if (__builtin_expect(near_intersection != NULL, 1)) {
         *near_intersection = VuVec(origin.x + direction.x * near_t, origin.y + direction.y * near_t,
                                    origin.z + direction.z * near_t, 0.0f);
     }
@@ -9873,7 +9859,7 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
                 CHECK_ROTATOR(far_point, normals[candidate], candidate + 1);
                 CHECK_ROTATOR(near_point, normals[candidate], candidate + 1);
             }
-            if (axis != 0) {
+            if (__builtin_expect(axis != 0, 1)) {
                 f32 x = chosen.x - center.x;
                 f32 y = chosen.y - center.y;
                 f32 z = chosen.z - center.z;

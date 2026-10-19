@@ -34,6 +34,7 @@
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/numtx_inline.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nurndr.h"
@@ -355,7 +356,7 @@ static GIZMOPICKUP_s *GizmoPickups_CollideList(GameObject_s *object, GIZMOPICKUP
         f32 radius_y = scale * (coin_magnet ? type->shadow_extent_z : type->shadow_radius_z);
         if (object->apiobj.collision_min.x > pickup->position.x + radius_x ||
             pickup->position.x - radius_x > object->apiobj.collision_max.x ||
-            object->apiobj.collision_min.z > pickup->position.z + radius_x ||
+            !(object->apiobj.collision_min.z <= pickup->position.z + radius_x) ||
             pickup->position.z - radius_x > object->apiobj.collision_max.z) {
             continue;
         }
@@ -367,7 +368,7 @@ static GIZMOPICKUP_s *GizmoPickups_CollideList(GameObject_s *object, GIZMOPICKUP
             if (!(dx * dx + dz * dz >= radius * radius)) {
                 return pickup;
             }
-        } else if (!(object->apiobj.collision_min.y > pickup->position.y + radius_y) &&
+        } else if (object->apiobj.collision_min.y <= pickup->position.y + radius_y &&
                    !(pickup->position.y - radius_y > object->apiobj.collision_max.y)) {
             if (object->field_0xcc0 == NULL) {
                 if (SphereSphereOverlapScaleY(&pickup->position, radius_x, radius_y, &object->apiobj.collision_position,
@@ -600,27 +601,15 @@ static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 
             if ((type->flags & GIZMOPICKUP_TYPE_DRAW_TUMBLING) != 0) {
                 const u16 y_rotation = pickup.draw_rotation;
                 const i32 x_rotation = static_cast<i32>(NuTrigTable[y_rotation & 0x7fff] * 1820.0f);
-                const f32 cos_x = NU_COS_LUT(x_rotation);
-                const f32 sin_x = NU_SIN_LUT(x_rotation);
-                const f32 cos_y = NU_COS_LUT(y_rotation);
-                const f32 sin_y = NU_SIN_LUT(y_rotation);
-
-                matrix.m00 = cos_y + sin_y * 0.0f;
-                matrix.m01 = 0.0f;
-                matrix.m02 = cos_y * 0.0f - sin_y;
-                matrix.m03 = 0.0f;
-                matrix.m11 = cos_x;
-                matrix.m10 = sin_x * sin_y + cos_y * 0.0f;
-                matrix.m12 = sin_x * cos_y - sin_y * 0.0f;
-                matrix.m13 = 0.0f;
-                matrix.m21 = -sin_x;
-                matrix.m20 = sin_y * cos_x + cos_y * 0.0f;
-                matrix.m22 = cos_y * cos_x - sin_y * 0.0f;
-                matrix.m23 = 0.0f;
-                matrix.m30 = sin_y * 0.0f + cos_y * 0.0f;
-                matrix.m31 = 0.0f;
-                matrix.m32 = cos_y * 0.0f - sin_y * 0.0f;
+                // Inline NuMtxSetRotationX followed by NuMtxRotateY.
+                matrix.m11 = matrix.m22 = NU_COS_LUT(x_rotation);
+                matrix.m12 = NU_SIN_LUT(x_rotation);
+                matrix.m21 = -matrix.m12;
+                matrix.m00 = 1.0f;
+                matrix.m01 = matrix.m02 = matrix.m03 = matrix.m23 = matrix.m10 = matrix.m20 = matrix.m13 = matrix.m30 =
+                    matrix.m31 = matrix.m32 = 0.0f;
                 matrix.m33 = 1.0f;
+                NuMtxRotateYInline(&matrix, y_rotation);
                 NuMtxTranslate(&matrix, &pickup.position);
             } else if ((type->flags & GIZMOPICKUP_TYPE_DRAW_Y_ROTATION) != 0) {
                 const i32 y_rotation = pickup.draw_rotation;
@@ -670,7 +659,7 @@ static void GizmoPickups_DrawList(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 
         }
         const f32 distance_squared = camera_x * camera_x + camera_z * camera_z;
         if (VehicleArea == 0 && pickup.floor_height != 2000000.0f && maximum_distance_squared > 0.0f &&
-            distance_squared < shadow_distance_squared) {
+            !(distance_squared >= shadow_distance_squared)) {
             const f32 distance_ratio = distance_squared / shadow_distance_squared;
             NUVEC shadow_position = pickup.position;
             shadow_position.y = pickup.floor_height + 0.005f;
@@ -809,7 +798,7 @@ static i32 GizmoPickups_Load(void *world_ptr, void *) {
         AreaPickupScale = 1.0f;
     }
 
-    if (version < 6 && pickup_sys->draw_distance < 10.0f) {
+    if (version < 6 && !(pickup_sys->draw_distance >= 10.0f)) {
         pickup_sys->draw_distance = 10.0f;
     }
     if (version <= 6 && world->level_sub_id >= 0 && world->level_sub_id < AREACOUNT &&
@@ -1037,7 +1026,7 @@ void MiniKitDetector(nuvec_s *position) {
 static void GizmoPickups_UpdateListBody(WORLDINFO *world, GIZMOPICKUP_s *pickups, i32 count, i32 play_nearby_sfx) {
 
     const bool detector_phase =
-        play_nearby_sfx && FadeSys.fade == 0.0f && NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
+        play_nearby_sfx && FadeSys.fade == 0.0f && !(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) >= 0.1f);
     const bool minikit_detector = detector_phase && Cheats_CheckFlags(0x200) != 0;
     const bool red_brick_detector = detector_phase && Cheats_CheckFlags(0x40000) != 0;
     NUVEC *nearby_pickup = NULL;

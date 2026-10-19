@@ -2565,7 +2565,6 @@ extern "C" {
     extern char edbits_level_save_directory[256];
     extern char edbits_level_save_name[256];
     extern char edbits_level_save_extension[256];
-    void eduiCreateMessageMenu(eduimenu_s *, char *, i32);
     extern eduimenu_s *edrtl_burn_main_menu;
     eduimenu_s *edrtl_burn_defaults_menu;
     eduimenu_s *edrtl_burn_radius_menu;
@@ -2680,17 +2679,19 @@ static void edrtlBurnTransitionsMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edrtl_burn_transitions_menu =
         eduiMenuCreate(70, 70, 250, 300, ed_fnt, edrtlCancelBurnTransitionsMenu, "Transitions");
     if (edrtl_edit_burnset != NULL && edrtl_burn_transitions_menu != NULL) {
-        burnset_s *set = edrtl_edit_burnset;
 #define BURN_TRANSITION_SLIDER(callback, minimum, maximum, value, label)                                               \
     eduiMenuAddItem(edrtl_burn_transitions_menu,                                                                       \
                     eduiItemSliderCreate(0, edblack, 0, callback, minimum, maximum, value, label))
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutNormalRate, 0.01f, 4.99f, set->field_b8, "Normal Rate");
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootRate, 0.01f, 4.99f, set->field_bc, "Overshoot Rate");
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootCutin, 0.0f, 2.0f, set->field_c0, "Overshoot Cutin");
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootAmount, 0.0f, 2.0f, set->field_c4, "Overshoot Amount");
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOverbrightCap, 0.0f, 2.0f, set->field_c8,
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutNormalRate, 0.01f, 4.99f, edrtl_edit_burnset->field_b8, "Normal Rate");
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootRate, 0.01f, 4.99f, edrtl_edit_burnset->field_bc,
+                               "Overshoot Rate");
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootCutin, 0.0f, 2.0f, edrtl_edit_burnset->field_c0,
+                               "Overshoot Cutin");
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOvershootAmount, 0.0f, 2.0f, edrtl_edit_burnset->field_c4,
+                               "Overshoot Amount");
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOverbrightCap, 0.0f, 2.0f, edrtl_edit_burnset->field_c8,
                                "edrtl_edit_burnset->Overbright Cap");
-        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOverdarkCap, 0.0f, 2.0f, set->field_cc,
+        BURN_TRANSITION_SLIDER(edrtlSetBurnoutOverdarkCap, 0.0f, 2.0f, edrtl_edit_burnset->field_cc,
                                "edrtl_edit_burnset->Overdark Cap");
 #undef BURN_TRANSITION_SLIDER
         eduiMenuAttach(parent, edrtl_burn_transitions_menu);
@@ -3699,12 +3700,13 @@ extern "C" void edrtlDrawLightEx(i32 index, i32 style) {
     // Three distinct reference switch arms render the same radius pair.
 #define EDRTL_RADIUS_PAIR()                                                                                            \
     RndrOSphere(&curr_set->lights[index].position, curr_set->lights[index].inner_radius, inner_colour, numsegs,        \
-                static_cast<i32>(reinterpret_cast<uintptr_t>(mtls[rtl_zoff ? 1 : 0])));                                \
+                mtls[rtl_zoff ? 1 : 0]);                                                                               \
     if (curr_set->lights[index].outer_radius > curr_set->lights[index].inner_radius)                                   \
         RndrOSphere(&curr_set->lights[index].position, curr_set->lights[index].outer_radius, outer_colour, numsegs,    \
-                    static_cast<i32>(reinterpret_cast<uintptr_t>(mtls[rtl_zoff ? 1 : 0])));                            \
+                    mtls[rtl_zoff ? 1 : 0]);                                                                           \
     if (&curr_set->lights[index] == curr_rtl)                                                                          \
-    RndrOSquare(&curr_set->lights[index].position, curr_set->lights[index].outer_radius, -1)
+    RndrOSquare(&curr_set->lights[index].position, curr_set->lights[index].outer_radius, -1,                           \
+                mtls[rtl_zoff ? 1 : 0])
     switch (curr_set->lights[index].type) {
         case 1:
             EDRTL_RADIUS_PAIR();
@@ -3724,10 +3726,9 @@ extern "C" void edrtlDrawLightEx(i32 index, i32 style) {
             NuVecMtxRotate(&line[1].position, &line[1].position, &global_camera.mtx);
             NuVecSub(&line[1].position, &line[0].position, &line[1].position);
             edrtlRndrLine3d(line, NULL, NULL);
-            RndrOSphere(&curr_set->lights[index].position, 2.0f, colour, numsegs,
-                        static_cast<i32>(reinterpret_cast<uintptr_t>(mtls[rtl_zoff ? 1 : 0])));
+            RndrOSphere(&curr_set->lights[index].position, 2.0f, colour, numsegs, mtls[rtl_zoff ? 1 : 0]);
             if (&curr_set->lights[index] == curr_rtl)
-                RndrOSquare(&curr_set->lights[index].position, 2.0f, -1);
+                RndrOSquare(&curr_set->lights[index].position, 2.0f, -1, mtls[rtl_zoff ? 1 : 0]);
             return;
         case 2:
         case 3:
@@ -3764,7 +3765,7 @@ extern "C" void edrtlDrawFog(EDRTLFOG_s *fog) {
             default:
                 break;
             case 1:
-                RndrOSphere(&fog->position, fog->radius, colour, numsegs, 0);
+                RndrOSphere(&fog->position, fog->radius, colour, numsegs, NULL);
                 break;
         }
     }
@@ -3792,11 +3793,11 @@ static void edrtlDrawBurnouts() {
         }
         if (edrtl_edit_burnset->burnouts[index].active) {
             RndrOSphere(&edrtl_edit_burnset->burnouts[index].position, edrtl_edit_burnset->burnouts[index].field_1c,
-                        colour, segments, 0);
+                        colour, segments, NULL);
             if (edrtl_edit_burnset->burnouts[index].field_20 > 0.0f) {
                 RndrOSphere(&edrtl_edit_burnset->burnouts[index].position,
                             edrtl_edit_burnset->burnouts[index].field_1c + edrtl_edit_burnset->burnouts[index].field_20,
-                            colour, segments, 0);
+                            colour, segments, NULL);
             }
         }
     }

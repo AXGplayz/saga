@@ -495,7 +495,7 @@ extern "C" {
                     nearest = i;
                 }
             }
-            if (nearest_distance > 0.04f) {
+            if (!(nearest_distance <= 0.04f)) {
                 memset(data->touch_events, 0, sizeof(data->touch_events));
                 data->touch_count = 0;
                 memset(used_touch_IDs, 0, sizeof(used_touch_IDs));
@@ -612,9 +612,9 @@ void NuTouchInputButton::Update(NuInputTouchData const *data) {
     u32 count = data->touch_count;
     pressed = false;
     for (u32 i = 0; i < count; ++i) {
-        u8 active = data->touch_events[i].unknown_00;
-        u8 released = data->touch_events[i].unknown_01;
-        u8 started = data->touch_events[i].unknown_02;
+        bool active = data->touch_events[i].unknown_00;
+        bool released = data->touch_events[i].unknown_01;
+        bool started = data->touch_events[i].unknown_02;
         float ty = data->touch_events[i].unknown_08;
         float tx = data->touch_events[i].unknown_04;
         u32 touch_id = data->touch_events[i].unknown_14;
@@ -680,12 +680,12 @@ void NuTouchInputStick::Update(NuInputTouchData const *data) {
             float magnitude = distance / height;
             float sx = NU_SIN_LUT(angle);
             float sy = NU_COS_LUT(angle);
-            magnitude = magnitude < 1.0f ? (magnitude < 0.0f ? 0.0f : magnitude) : 1.0f;
+            magnitude = MAX(0.0f, MIN(magnitude, 1.0f));
             magnitude = (float)(magnitude * 1.4) * 3.0f;
             sx *= magnitude;
             sy *= magnitude;
-            stick_x = sx < 1.0f ? (sx > -1.0f ? sx : -1.0f) : 1.0f;
-            stick_y = sy < 1.0f ? (sy > -1.0f ? sy : -1.0f) : 1.0f;
+            stick_x = MAX(-1.0f, MIN(sx, 1.0f));
+            stick_y = MAX(-1.0f, MIN(sy, 1.0f));
             return;
         }
     }

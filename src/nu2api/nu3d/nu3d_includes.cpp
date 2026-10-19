@@ -35,6 +35,7 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurendercontext.h"
+#include "nu2api/nu3d/nurendercontext_inline.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nushader.h"
 #include "nu2api/nu3d/nupostshaderparams.h"
@@ -456,7 +457,7 @@ nushaderprogram_s *NuPostFilterGen::blurGuardProgram;
 
 static inline void PostRegisterPort(NuPostDataPort &port, NuDataPortManager &manager, const char *name) {
     if (port.index >= 0)
-        --port.manager->entries[port.index].references;
+        --port.manager->getEntry(port.index).references;
     port.manager = &manager;
     port.index = manager.registerPort(name, NULL);
 }
@@ -552,8 +553,9 @@ i32 nutexanim_usepakfile = 1;
 static i32 NuTexAnimLabelIndex(char *name, char (*table)[21], i32 *count) {
     if (strlen(name) > 20)
         name[20] = '\0';
+    char *labels = &table[0][0];
     for (i32 i = 0; i < *count; ++i) {
-        if (NuStrICmp(table[i], name) == 0)
+        if (NuStrICmp(labels + i * 21, name) == 0)
             return i;
     }
     NuStrCpy(table[(*count)++], name);
@@ -727,7 +729,7 @@ static NUFRUSTRUM *copyFrustrum(NUFRUSTRUM *source, i16 room_id) {
     return copy;
 }
 
-static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth);
+static void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth);
 static NUVEC *override_campos;
 static NUPLANE near_clip_plane;
 
@@ -3474,7 +3476,7 @@ static i32 CreateTimeBar(VARIPTR *buffer, i32 *colours, i32 slot_count) {
         NuTimeBar_SetList[list_index] = timebar;
     }
 
-    if (colours != NULL) {
+    if (__builtin_expect(colours != NULL, 0)) {
         std::memcpy(timebar->colours, colours, static_cast<usize>(slot_count) * sizeof(i32));
     } else {
         std::memcpy(timebar->colours, NuTimeBar_DefaultColours, static_cast<usize>(slot_count) * sizeof(i32));
@@ -3984,9 +3986,11 @@ extern "C" void NuPostEffectRender(nuframebuffer_s *output) {
     NuPostFilterGen::portDepthBuffer.set(&proxyDepthBuffer);
     NuPostFilterGen *filters[5];
     i32 count = 0;
-    if (speedBlurFilter != NULL && speedBlurFilter->isEnabled()) {
-        filters[count++] = speedBlurFilter;
-        NuFramebufferAttachTex2D(speedBlurFilter->getInputFbo(), 0, color, 0);
+    if (speedBlurFilter != NULL) {
+        if (speedBlurFilter->isEnabled()) {
+            filters[count++] = speedBlurFilter;
+            NuFramebufferAttachTex2D(speedBlurFilter->getInputFbo(), 0, color, 0);
+        }
     }
     if (deferredFilter != NULL) {
         if (deferredFilter->isEnabled()) {
@@ -3994,9 +3998,11 @@ extern "C" void NuPostEffectRender(nuframebuffer_s *output) {
             NuFramebufferAttachTex2D(deferredFilter->getInputFbo(), 0, color, 0);
         }
     }
-    if (mainFilter != NULL && mainFilter->isEnabled()) {
-        filters[count++] = mainFilter;
-        NuFramebufferAttachTex2D(mainFilter->getInputFbo(), 0, color, 0);
+    if (mainFilter != NULL) {
+        if (mainFilter->isEnabled()) {
+            filters[count++] = mainFilter;
+            NuFramebufferAttachTex2D(mainFilter->getInputFbo(), 0, color, 0);
+        }
     }
     if (motionFilter != NULL) {
         if (motionFilter->isEnabled()) {
@@ -4742,12 +4748,14 @@ bool OccluderSet::IsOccludedSphere(nuvec_s const *center, float radius) {
         NUVEC4 *v = record.transformed;
         float winding = (v[1].y - v[0].y) * (v[2].x - v[0].x) - (v[1].x - v[0].x) * (v[2].y - v[0].y);
         NUVEC4 *start = &v[(!(winding > 0.0f)) * 3];
-        NUVEC4 *end = &v[(!(winding > 0.0f)) + 1];
+        NUVEC4 *end = &v[(winding <= 0.0f) + 1];
         normal.y = -(end->x - start->x);
         normal.x = end->y - start->y;
         normal.z = normal.w = 0.0f;
         NuVecNorm(reinterpret_cast<NUVEC *>(&normal), reinterpret_cast<NUVEC *>(&normal));
-        if ((projected.x - start->x) * normal.x + (projected.y - start->y) * normal.y + 0.0f - screen_radius < 0.0f)
+        if (__builtin_expect(
+                (projected.x - start->x) * normal.x + (projected.y - start->y) * normal.y + 0.0f - screen_radius < 0.0f,
+                0))
             continue;
         start = &v[(!(winding > 0.0f)) + 1];
         end = &v[(winding > 0.0f) + 1];
@@ -4809,7 +4817,7 @@ bool OccluderSet::IsOccludedOBB(nuvec_s const *minimum, nuvec_s const *maximum, 
     }
     i32 limit = static_cast<i32>(count) < 100 ? static_cast<i32>(count) : 100;
     for (i32 i = 0; i != limit; ++i) {
-        if (indices[i] == 0xffffffffu)
+        if (__builtin_expect(indices[i] == 0xffffffffu, 0))
             continue;
         OccluderRecord &record = occluders[indices[i]];
         if (record.depth > min_depth - 2.0f)
@@ -4820,7 +4828,7 @@ bool OccluderSet::IsOccludedOBB(nuvec_s const *minimum, nuvec_s const *maximum, 
         float winding = (v[2].x - v[0].x) * (v[1].y - v[0].y) - (v[1].x - v[0].x) * (v[2].y - v[0].y);
         bool inside = true;
         for (i32 edge = 0; edge < 4 && inside; ++edge) {
-            i32 start = winding > 0.0f ? edge : 3 - edge;
+            i32 start = !(winding <= 0.0f) ? edge : 3 - edge;
             i32 end = winding > 0.0f ? (edge + 1) & 3 : (6 - edge) & 3;
             NUVEC4 normal;
             normal.y = -(v[end].x - v[start].x);
@@ -4830,13 +4838,13 @@ bool OccluderSet::IsOccludedOBB(nuvec_s const *minimum, nuvec_s const *maximum, 
             for (u32 corner = 0; corner < 8; ++corner) {
                 float distance =
                     (corners[corner].x - v[start].x) * normal.x + (corners[corner].y - v[start].y) * normal.y + 0.0f;
-                if (distance < 0.01f) {
+                if (__builtin_expect(distance < 0.01f, 0)) {
                     inside = false;
                     break;
                 }
             }
         }
-        if (inside)
+        if (__builtin_expect(!!(inside), 1))
             return true;
     }
     return false;
@@ -4950,11 +4958,11 @@ void OccluderSet::RenderOccluders(bool depth_only) const {
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[3].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[3].z;
                 g_NuPrim_StreamBufferPtr->addr += 24;
-                if (!g_NuPrim_NeedsOverbrightening)
+                if (g_NuPrim_NeedsOverbrightening)
+                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
+                else
                     *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) =
                         ((colour >> 1) & 0x007f7f7f) | 0xff000000u;
-                else
-                    *reinterpret_cast<i32 *>(g_NuPrim_StreamBufferPtr->addr + 12) = colour;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->x = record->vertices[0].x;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->y = record->vertices[0].y;
                 reinterpret_cast<NUVEC *>(g_NuPrim_StreamBufferPtr->addr)->z = record->vertices[0].z;
@@ -5304,12 +5312,18 @@ extern "C" {
     void NuDynamicLightTestShadowExtrusionsExtent(NuDynamicLight *light, const NUVEC *center, const NUVEC *extent) {
         VuVec minimum;
         VuVec maximum;
-        minimum.x = center->x - extent->x;
-        minimum.y = center->y - extent->y;
-        minimum.z = center->z - extent->z;
-        maximum.x = center->x + extent->x;
-        maximum.y = center->y + extent->y;
-        maximum.z = center->z + extent->z;
+        const f32 extent_x = extent->x;
+        const f32 extent_y = extent->y;
+        const f32 extent_z = extent->z;
+        const f32 center_x = center->x;
+        const f32 center_y = center->y;
+        const f32 center_z = center->z;
+        minimum.x = center_x - extent_x;
+        minimum.y = center_y - extent_y;
+        minimum.z = center_z - extent_z;
+        maximum.x = extent_x + center_x;
+        maximum.y = extent_y + center_y;
+        maximum.z = extent_z + center_z;
         light->testShadowExtrusions(minimum, maximum);
     }
 
@@ -5901,7 +5915,9 @@ extern "C" {
 
         if (isBitCountTable == 0)
             buildBitCountTable();
-        nuanimdata_s *data = static_cast<nuanimdata_s *>(NuLegacyRelocatePointer(animation, delta));
+        if (animation != NULL)
+            animation = reinterpret_cast<void *>(reinterpret_cast<usize>(animation) + delta);
+        nuanimdata_s *data = static_cast<nuanimdata_s *>(animation);
         data->node_name = static_cast<char *>(NuLegacyRelocatePointer(data->node_name, delta));
         data->chunks = static_cast<nuanimdatachunk_s **>(NuLegacyRelocatePointer(data->chunks, delta));
         if (data->chunks != NULL) {
@@ -6764,15 +6780,15 @@ extern "C" void *NuAnimData2Relocate(void **data, VARIPTR *buf) {
     }
 
     buf->addr = ALIGN(buf->addr, 16);
-    u32 *header = static_cast<u32 *>(source);
-    memcpy(buf->void_ptr, source, header[0]);
+    memcpy(buf->void_ptr, *data, *static_cast<u32 *>(*data));
     *data = buf->void_ptr;
     buf->addr += *static_cast<u32 *>(*data);
-    header = static_cast<u32 *>(*data);
+    u32 *header = static_cast<u32 *>(*data);
     header[2] = reinterpret_cast<usize>(
         NuAnimData2FixPtrs(reinterpret_cast<void *>(static_cast<usize>(header[2])),
                            reinterpret_cast<usize>(header) - static_cast<usize>(header[1]), 0, 0));
-    header[1] = reinterpret_cast<usize>(*data);
+    header = static_cast<u32 *>(*data);
+    header[1] = reinterpret_cast<usize>(header);
     return reinterpret_cast<void *>(static_cast<usize>(header[2]));
 }
 
@@ -7320,13 +7336,13 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Quat3(ani3_animh
         f32 key = (frame - anim->first_frame) * static_cast<f32>(last) / static_cast<f32>(anim->frame_count - 1);
         key = key < 0.0f ? 0.0f : key;
         i32 whole;
-        if (static_cast<f32>(last) <= key) {
+        if (!(static_cast<f32>(last) <= key)) {
+            whole = static_cast<i32>(key);
+            fraction = key - static_cast<f32>(whole);
+        } else {
             const f32 final_key = static_cast<f32>(last);
             whole = static_cast<i32>(final_key);
             fraction = final_key - static_cast<f32>(whole);
-        } else {
-            whole = static_cast<i32>(key);
-            fraction = key - static_cast<f32>(whole);
         }
         quarter = static_cast<u32>(whole) & 3;
         key_offset = (whole / 4) * key_stride;
@@ -7427,7 +7443,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_anim
     } else {
         const f32 last_key = static_cast<f32>(anim->key_count - 1);
         f32 key = (frame - anim->first_frame) * last_key / static_cast<f32>(anim->frame_count - 1);
-        if (key < 0.0f) {
+        if (!(key >= 0.0f)) {
             key = 0.0f;
         }
         i32 whole_key;
@@ -7918,7 +7934,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3W(ani
     u8 *keys = anim->keys + (whole / 4) * key_stride;
     const u16 *constants = reinterpret_cast<const u16 *>(anim->constants);
     const i32 count = joint_count < anim->node_count ? joint_count : anim->node_count;
-    if (__builtin_expect(first_joint != 0, 1))
+    if (first_joint != 0)
         root_translation = NULL;
     const u8 *first_flags = node_flags + first_joint;
     for (const u8 *skip_flags = node_flags; skip_flags < first_flags; ++skip_flags) {
@@ -9815,33 +9831,33 @@ extern "C" {
 }
 
 __attribute__((optimize("O2"))) i32 UnicodeToIndexFast(vucharidx_s *map, i32 count, u16 unicode) {
-    if (count <= 0 || map[count - 1].unicode < unicode)
-        return -1;
-    if (__builtin_expect(count == 1, 0))
-        return map[0].unicode == unicode ? map[0].index : -1;
+    i32 index = -1;
 
-    i32 low = 0;
-    i32 high = count - 1;
-    i32 middle = count / 2;
-    u16 middle_unicode = map[middle].unicode;
-    while (middle_unicode != unicode) {
-        if (__builtin_expect(low + 1 == high, 0)) {
-            if (__builtin_expect(map[high].unicode == unicode, 1))
-                return map[high].index;
-            if (map[low].unicode == unicode)
-                return map[low].index;
-            return -1;
+    if (map[count - 1].unicode >= unicode) {
+        i32 low = 0;
+        i32 high = count - 1;
+        i32 middle = count / 2;
+        while (map[middle].unicode != unicode) {
+            if (low + 1 == high) {
+                if (map[high].unicode == unicode)
+                    return map[high].index;
+                if (map[low].unicode == unicode)
+                    return map[low].index;
+                return -1;
+            }
+            if (unicode < map[middle].unicode) {
+                high = middle;
+                middle = (low + middle) >> 1;
+            } else if (unicode > map[middle].unicode) {
+                low = middle;
+                middle = (high + middle) >> 1;
+            } else if (high == low) {
+                return -1;
+            }
         }
-        if (!(middle_unicode > unicode)) {
-            low = middle;
-            middle = (high + middle) >> 1;
-        } else {
-            high = middle;
-            middle = (low + middle) >> 1;
-        }
-        middle_unicode = map[middle].unicode;
+        index = map[middle].index;
     }
-    return map[middle].index;
+    return index;
 }
 
 u16 NuQFntEncodeUnicodeChar(NUQFNT *font, u16 character) {
@@ -10437,6 +10453,9 @@ extern "C" void NuTexAnimProgAssembleEnd(nutexanimprog_s *program) {
                 index += 3;
                 break;
             case 9:
+                program->instructions[index + 1] = nta_labels[program->instructions[index + 1]];
+                index += 2;
+                break;
             case 10:
                 program->instructions[index + 1] = nta_labels[program->instructions[index + 1]];
                 index += 2;
@@ -10839,9 +10858,9 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
 }
 
 extern "C" void NuTexAnimSetSignals(u32 signals) {
-    const u32 previous_signals = nta_sig_old;
-    nta_sig_on = ~previous_signals & signals;
-    nta_sig_off = (previous_signals | signals) ^ signals;
+    const u32 combined = nta_sig_old | signals;
+    nta_sig_on = ~nta_sig_old & signals;
+    nta_sig_off = combined ^ signals;
     nta_sig_old = signals;
 }
 
@@ -11281,84 +11300,83 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
 
     void **NuHGobjEvalDwaBlend2(i32 render_count, i16 *render_indices, nuanimdata2_s *animation_a, f32 frame_a,
                                 nuanimdata2_s *animation_b, f32 frame_b, f32 blend) {
-        if ((animation_a == NULL && animation_b == NULL) || render_count == 0) {
-            return NULL;
-        }
-
-        nuanimtime_s time_a;
-        nuanimtime_s time_b;
-        if (animation_a != NULL) {
-            NuAnimData2CalcTime(animation_a, frame_a, &time_a);
-        }
-        if (animation_b != NULL) {
-            NuAnimData2CalcTime(animation_b, frame_b, &time_b);
-        }
-
-        usize clear_size;
-        if (render_indices == NULL) {
-            render_count = 1;
-            clear_size = 1;
-        } else {
-            clear_size = (static_cast<usize>(render_count) * sizeof(void *) + 0xf) >> 4;
-        }
-        f32 **weights_by_render = NuRndrCreateBlendShapeDWAPointers(render_count);
-        if (weights_by_render == NULL) {
-            return NULL;
-        }
-        memset(weights_by_render, 0, clear_size);
-
-        nuanimcurve2_s *curves_a = NULL;
-        u8 *types_a = NULL;
-        nuanimcurve2_s *curves_b = NULL;
-        u8 *types_b = NULL;
-        for (i32 render = 0; render < render_count; ++render) {
-            i32 node = render_indices == NULL ? 0 : render_indices[render];
-            if (node < 0) {
-                continue;
+        if (!(animation_a == NULL && animation_b == NULL) && render_count != 0) {
+            nuanimtime_s time_a;
+            nuanimtime_s time_b;
+            if (animation_a != NULL) {
+                NuAnimData2CalcTime(animation_a, frame_a, &time_a);
+            }
+            if (animation_b != NULL) {
+                NuAnimData2CalcTime(animation_b, frame_b, &time_b);
             }
 
-            i32 count_a;
-            if (animation_a != NULL && node < NuAnimNumNodes(animation_a)) {
-                count_a = static_cast<i16>(animation_a->curve_count);
-                curves_a = animation_a->curves + count_a * node;
-                types_a = animation_a->curve_types + count_a * node;
+            usize clear_size;
+            if (render_indices == NULL) {
+                render_count = 1;
+                clear_size = 1;
             } else {
-                count_a = 0;
+                clear_size = (static_cast<usize>(render_count) * sizeof(void *) + 0xf) >> 4;
             }
-
-            i32 count_b;
-            if (animation_b != NULL && node < NuAnimNumNodes(animation_b)) {
-                count_b = static_cast<i16>(animation_b->curve_count);
-                curves_b = animation_b->curves + count_b * node;
-                types_b = animation_b->curve_types + count_b * node;
-            } else {
-                count_b = 0;
+            f32 **weights_by_render = NuRndrCreateBlendShapeDWAPointers(render_count);
+            if (weights_by_render == NULL) {
+                return NULL;
             }
+            memset(weights_by_render, 0, clear_size);
 
-            i32 curve_count = count_a < count_b ? count_b : count_a;
-            f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
-            weights_by_render[render] = weights;
-            if (weights == NULL) {
-                continue;
-            }
-
-            nuanimcurve2_s *curve_a = curves_a;
-            nuanimcurve2_s *curve_b = curves_b;
-            for (i32 curve = 0; curve < curve_count; ++curve, ++curve_a, ++curve_b) {
-                f32 value_a = 0.0f;
-                if (curve < count_a) {
-                    const i32 type = static_cast<i8>(types_a[curve]);
-                    value_a = type == 0 ? curve_a->data.constant : NuAnimCurve2CalcValEx(curve_a, &time_a, type);
+            nuanimcurve2_s *curves_a = NULL;
+            u8 *types_a = NULL;
+            nuanimcurve2_s *curves_b = NULL;
+            u8 *types_b = NULL;
+            for (i32 render = 0; render < render_count; ++render) {
+                i32 node = render_indices == NULL ? 0 : render_indices[render];
+                if (node < 0) {
+                    continue;
                 }
-                f32 value_b = 0.0f;
-                if (curve < count_b) {
-                    const i32 type = static_cast<i8>(types_b[curve]);
-                    value_b = type == 0 ? curve_b->data.constant : NuAnimCurve2CalcValEx(curve_b, &time_b, type);
+
+                i32 count_a;
+                if (animation_a != NULL && node < NuAnimNumNodes(animation_a)) {
+                    count_a = static_cast<i16>(animation_a->curve_count);
+                    curves_a = animation_a->curves + count_a * node;
+                    types_a = animation_a->curve_types + count_a * node;
+                } else {
+                    count_a = 0;
                 }
-                weights[curve + 1] = value_b * blend + (1.0f - blend) * value_a;
+
+                i32 count_b;
+                if (animation_b != NULL && node < NuAnimNumNodes(animation_b)) {
+                    count_b = static_cast<i16>(animation_b->curve_count);
+                    curves_b = animation_b->curves + count_b * node;
+                    types_b = animation_b->curve_types + count_b * node;
+                } else {
+                    count_b = 0;
+                }
+
+                i32 curve_count = count_a < count_b ? count_b : count_a;
+                f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
+                weights_by_render[render] = weights;
+                if (weights == NULL) {
+                    continue;
+                }
+
+                nuanimcurve2_s *curve_a = curves_a;
+                nuanimcurve2_s *curve_b = curves_b;
+                for (i32 curve = 0; curve < curve_count; ++curve, ++curve_a, ++curve_b) {
+                    f32 value_a = 0.0f;
+                    if (curve < count_a) {
+                        const i32 type = static_cast<i8>(types_a[curve]);
+                        value_a = type == 0 ? curve_a->data.constant : NuAnimCurve2CalcValEx(curve_a, &time_a, type);
+                    }
+                    f32 value_b = 0.0f;
+                    if (curve < count_b) {
+                        const i32 type = static_cast<i8>(types_b[curve]);
+                        value_b = type == 0 ? curve_b->data.constant : NuAnimCurve2CalcValEx(curve_b, &time_b, type);
+                    }
+                    weights[curve + 1] = value_b * blend + (1.0f - blend) * value_a;
+                }
             }
+            return reinterpret_cast<void **>(weights_by_render);
         }
-        return reinterpret_cast<void **>(weights_by_render);
+        return NULL;
     }
 
     // Original @0x2ce450. Evaluate and blend two legacy animation chunks
@@ -11419,12 +11437,12 @@ void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a
                                  NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
     nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(scene);
     nuanimbuff_s buffer;
-    NUVEC root_a = {0.0f, 0.0f, 0.0f};
-    NUVEC root_b = {0.0f, 0.0f, 0.0f};
-    NUVEC root_translation = {0.0f, 0.0f, 0.0f};
+    NUVEC root_a;
+    NUVEC root_b;
 
     NuAnimBuffCreateScratch(&buffer);
-    const i32 use_quaternions = NuAnimGetUseQuatsFlag() | ((animation_a->format_flags | animation_b->format_flags) &
+    NUVEC root_translation = {0.0f, 0.0f, 0.0f};
+    const char use_quaternions = NuAnimGetUseQuatsFlag() | ((animation_a->format_flags | animation_b->format_flags) &
                                                            ANI3_FORMAT_QUATERNION_ROTATION);
     NuAnimPushSetUseQuatsFlag(use_quaternions);
     NuAnimBuffAccumulate_3(&buffer, animation_a, time_a, 1, 0.0f, 0, object, &root_a);
@@ -12158,7 +12176,7 @@ extern "C" {
         u8 results[8];
         if (far_clip == 0.0f)
             far_clip = global_camera.far_clip;
-        if (__builtin_expect(world_mtx == NULL || world_mtx == &numtx_identity, 0))
+        if (world_mtx == NULL || world_mtx == &numtx_identity)
             transform = vmtx;
         else
             NuMtxMul(&transform, world_mtx, &vmtx);
@@ -12571,10 +12589,15 @@ extern "C" {
 void OcclusionManager::AddOccluder(nuvec_s const *minimum, nuvec_s const *maximum, numtx_s const *matrix) {
     if (!initialized || !enabled)
         return;
-    NUVEC4 corners[8] = {{minimum->x, maximum->y, minimum->z, 1.0f}, {maximum->x, maximum->y, maximum->z, 1.0f},
-                         {maximum->x, minimum->y, maximum->z, 1.0f}, {minimum->x, minimum->y, minimum->z, 1.0f},
-                         {minimum->x, maximum->y, maximum->z, 1.0f}, {maximum->x, maximum->y, minimum->z, 1.0f},
-                         {maximum->x, minimum->y, minimum->z, 1.0f}, {minimum->x, minimum->y, maximum->z, 1.0f}};
+    const f32 min_x = minimum->x;
+    const f32 min_y = minimum->y;
+    const f32 min_z = minimum->z;
+    const f32 max_x = maximum->x;
+    const f32 max_y = maximum->y;
+    const f32 max_z = maximum->z;
+    NUVEC4 corners[8] = {{min_x, max_y, min_z, 1.0f}, {max_x, max_y, max_z, 1.0f}, {max_x, min_y, max_z, 1.0f},
+                         {min_x, min_y, min_z, 1.0f}, {min_x, max_y, max_z, 1.0f}, {max_x, max_y, min_z, 1.0f},
+                         {max_x, min_y, min_z, 1.0f}, {min_x, min_y, max_z, 1.0f}};
     for (u32 i = 0; i < 8; ++i) {
         NUVEC *vertex = reinterpret_cast<NUVEC *>(&corners[i]);
         NuVecMtxTransform(vertex, vertex, const_cast<NUMTX *>(matrix));
@@ -12711,8 +12734,8 @@ extern "C" {
             transform = vpc_vport_mtx;
         else
             NuMtxMulH(&transform, matrix, &vpc_vport_mtx);
-        for (; world < end; ++world, ++screen)
-            NuVecMtxTransformH(screen, world, &transform);
+        while (world < end)
+            NuVecMtxTransformH(screen++, world++, &transform);
     }
 
 extern "C++" {
@@ -13156,11 +13179,14 @@ extern "C" {
             sprintf(text, "<TABLE height=%d width=\"100%%%%\" cellSpacing=1 cellPadding=0 border=0><TR>\r\n",
                     row_height);
             NuHtmlWrite(text);
-            char *label = labels != NULL ? labels[index] : NULL;
+            const char *label = " ";
+            if (labels != NULL && labels[index] != NULL) {
+                label = labels[index];
+            }
             sprintf(text,
                     "<TD align=right width=\"%d%%%%\" bgColor=lightgrey>"
                     "<DIV style=\"FONT-SIZE: 10pt\">%s</TD>\r\n",
-                    12, label != NULL ? label : " ");
+                    12, label);
             NuHtmlWrite(text);
             sprintf(text, "<TD width=\"%d%%%%\" bgColor=%06X></TD>\r\n", bar_width, colour);
             NuHtmlWrite(text);
@@ -13226,11 +13252,14 @@ extern "C" {
             }
             sprintf(text, "<TR><TD Height=\"%d%%%%\" bgColor=%06X></TD></TR>\r\n", bar_height, colour);
             NuHtmlWrite(text);
-            char *label = labels != NULL ? labels[index] : NULL;
+            const char *label = " ";
+            if (labels != NULL && labels[index] != NULL) {
+                label = labels[index];
+            }
             sprintf(text,
                     "<TR><TD Height=\"%d%%%%\" bgColor=lightgrey><DIV style=\"FONT-SIZE: 10pt; WIDTH: 10pt; "
                     "WRITING-MODE: tb-rl\">%s</DIV></TD></TR></TABLE>\r\n",
-                    20, label != NULL ? label : " ");
+                    20, label);
             NuHtmlWrite(text);
         }
         NuHtmlWrite("</TABLE></TD></tr></TABLE>\r\n");
@@ -13435,9 +13464,8 @@ extern "C" u32 _NuTimeBarSlotEnd(i32 set, i32 slot) {
         NuTimeSub(&delta, &now, &timebar->start_times[slot]);
         f32 elapsed_us = NuTimeMicroSeconds(&delta);
 
-        i32 accumulator = 1 - timebar->toggle_flags[slot];
-        timebar->accumulators[accumulator][slot] += static_cast<i32>(elapsed_us);
-        value = static_cast<u32>(timebar->accumulators[accumulator][slot]);
+        timebar->accumulators[1 - timebar->toggle_flags[slot]][slot] += static_cast<i32>(elapsed_us);
+        value = static_cast<u32>(timebar->accumulators[1 - timebar->toggle_flags[slot]][slot]);
     }
     return value;
 }
@@ -13513,14 +13541,14 @@ extern "C" void BuildCamSpaceClipPlanes(void) {
     f32 x_inv = 1.0f / NuFsqrt(x * x + near_sq);
     f32 y_inv = 1.0f / NuFsqrt(y * y + near_sq);
     NuMtxSetZero(&CamSpaceFrustrumPlanes);
-    CamSpaceFrustrumPlanes.m00 = -near_dist * x_inv;
-    CamSpaceFrustrumPlanes.m01 = -CamSpaceFrustrumPlanes.m00;
-    CamSpaceFrustrumPlanes.m20 = -x * x_inv;
-    CamSpaceFrustrumPlanes.m21 = CamSpaceFrustrumPlanes.m20;
-    CamSpaceFrustrumPlanes.m22 = -y * y_inv;
-    CamSpaceFrustrumPlanes.m23 = CamSpaceFrustrumPlanes.m22;
     CamSpaceFrustrumPlanes.m12 = near_dist * y_inv;
     CamSpaceFrustrumPlanes.m13 = -CamSpaceFrustrumPlanes.m12;
+    CamSpaceFrustrumPlanes.m22 = -y * y_inv;
+    CamSpaceFrustrumPlanes.m23 = CamSpaceFrustrumPlanes.m22;
+    CamSpaceFrustrumPlanes.m20 = -x * x_inv;
+    CamSpaceFrustrumPlanes.m21 = CamSpaceFrustrumPlanes.m20;
+    CamSpaceFrustrumPlanes.m00 = -near_dist * x_inv;
+    CamSpaceFrustrumPlanes.m01 = -CamSpaceFrustrumPlanes.m00;
     x = zxs * near_dist;
     y = zys * near_dist;
     x_inv = 1.0f / NuFsqrt(x * x + near_sq);
@@ -13793,7 +13821,7 @@ extern "C" {
             NUPLANE *plane = room->planes;
             for (i32 plane_index = 0; plane_index < room->plane_count; ++plane_index, ++plane) {
                 plane_distance = plane->a * position->x + plane->b * position->y + plane->c * position->z + plane->d;
-                if (__builtin_expect(plane_distance > 0.0f, 0)) {
+                if (plane_distance > 0.0f) {
                     break;
                 }
             }
@@ -13886,7 +13914,7 @@ extern "C" i32 clipTestBox(NUVEC *minimum, NUVEC *maximum, NUPLANE *planes, i32 
         i32 inside_plane = 0;
         if (!(plane.a * min.x + plane.b * min.y + plane.c * min.z + plane.d < 0.0f))
             ++inside_plane, ++inside_vertices;
-        if (!(plane.a * max.x + plane.b * min.y + plane.c * min.z + plane.d < 0.0f))
+        if (plane.a * max.x + plane.b * min.y + plane.c * min.z + plane.d >= 0.0f)
             ++inside_plane, ++inside_vertices;
         if (!(plane.a * max.x + plane.b * max.y + plane.c * min.z + plane.d < 0.0f))
             ++inside_plane, ++inside_vertices;
@@ -14867,7 +14895,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
     } else {
         f32 n = scale / 0.75f;
         tiles = static_cast<f32>(static_cast<i32>(n));
-        if (n > tiles)
+        if (!(n <= tiles))
             tiles += 1.0f;
     }
     yTiles = tiles;
@@ -14935,7 +14963,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
         return 1;
     }
     NuRndrScreenGrabTileBegin(&tile);
-    if (tile == NULL) {
+    if (__builtin_expect(tile == NULL, 0)) {
         NuRndrScreenGrabTileDeInit(&params);
         dump_state = -1;
         NuFileClose(fh);
@@ -15071,34 +15099,11 @@ extern "C" i32 NuRndrLine2d(NuLineVertex2D *vertices, NUMTL *material) {
 extern "C" void NuRndrRect(f32 x, f32 y, f32 z, f32 width, f32 height, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
                            NUMTL *material) {
     NuPrim2DBegin(4, 7, material);
-    u8 *vertex;
-    if (!g_NuPrim_NeedsHalfUVs) {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *(f32 *)(vertex + 0x10) = u0;
-        *(f32 *)(vertex + 0x14) = v0;
-    } else {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u0);
-        *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v0);
-    }
-    i32 adjusted_colour = colour;
-    if (!g_NuPrim_NeedsOverbrightening)
-        adjusted_colour = ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
-    *(i32 *)(vertex + 0x0c) = adjusted_colour;
+    NuRndrPrimUV(u0, v0);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(x, y, z);
-    if (!g_NuPrim_NeedsHalfUVs) {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *(f32 *)(vertex + 0x10) = u1;
-        *(f32 *)(vertex + 0x14) = v1;
-    } else {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *(u16 *)(vertex + 0x10) = NuRndrFloatToHalf(u1);
-        *(u16 *)(vertex + 0x12) = NuRndrFloatToHalf(v1);
-    }
-    adjusted_colour = colour;
-    if (!g_NuPrim_NeedsOverbrightening)
-        adjusted_colour = ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
-    *(i32 *)(vertex + 0x0c) = adjusted_colour;
+    NuRndrPrimUV(u1, v1);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(x + width, y + height, z);
     NuPrim2DEnd();
 }
@@ -15135,9 +15140,11 @@ extern "C" void NuRndrRect2di(i32 x, i32 y, i32 w, i32 h, i32 colour, numtl_s *m
 void NuRndrRectUV2d(f32 x, f32 y, f32, f32 width, f32 height, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
                     numtl_s *material) {
     NuPrim2DBegin(4, 7, material);
-    NuRndrPrimTexturedColour(u0, v0, colour);
+    NuRndrPrimUV(u0, v0);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(x, y, 0.0f);
-    NuRndrPrimTexturedColour(u1, v1, colour);
+    NuRndrPrimUV(u1, v1);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(x + width, y + height, 0.0f);
     NuPrim2DEnd();
 }
@@ -15150,38 +15157,11 @@ extern "C" void NuRndrRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 
     const f32 sh = static_cast<f32>(h) * 0.0625f;
 
     NuPrim2DBegin(4, 7, mtl);
-    u8 *vertex;
-    if (!g_NuPrim_NeedsHalfUVs) {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *reinterpret_cast<f32 *>(vertex + 0x10) = u0;
-        *reinterpret_cast<f32 *>(vertex + 0x14) = v0;
-    } else {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u0);
-        *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v0);
-    }
-    const char *needs_overbrightening = &g_NuPrim_NeedsOverbrightening;
-    i32 adjusted_colour = colour;
-    if (!*needs_overbrightening) {
-        adjusted_colour = ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
-    }
-    *reinterpret_cast<u32 *>(vertex + 0x0c) = adjusted_colour;
+    NuRndrPrimUV(u0, v0);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(sx, sy, 0.0f);
-
-    if (!g_NuPrim_NeedsHalfUVs) {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *reinterpret_cast<f32 *>(vertex + 0x10) = u1;
-        *reinterpret_cast<f32 *>(vertex + 0x14) = v1;
-    } else {
-        vertex = g_NuPrim_StreamBufferPtr->u8_ptr;
-        *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u1);
-        *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v1);
-    }
-    adjusted_colour = colour;
-    if (!*needs_overbrightening) {
-        adjusted_colour = ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
-    }
-    *reinterpret_cast<u32 *>(vertex + 0x0c) = adjusted_colour;
+    NuRndrPrimUV(u1, v1);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
     NuPrim2DEnd();
 }
@@ -15311,11 +15291,11 @@ extern "C" void NuRndrLine3dDbg(f32 x0, f32 y0, f32 z0, f32 x1, f32 y1, f32 z1, 
     vertex->z = z0;
     g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
     ++g_NuPrim_VertexCount;
-    if (!g_NuPrim_NeedsOverbrightening)
+    if (g_NuPrim_NeedsOverbrightening)
+        ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color = colour;
+    else
         ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color =
             ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
-    else
-        ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color = colour;
     vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
     vertex->x = x1;
     vertex->y = y1;
@@ -15395,7 +15375,7 @@ static void drawClippedPortal(NUPORTAL *portal, NUPLANE **planes, u8 *plane_coun
     NuCameraRelock();
 }
 
-static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth) {
+static void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth) {
     if (depth >= 2) {
         for (i32 i = 0; i < depth - 1; ++i) {
             if (__builtin_expect(rooms_visited[i] != room_id, 0)) {
@@ -15440,10 +15420,10 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
         for (i32 plane_index = 0; plane_index < frustum->plane_count; ++plane_index) {
             i32 outside_vertices = 0;
             for (i32 vertex_index = 0; vertex_index < portal->vertex_count; ++vertex_index) {
-                if (planeDistance(frustum->planes[plane_index], portal->vertices[vertex_index]) >= 0.0f) {
-                    ++inside_tests;
-                } else {
+                if (!(planeDistance(frustum->planes[plane_index], portal->vertices[vertex_index]) >= 0.0f)) {
                     ++outside_vertices;
+                } else {
+                    ++inside_tests;
                 }
             }
             if (outside_vertices == portal->vertex_count) {
@@ -15472,14 +15452,18 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
                 NUVEC portal_minimum;
                 NUVEC portal_maximum;
                 computePortalExtents(&portal->vertices, &portal->vertex_count, &portal_maximum, &portal_minimum);
-                if (frustum->minimum.x >= portal_maximum.x || frustum->minimum.y >= portal_maximum.y ||
+                if (!(frustum->minimum.x < portal_maximum.x) || frustum->minimum.y >= portal_maximum.y ||
                     portal_minimum.x >= frustum->maximum.x || portal_minimum.y >= frustum->maximum.y) {
                     continue;
                 }
-                portal_minimum.x = MAX(portal_minimum.x, frustum->minimum.x);
-                portal_minimum.y = MAX(portal_minimum.y, frustum->minimum.y);
-                portal_maximum.x = MIN(portal_maximum.x, frustum->maximum.x);
-                portal_maximum.y = MIN(portal_maximum.y, frustum->maximum.y);
+                if (portal_minimum.x < frustum->minimum.x)
+                    portal_minimum.x = frustum->minimum.x;
+                if (portal_minimum.y < frustum->minimum.y)
+                    portal_minimum.y = frustum->minimum.y;
+                if (portal_maximum.x > frustum->maximum.x)
+                    portal_maximum.x = frustum->maximum.x;
+                if (portal_maximum.y > frustum->maximum.y)
+                    portal_maximum.y = frustum->maximum.y;
                 drawClippedPortal(portal, &next->planes, &next->plane_count, &portal_minimum, &portal_maximum);
                 next_frustum = buildFrustrum(&portal_minimum, &portal_maximum, next_room);
             }
@@ -15503,7 +15487,7 @@ static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_
                     for (i32 plane_index = 0; plane_index < next->plane_count; ++plane_index) {
                         NUVEC point;
                         const f32 distance = NuPlnLine3(&next->planes[plane_index], vertex, &direction, &point);
-                        if (distance > 0.0f && distance < nearest_distance) {
+                        if (!(distance <= 0.0f) && distance < nearest_distance) {
                             nearest_point = point;
                             nearest_distance = distance;
                         }
@@ -15527,9 +15511,9 @@ extern "C" void NuRndrSphereEx(NUVEC *centre, f32 radius, i32 colour, f32 vertic
         f32 upper_radius = radius * NU_SIN_LUT((band < 3 ? band + 1 : 7 - band) * 4096);
         f32 lower_y = NuFsqrt(radius_squared - lower_radius * lower_radius) * vertical_scale;
         f32 upper_y = NuFsqrt(radius_squared - upper_radius * upper_radius) * vertical_scale;
-        if (band > 4)
+        if (__builtin_expect(band > 4, 0))
             lower_y = -lower_y;
-        if (band > 3)
+        if (__builtin_expect(band > 3, 0))
             upper_y = -upper_y;
         lower_y += centre->y;
         upper_y += centre->y;
@@ -15686,9 +15670,11 @@ void NuRndrRectUV2diZ(i32 x, i32 y, i32 width, i32 height, f32 u0, f32 v0, f32 u
     const f32 sh = static_cast<f32>(height) * 0.0625f;
     const f32 sz = static_cast<f32>(z) * (1.0f / 16777215.0f);
     NuPrim2DBegin(4, 7, material);
-    NuRndrPrimTexturedColour(u0, v0, colour);
+    NuRndrPrimUV(u0, v0);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(sx, sy, sz);
-    NuRndrPrimTexturedColour(u1, v1, colour);
+    NuRndrPrimUV(u1, v1);
+    NuRndrPrimSetColour(colour);
     NuPrim2DAddXYZ(sx + sw, sy + sh, sz);
     NuPrim2DEnd();
 }
@@ -16351,9 +16337,10 @@ void NuRndrStreamInit(i32 stream_buffer_size, VARIPTR *buffer) {
     } else {
         for (i = 0; i < rndrstream_nbuffers; i++) {
             buffer->addr = ALIGN(buffer->addr, 0x80);
-            rndrstream[i].void_ptr = buffer->void_ptr;
+            void *stream = buffer->void_ptr;
+            rndrstream[i].void_ptr = stream;
 
-            memset(buffer->void_ptr, 0, stream_buffer_size);
+            memset(stream, 0, stream_buffer_size);
 
             buffer->void_ptr = (void *)(buffer->addr + stream_buffer_size);
         }
@@ -16488,7 +16475,7 @@ extern "C" {
                 continue;
             if (__builtin_expect(vertices[4].x > 1.0f && vertices[5].x > 1.0f, 0))
                 continue;
-            if (vertices[4].y < -1.0f && vertices[5].y < -1.0f)
+            if (vertices[4].y < -1.0f && !(vertices[5].y >= -1.0f))
                 continue;
             if (vertices[4].y > 1.0f && vertices[5].y > 1.0f)
                 continue;
@@ -16505,7 +16492,7 @@ extern "C" {
             if (!(length > 0.0f))
                 continue;
             f32 step = laser->segment_length / length;
-            if (step > 1.0f)
+            if (!(step <= 1.0f))
                 step = 1.0f;
             // Per-laser seeds make repeated and paused rendering deterministic.
             NuLgtSeed = laser->seed;
@@ -16658,10 +16645,10 @@ void NuLgtArcLaserEx(i32 type, NUVEC *start, NUVEC *end, NUVEC *bend, f32 width,
     u32 alpha = ((u32)colour >> 24) * 2;
     if (red > 255)
         red = 255;
-    if (green > 0xff00)
-        green = 0xff00;
     if (blue > 255)
         blue = 255;
+    if (green > 0xff00)
+        green = 0xff00;
     if (alpha > 255)
         alpha = 255;
     NuLgtArcLaserData[index].colour = (blue | (red << 16)) | (green | (alpha << 24));
@@ -16708,7 +16695,7 @@ void NuDisplayListCreate(nudisplayscene_s *raw_scene, variptr_u *buffer, variptr
         NUMTL *materials = reinterpret_cast<NUMTL *>(ALIGN(buffer->addr, 0x10));
         buffer->addr = reinterpret_cast<usize>(materials + material_count);
         for (i32 i = 0; i < material_count; ++i) {
-            scene->mtls[i] = &materials[i];
+            scene->mtls[i] = materials++;
         }
     }
 
@@ -17086,7 +17073,35 @@ void DisplayListLinkDynamicMtls(void) {
         dl->mtl_id = insert;
 
         nusortpri_s *sp;
-        if (sp_idx != -1) {
+        if (sp_idx == -1) {
+            sp = &mgr->dyn_mtl_dlist.sort_pris[mgr->dyn_mtl_dlist.nsort_pris];
+            sp->items = items;
+            sp->field_18 = mgr->field_4a8;
+            sp->sort_pri = key;
+            sp->nmtls = 0;
+
+            nusortpri_s *prev = nullptr;
+            nusortpri_s *cur = mgr->sort_list;
+            if (cur == nullptr) {
+                mgr->sort_list = sp;
+                sp->sys_next = nullptr;
+            } else {
+                while (cur != nullptr && key > cur->sort_pri) {
+                    prev = cur;
+                    cur = cur->sys_next;
+                }
+                if (prev == nullptr) {
+                    sp->sys_next = mgr->sort_list;
+                    mgr->sort_list = sp;
+                } else {
+                    sp->sys_next = cur;
+                    prev->sys_next = sp;
+                }
+            }
+            ++mgr->nused_sort_pris;
+            ++mgr->dyn_mtl_dlist.nsort_pris;
+            sp->nmtls = 1;
+        } else {
             sp = &mgr->dyn_mtl_dlist.sort_pris[sp_idx];
             if (__builtin_expect(insert != 0 && MtlSortKey(mgr->dyn_mtl_dlist.mtls[insert - 1]) == key, 0)) {
                 // Splice after previous material's block.
@@ -17104,34 +17119,6 @@ void DisplayListLinkDynamicMtls(void) {
                 sp->items = items;
             }
             ++sp->nmtls;
-        } else {
-            sp = &mgr->dyn_mtl_dlist.sort_pris[mgr->dyn_mtl_dlist.nsort_pris];
-            sp->items = items;
-            sp->field_18 = mgr->field_4a8;
-            sp->sort_pri = key;
-            sp->nmtls = 0;
-
-            nusortpri_s *prev = nullptr;
-            nusortpri_s *cur = mgr->sort_list;
-            if (cur == nullptr) {
-                mgr->sort_list = sp;
-                sp->sys_next = nullptr;
-            } else {
-                while (cur != nullptr && key > cur->sort_pri) {
-                    prev = cur;
-                    cur = cur->sys_next;
-                }
-                if (__builtin_expect(prev == nullptr, 0)) {
-                    sp->sys_next = mgr->sort_list;
-                    mgr->sort_list = sp;
-                } else {
-                    sp->sys_next = cur;
-                    prev->sys_next = sp;
-                }
-            }
-            ++mgr->nused_sort_pris;
-            ++mgr->dyn_mtl_dlist.nsort_pris;
-            sp->nmtls = 1;
         }
 
         {
@@ -17508,7 +17495,14 @@ void xxxNuDisplayListUpdateSpecial(nuhspecial_s *special) {
     NuVecMax(&maximum, &maximum, &corners[6]);
     NuVecMax(&maximum, &maximum, &corners[7]);
 
-    if ((scene->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
+    if ((scene->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) == 0) {
+        NUCLIPBOUNDS *bounds = &scene->clip_bounds[display->instance_ix];
+        bounds->center = minimum;
+        bounds->extent = maximum;
+        // Retail copies uninitialized local W components in min/max mode.
+        // They are not clipping coordinates; retain the destination padding,
+        // as the active NuDisplayListUpdateSpecial implementation does.
+    } else {
         NUVEC extent;
         extent.y = (maximum.y - minimum.y) * 0.5f;
         extent.x = (maximum.x - minimum.x) * 0.5f;
@@ -17520,13 +17514,6 @@ void xxxNuDisplayListUpdateSpecial(nuhspecial_s *special) {
         bounds->center.z = (maximum.z + minimum.z) * 0.5f;
         bounds->center_w = radius;
         bounds->extent = extent;
-    } else {
-        NUCLIPBOUNDS *bounds = &scene->clip_bounds[display->instance_ix];
-        bounds->center = minimum;
-        bounds->extent = maximum;
-        // Retail copies uninitialized local W components in min/max mode.
-        // They are not clipping coordinates; retain the destination padding,
-        // as the active NuDisplayListUpdateSpecial implementation does.
     }
     DisplayListUpdateSpecialTransformPS(special, &matrix);
 }
@@ -17781,7 +17768,7 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
         for (i32 m = 0; m < sp->nmtls; ++m) {
             i32 mi = sp->mtl_first + m;
             NUDISPLAYLIST *dl = sc->dlist_mtls[mi];
-            if (dl->mtl_item->id != kItemId_Cnt)
+            if (__builtin_expect(dl->mtl_item->id != kItemId_Cnt, 0))
                 continue;
 
             NUMTL *mtl = sc->mtls[mi];
@@ -17975,7 +17962,7 @@ extern "C" void NuDisplayListBurstRndrSpecial(nuhspecial_s *handle, u32 count, N
         return;
     NUCLIPOBJECT *object = special->clip_objects;
     f32 *range = special->clip_range;
-    while (*range > 0 && object->nmaterials == 0) {
+    while (!(*range <= 0) && object->nmaterials == 0) {
         ++range;
         ++object;
     }
@@ -18347,12 +18334,7 @@ void NuDynamicLight::renderShadowMap(i32 index, nuframebuffer_s *) {
         item->type = 0x84;
         item->id = 4;
         item->next = NULL;
-        if (g_renderContext_zFunc != 0) {
-            glEnable(0xb71);
-            glDepthMask(1);
-            glDepthFunc(0x203);
-        }
-        g_renderContext_zFunc = 0;
+        NuRenderContextSetZFunc_inline(0);
         memcpy(g_renderContext_kTint, nuvec4_one, sizeof(g_renderContext_kTint));
         NuShaderManagerSetfv(0x44, nuvec4_one);
         NuDisplayListDrawItems(set.display_lists[0].first);
@@ -18363,12 +18345,7 @@ void NuDynamicLight::renderShadowMap(i32 index, nuframebuffer_s *) {
         item->type = 0x84;
         item->id = 4;
         item->next = NULL;
-        if (g_renderContext_zFunc != 0) {
-            glEnable(0xb71);
-            glDepthMask(1);
-            glDepthFunc(0x203);
-        }
-        g_renderContext_zFunc = 0;
+        NuRenderContextSetZFunc_inline(0);
         memcpy(g_renderContext_kTint, nuvec4_one, sizeof(g_renderContext_kTint));
         NuShaderManagerSetfv(0x44, nuvec4_one);
         NuDisplayListDrawItems(set.display_lists[1].first);
@@ -18736,16 +18713,16 @@ void NuLgtArcLaserDraw(i32 paused) {
         auto laser_wobble = laser->wobble;
         do {
             f32 next = progress + step;
-            if (!(next >= 1.0f)) {
-                i32 angle = ((i32)(32768.0f * next) >> 1) & 0x7fff;
-                vertices[5].x = next * vertices[7].x + vertices[6].x + vertices[10].x * NuTrigTable[angle];
-                vertices[5].y = next * vertices[7].y + vertices[6].y + vertices[10].y * NuTrigTable[angle];
-                vertices[5].z = next * vertices[7].z + vertices[6].z + vertices[10].z * NuTrigTable[angle];
-            } else {
+            if (next >= 1.0f) {
                 vertices[5].x = vertices[6].x + vertices[7].x;
                 vertices[5].y = vertices[6].y + vertices[7].y;
                 vertices[5].z = vertices[6].z + vertices[7].z;
                 u = NuLgtArcMtl[0].u1 + (1.0f - progress) * (NuLgtArcMtl[0].u0 - NuLgtArcMtl[0].u1) / step;
+            } else {
+                i32 angle = ((i32)(32768.0f * next) >> 1) & 0x7fff;
+                vertices[5].x = next * vertices[7].x + vertices[6].x + vertices[10].x * NuTrigTable[angle];
+                vertices[5].y = next * vertices[7].y + vertices[6].y + vertices[10].y * NuTrigTable[angle];
+                vertices[5].z = next * vertices[7].z + vertices[6].z + vertices[10].z * NuTrigTable[angle];
             }
             vertices[5].w = 1.0f;
             NuVec4MtxTransformVU0(&vertices[5], &vertices[5], clip);
@@ -18801,13 +18778,13 @@ void DisplayListCreateDynMtlList(variptr_u *buffer, variptr_u buffer_end) {
     scene->nsort_pris = 0;
     scene->name = const_cast<char *>("Dynamic Material Display Scene");
 
+    NUDISPLAYLIST **display_lists = scene->dlist_mtls;
     NUDISPLAYLISTITEM *material_item = scene->items;
     for (i32 i = 0; i < 0x80; ++i) {
-        NUDISPLAYLIST *display_list = scene->dlist_mtls[i];
-        display_list->mtl_item = material_item;
-        display_list->dyn_geom = material_item + 6;
-        display_list->dlist = scene;
-        display_list->mtl_id = i;
+        display_lists[i]->mtl_item = material_item;
+        display_lists[i]->dyn_geom = material_item + 6;
+        display_lists[i]->dlist = scene;
+        display_lists[i]->mtl_id = i;
         material_item += 8;
     }
 
@@ -19226,17 +19203,15 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
     auto source_nitems = source->nitems;
     for (i32 i = 0; i < source_nitems; ++i) {
         NUDISPLAYLISTITEM *item = &scene->items[i];
-        if (item->type != 0x80) {
-            if (item->type == 0x85) {
-                item->next = scene->items + (static_cast<NUDISPLAYLISTITEM *>(source->items[i].next) - source->items);
-            }
-        } else {
+        if (item->type == 0x80) {
             for (i32 j = 0; j < static_cast<i32>(source->nmtls); ++j) {
                 if (source->items[i].next == source->mtls[j]) {
                     item->next = scene->mtls[j];
                     break;
                 }
             }
+        } else if (item->type == 0x85) {
+            item->next = scene->items + (static_cast<NUDISPLAYLISTITEM *>(source->items[i].next) - source->items);
         }
     }
     if (source->material_animations != NULL) {
@@ -19274,12 +19249,12 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
                     previous = current;
                     current = current->sys_next;
                 }
-                if (previous == NULL) {
-                    sort->sys_next = sort_list;
-                    sort_list = sort;
-                } else {
+                if (previous != NULL) {
                     sort->sys_next = current;
                     previous->sys_next = sort;
+                } else {
+                    sort->sys_next = sort_list;
+                    sort_list = sort;
                 }
             }
             ++used_sort_pris;
@@ -19615,8 +19590,8 @@ static void OccluderSetInitMaterials() {
     desc2d.vtx_desc.has_position = 1;
     desc2d.vtx_desc.has_no_transform = 1;
     NuMtlSetShaderDescPS(OccluderSet::ms_pZOnlyMtl2D, &desc2d);
-    OccluderSet::ms_pZOnlyMtl2D->attribs.alpha_mode = 13;
     OccluderSet::ms_pZOnlyMtl2D->attribs.cull_mode = 2;
+    OccluderSet::ms_pZOnlyMtl2D->attribs.alpha_mode = 13;
     OccluderSet::ms_pZOnlyMtl2D->attribs.z_mode = 0;
     OccluderSet::ms_pZOnlyMtl2D->attribs.unknown_2_8 = 0;
     NuMtlUpdate(OccluderSet::ms_pZOnlyMtl2D);
@@ -19625,13 +19600,13 @@ static void OccluderSetInitMaterials() {
     desc3d.flags = 0x1000;
     desc3d.vtx_desc.has_position = 1;
     NuMtlSetShaderDescPS(OccluderSet::ms_pZOnlyMtl3D, &desc3d);
-    OccluderSet::ms_pZOnlyMtl3D->attribs.alpha_mode = 13;
     OccluderSet::ms_pZOnlyMtl3D->attribs.cull_mode = 2;
+    OccluderSet::ms_pZOnlyMtl3D->attribs.alpha_mode = 13;
     OccluderSet::ms_pZOnlyMtl3D->attribs.z_mode = 0;
     OccluderSet::ms_pZOnlyMtl3D->attribs.unknown_2_8 = 0;
     NuMtlUpdate(OccluderSet::ms_pZOnlyMtl3D);
-    OccluderSet::ms_pAlphaMtl2D->attribs.alpha_mode = 1;
     OccluderSet::ms_pAlphaMtl2D->attribs.cull_mode = 2;
+    OccluderSet::ms_pAlphaMtl2D->attribs.alpha_mode = 1;
     OccluderSet::ms_pAlphaMtl2D->attribs.z_mode = 1;
     NuMtlUpdate(OccluderSet::ms_pAlphaMtl2D);
 }
@@ -19867,7 +19842,7 @@ extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
         NuVecScale(&center, &center, 0.5f);
         NuVecMtxTransform(&center, &center, mtx);
         f32 distance_sqr = NuCameraDistSqr(&center);
-        distance_sqr = distance_sqr >= 0.0f ? distance_sqr : 0.0f;
+        distance_sqr = !(distance_sqr < 0.0f) ? distance_sqr : 0.0f;
 
         NUCLIPOBJECT *clip_object = special->clip_objects;
         if (special->clip_range != NULL && special->clip_range[0] != 0.0f) {
@@ -20614,11 +20589,11 @@ NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
         *(i32 *)relocation_table.void_ptr = relocation_count;
         relocation_entry.addr = relocation_table.addr + 4;
         for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
-            if (relocations[i].pointer == 0) {
-                *(i32 *)relocation_entry.void_ptr = 0;
-            } else {
+            if (relocations[i].pointer != 0) {
                 *(i32 *)relocation_entry.void_ptr = relocations[i].pointer - (relocation_entry.addr - base.addr);
                 *(i32 *)(base.addr + relocations[i].pointer) = relocations[i].target - relocations[i].pointer;
+            } else {
+                *(i32 *)relocation_entry.void_ptr = 0;
             }
         }
     }
@@ -21038,9 +21013,9 @@ extern "C" {
         vsprintf(text, format, arguments);
         va_end(arguments);
         i32 width = static_cast<i32>(NuQFntPrintLenU(font, text));
-        if (__builtin_expect(alignment == 0x20, 1)) {
+        if (alignment == 0x20) {
             x -= width;
-        } else if (alignment == 0x40) {
+        } else if (__builtin_expect(alignment == 0x40, 1)) {
             x -= width / 2;
         }
         NuQFntMove(font, static_cast<f32>(x), static_cast<f32>(y), 0.0f);
@@ -21132,7 +21107,7 @@ extern "C" void NuTimeBarSetRender(i32 set) {
     TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
     f32 gpu_frames = 0.0f;
     if (set == -1) {
-        if (NuTimeBar_GpuFrameOutEnabled != 0) {
+        if (__builtin_expect(NuTimeBar_GpuFrameOutEnabled != 0, 0)) {
             i32 buffer = timebar->toggle_flags[1];
             u32 gpu_time = static_cast<u32>(timebar->accumulators[buffer][1]);
             gpu_frames = timebar_unsigned_float(gpu_time) * nuapi.fps / 1000000.0f;
@@ -21534,11 +21509,11 @@ i32 NuGScnRestoreTID(nugscn_s *scene, i32 tid) {
     }
 
     NUNATIVETEX *texture = NuTexGetNative(tid);
-    for (i32 i = 0; i < scene->ntextures; ++i) {
+    for (i32 i = 0; i != scene->ntextures; ++i) {
         NUNATIVETEX *scene_texture = scene->textures[i];
         bool checksum_matches = true;
         for (i32 byte = 0; byte < 16; ++byte) {
-            if (scene_texture->checksum[byte] != texture->checksum[byte]) {
+            if (texture->checksum[byte] != scene_texture->checksum[byte]) {
                 checksum_matches = false;
                 break;
             }
@@ -21618,7 +21593,7 @@ extern "C" i32 NuTexResolveReference(NUGSCN *scene, i32 tex_id) {
     i32 newest_texture_id = 0;
     i32 newest_texture_order = 0;
 
-    for (u32 index = 0; index < static_cast<u32>(max_textures); ++index) {
+    for (u32 index = 0; index != static_cast<u32>(max_textures); ++index) {
         NUNATIVETEX *texture = texture_list[index];
         if (texture == NULL || texture->ref_count < 0) {
             continue;

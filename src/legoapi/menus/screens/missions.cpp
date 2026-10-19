@@ -35,16 +35,14 @@
 #include "legoapi/world/world_shared.h"
 #include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/screens/missions.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/menus/screens/gamestatus_lsw.h"
+#include "legoapi/world/levels/levels.h"
 
 extern f32 HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING;
-void Hub_DrawImportantBrick(i32, f32, f32, f32, i32, i32);
-extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
-                          u8 green, u8 blue, f32 max_width, i32 max_lines);
 extern i16 tOUTOFTIME;
 extern "C" TIMER BonusTimer;
-extern void SetBonusWinner(i32);
-extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 static f32 MissionsAlpha;
 static i32 hub_mission;
 static f32 MissionIconScale[20];
@@ -87,12 +85,12 @@ void MenuDrawMissions(MENU_s *menu) {
         char time[64], text[64];
         Text_MakeTime(Game.mission_save.best_times[hub_mission], 0, 1, 1, time);
         sprintf(text, "~0(~2%s~0)", time);
-        Text3DEx(text, 0.15f, -0.365f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 0, 255, 0, static_cast<u8>(opacity * 255.0f));
+        Text3DEx(text, 0.15f, -0.365f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 0, 255, 0, static_cast<u8>(static_cast<i32>(opacity * 255.0f)));
     }
     for (i32 i = 0; i < MissionSys->count; ++i) {
         f32 size = MissionIconScale[i] * 0.075f + 0.125f;
         f32 x = MissionIconX[i];
-        if (fabsf(x) > 1.0f)
+        if (!(fabsf(x) <= 1.0f))
             size = 0.0f;
         else {
             f32 opacity = (MissionIconScale[i] * 0.3f + 0.7f) * alpha;
@@ -182,7 +180,7 @@ void MenuUpdateMissions(MENU_s *menu) {
         if (MenuPacket.active_player[0]) {
             const u32 pressed = GamePad[0].buttons_pressed;
             if (pressed & GAMEPAD_MENUSELECT) {
-                if (!MenuPacket.active_player[1]) {
+                if (__builtin_expect(!MenuPacket.active_player[1], 0)) {
                     start = 1;
                     goto collected_input;
                 }
@@ -201,7 +199,7 @@ void MenuUpdateMissions(MENU_s *menu) {
                 }
                 MenuPacket.reserved_1[0] = 0;
                 GameAudio_PlaySfx(0x31, NULL, 0, 0);
-            } else if (MenuPacket.reserved_1[0] == 0 && MenuPacket.reserved_1[1] == 0) {
+            } else if (__builtin_expect(MenuPacket.reserved_1[0] == 0 && MenuPacket.reserved_1[1] == 0, 1)) {
                 const u32 directions = GamePad[0].unknown_10;
                 if ((directions & GAMEPAD_DLEFT) || (pressed & (GAMEPAD_DLEFT | GAMEPAD_TOGGLELEFT)))
                     left = 1;
@@ -216,7 +214,7 @@ void MenuUpdateMissions(MENU_s *menu) {
                     start = 1;
                     goto collected_input;
                 }
-                if (!MenuPacket.reserved_1[1]) {
+                if (__builtin_expect(!MenuPacket.reserved_1[1], 0)) {
                     MenuPacket.reserved_1[1] = 1;
                     if (MenuPacket.reserved_1[0]) {
                         start = 1;

@@ -28,6 +28,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/qrand.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/playeritems.h"
 #include "legoapi/gizmo/object/gizmopickup.h"
@@ -202,7 +203,6 @@ struct nuhspecial_s;
 extern i16 tNONEWBESTTIME, tNEWBESTTIME;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
@@ -222,7 +222,6 @@ typedef f32 BezierVec4Unaligned __attribute__((vector_size(16), aligned(4)));
 // Retail only keeps the split-out body of the IPA-SRA clone, which takes
 // &spline->length and &spline->pts in place of the spline.
 
-extern i32 (*GamePads_IgnoreInputFn)(void);
 extern "C" {
     extern "C++" FadeSystem FadeSys;
     extern i32 CutSceneWaiting;
@@ -236,8 +235,6 @@ f32 MulAdd = 0.0f;
 // This alignment affects PodRaceAUpdate codegen even though the linked address is 32-byte aligned.
 
 DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
-
-void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32));
 
 anakin_door_s *volatile AnakinC = NULL;
 
@@ -337,8 +334,8 @@ static __attribute__((noinline)) void StarFighterAlign(starfighter_s *fighter, _
     if (roll < limit)
         roll = static_cast<i16>(static_cast<i32>(limit));
     i32 adjustment = 0;
-    if (distance <= 2.0f) {
-        if (distance <= 1.0f)
+    if (!(distance > 2.0f)) {
+        if (!(distance > 1.0f))
             adjustment = -static_cast<i16>(static_cast<i32>(roll));
         else
             adjustment = -static_cast<i16>(static_cast<i32>((2.0f - distance) * roll));
@@ -358,13 +355,12 @@ static void ResetSpaceLevel(WORLDINFO_s *world, spacelevel_s *space) {
     space->inverse_direction_length = 1.0f / space->direction_length;
 
     for (door_index = 6; door_index >= 0; --door_index) {
-        for (i32 player = 0; player < 2; ++player) {
-            if (Player[player] != NULL && Player[player]->field_0x68c > DogFightDoors.doors[door_index].distance) {
-                space->door_time = DogFightDoors.doors[door_index].timer;
-                space->door_countdown = space->door_time * 94.977417f / 59.449684f;
-                space->door_elapsed = (space->door_countdown - FRAMETIME) * 94.977417f / 59.449684f;
-                goto reset_space;
-            }
+        if ((Player[0] != NULL && Player[0]->field_0x68c > DogFightDoors.doors[door_index].distance) ||
+            (Player[1] != NULL && Player[1]->field_0x68c > DogFightDoors.doors[door_index].distance)) {
+            space->door_time = DogFightDoors.doors[door_index].timer;
+            space->door_countdown = space->door_time * 94.977417f / 59.449684f;
+            space->door_elapsed = (space->door_countdown - FRAMETIME) * 94.977417f / 59.449684f;
+            goto reset_space;
         }
     }
     space->door_countdown = 0.0f;
@@ -386,12 +382,12 @@ reset_space:
 
     STARFIGHTERDRAWSCALE = {4.0f, 4.0f, 4.0f, 1.0f};
     space->draw_scale = {-141.0f, -121.0f, -1034.0f, 1.0f};
-    if (world->current_level == DOGFIGHTA_LDATA) {
+    if (__builtin_expect(world->current_level == DOGFIGHTA_LDATA, 1)) {
         space->unknown_3370 = NULL;
     } else {
         space->unknown_3370 = &Actions_AnakinA;
     }
-    if (space->reset_buffer_count != 0) {
+    if (__builtin_expect(space->reset_buffer_count != 0, 1)) {
         memset(space->reset_buffer, 0, space->reset_buffer_count * 96);
         space->reset_buffer_used = 0;
     }
@@ -507,7 +503,7 @@ void ChrisAnakinCReset() {
     anakin_door_s *door = AnakinC;
     i32 count = 0;
     for (anakin_door_setup_s *setup = DoorSetupList; count < 12; ++setup) {
-        if (setup->name == NULL) {
+        if (__builtin_expect(setup->name == NULL, 0)) {
             for (; count < 12; ++count, ++door)
                 door->active = 0;
             return;
@@ -754,7 +750,7 @@ static void DrawSpaceLevel(spacelevel_s *space) {
         DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[0].world_position), space->crosses[0].scale,
                       space->crosses[0].colour, 1);
     }
-    if (space->crosses[1].enabled != 0) {
+    if (__builtin_expect(space->crosses[1].enabled != 0, 1)) {
         NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->crosses[1].world_position),
                           reinterpret_cast<NUVEC *>(&space->crosses[1].local_position), &GameCam->render_mtx);
         DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->crosses[1].world_position), space->crosses[1].scale,
@@ -1248,7 +1244,7 @@ void FlightSpline_Init(WORLDINFO_s *world, flightspline_s *splines, i32 capacity
         for (i = 0; i < count; ++i) {
             flightspline_s *spline = &splines[i];
             f32 distance = 0.0f;
-            if (spline->point_count != 0) {
+            if (__builtin_expect(spline->point_count != 0, 1)) {
                 _vuv_s current;
                 CalcSplinePoint(spline, &current, 1.0f);
                 f32 along = 1.0f;
@@ -1306,7 +1302,7 @@ void ChrisRadialCam(nuvec_s *position, nuvec_s *target) {
     position->y = position_y;
     position->z = RadialMoveCentre.z + position_delta.z;
 
-    if (base_radius <= origin_radius) {
+    if (!(base_radius > origin_radius)) {
         target_radius = base_radius + 0.6f * extra_radius;
     }
     if (origin_radius != 0.0f) {
@@ -1327,12 +1323,11 @@ void SpaceAudioPoint() {
 
 void SpaceResetAudioPoint() {
     for (i32 door = 6; door >= 0; --door) {
-        for (i32 player = 0; player < 2; ++player) {
-            if (Player[player] != NULL && Player[player]->sock_position.distance > DogFightDoors.doors[door].distance) {
-                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
-                music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
-                return;
-            }
+        if ((Player[0] != NULL && Player[0]->sock_position.distance > DogFightDoors.doors[door].distance) ||
+            (Player[1] != NULL && Player[1]->sock_position.distance > DogFightDoors.doors[door].distance)) {
+            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
+            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
+            return;
         }
     }
     SetPreSeekStartPoint(0.0f);
@@ -1463,7 +1458,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         }
         if (space->unknown_337c == 0) {
             space->action_timer -= FRAMETIME;
-            if (__builtin_expect(space->action_timer <= 0.0f, 1))
+            if (__builtin_expect(!(space->action_timer > 0.0f), 1))
                 space->unknown_337c = 4;
         }
     }
@@ -1521,7 +1516,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
         i32 valid0 = 0, valid1 = 0;
         f32 player0x, player0y, player0z;
         f32 player1x, player1y, player1z;
-        if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
+        if (__builtin_expect(Player[0] != NULL && Player[0]->apiobj.player_controlled, 0)) {
             player0x = Player[0]->apiobj.field_0xb8.m30;
             player0y = Player[0]->apiobj.field_0xb8.m31;
             player0z = Player[0]->apiobj.field_0xb8.m32;
@@ -1578,7 +1573,7 @@ static void ProcessSpaceLevel(spacelevel_s *space) {
                 if (space->queued_fighters[j].active == 0)
                     break;
             }
-            if (__builtin_expect(j != 96, 1)) {
+            if (j != 96) {
                 starfighter_s *fighter = &space->queued_fighters[j];
                 fighter->spawn_time = spline->spawn_time;
                 NuMtxSetIdentity(&fighter->matrix);
@@ -1901,8 +1896,9 @@ i32 ShipDropCoins(starfighter_s *fighter) {
     i32 index = 0;
     if (space->coin_history_count > 0) {
         for (; index < space->coin_history_count; ++index) {
-            if (space->coin_history[index].spline_id == fighter->spline->id &&
-                fighter->spawn_time == space->coin_history[index].spawn_time)
+            if (__builtin_expect(space->coin_history[index].spline_id == fighter->spline->id &&
+                                     fighter->spawn_time == space->coin_history[index].spawn_time,
+                                 0))
                 return 0;
         }
         if (index > 255)
@@ -1923,7 +1919,7 @@ static i32 CollideBoltStarFighter(BOLT_s *bolt, starfighter_s *fighter, _vuv_s *
     const f32 dz = position->z - fighter->matrix.m32;
     const f32 a = vx * vx + vy * vy + vz * vz;
     const f32 c = dx * dx + dy * dy + dz * dz - 2.0f;
-    if (!(a <= 0.0f)) {
+    if (a > 0.0f) {
         const f32 b = 2.0f * (dx * vx + dy * vy + dz * vz);
         const f32 discriminant = b * b - 4.0f * a * c;
         if (!(discriminant >= 0.0f))
@@ -1941,7 +1937,7 @@ static i32 CollideBoltStarFighter(BOLT_s *bolt, starfighter_s *fighter, _vuv_s *
         position->y += vy * time;
         position->z += vz * time;
     } else {
-        if (!(c <= 0.0f))
+        if (c > 0.0f)
             return 0;
     }
     if (fighter->spline == NULL || static_cast<u32>(fighter->spline->id - 84) > 1) {

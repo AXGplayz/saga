@@ -2,11 +2,11 @@
 #include "MechInputTouch_types.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
+#include "legoapi/lib/text.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/common.h"
 
-i32 GetMenuID();
 
 void MechInputTouchPodraceController::Activate() {
     if (active) {
@@ -65,8 +65,9 @@ void MechInputTouchPodraceController::Update(NuInputTouchData const *) {
         stick_values[1] = -1.0f;
     }
     button_was_pressed[2] = 1;
-    const f32 steering = steering_touch->touch_position.x * 3.0f;
-    stick_values[0] = MAX(-1.0f, (MIN(steering, 1.0f)));
+    f32 steering = steering_touch->touch_position.x * 3.0f;
+    steering = MIN(steering, 1.0f);
+    stick_values[0] = MAX(-1.0f, steering);
     UpdateButtons();
 }
 

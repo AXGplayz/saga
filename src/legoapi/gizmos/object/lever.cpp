@@ -33,9 +33,7 @@
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
-
-f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 platform_id);
-void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
+#include "legoapi/misc/utilities.h"
 
 struct LEVERPROGRESS {
     u32 pulled_down[1];
@@ -48,7 +46,6 @@ DECOMP_ASSERT(sizeof(LEVERPROGRESS) == 0xc, "LEVER progress ABI");
 LEVER_CONFIG LeverSys = {0x55, 0};
 
 extern "C" u8 show_lever_hint;
-void Hint_SetComplete(i32);
 
 void ReleaseLever(GameObject_s *object) {
     if (object->character_context == 0x4a) {
@@ -94,7 +91,7 @@ void Lever_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 f32 frame = *playing;
                 if (!(frame >= AnimListFrame(object->apiobj.character_model, object->context_animation, 0)))
                     return;
-            } else if (!(object->context_animation_timer >= 0.25f)) {
+            } else if (object->context_animation_timer < 0.25f) {
                 return;
             }
         }
@@ -301,11 +298,11 @@ static void Levers_Draw(void *world_ptr, void *, float) {
 
     EnableShadowMapRendering(0);
 
-    LEVEL_OBJECT_RUNTIME *animated_entry = &world->lev_objs[LEVER_SPECIAL_ANIMATED];
-    nuhspecial_s *animated_special = animated_entry->active != 0 ? &animated_entry->special : NULL;
-    if (animated_special != NULL) {
+    nuhspecial_s *animated_special = NULL;
+    if (world->lev_objs[LEVER_SPECIAL_ANIMATED].active != 0) {
+        animated_special = &world->lev_objs[LEVER_SPECIAL_ANIMATED].special;
         nuinstanim_s *instance_animation = NuSpecialGetInstAnim(animated_special);
-        if (instance_animation != NULL && animated_special->scene != NULL) {
+        if (instance_animation != NULL) {
             NuAnimEndFrameOld(animated_special->scene->instance_animation_data[instance_animation->anim_ix]);
         }
     }
@@ -330,31 +327,30 @@ static void Levers_Draw(void *world_ptr, void *, float) {
             NuMtxSetRotationX(&animated_matrix, 0);
             NuMtxRotateY(&animated_matrix, lever.y_rotation);
             NuMtxTranslate(&animated_matrix, &lever.position);
-            NuSpecialDrawAt(&animated_entry->special, &animated_matrix);
+            NuSpecialDrawAt(&world->lev_objs[LEVER_SPECIAL_ANIMATED].special, &animated_matrix);
         } else {
             f32 animation_frame = 0.0f;
-            if (lever.pull_progress <= 0.0f) {
-                if ((lever.flags & LEVER_FLAG_IDLE_STATE_MASK) == LEVER_FLAG_ENABLED) {
-                    if (lever.idle_animation_timer > 0.0f) {
-                        lever.idle_animation_timer -= FRAMETIME;
-                        if (!(lever.idle_animation_timer < 0.0f)) {
-                            const f32 idle_phase = lever.idle_animation_timer / 0.15f * 32768.0f + 16384.0f;
-                            animation_frame =
-                                (1.0f - NuFabs(NuTrigTable[(static_cast<i32>(idle_phase) >> 1) & 0x7fff])) * 1.5f +
-                                16.0f;
-                        } else {
-                            lever.idle_animation_timer = 0.0f;
-                        }
-                    } else if (qrand() < 0x800) {
-                        lever.idle_animation_timer = 0.15f;
-                    }
+            if (!(lever.pull_progress <= 0.0f)) {
+                if (lever.auto_reset_timer > 0.0f) {
+                    animation_frame = 32.0f;
+                } else if ((lever.flags & LEVER_FLAG_RETURNING) == 0) {
+                    animation_frame = lever.pull_progress * 31.0f + 1.0f;
+                } else {
+                    animation_frame = 32.0f + ((0.6f - lever.pull_progress) * 32.0f) / 0.6f;
                 }
-            } else if (lever.auto_reset_timer > 0.0f) {
-                animation_frame = 32.0f;
-            } else if ((lever.flags & LEVER_FLAG_RETURNING) == 0) {
-                animation_frame = lever.pull_progress * 31.0f + 1.0f;
-            } else {
-                animation_frame = 32.0f + ((0.6f - lever.pull_progress) * 32.0f) / 0.6f;
+            } else if ((lever.flags & LEVER_FLAG_IDLE_STATE_MASK) == LEVER_FLAG_ENABLED) {
+                if (lever.idle_animation_timer > 0.0f) {
+                    lever.idle_animation_timer -= FRAMETIME;
+                    if (!(lever.idle_animation_timer < 0.0f)) {
+                        const f32 idle_phase = lever.idle_animation_timer / 0.15f * 32768.0f + 16384.0f;
+                        animation_frame =
+                            (1.0f - NuFabs(NuTrigTable[(static_cast<i32>(idle_phase) >> 1) & 0x7fff])) * 1.5f + 16.0f;
+                    } else {
+                        lever.idle_animation_timer = 0.0f;
+                    }
+                } else if (qrand() < 0x800) {
+                    lever.idle_animation_timer = 0.15f;
+                }
             }
 
             EvalAnim(animated_special, animation_frame, &animated_matrix, 0);
@@ -378,7 +374,7 @@ static void Levers_Draw(void *world_ptr, void *, float) {
 
         i32 status_special = LEVER_SPECIAL_INCOMPLETE;
         if ((lever.flags & LEVER_FLAG_ENABLED) != 0) {
-            status_special = lever.pull_progress < 1.0f ? LEVER_SPECIAL_INCOMPLETE : LEVER_SPECIAL_COMPLETE;
+            status_special = !(lever.pull_progress >= 1.0f) ? LEVER_SPECIAL_INCOMPLETE : LEVER_SPECIAL_COMPLETE;
             bool draw_target = false;
             if ((lever.flags & LEVER_FLAG_HIDE_TARGET_INDICATOR) == 0 && lever.target_offset.y != 2000000.0f) {
                 draw_target = world->lev_objs[LEVER_SPECIAL_TARGET].active != 0;

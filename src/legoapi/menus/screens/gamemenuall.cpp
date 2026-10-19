@@ -71,6 +71,9 @@
 #include "legoapi/props/system/socksys.h"
 #include "nu2api/nucore/numemory.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/core/config/fileselect.h"
 #include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numusic/sfx.h"
@@ -223,7 +226,6 @@ extern char *apitxt_SAVING;
 extern f32 MENUBOTY;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
@@ -393,7 +395,6 @@ void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSiz
 
 extern i32 memcard_deleteneeded, memcard_deletestarted, memcard_deletefailed;
 extern i32 memcard_formatme, memcard_formatting, memcard_formatfailed;
-extern void (*FS_Callback)(char *, char *);
 
 f32 memcard_autosavecanceldelay = 1.5f;
 f32 memcard_createmessage_delay;
@@ -402,9 +403,6 @@ f32 memcard_message_delay;
 f32 memcard_result_delay;
 i32 memcard_justformatted;
 i32 saveload_autosavedisabled;
-
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
 
 extern "C" {
     void (*savesuccessfn)(void);
@@ -467,14 +465,6 @@ static i32 IsTextBreak(unsigned char *text, i32 index) {
     }
     return 0;
 }
-
-extern "C" {
-    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
-}
-
-extern "C" {
-extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
-} // extern "C"
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -595,8 +585,6 @@ extern i32 memcard_deletefailed;
 extern i32 memcard_formatting;
 extern i32 memcard_formatme;
 extern i32 memcard_formatfailed;
-extern void (*drawslotinfofn)(f32, f32, i32, i32);
-extern void (*drawslotsfn)(MENU *, f32);
 extern u8 RAP_WARNING_B;
 extern u8 RAP_WARNING_G;
 extern u8 RAP_WARNING_R;
@@ -605,8 +593,6 @@ extern "C" {
 extern f32 MENUBOTY;
 extern f32 MENUENTRYEXWIDTH;
 } // extern "C"
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
 
 extern "C" {
     extern "C++" {
@@ -649,16 +635,6 @@ DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 
 extern "C" i16 id_LANDSPEEDER;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
-
-extern "C" {
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
-
-}
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
 
 extern "C" {
     extern "C++" {
@@ -913,13 +889,13 @@ extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3) {
     if (MenuInfo[menu->menu].memory_x != -1) {
         menu->selected_column = MenuInfo[menu->menu].memory_x;
     }
-    if (menu->selected_column < menu->first_column) {
+    if (__builtin_expect(menu->selected_column < menu->first_column, 1)) {
         menu->selected_column = menu->first_column;
-    } else if (menu->selected_column > menu->last_column) {
+    } else if (__builtin_expect(menu->selected_column > menu->last_column, 0)) {
         menu->selected_column = menu->last_column;
     }
     if (menu_y < menu->first_row || menu_y > menu->last_row) {
-        if (MenuInfo[menu->menu].memory_y != -1) {
+        if (__builtin_expect(MenuInfo[menu->menu].memory_y != -1, 1)) {
             menu->selected_row = MenuInfo[menu->menu].memory_y;
         }
         if (menu->selected_row < menu->first_row) {
@@ -2306,7 +2282,7 @@ extern "C" {
                 memcard_autosaveinprogress = 1;
             }
         } else if (memcard_autosavestarted != 0 && memcard_saveneeded == 0 && memcard_savestarted == 0 &&
-                   !(memcard_autosavepredelay > 0.0f)) {
+                   memcard_autosavepredelay <= 0.0f) {
             memcard_slot = saveload_autosave;
             memcard_saveneeded = 1;
         }
@@ -2963,7 +2939,7 @@ void APIMenuDrawMemCardSlots(MENU *menu, f32 y) {
             blue = MENUFLASH1B;
             green = MENUFLASH1G;
         }
-    } else if (menu_pulse > 0.0f) {
+    } else if (__builtin_expect(menu_pulse > 0.0f, 1)) {
         red = MenuSlotColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
         green = MenuSlotColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
         blue = MenuSlotColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
@@ -3066,7 +3042,7 @@ i32 FindNearestBreak(unsigned char *text, i32 index) {
         while (static_cast<u8>(text[backward] - 0x80) <= 0x3f)
             --backward;
 
-        if (IsTextBreak(text, forward))
+        if (__builtin_expect(IsTextBreak(text, forward), 1))
             return forward;
         if (IsTextBreak(text, backward))
             return backward;
@@ -4068,7 +4044,7 @@ extern "C" {
                 if (text[position] == '\\' && text[position + 1] == 'n') {
                     previous_break = position + 1;
                     text[previous_break] = ' ';
-                } else if (max_width > width) {
+                } else if (!(max_width <= width)) {
                     previous_break = position;
                     continue;
                 } else if (previous_break == line_start) {
@@ -4172,7 +4148,7 @@ extern "C" {
             f32 scale = game_font->height / button_font->height;
             for (i32 i = 0; i < button_font->glyph_count; i++) {
                 for (i32 j = 0; j < game_font->glyph_count; j++) {
-                    if (button_font->unicode_map[i].unicode != game_font->unicode_map[j].unicode) {
+                    if (__builtin_expect(button_font->unicode_map[i].unicode != game_font->unicode_map[j].unicode, 0)) {
                         continue;
                     }
                     if (button_font->unicode_map[i].unicode >= 0x531 && button_font->unicode_map[i].unicode <= 0x53f) {

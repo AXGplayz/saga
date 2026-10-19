@@ -53,14 +53,14 @@
 #include "nu2api/nusound/nusound.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "gameapi/edtools/edgra.h"
+#include "legoapi/characters/core/characters.h"
+#include "legoapi/characters/core/customiser.h"
+#include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/items/fx/ripples.h"
 
 // World info lifetime (retail worldinfo.cpp): registering, initialising,
 // activating, streaming and resetting the two WORLDINFO slots.
 
-void CutScenes_Destroy(CUTSYS *system);
-void CharScenes_LevelDump(WORLDINFO *world);
-void Customiser_DumpAll(CUSTOMISER *, WORLDINFO *);
-void DestroyRippleMtls(WORLDINFO *);
 extern "C" {
     extern i32 part_page_on[8];
 }
@@ -252,8 +252,8 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     // Level progress copy
     LEVEL_PROGRESS_s *progress = (LEVEL_PROGRESS_s *)world->level_progress;
-    if (NOSOUND == 0 && progress != NULL && (progress->flags & 1) == 0) {
-        progress->flags |= 1;
+    if (NOSOUND == 0 && progress != NULL && (progress->flags_low & 1) == 0) {
+        progress->flags_low |= 1;
         progress->data = world->progress_data;
     }
 

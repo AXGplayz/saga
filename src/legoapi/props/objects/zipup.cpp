@@ -19,6 +19,7 @@
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/misc/supportall.h"
 #include "legoapi/misc/utilities.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/world/level.h"
@@ -61,8 +62,6 @@ struct ZIPUPPROGRESS {
 i32 zipup_gizmotype_id = -1;
 static char zipup_outputName[] = "Active";
 static NUVEC ZipUpHookOffset = {0.0f, -0.1143f, -0.0859f};
-
-i32 SuperWeirdo(GameObject_s *);
 
 numtl_s *ropemtl;
 
@@ -143,8 +142,6 @@ static inline void SetRopeVertex(NURND_VERTEX3D *vertex, f32 x, f32 y, f32 z, f3
     vertex->v = v;
     vertex->colour = colour;
 }
-
-i32 SuperWeirdo(GameObject_s *object);
 
 // Each control mode retains its own requested and interpolated hint row.
 
@@ -308,7 +305,7 @@ void ZipUps_Reset(void *world_ptr, void *, void *progress_ptr) {
 
             NewTerrPlatformsOff();
             f32 ground_height = GameShadow(NULL, &zipup->lower_position, 5.0f, -1);
-            if (ground_height != 2000000.0f) {
+            if (__builtin_expect(ground_height != 2000000.0f, 0)) {
                 zipup->lower_ground_height = ground_height + 0.005f;
                 FindAnglesZX(&ShadNorm, &zipup->lower_ground_x_rotation, &zipup->lower_ground_z_rotation);
             } else {
@@ -515,7 +512,7 @@ static void ZipUps_Draw(void *world_ptr, void *, float) {
                 continue;
             }
 
-            if (world->lev_objs[ZIPUP_SPECIAL_GROUND_SWIRL].active != 0) {
+            if (__builtin_expect(world->lev_objs[ZIPUP_SPECIAL_GROUND_SWIRL].active != 0, 0)) {
                 NuMtxSetRotationY(&matrices[ZIPUP_MATRIX_LOWER_SWIRL], spin_angle);
                 NuMtxRotateZ(&matrices[ZIPUP_MATRIX_LOWER_SWIRL], zipup->lower_ground_z_rotation);
                 NuMtxRotateX(&matrices[ZIPUP_MATRIX_LOWER_SWIRL], zipup->lower_ground_x_rotation);
@@ -567,7 +564,7 @@ ZIPUP *ZipUp_FindNearest(WORLDINFO_s *world, nuvec_s *position, float radius, fl
     ZIPUP *nearest = NULL;
     ZIPUP *zipup = world->zipups;
     for (i32 i = 0; i < world->zipup_count; ++i, ++zipup) {
-        if (zipup != NULL && !ZipUp_CanUse(zipup, object))
+        if (__builtin_expect(zipup != NULL && !ZipUp_CanUse(zipup, object), 0))
             continue;
         float candidate = NuVecDistSqr(position, &zipup->lower_position, NULL);
         if (candidate < nearest_distance) {
@@ -638,7 +635,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
                     NuVecSub(&delta, &object->zipup_swing_position, &object->zipup_start_position);
                     NuVecScale(&delta, &delta, fraction);
                     NuVecAdd(&api.position, &object->zipup_start_position, &delta);
-                    if (object->context_animation_timer >= object->airborne_action_duration) {
+                    if (!(object->context_animation_timer < object->airborne_action_duration)) {
                         object->field_0x7a3 = 2;
                         object->context_animation_timer = 0.0f;
                         object->context_animation = LEGOACT_WHIP_SWING_JUMP;
@@ -702,7 +699,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
             PlaySfx("GrapWindLp", &api.collision_position);
             return;
         }
-        if (object->context_animation_timer < 1.5f) {
+        if (!(object->context_animation_timer >= 1.5f)) {
             zipup->runtime_flags |= 2;
             u16 start_angle = NuAtan2D(zipup->rider_start_offset.x, zipup->rider_start_offset.z);
             NUVEC end_offset;
@@ -831,7 +828,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
     NUVEC *heading = start->x == hook->x && start->z == hook->z ? destination : hook;
     api.movement_facing_angle = NuAtan2D(heading->x - start->x, heading->z - start->z);
     api.velocity.y = 0.0f;
-    if (__builtin_expect(api.character_data->game_character->field275_0x116 == 2, 1))
+    if (api.character_data->game_character->field275_0x116 == 2)
         FastWeaponOut(object, 1);
     object->context_animation_timer = 0.0f;
     PlaySfx("GrapAttach", &api.upper_position);
@@ -938,7 +935,7 @@ void InitRopeMtl(char *name, variptr_u *buffer, variptr_u *buffer_end) {
     NuStrCat(path, name);
     buffer->addr = ALIGN(buffer->addr, 16);
     ropemtl->tex_id = NuTexRead(path, buffer, *buffer_end);
-    if (ropemtl->tex_id == 0) {
+    if (__builtin_expect(ropemtl->tex_id == 0, 0)) {
         NuMtlDestroy(ropemtl);
         ropemtl = NULL;
     } else {
@@ -990,12 +987,13 @@ void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *materia
     f32 step = spacing * ROPELEN;
     u16 rotation = 0;
     while (position.y < length) {
-        f32 magnitude = scale;
         if (grow_time >= time) {
             i32 angle = (i32)((1.0f / grow_time * time) * 16384.0f + 32768.0f + 16384.0f);
-            magnitude = (1.0f + NuTrigTable[(angle >> 1) & 0x7fff]) * scale;
+            f32 magnitude = (1.0f + NuTrigTable[(angle >> 1) & 0x7fff]) * scale;
+            size.x = size.y = size.z = magnitude;
+        } else {
+            size.x = size.y = size.z = scale;
         }
-        size.x = size.y = size.z = magnitude;
         rotation = (u16)(rotation + 0x5555);
         NuMtxSetScale(&matrix, &size);
         NuMtxTranslate(&matrix, &position);

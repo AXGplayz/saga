@@ -60,6 +60,9 @@
 #include "legoapi/world/levels/hub.h"
 #include "legogame/game.h"
 #include "nu2api/nucore/nu2api_nucore_misc.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/menus/screens/credits.h"
 
 extern u8 MENULOSTR1, MENULOSTG1, MENULOSTB1, MENULOSTA1;
 extern u8 MENULOSTR2, MENULOSTG2, MENULOSTB2, MENULOSTA2;
@@ -92,7 +95,6 @@ extern i16 tOFF;
 extern i16 tALLSTUDSCOLLECTED;
 extern i16 tSELECTING;
 extern i16 tCONTROLLER;
-void Credits_UpdateMenu(MENU *menu);
 extern i16 tTOUCHTOSTART;
 extern i16 tNEWGAME;
 extern i16 tLOADGAME;
@@ -100,8 +102,6 @@ extern i16 tCONTROLS;
 extern i16 tCONTROLLERCONNECTED;
 extern i16 tTOUCH;
 extern i16 tCONSOLE;
-extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
-                          u8 green, u8 blue, f32 max_width, i32 max_lines);
 extern f32 HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING;
 extern i16 tSELECTCONTROLS;
@@ -124,7 +124,6 @@ extern i16 tEMPTY;
 extern i16 tGAME;
 extern i16 tNOSPACE;
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern "C" void PlaySfx(char *, NUVEC *);
 static f32 newgamewait;
 static u32 buttons_store[15];
 // Initialised by the unit's static constructor; nothing in the retail binary reads it.
@@ -1008,7 +1007,7 @@ void MenuUpdateOptions(MENU_s *menu) {
 
     i32 preview = 0;
     opts_sfx_wait -= FRAMETIME;
-    if (opts_sfx_wait <= 0.0f) {
+    if (!(opts_sfx_wait > 0.0f)) {
         opts_sfx_i = static_cast<i32>(static_cast<u32>(opts_sfx_i) + 1);
         opts_sfx_wait += 1.5f;
         if (opts_sfx_i == 1)
@@ -1371,7 +1370,7 @@ void UpdateGameMenu(GAMEPAD_s *pad, i32 a2) {
     // after the save loader has selected the destination level.
     if (!(FadeSys.fade > 0.0f) && NewMode == 0 && NewLData == NULL && editor_active == 0) {
         u32 held = 0, pressed = 0, alternate_held = 0, alternate_pressed = 0;
-        if (menu_id != 1 || !(GameTimer.time_elapsed < 4.0f)) {
+        if (menu_id != 1 || GameTimer.time_elapsed >= 4.0f) {
             if (both_pads) {
                 held = GamePad[0].unknown_04 | GamePad[1].unknown_04;
                 pressed = GamePad[0].buttons_down_08 | GamePad[1].buttons_down_08;

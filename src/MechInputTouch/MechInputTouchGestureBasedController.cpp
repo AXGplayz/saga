@@ -459,13 +459,15 @@ void MechInputTouchGestureBasedController::ProcessDragMovement(GameObject_s &obj
     f32 origin_x = field_90->down_position.x;
     f32 origin_y = field_90->down_position.y;
     if (object.id != id_GRABCONTROL && stick_mode.value == 0) {
-        origin_x = MAX(-0.6f, (MIN(object.camera_screen_position.x, 0.6f)));
-        origin_y = MAX(-0.6f, (MIN(object.camera_screen_position.y, 0.6f)));
+        const f32 screen_x = object.camera_screen_position.x;
+        const f32 screen_y = object.camera_screen_position.y;
+        origin_x = MAX(-0.6f, (MIN(screen_x, 0.6f)));
+        origin_y = MAX(-0.6f, (MIN(screen_y, 0.6f)));
     }
     NuVec2 drag = {origin_x - field_90->touch_position.x, origin_y - field_90->touch_position.y};
     if (field_94 != NULL) {
         const NuVec2 other_drag = {origin_x - field_94->touch_position.x, origin_y - field_94->touch_position.y};
-        if (drag.x * drag.x + drag.y * drag.y < other_drag.x * other_drag.x + other_drag.y * other_drag.y) {
+        if (other_drag.x * other_drag.x + other_drag.y * other_drag.y > drag.x * drag.x + drag.y * drag.y) {
             drag = other_drag;
         }
     }
@@ -512,9 +514,11 @@ void MechInputTouchGestureBasedController::ProcessDragMovement(GameObject_s &obj
         return;
     }
     const i32 angle = NuAtan2D(drag.x, drag.y);
+    const f32 sine = NU_SIN_LUT(angle);
+    const f32 cosine = NU_COS_LUT(angle);
     const f32 strength = (MAX(0.0f, (MIN((distance - 0.05f) * 4.0f, 1.0f)))) * 1.4f;
-    const f32 stick_x = -(strength * NU_SIN_LUT(angle));
-    const f32 stick_y = strength * NU_COS_LUT(angle);
+    const f32 stick_y = strength * cosine;
+    const f32 stick_x = -(strength * sine);
     stick_values[0] = MAX(-1.0f, (MIN(stick_x, 1.0f)));
     stick_values[1] = MAX(-1.0f, (MIN(stick_y, 1.0f)));
     field_9c += FRAMETIME;
@@ -668,7 +672,10 @@ bool MechInputTouchGestureBasedController::OnSwipe(GameObject_s &object, TouchHo
     packet.type = 3;
     packet.touch_holder = &holder;
     packet.start = holder.swipe_samples[index].position;
-    packet.velocity = VuVec_Zero;
+    packet.velocity.x = VuVec_Zero.x;
+    packet.velocity.y = VuVec_Zero.y;
+    packet.velocity.z = VuVec_Zero.z;
+    packet.velocity.w = VuVec_Zero.w;
     packet.end = holder.touch_position;
     isBucking = (reinterpret_cast<u8 *>(object.apiobj.character_data->player_config)[0x96] & 2) != 0;
     TriggerJumpTask(packet, true, false, true);
@@ -687,7 +694,7 @@ __attribute__((optimize("no-tree-slp-vectorize"))) bool MechInputTouchGestureBas
 
     VuVec touch_position(holder.down_position.x, holder.down_position.y, 0.0f, 1.0f);
     MechObjectInterface *target = holder.target_object.Get();
-    if (target == NULL)
+    if (__builtin_expect(target == NULL, 0))
         target = holder.previous_target_object.Get();
     if (target == NULL)
         target = MechInputTouchSystem::FindTargetObject(object, touch_position, 0x80, NULL, &temporary_position);
@@ -745,7 +752,7 @@ __attribute__((optimize("no-tree-slp-vectorize"))) bool MechInputTouchGestureBas
         StartNewTask(new MechTouchTaskPlannedDoubleClickGoTo(*this, target), holder, false, true);
         return true;
     }
-    if ((object.apiobj.character_data->model_flags & 8) == 0)
+    if (__builtin_expect((object.apiobj.character_data->model_flags & 8) == 0, 1))
         return OnClick(object, holder);
 
     if (attack_jump)
@@ -974,7 +981,7 @@ bool MechInputTouchGestureBasedController::PerformCloseMechanic(GameObject_s &ob
             f32 dx = teleport_position.x - object.apiobj.position.x;
             f32 dy = teleport_position.y - object.apiobj.position.y;
             f32 dz = teleport_position.z - object.apiobj.position.z;
-            if (__builtin_fabsf(dy) < object.apiobj.scaled_height && dx * dx + dz * dz < 0.35f * 0.35f) {
+            if (__builtin_fabsf(dy) < object.apiobj.scaled_height && !(dx * dx + dz * dz >= 0.35f * 0.35f)) {
                 StartNewTask(new MechTouchTaskUseTeleport(*this, NULL, position), holder, true, true);
                 return true;
             }

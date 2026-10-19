@@ -93,8 +93,6 @@
 #include "nu2api/nu3d/nupostparams.h"
 #include "nu2api/nu3d/nu3d_includes.h"
 
-pushblock_s *BlockInBlock(WORLDINFO_s *world, pushblock_s *block, i32 excluded, pushblock_s **support);
-
 extern "C" {
     i32 edpart_set_part = 5;
     i32 edpart_filter;
@@ -366,18 +364,6 @@ extern "C" {
     ed_module_s edpartdesc = {NULL,        NULL, "PART Editor", edpartInit, edpartClose, edpartEnter,  NULL,
                               edpartApply, NULL, NULL,          0x74726170, edpartProc,  edpartRender, NULL};
 }
-
-extern "C" {
-    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
-}
-
-extern "C" {
-void Debris(i32 update_panel_time);
-} // extern "C"
-
-extern "C" {
-extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
-} // extern "C"
 
 struct rtlset;
 rtlset *PartRTL = NULL;
@@ -685,14 +671,6 @@ extern i16 tSELECT, tSELECTED, tSELECTING;
 extern void (*drawslotinfofn)(f32, f32, i32, i32);
 extern void (*drawslotsfn)(MENU *, f32);
 
-void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
-
-void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
-
 extern "C" {
     extern "C++" {
         static __attribute__((noinline, noclone)) void
@@ -734,13 +712,8 @@ DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 
 extern "C" i16 id_LANDSPEEDER;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
 
 extern void (*FS_Callback)(char *, char *);
-
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
 
 struct nuhspecial_s;
 
@@ -748,14 +721,6 @@ extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
 extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
-
-extern "C" {
-extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
-                             void (*callback)(char *, char *));
-
-}
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
 
 extern "C" {
     extern "C++" {
@@ -1328,11 +1293,11 @@ static void edpartSScaleMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 static void edpartDataMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edpart_data_menu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelDataMenu, "Data Menu");
     if (edpart_data_menu != NULL) {
-        if (edpart_create_type != -1)
+        if (edpart_create_type == -1)
+            eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Type Name..."));
+        else
             eduiMenuAddItem(edpart_data_menu,
                             eduiItemSelCreate(1, edblack, 0, 0, edpartChangeNameMenu, "Type Name..."));
-        else
-            eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Type Name..."));
         if (edpart_create_type != -1) {
             eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartCopyType, "Copy Type"));
             eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartDeleteType, "Delete Type"));
@@ -2468,7 +2433,7 @@ extern "C" {
             movement.z = time * part->velocity.z;
         }
         f32 distance = NuVecMagSqr(&movement);
-        if (distance < 0.001f || distance > 10000.0f) {
+        if (!(distance >= 0.001f) || distance > 10000.0f) {
             part->field_209 = -1;
             return;
         }
@@ -2861,8 +2826,8 @@ void edpartHighlightNearest() {
                 continue;
 
             NuVecSub(&delta, &edpart_cam_pos, &part_emits[index].position);
-            if (edpart_copy_size < __builtin_fabsf(delta.x) || edpart_copy_size < __builtin_fabsf(delta.y) ||
-                edpart_copy_size < __builtin_fabsf(delta.z))
+            if (!(edpart_copy_size >= __builtin_fabsf(delta.x)) || !(edpart_copy_size >= __builtin_fabsf(delta.y)) ||
+                !(edpart_copy_size >= __builtin_fabsf(delta.z)))
                 continue;
             ++edpart_copy_enclosed;
             edbitsDrawDiagonalCross(part_emits[index].position.x, part_emits[index].position.y,
@@ -3574,6 +3539,12 @@ extern "C" PART_s *HitParts(GameObject_s *owner, NUVEC *positions, i32 count, f3
         else
             memset(&part->special, 0, sizeof(part->special));
         part->active &= ~0x14;
+        part->bounds_min.x = part->position.x - part->target_radius;
+        part->bounds_max.x = part->position.x + part->target_radius;
+        part->bounds_min.y = part->position.y - part->target_radius;
+        part->bounds_max.y = part->position.y + part->target_radius;
+        part->bounds_min.z = part->position.z - part->target_radius;
+        part->bounds_max.z = part->position.z + part->target_radius;
         part->field_1ac = params->field_30;
         part->move_callback = params->move_fn;
         part->update_callback = params->update_fn;
@@ -3584,12 +3555,6 @@ extern "C" PART_s *HitParts(GameObject_s *owner, NUVEC *positions, i32 count, f3
         part->stop_callback = params->stop_fn;
         part->replace_callback = params->replace_fn;
         part->draw_callback = params->draw_fn;
-        part->bounds_min.x = part->position.x - part->target_radius;
-        part->bounds_min.y = part->position.y - part->target_radius;
-        part->bounds_min.z = part->position.z - part->target_radius;
-        part->bounds_max.x = part->position.x + part->target_radius;
-        part->bounds_max.y = part->position.y + part->target_radius;
-        part->bounds_max.z = part->position.z + part->target_radius;
         part->elapsed = 0.0f;
         memcpy(part->field_10c, params->field_a8, sizeof(part->field_10c));
         for (i32 i = 0; i < 5; ++i)
@@ -3716,135 +3681,123 @@ extern "C" PART_s *HitParts(GameObject_s *owner, NUVEC *positions, i32 count, f3
     }
 
     void AddVariableShotPARTEffect(i32 effect_index, NUVEC *position, f32 rate, f32 duration, NUMTX *orientation) {
+        part_type_s *type = &part_types[effect_index];
         NUVEC part_position;
-        if (part_types[effect_index].name[0] == 0 || part_types[effect_index].emission_rate <= 0.0f) {
-            return;
-        }
+        if (type->name[0] != 0 && !(type->emission_rate <= 0.0f)) {
+            const f32 effective_rate = rate <= 0.0f ? type->emission_rate : rate;
+            if (orientation == NULL) {
+                orientation = &numtx_identity;
+            }
 
-        const f32 effective_rate = rate <= 0.0f ? part_types[effect_index].emission_rate : rate;
-        if (orientation == NULL) {
-            orientation = &numtx_identity;
-        }
+            const f32 interval = NuFdiv(1.0f, effective_rate);
+            const f32 end_time = partglobaltime + duration;
+            f32 emission_time = static_cast<i32>(NuFdiv(partglobaltime, interval)) * interval + interval;
+            if (!(emission_time > end_time)) {
 
-        const f32 interval = NuFdiv(1.0f, effective_rate);
-        const f32 end_time = partglobaltime + duration;
-        f32 emission_time = static_cast<i32>(NuFdiv(partglobaltime, interval)) * interval + interval;
-        if (emission_time <= end_time) {
+                i32 remaining = 99;
+                do {
+                    ADDPART_ALIGNED16 params = Default_ADDPART;
 
-            i32 remaining = 99;
-            do {
-                ADDPART_ALIGNED16 params = Default_ADDPART;
+                    f32 random = NuRandFloatSeeded(&partseed);
+                    part_position.x = (random + random) * type->position_random.x - type->position_random.x;
+                    random = NuRandFloatSeeded(&partseed);
+                    part_position.y = (random + random) * type->position_random.y - type->position_random.y;
+                    random = NuRandFloatSeeded(&partseed);
+                    part_position.z = (random + random) * type->position_random.z - type->position_random.z;
+                    NuVecMtxTransformVU0(&part_position, &part_position, orientation);
+                    NuVecAdd(&part_position, &part_position, position);
 
-                f32 random = NuRandFloatSeeded(&partseed);
-                part_position.x = (random + random) * part_types[effect_index].position_random.x -
-                                  part_types[effect_index].position_random.x;
-                random = NuRandFloatSeeded(&partseed);
-                part_position.y = (random + random) * part_types[effect_index].position_random.y -
-                                  part_types[effect_index].position_random.y;
-                random = NuRandFloatSeeded(&partseed);
-                part_position.z = (random + random) * part_types[effect_index].position_random.z -
-                                  part_types[effect_index].position_random.z;
-                NuVecMtxTransformVU0(&part_position, &part_position, orientation);
-                NuVecAdd(&part_position, &part_position, position);
+                    NUVEC velocity = {0.0f, type->speed, 0.0f};
+                    random = NuRandFloatSeeded(&partseed);
+                    velocity.x += (random + random) * type->velocity_random.x - type->velocity_random.x;
+                    random = NuRandFloatSeeded(&partseed);
+                    velocity.y += (random + random) * type->velocity_random.y - type->velocity_random.y;
+                    random = NuRandFloatSeeded(&partseed);
+                    velocity.z += (random + random) * type->velocity_random.z - type->velocity_random.z;
+                    NuVecMtxTransformVU0(&velocity, &velocity, orientation);
 
-                NUVEC velocity = {0.0f, part_types[effect_index].speed, 0.0f};
-                random = NuRandFloatSeeded(&partseed);
-                velocity.x += (random + random) * part_types[effect_index].velocity_random.x -
-                              part_types[effect_index].velocity_random.x;
-                random = NuRandFloatSeeded(&partseed);
-                velocity.y += (random + random) * part_types[effect_index].velocity_random.y -
-                              part_types[effect_index].velocity_random.y;
-                random = NuRandFloatSeeded(&partseed);
-                velocity.z += (random + random) * part_types[effect_index].velocity_random.z -
-                              part_types[effect_index].velocity_random.z;
-                NuVecMtxTransformVU0(&velocity, &velocity, orientation);
+                    params.gravity = type->gravity;
+                    params.position = &part_position;
+                    params.velocity = &velocity;
+                    params.field_20 = type->bounce;
 
-                params.gravity = part_types[effect_index].gravity;
-                params.position = &part_position;
-                params.velocity = &velocity;
-                params.field_20 = part_types[effect_index].bounce;
-
-                i32 variant = 0;
-                if (part_types[effect_index].variant_count != 0 && part_types[effect_index].variant_mode <= 1) {
-                    variant = static_cast<i32>(NuRandFloatSeeded(&partseed) * 65535.0f) %
-                              part_types[effect_index].variant_count;
-                }
-                params.field_28 = part_types[effect_index].effect_ids[variant];
-                nuhspecial_s special;
-                if (params.field_28 == 9999) {
-                    params.special = NULL;
-                } else if (params.field_28 != -1) {
-                    params.special = &special;
-                    NuGScnGetSpecial(&special, part_scene[part_types[effect_index].scene_indices[variant]],
-                                     params.field_28);
-                }
-
-                params.field_a4 = part_types[effect_index].lifetime +
-                                  NuRandFloatSeeded(&partseed) * part_types[effect_index].lifetime_random;
-                NUMTX_ALIGNED16 matrix;
-                NuMtxSetIdentity(&matrix);
-                const f32 rotation_x = static_cast<f32>(part_types[effect_index].rotation[0]);
-                const f32 random_x = NuRandFloatSeeded(&partseed);
-                const f32 range_x = static_cast<f32>(part_types[effect_index].rotation_random[0]);
-                const f32 rotation_y = static_cast<f32>(part_types[effect_index].rotation[1]);
-                const f32 random_y = NuRandFloatSeeded(&partseed);
-                const f32 range_y = static_cast<f32>(part_types[effect_index].rotation_random[1]);
-                const f32 rotation_z = static_cast<f32>(part_types[effect_index].rotation[2]);
-                const f32 random_z = NuRandFloatSeeded(&partseed);
-                const f32 range_z = static_cast<f32>(part_types[effect_index].rotation_random[2]);
-                for (i32 axis = 0; axis < 3; ++axis) {
-                    params.field_a8[axis] = part_types[effect_index].rotation[axis];
-                    params.field_a8[axis + 3] = part_types[effect_index].rotation_random[axis];
-                }
-                NuMtxRotateX(&matrix, static_cast<i16>(
-                                          static_cast<i32>((random_x + random_x) * range_x + rotation_x - range_x)));
-                NuMtxRotateY(&matrix, static_cast<i16>(
-                                          static_cast<i32>((random_y + random_y) * range_y + rotation_y - range_y)));
-                NuMtxRotateZ(&matrix, static_cast<i16>(
-                                          static_cast<i32>((random_z + random_z) * range_z + rotation_z - range_z)));
-                matrix.m30 = part_position.x;
-                matrix.m31 = part_position.y;
-                matrix.m32 = part_position.z;
-                params.matrix = &matrix;
-
-                params.flags = part_types[effect_index].flags & ~0x60000;
-                if (part_types[effect_index].trail_effects[0] != -1) {
-                    params.field_60 = part_types[effect_index].trail_effects[0];
-                    params.flags |= 0x40000;
-                }
-                if (part_types[effect_index].trail_effects[1] != -1) {
-                    params.field_64 = part_types[effect_index].trail_effects[1];
-                    params.flags |= 0x40000;
-                }
-                if (part_types[effect_index].attached_effect != -1) {
-                    params.field_58 = part_types[effect_index].attached_effect;
-                    params.flags |= 0x20000;
-                }
-                params.field_68 = part_types[effect_index].trail_rates[0];
-                params.field_6c = part_types[effect_index].trail_rates[1];
-                params.field_70 = part_types[effect_index].impact_effect;
-                if (part_types[effect_index].impact_part == -1 && part_types[effect_index].impact_part_name[0] != 0) {
-                    part_types[effect_index].impact_part = PARTLookupType(part_types[effect_index].impact_part_name);
-                }
-                params.field_74 = part_types[effect_index].impact_part;
-                params.field_78 = part_types[effect_index].kill_effect;
-                params.field_98 = part_types[effect_index].field_160;
-                params.field_9c = part_types[effect_index].field_164;
-                params.field_a0 = part_types[effect_index].field_168;
-                AddPart(&params);
-
-                for (i32 sound = 0; sound < 4; ++sound) {
-                    if (part_types[effect_index].sounds[sound] != -1 &&
-                        part_types[effect_index].sound_modes[sound] == 3) {
-                        PlaySfxById(part_types[effect_index].sounds[sound], &part_position);
+                    i32 variant = 0;
+                    if (type->variant_count != 0 && type->variant_mode <= 1) {
+                        variant = static_cast<i32>(NuRandFloatSeeded(&partseed) * 65535.0f) % type->variant_count;
                     }
-                }
-                part_types[effect_index].last_used_time = emission_time;
-                emission_time += interval;
-            } while (emission_time <= end_time && --remaining != 0);
+                    params.field_28 = type->effect_ids[variant];
+                    nuhspecial_s special;
+                    if (type->effect_ids[variant] == 9999) {
+                        params.special = NULL;
+                    } else if (type->effect_ids[variant] != -1) {
+                        params.special = &special;
+                        NuGScnGetSpecial(&special, part_scene[type->scene_indices[variant]], params.field_28);
+                    }
+
+                    params.field_a4 = type->lifetime + NuRandFloatSeeded(&partseed) * type->lifetime_random;
+                    NUMTX_ALIGNED16 matrix;
+                    NuMtxSetIdentity(&matrix);
+                    const f32 rotation_x = static_cast<f32>(type->rotation[0]);
+                    const f32 random_x = NuRandFloatSeeded(&partseed);
+                    const f32 range_x = static_cast<f32>(type->rotation_random[0]);
+                    const f32 rotation_y = static_cast<f32>(type->rotation[1]);
+                    const f32 random_y = NuRandFloatSeeded(&partseed);
+                    const f32 range_y = static_cast<f32>(type->rotation_random[1]);
+                    const f32 rotation_z = static_cast<f32>(type->rotation[2]);
+                    const f32 random_z = NuRandFloatSeeded(&partseed);
+                    const f32 range_z = static_cast<f32>(type->rotation_random[2]);
+                    for (i32 axis = 0; axis < 3; ++axis) {
+                        params.field_a8[axis] = type->rotation[axis];
+                        params.field_a8[axis + 3] = type->rotation_random[axis];
+                    }
+                    NuMtxRotateX(&matrix, static_cast<i16>(static_cast<i32>((random_x + random_x) * range_x +
+                                                                            rotation_x - range_x)));
+                    NuMtxRotateY(&matrix, static_cast<i16>(static_cast<i32>((random_y + random_y) * range_y +
+                                                                            rotation_y - range_y)));
+                    NuMtxRotateZ(&matrix, static_cast<i16>(static_cast<i32>((random_z + random_z) * range_z +
+                                                                            rotation_z - range_z)));
+                    matrix.m30 = part_position.x;
+                    matrix.m31 = part_position.y;
+                    matrix.m32 = part_position.z;
+                    params.matrix = &matrix;
+
+                    params.flags = type->flags & ~0x60000;
+                    if (type->trail_effects[0] != -1) {
+                        params.field_60 = type->trail_effects[0];
+                        params.flags |= 0x40000;
+                    }
+                    if (type->trail_effects[1] != -1) {
+                        params.field_64 = type->trail_effects[1];
+                        params.flags |= 0x40000;
+                    }
+                    if (type->attached_effect != -1) {
+                        params.field_58 = type->attached_effect;
+                        params.flags |= 0x20000;
+                    }
+                    params.field_68 = type->trail_rates[0];
+                    params.field_6c = type->trail_rates[1];
+                    params.field_70 = type->impact_effect;
+                    if (type->impact_part == -1 && type->impact_part_name[0] != 0) {
+                        type->impact_part = PARTLookupType(type->impact_part_name);
+                    }
+                    params.field_74 = type->impact_part;
+                    params.field_78 = type->kill_effect;
+                    params.field_98 = type->field_160;
+                    params.field_9c = type->field_164;
+                    params.field_a0 = type->field_168;
+                    AddPart(&params);
+
+                    for (i32 sound = 0; sound < 4; ++sound) {
+                        if (type->sounds[sound] != -1 && type->sound_modes[sound] == 3) {
+                            PlaySfxById(type->sounds[sound], &part_position);
+                        }
+                    }
+                    type->last_used_time = emission_time;
+                    emission_time += interval;
+                } while (emission_time <= end_time && --remaining != 0);
+            }
         }
     }
-
 }
 
 void edpartLoadSingleType(part_typedesc_s *type, i32 version, i32 page) {
@@ -4538,11 +4491,10 @@ void edpartDoInput(nupad_s *pad) {
             ++orphans;
         else {
             for (i32 previous = 0; previous < variant; ++previous) {
-                if (effect != edpart_nearest_type->effect_ids[previous]) {
-                    continue;
+                if (effect == edpart_nearest_type->effect_ids[previous]) {
+                    ++duplicates;
+                    break;
                 }
-                ++duplicates;
-                break;
             }
         }
     }
@@ -4624,7 +4576,7 @@ void UpdatePartEmits(f32 time) {
             PART_EMIT_SOUND_ON(3);
         }
         if ((type->flags & 0x400000) != 0) {
-            if (type->maximum_distance > emitter->camera_distance && previous_distance >= type->maximum_distance) {
+            if (!(type->maximum_distance <= emitter->camera_distance) && previous_distance >= type->maximum_distance) {
                 emitter->time_24 = partglobaltime;
                 emitter->time_20 = partglobaltime - interval + 0.001f;
                 emitter->time_28 = partglobaltime - 1.0f;
@@ -4846,8 +4798,8 @@ extern "C" {
             if ((part->active & 2) == 0) {
                 f32 movement_time = time;
                 if ((part->flags & 0x400) == 0) {
-                    if (time >= part->elapsed) {
-                        part->radius_state = part->target_radius > part->radius ? 1 : 0;
+                    if (!(time < part->elapsed)) {
+                        part->radius_state = !(part->target_radius <= part->radius) ? 1 : 0;
                         if ((part->active & 4) != 0) {
                             if ((part->flags & 0x80000) != 0 && (part->active & 0x10) != 0 && part_platimpactcnt < 4) {
                                 part_platimpactlist[part_platimpactcnt++] = part->field_200;
@@ -4988,7 +4940,7 @@ extern "C" {
                 if ((part->active & 1) != 0) {
                     if (part->field_1c4 != NULL)
                         part->field_1c4(part);
-                    if (part->field_100 > 0.0f) {
+                    if (!(part->field_100 <= 0.0f)) {
                         part->field_100 -= time;
                         if (part->field_100 <= 0.0f)
                             KillPart(part, 0);

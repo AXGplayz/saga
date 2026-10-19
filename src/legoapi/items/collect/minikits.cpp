@@ -56,6 +56,7 @@
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nupostparams.h"
+#include "legoapi/audio/audio.h"
 
 HUBMINIKITPIECES_s **Char_MiniKit;
 static VARIPTR minikits_savecharacterbufferptr;
@@ -65,7 +66,6 @@ extern "C" VARIPTR characterbuffer_end;
 char *LEGOASCII_BIGARROW = NULL;
 
 extern i32 LEGOOBJ_MINIKIT, LEGOOBJ_CHARKIT;
-void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
 
 struct GAMEMESSAGE_s;
 struct nuhspecial_s;
@@ -155,26 +155,25 @@ void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflec
     if (Char_MiniKit == NULL)
         return;
     HUBMINIKITPIECES_s *kit = Char_MiniKit[id];
-    if (kit != NULL) {
-        bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
-        for (i32 i = 0; i < kit->piece_count; ++i) {
-            HUBMINIKITPIECE_s *piece = &kit->pieces[i];
-            if (NuSpecialExistsFn(&piece->special) == 0)
-                continue;
-            piece = &kit->pieces[i];
-            draw_matrix = piece->matrix;
-            NuMtxMul(&draw_matrix, &draw_matrix, matrix);
-            piece = &kit->pieces[i];
-            NuSpecialDrawAt(&piece->special, &draw_matrix);
-            if (reflection) {
-                NUMTX reflected;
-                if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) !=
-                    0) {
-                    NuRndrStartReflectionRender(0);
-                    piece = &kit->pieces[i];
-                    NuSpecialDrawAt(&piece->special, &reflected);
-                    NuRndrEndReflectionRender();
-                }
+    if (kit == NULL)
+        return;
+    bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
+    for (i32 i = 0; i < kit->piece_count; ++i) {
+        HUBMINIKITPIECE_s *piece = &kit->pieces[i];
+        if (NuSpecialExistsFn(&piece->special) == 0)
+            continue;
+        piece = &kit->pieces[i];
+        draw_matrix = piece->matrix;
+        NuMtxMul(&draw_matrix, &draw_matrix, matrix);
+        piece = &kit->pieces[i];
+        NuSpecialDrawAt(&piece->special, &draw_matrix);
+        if (reflection) {
+            NUMTX reflected;
+            if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) != 0) {
+                NuRndrStartReflectionRender(0);
+                piece = &kit->pieces[i];
+                NuSpecialDrawAt(&piece->special, &reflected);
+                NuRndrEndReflectionRender();
             }
         }
     }
@@ -189,17 +188,17 @@ void CharacterMiniKits_Load(COLLECTION_s *collection, WORLDINFO *world, VARIPTR 
         Char_MiniKit[i] = NULL;
 
     buf->addr = ALIGN(buf->addr, 4);
+    const usize table_size = static_cast<usize>(CHARCOUNT) * sizeof(*world->minikit_pieces_buf);
     world->minikit_pieces_buf = reinterpret_cast<HUBMINIKITPIECES_s **>(buf->addr);
-    memset(world->minikit_pieces_buf, 0, static_cast<usize>(CHARCOUNT) * sizeof(*world->minikit_pieces_buf));
-    buf->addr += static_cast<usize>(CHARCOUNT) * sizeof(*world->minikit_pieces_buf);
+    memset(world->minikit_pieces_buf, 0, table_size);
+    buf->addr += table_size;
 
-    for (u32 index = 0; index < collection->count_y; ++index) {
+    for (i32 index = 0; index < collection->count_y; ++index) {
         const i32 character_id = collection->list[index].id;
         if ((GCDataList[character_id].flags_094[1] & 4) != 0 || APICharacterLoaded(character_id) == NULL)
             continue;
 
-        HUBMINIKITPIECES_s *minikit = reinterpret_cast<HUBMINIKITPIECES_s *>(buf->addr);
-        world->minikit_pieces_buf[character_id] = minikit;
+        world->minikit_pieces_buf[character_id] = reinterpret_cast<HUBMINIKITPIECES_s *>(buf->addr);
         buf->addr += 0x18;
 
         char path[256];
@@ -210,21 +209,21 @@ void CharacterMiniKits_Load(COLLECTION_s *collection, WORLDINFO *world, VARIPTR 
         NuStrCat(path, const_cast<char *>(".gsc"));
 
         buf->addr = ALIGN(buf->addr, 4);
-        if (index <= 17)
-            minikit->scene = NuGScnRead(buf, *buf_end, path);
+        if (index > 17)
+            world->minikit_pieces_buf[character_id]->scene =
+                NuGScnRead(&characterbuffer_ptr, characterbuffer_end, path);
         else
-            minikit->scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, path);
+            world->minikit_pieces_buf[character_id]->scene = NuGScnRead(buf, *buf_end, path);
 
-        MINIKIT *runtime = reinterpret_cast<MINIKIT *>(minikit);
-        runtime->id = static_cast<i16>(character_id);
-        if (minikit->scene == NULL) {
+        reinterpret_cast<MINIKIT *>(world->minikit_pieces_buf[character_id])->id = static_cast<i16>(character_id);
+        if (world->minikit_pieces_buf[character_id]->scene == NULL) {
             world->minikit_pieces_buf[character_id] = NULL;
             buf->addr -= 0x18;
             continue;
         }
 
-        MiniKit_InitPieces(runtime, 10, buf, buf_end);
-        Char_MiniKit[character_id] = minikit;
+        MiniKit_InitPieces(reinterpret_cast<MINIKIT *>(world->minikit_pieces_buf[character_id]), 10, buf, buf_end);
+        Char_MiniKit[character_id] = world->minikit_pieces_buf[character_id];
     }
 }
 

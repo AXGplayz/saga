@@ -12,13 +12,11 @@
 #include "nu2api/nu3d/nurndr.h"
 #include <string.h>
 #include "legoapi/ai/core/gameai.h"
+#include "legoapi/characters/motion.h"
 
 extern "C" {
     u64 GameAntinode_grid[64];
 }
-i32 ViewCamGetMode();
-NUVEC *ViewCamGetTgt();
-void GameAntinode_FindGridPosition(WORLDINFO_s *, NUVEC *, f32, f32, u8 *, u8 *, u8 *, u8 *);
 
 void *GameAntnode_CreateSys(WORLDINFO_s *world, variptr_u *buf, variptr_u *buf_end, i32 count) {
     usize node_bytes = count * sizeof(GAMEANTINODE_s);
@@ -66,7 +64,7 @@ void GameAntinode_Update(GAMEANTINODESYS_s *system) {
     }
     for (GAMEANTINODE_s *node = system->active, *next; node != NULL; node = next) {
         next = node->next;
-        if (node->remaining_time > 0.0f) {
+        if (!(node->remaining_time <= 0.0f)) {
             node->remaining_time -= FRAMETIME;
             if (node->remaining_time <= 0.0f) {
                 GameAntinode_UnregisterAntiNode(system, node);
@@ -230,7 +228,7 @@ GAMEANTINODE_s *GameAntinode_UpdateAntiNodeUsingData(GAMEANTINODESYS_s *system, 
             const f32 base_radius = data->radius;
             const f32 extent_x = data->extent_x;
             const f32 extent_z = data->extent_z;
-            const u16 node_angle = data->flags + angle;
+            const i32 node_angle = data->flags + angle;
             node->max_y = max_y;
             node->min_y = min_y;
             node->radius = base_radius;

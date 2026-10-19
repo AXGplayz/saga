@@ -121,11 +121,6 @@ char *apitxt_DANISH = const_cast<char *>("Dansk");
 
 extern i16 tALONGTIMEAGO;
 
-extern "C" {
-void TextRegisterButtonMapFn(void (*fn)(char *, char *));
-void TextRegisterPulseTimerFn(f32 (*fn)(f32));
-}
-
 i32 (*Tag_NoHiddenIconFn)(GameObject_s *) = NULL;
 char *LEGOASCII_UP = NULL;
 
@@ -282,8 +277,9 @@ extern "C" {
 
 __attribute__((optimize("O2", "tree-vectorize"))) void Tag_DrawIcon_Batman(GameObject_s *object) {
     i32 count;
-    if (VehicleArea != 0 || FadeSys.fade != 0.0f || !object->apiobj.player_controlled ||
-        !(object->pause_context_state > 0.0f)) {
+    if (__builtin_expect(VehicleArea != 0 || FadeSys.fade != 0.0f || !object->apiobj.player_controlled ||
+                             !(object->pause_context_state > 0.0f),
+                         0)) {
         return;
     }
 
@@ -312,7 +308,7 @@ __attribute__((optimize("O2", "tree-vectorize"))) void Tag_DrawIcon_Batman(GameO
             count = 1;
             const f32 y = object->joint_matrices[0].m31;
             x_sum += x;
-            max_y = y > max_y ? y : max_y;
+            max_y = MAX(max_y, y);
             z_sum += object->joint_matrices[0].m32;
         }
 #define TAG_INCLUDE_POI(index)                                                                                         \
@@ -338,7 +334,7 @@ __attribute__((optimize("O2", "tree-vectorize"))) void Tag_DrawIcon_Batman(GameO
         TAG_INCLUDE_POI(13)
         TAG_INCLUDE_POI(14)
         TAG_INCLUDE_POI(15)
-        if (count != 0) {
+        if (__builtin_expect(count != 0, 0)) {
             const f32 inv_count = 1.0f / static_cast<f32>(count);
             position.x = (x_sum * inv_count + position.x) * 0.5f;
             position.y = ((max_y + 0.05f) + position.y) * 0.5f;
@@ -382,7 +378,7 @@ __attribute__((optimize("O2", "tree-vectorize"))) void Tag_DrawIcon_LSW(GameObje
     }
     if ((object->field_0xefe & 0x10) == 0) {
         f32 timer = object->hud_icon_timer;
-        if (!(timer > 0.0f) || (timer < 2.0f && NuFmod(timer, 0.4f) < 0.2f)) {
+        if (!(timer > 0.0f) || (!(timer >= 2.0f) && !(NuFmod(timer, 0.4f) >= 0.2f))) {
             return;
         }
     }

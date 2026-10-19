@@ -14,6 +14,8 @@
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/misc/utilities.h"
+#include "legoapi/render/core/terrain.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/world_shared.h"
@@ -27,10 +29,6 @@
 struct TECHNOPROGRESS {
     i32 state[2];
 };
-
-extern "C" void NewTerrPlatformsOff(void);
-f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 terrain_mask);
-void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
 TECHNO_CONFIG TechnoSys = {
     0.2f,
@@ -214,8 +212,9 @@ static inline void Techno_DrawHand(WORLDINFO *world, TECHNO *techno, NUMTX *matr
 
 static void Technos_Draw(void *world_ptr, void *, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (TechnoSys.active_effect_id == -1 || world->lev_objs[TechnoSys.active_effect_id].active == 0 ||
-        world->technos == NULL) {
+    if (__builtin_expect(TechnoSys.active_effect_id == -1 || world->lev_objs[TechnoSys.active_effect_id].active == 0 ||
+                             world->technos == NULL,
+                         0)) {
         return;
     }
 
@@ -413,7 +412,7 @@ void *Technos_FindTgt(TECHNO_s *techno) {
             break;
         case 3:
             techno->controlled_object = GizmoFindByName(WORLD->gizmo_sys, -1, techno->target_name);
-            if (techno->controlled_object == NULL) {
+            if (__builtin_expect(techno->controlled_object == NULL, 0)) {
                 techno->target_mode = 0;
             }
             break;
@@ -454,12 +453,12 @@ void Technos_MoveTarget(TECHNO_s *techno, GameObject_s *object) {
         return;
     }
 
-    GIZMO *gizmo = static_cast<GIZMO *>(techno->controlled_object);
-    if (NuStrICmp(gizmotypes->types[gizmo->type_id].name, "GIZOBSTACLE") != 0) {
+    if (NuStrICmp(gizmotypes->types[static_cast<GIZMO *>(techno->controlled_object)->type_id].name,
+                  "GIZOBSTACLE") != 0) {
         return;
     }
 
-    GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(gizmo->object);
+    GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(static_cast<GIZMO *>(techno->controlled_object)->object);
     if ((techno->enabled & 2) != 0 && object != NULL && static_cast<u8>(object->apiobj.field_0x27c) < 2) {
         f32 rate = object->pad_gamepad->waggle_magnitude != 0.0f ? 3.0f * FRAMETIME : 2.0f * FRAMETIME;
         TechnoMoveSpeed[static_cast<i8>(object->apiobj.field_0x27c)] =

@@ -44,6 +44,8 @@
 #include "legoapi/items/collect/bolts.h"
 #include "legoapi/items/fx/explosions.h"
 #include "legoapi/render/fx/edsplines.h"
+#include "legoapi/characters/core/playeritems.h"
+#include "legoapi/render/fx/parts.h"
 
 i32 GizmoBlowup_HitMultiplier = 1;
 void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *) = NULL;
@@ -57,13 +59,6 @@ i32 (*GizmoBlowUp_NoTargetFn)(WORLDINFO_s *, GameObject_s *) = NULL;
 
 i32 MAXBLOWUPRANDSPANG = 60;
 extern ADDPART_s Default_ADDPART;
-extern "C" PART_s *AddPart(ADDPART_s *);
-i32 PartDraw_Flickerer(PART_s *);
-void PartStop_Flickerer(PART_s *);
-i32 ReleaseHearts();
-
-void Bolt_AddDeflectedBolt(BOLT_s *, nuvec_s *, nuvec_s *, unsigned char *);
-void Bolt_End(BOLT_s *, i32);
 
 static void Blowups_Reset(void *world_ptr, void *, void *progress_ptr);
 static i32 gizmoblowupnametable_numids;
@@ -400,10 +395,9 @@ void GizBlowup_Respawn(GIZMOBLOWUP_s *blowup) {
         AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[2], &blowup->mid_position, 1);
     }
     i32 handle = -1;
-    if (blowup->type->particle_types[3] == -1) {
-        return;
+    if (blowup->type->particle_types[3] != -1) {
+        AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[3], &blowup->mid_position, 1);
     }
-    AddFiniteShotDebrisEffect(&handle, blowup->type->particle_types[3], &blowup->mid_position, 1);
 }
 
 u32 GizmoBlowups_TotalScore(void *context) {
@@ -791,7 +785,7 @@ i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 dama
             }
         } else {
             if ((blowup->draw_flags & 0x208) && blowup->saved_state_0 != 0 &&
-                (!(blowup->field_0xb4 <= 0.0f) || !(blowup->field_0xb8 > 0.0f))) {
+                (!(blowup->field_0xb4 <= 0.0f) || blowup->field_0xb8 <= 0.0f)) {
                 const f32 radius_squared = blowup->field_0xb4 * blowup->field_0xb4;
                 auto blowup_saved_state_0 = blowup->saved_state_0;
                 for (i32 player = 0; player < 8; ++player) {

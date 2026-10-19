@@ -89,6 +89,7 @@
 #include "legoapi/cutscenes/gcutscn.h"
 #include "legoapi/gizmos/traps/gizturret.h"
 #include "legoapi/misc/utilities.h"
+#include "legoapi/ai/core/aisysall.h"
 #include "legoapi/world/levels/episodeII.h"
 
 struct instNUGCUTSCENE_s;
@@ -97,12 +98,6 @@ extern nuhspecial_s disco_on_spin[3], walllights_disco[2], walllights[2], stripl
     discorm_wall_off, discorm_wall_on;
 extern GIZMO *disco_off_spina[3], *gizTurrets[2];
 extern struct GUNSHIP_LEVFLAG_s LevFlag;
-
-// --- Cross-file entry points / id globals ---
-//
-extern "C" {
-    void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *); // legoapi/ai pathfinding
-}
 
 struct JEDIBNETPACKET_s;
 
@@ -240,7 +235,6 @@ f32 gunshipb_seekrange = 4.0f;
 struct nuhspecial_s;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
@@ -444,7 +438,9 @@ void UpdatePaintPuzzle(WORLDINFO_s *world) {
                     paintmixed = 3;
                 } else if ((paintsused[0] == 2 && paintsused[1] == 1) || (paintsused[1] == 2 && paintsused[0] == 1)) {
                     paintmixed = 4;
-                } else if ((paintsused[1] == 2 && paintsused[0] == 0) || (paintsused[0] == 2 && paintsused[1] == 0)) {
+                } else if (__builtin_expect((paintsused[1] == 2 && paintsused[0] == 0) ||
+                                                (paintsused[0] == 2 && paintsused[1] == 0),
+                                            0)) {
                     paintmixed = 5;
                 } else {
                     paintmixed = -1;
@@ -1105,7 +1101,7 @@ void JediB_DrawPanel(WORLDINFO_s *) {
                 }
                 break;
             case 7:
-                if (jedi_b.boss == NULL) {
+                if (__builtin_expect(jedi_b.boss == NULL, 1)) {
                     jedi_b.boss = (GameObject_s *)FindGameObject((i32)(i16)id_JANGOFETT, 1, 1, 0, 0);
                     if (jedi_b.boss == NULL) {
                         return;
@@ -1529,7 +1525,7 @@ void KaminoC_Update(WORLDINFO_s *world) {
     KaminoProgressGizmo_s *progress = static_cast<KaminoProgressGizmo_s *>(LevGizmo[0]->object);
     if (GizmoGetOutput(world->gizmo_sys, LevGizmo[0], 0, 0)) {
         GizmoSetVisibility(world->gizmo_sys, LevGizmo[1], 0, 1);
-    } else if (!(progress->flags & 1)) {
+    } else if (__builtin_expect(!(progress->flags & 1), 1)) {
         GizmoActivate(world->gizmo_sys, LevGizmo[1], 1, 1);
         if (GizmoGetOutput(world->gizmo_sys, gizTurrets[0], 0, 0) &&
             GizmoGetOutput(world->gizmo_sys, gizTurrets[1], 0, 0))
@@ -2164,7 +2160,7 @@ void GunShip_DragBombSeekBlowUp(GameObject_s *object) {
     f32 nearest_distance = gunshipb_seekrange * gunshipb_seekrange;
     NUVEC offset, nearest_offset, direction;
     for (i32 i = 0; i < 8; ++i) {
-        if (LevGizmo[i] == NULL)
+        if (__builtin_expect(LevGizmo[i] == NULL, 0))
             continue;
         GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[i]->object);
         if (blowup == NULL || (blowup->status_flags & 0x800001) != 0x800000)

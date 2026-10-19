@@ -297,8 +297,6 @@ i64 XToI64(char *input) {
 
 typedef f32 RawClipVec4 __attribute__((vector_size(16), aligned(4)));
 
-i32 findrange(nugscn_s *scene, i32 first_joint);
-
 #if defined(__i386__)
 #define SPLINE_POINT_ANGLES_ATTR __attribute__((noinline, noclone, regparm(2)))
 #else
@@ -898,12 +896,19 @@ void AnglesBetweenPoints(nuvec_s *from, nuvec_s *to, u16 *vertical, u16 *horizon
 
 void CalculateInterceptVector(NUVEC *origin, NUVEC *target, NUVEC *velocity, f32 speed, NUVEC *direction,
                               NUVEC *intercept) {
+    const bool zero_speed = speed == 0.0f;
     NUVEC prediction = *target;
     {
         NuVecSub(direction, &prediction, origin);
         f32 distance = NuVecMag(direction);
+        f32 time = (distance == 0.0f || zero_speed) ? 0.0f : distance / speed;
+        NuVecAddScale(&prediction, target, velocity, time);
+    }
+    {
+        NuVecSub(direction, &prediction, origin);
+        f32 distance = NuVecMag(direction);
         f32 time = distance;
-        if (distance == 0.0f || speed == 0.0f)
+        if (distance == 0.0f || zero_speed)
             time = 0.0f;
         else
             time /= speed;
@@ -913,17 +918,7 @@ void CalculateInterceptVector(NUVEC *origin, NUVEC *target, NUVEC *velocity, f32
         NuVecSub(direction, &prediction, origin);
         f32 distance = NuVecMag(direction);
         f32 time = distance;
-        if (distance == 0.0f || speed == 0.0f)
-            time = 0.0f;
-        else
-            time /= speed;
-        NuVecAddScale(&prediction, target, velocity, time);
-    }
-    {
-        NuVecSub(direction, &prediction, origin);
-        f32 distance = NuVecMag(direction);
-        f32 time = distance;
-        if (distance == 0.0f || speed == 0.0f)
+        if (distance == 0.0f || zero_speed)
             time = 0.0f;
         else
             time /= speed;
@@ -1012,9 +1007,8 @@ i32 MatrixReflection(numtx_s *matrix, i32 axis, f32 plane, f32 override_plane, n
 i32 MatrixReflectionVU0_AXISY(numtx_s *matrix, f32 plane, f32 override_plane, numtx_s *result) {
     if (static_cast<u8>(Reflections_On) == 0)
         return 0;
-    if (override_plane != 2000000.0f) {
-        if (MatrixReflection_CanOverrideFn != NULL && MatrixReflection_CanOverrideFn(plane) == 0)
-            return 0;
+    if (override_plane != 2000000.0f &&
+        (MatrixReflection_CanOverrideFn == NULL || MatrixReflection_CanOverrideFn(plane) != 0)) {
         plane = override_plane;
     }
     *result = *matrix;
@@ -1189,7 +1183,7 @@ f32 SplineLength(nugspline_s *spline, i32 closed) {
     return length;
 }
 
-i16 InsideLineXZ(f32 point_u, f32 point_v, f32 line_start_u, f32 line_start_v, f32 line_end_u, f32 line_end_v) {
+i32 InsideLineXZ(f32 point_u, f32 point_v, f32 line_start_u, f32 line_start_v, f32 line_end_u, f32 line_end_v) {
     const f32 side =
         (point_u - line_start_u) * (line_end_v - line_start_v) + (point_v - line_start_v) * (line_start_u - line_end_u);
     return side >= 0.0f;
@@ -1423,7 +1417,7 @@ void MoveSplinePosition(SPLINEPOS_s *position, f32 distance) {
             if (distance >= 0.0f) {
                 while (distance > 0.0f) {
                     position->segment_distance += distance;
-                    if (!(position->segment_distance >= position->segment_length))
+                    if (__builtin_expect(!(position->segment_distance >= position->segment_length), 0))
                         goto interpolate;
                     distance = position->segment_distance - position->segment_length;
                     i16 previous = position->segment;
@@ -1453,7 +1447,7 @@ void MoveSplinePosition(SPLINEPOS_s *position, f32 distance) {
             } else if (position->segment >= 0 && distance < 0.0f) {
                 for (;;) {
                     position->segment_distance += distance;
-                    if (__builtin_expect(!(position->segment_distance < 0.0f), 0))
+                    if (__builtin_expect(position->segment_distance >= 0.0f, 0))
                         break;
                     distance = position->segment_distance;
                     i16 previous = position->segment;
@@ -1769,30 +1763,30 @@ void EvalAnim2(nuhspecial_s *special, float frame) {
 }
 
 void SetAnimFrame(nuhspecial_s *special, float frame) {
-    if (NuSpecialExistsFn(special) == 0)
-        return;
-    NUMTX_ALIGNED16 matrix;
-    NuMtxSetIdentity(&matrix);
-    nuinstanim_s *instance_animation = NuSpecialGetInstAnim(special);
-    if (instance_animation == NULL)
-        return;
-    nuanimdata_s *animation = special->scene->instance_animation_data[instance_animation->anim_ix];
-    if (animation == NULL)
-        return;
-    // The animation header begins with its final frame; the remaining header is opaque here.
-    f32 end_frame;
-    memcpy(&end_frame, animation, sizeof(end_frame));
-    if (frame == 1.0e9f)
-        frame = end_frame;
-    if (!(frame >= 1.0f && frame <= end_frame))
-        return;
-    NuAnimData2CalcMatrix(animation, 0, frame, &matrix);
-    instance_animation->mtx = matrix;
-    NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
-    instance_animation->mtx.m30 = instance_matrix->m30;
-    instance_animation->mtx.m31 = instance_matrix->m31;
-    instance_animation->mtx.m32 = instance_matrix->m32;
-    instance_animation->ltime = frame;
+    if (NuSpecialExistsFn(special) != 0) {
+        NUMTX_ALIGNED16 matrix;
+        NuMtxSetIdentity(&matrix);
+        nuinstanim_s *instance_animation = NuSpecialGetInstAnim(special);
+        if (instance_animation == NULL)
+            return;
+        nuanimdata_s *animation = special->scene->instance_animation_data[instance_animation->anim_ix];
+        if (animation == NULL)
+            return;
+        // The animation header begins with its final frame; the remaining header is opaque here.
+        f32 end_frame;
+        memcpy(&end_frame, animation, sizeof(end_frame));
+        if (frame == 1.0e9f)
+            frame = end_frame;
+        if (!(frame >= 1.0f) || frame > end_frame)
+            return;
+        NuAnimData2CalcMatrix(animation, 0, frame, &matrix);
+        instance_animation->mtx = matrix;
+        NUMTX *instance_matrix = NuSpecialGetInstanceMtx(special);
+        instance_animation->mtx.m30 = instance_matrix->m30;
+        instance_animation->mtx.m31 = instance_matrix->m31;
+        instance_animation->mtx.m32 = instance_matrix->m32;
+        instance_animation->ltime = frame;
+    }
 }
 
 f32 NuSpecialGetAnimPos(nuhspecial_s *special) {

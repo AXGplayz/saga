@@ -329,7 +329,7 @@ void DeathStar2BattleD_Update(WORLDINFO_s *) {
             continue;
         }
         GIZMOBLOWUP_s *blowup = DeathStar2BattleD_InZapRange(*player);
-        if (blowup == NULL) {
+        if (__builtin_expect(blowup == NULL, 0)) {
             continue;
         }
 
@@ -809,7 +809,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 if (!(player->apiobj.field_0x1f4 & 0x40000))
                     ObjHitObj(NULL, player, 1, 0, 0, 1);
                 player = Player[i];
-                if (__builtin_expect(dx > 0.0f, 0))
+                if (__builtin_expect(!(dx <= 0.0f), 0))
                     player->apiobj.velocity.x += 0.2f;
                 else
                     player->apiobj.velocity.x -= 0.2f;
@@ -1164,7 +1164,7 @@ void JabbasPalaceE_Update(WORLDINFO_s *world) {
     }
     blowup = LevGizmo[1] != NULL ? static_cast<GIZMOBLOWUP_s *>(LevGizmo[1]->object) : NULL;
     if (blowup != NULL && (blowup->status_flags & 1) != 0) {
-        if (LevFlag[7] == 0) {
+        if (__builtin_expect(LevFlag[7] == 0, 0)) {
             PlaySfx("exp_minecart", &blowup->position);
             LevFlag[7] = 1;
         }
@@ -1476,7 +1476,7 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                         object->apiobj.field_0x27d != 0) {
                         f32 dx = position->x - object->apiobj.position.x;
                         f32 dz = position->z - object->apiobj.position.z;
-                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
+                        if (!(dx * dx + dz * dz >= 0.2f * 0.2f)) {
                             sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 2;
                             second_occupied = 1;
                             if (object == player)
@@ -1947,7 +1947,7 @@ void NewTown_Reset(WORLDINFO_s *world) {
 }
 
 void NewTown_Update(WORLDINFO_s *world) {
-    if (world == NULL || world->pickup_sys == NULL) {
+    if (__builtin_expect(world == NULL || world->pickup_sys == NULL, 0)) {
         return;
     }
     u8 onTaunTaun = 0;

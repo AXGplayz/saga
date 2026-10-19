@@ -26,11 +26,10 @@
 #include <string.h>
 #include "legoapi/items/collect/detonator.h"
 #include "legoapi/items/objects/game_obj.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
 
 extern BATARANG_s Batarang[8];
 extern i16 id_CATWOMAN;
-
-i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *, i32, i32, i32, GameObject_s *, i32);
 
 static unsigned int Batarang_GetTargetPos(BATARANG_s *batarang, int index, nuvec_s *position) {
     if (batarang->field_0x7d != 0 && batarang->active != 0 && batarang->active == index) {
@@ -238,17 +237,15 @@ static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 aut
 
 void Batarang_Release(GameObject_s *object, i32 mode) {
     BATARANG_s *batarang = static_cast<BATARANG_s *>(object->batarang);
-    if (batarang == NULL) {
-        return;
-    }
     batarang->field_0x7d = 1;
     batarang->owner = object;
     static_cast<BATARANG_s *>(object->batarang)->current_target = 0;
     batarang = static_cast<BATARANG_s *>(object->batarang);
     batarang->flight_time = 0.0f;
-    batarang->velocity.x = NU_SIN_LUT(object->apiobj.movement_facing_angle) * 4.0f;
+    const u16 facing = object->apiobj.movement_facing_angle;
+    batarang->velocity.x = NuTrigTable[static_cast<u16>(facing / 2)] * 4.0f;
     batarang->velocity.y = object->apiobj.velocity.y * 0.5f;
-    batarang->velocity.z = 4.0f * NU_COS_LUT(object->apiobj.movement_facing_angle);
+    batarang->velocity.z = 4.0f * NuTrigTable[((facing + 0x4000) >> 1) & 0x7fff];
     NewRumble(object->pad_gamepad->pad, 0.5f, 0);
     batarang = static_cast<BATARANG_s *>(object->batarang);
     batarang->position = object->apiobj.collision_position;
@@ -260,22 +257,19 @@ void Batarang_Release(GameObject_s *object, i32 mode) {
     }
 
     if (batarang->active == 0 && mode == 2) {
-        if (WORLD != NULL) {
-            Batarang_FindTarget(WORLD, object, 1);
-        }
+        Batarang_FindTarget(WORLD, object, 1);
         batarang = static_cast<BATARANG_s *>(object->batarang);
         if (batarang->active == 0) {
-            const i32 angle = object->apiobj.movement_facing_angle;
-            const f32 x = NU_SIN_LUT(angle);
-            const f32 z = NU_COS_LUT(angle);
-            batarang->targets[0].fallback_position = {
-                x + x + object->apiobj.collision_position.x,
-                object->apiobj.collision_position.y,
-                z + z + object->apiobj.collision_position.z,
-            };
+            const u16 angle = object->apiobj.movement_facing_angle;
+            batarang->targets[0].fallback_position.x =
+                NuTrigTable[static_cast<u16>(angle / 2)] * 2.0f + object->apiobj.collision_position.x;
+            batarang->targets[0].fallback_position.y = object->apiobj.collision_position.y;
+            batarang->targets[0].fallback_position.z =
+                NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 2.0f + object->apiobj.collision_position.z;
             batarang->targets[0].object = &batarang->targets[0].fallback_position;
             batarang->targets[0].type = 3;
-            static_cast<BATARANG_s *>(object->batarang)->targets[0].lost = 0;
+            batarang = static_cast<BATARANG_s *>(object->batarang);
+            batarang->targets[batarang->active].lost = 0;
             ++static_cast<BATARANG_s *>(object->batarang)->active;
         }
     }
@@ -575,7 +569,7 @@ void Batarang_MoveCode(GameObject_s *object) {
     }
     if (object->character_context == 0x50) {
         object->field_0xe22 |= 0x40;
-        if (!(object->hold_timer < 0.25f)) {
+        if (object->hold_timer >= 0.25f) {
             Batarang_StartTargetting(object);
             return;
         }
@@ -584,7 +578,7 @@ void Batarang_MoveCode(GameObject_s *object) {
         }
         if (!(object->pad_gamepad->input_magnitude > 0.0f)) {
             object->context_animation_timer -= FRAMETIME;
-            if (0.0f < object->context_animation_timer) {
+            if (!(object->context_animation_timer <= 0.0f)) {
                 return;
             }
             if ((object->pad_gamepad->buttons_held & GAMEPAD_ACTION) != 0) {
@@ -606,7 +600,7 @@ void Batarang_MoveCode(GameObject_s *object) {
             return;
         }
         object->field_0xe22 |= 0x40;
-        if (0.25f <= object->hold_timer - FRAMETIME) {
+        if (!(0.25f > object->hold_timer - FRAMETIME)) {
             return;
         }
         Batarang_StartTargetting(object);
@@ -645,7 +639,7 @@ void Batarang_MoveCode(GameObject_s *object) {
                 object->context_animation_timer += FRAMETIME;
                 f32 x = pad->input_direction_z * 1.25f;
                 f32 y = 1.25f * pad->input_direction_x;
-                if (object->context_animation_timer < 0.25f) {
+                if (!(object->context_animation_timer >= 0.25f)) {
                     const f32 ramp = object->context_animation_timer * 4.0f;
                     x *= ramp;
                     y *= ramp;
@@ -660,10 +654,8 @@ void Batarang_MoveCode(GameObject_s *object) {
             }
             batarang = static_cast<BATARANG_s *>(object->batarang);
             KeepPointOnScreen(&batarang->sight_position, &batarang->sight_velocity);
-            if (WORLD != NULL) {
-                if (Batarang_FindTarget(WORLD, object, 0) != 0) {
-                    NewBuzzFrames(object->pad_gamepad->pad, 1, 0);
-                }
+            if (Batarang_FindTarget(WORLD, object, 0) != 0) {
+                NewBuzzFrames(object->pad_gamepad->pad, 1, 0);
             }
 
             char text[32];

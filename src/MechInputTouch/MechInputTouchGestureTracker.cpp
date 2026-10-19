@@ -4,10 +4,10 @@
 #include "nu2api/nucore/NuInputDevice.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/lib/text.h"
 #include "gamelib/util/gamelib_util_types.h"
 
 f32 TimeSampleDelta = 0.05f;
-i32 GetMenuID();
 
 TouchHolder *MechInputTouchGestureTrackingSystem::GetTouch(NuInputTouch const &touch) {
     for (i32 index = 0; index < 10; ++index) {
@@ -34,7 +34,7 @@ void MechInputTouchGestureTrackingSystem::LookForClicks(GameObject_s &object) {
         holder.click_candidate = 1;
         f32 dx = holder.touch_position.x - holder.down_position.x;
         f32 dy = holder.touch_position.y - holder.down_position.y;
-        if (dy * dy + dx * dx >= 0.0025f) {
+        if (!(dy * dy + dx * dx < 0.0025f)) {
             continue;
         }
         bool first_recent = holder.click_timer < 0.3f;
@@ -124,7 +124,7 @@ void MechInputTouchGestureTrackingSystem::LookForSwipe(GameObject_s &object) {
         i32 previous_index = 0;
         for (i32 sample_index = 0; sample_index < 20; ++sample_index) {
             TouchSwipeSample &sample = holder.swipe_samples[sample_index];
-            if (sample.time < 0.0f) {
+            if (!(sample.time >= 0.0f)) {
                 break;
             }
             if (sample_index > 0 && elapsed < 0.2f) {
@@ -159,6 +159,16 @@ void MechInputTouchGestureTrackingSystem::Process(GameObject_s &object, NuInputT
     LookForGestures(object);
 }
 
+static inline void StoreObjectMotion(TouchSwipeSample &sample, const GameObject_s *object) {
+    if (object == NULL) {
+        return;
+    }
+    sample.object_position =
+        VuVec(object->apiobj.position.x, object->apiobj.position.y, object->apiobj.position.z, 1.0f);
+    sample.object_velocity =
+        VuVec(object->apiobj.velocity.x, object->apiobj.velocity.y, object->apiobj.velocity.z, 1.0f);
+}
+
 void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInputTouchData const &data) {
     for (i32 index = 0; index < 10; ++index) {
         TouchHolder &holder = holders[index];
@@ -168,17 +178,16 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
         holder.sample_countdown += FRAMETIME;
     }
 
-    for (i32 index = 0; index < data.touch_count; ++index) {
-        f32 x, y;
+    for (u32 index = 0; index < data.touch_count; ++index) {
+        NuVec2 position;
         MechInputTouchSystem::ConvertToScreenCoords(data.touch_events[index].unknown_04,
-                                                    data.touch_events[index].unknown_08, x, y);
+                                                    data.touch_events[index].unknown_08, position.x, position.y);
         TouchHolder *holder = GetTouch(data.touch_events[index]);
         if (!holder->field_0x6) {
             holder->click_candidate = 0;
-            holder->down_position.x = x;
-            holder->down_position.y = y;
+            holder->down_position = position;
             holder->sample_countdown = TimeSampleDelta;
-            VuVec screen_position(x, y, 1.0f, 1.0f);
+            VuVec screen_position(position.x, position.y, 1.0f, 1.0f);
             if (player != NULL && NewMode == 0 && NewLData == NULL && GetMenuID() == -1 && Paused == 0 &&
                 TouchHacks::TouchControlsActive) {
                 MechObjectInterface *target =
@@ -196,8 +205,7 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
                 holder->swipe_samples[sample].time = -1.0f;
             }
         }
-        holder->touch_position.x = x;
-        holder->touch_position.y = y;
+        holder->touch_position = position;
         holder->is_down = 1;
         if (holder->sample_countdown >= TimeSampleDelta) {
             holder->sample_countdown -= TimeSampleDelta;
@@ -216,13 +224,9 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
                 dst.object_velocity.w = src.object_velocity.w;
             }
             TouchSwipeSample &latest = holder->swipe_samples[0];
-            latest.position.x = x;
-            latest.position.y = y;
+            latest.position = position;
             latest.time = holder->held_time;
-            latest.object_position =
-                VuVec(object.apiobj.position.x, object.apiobj.position.y, object.apiobj.position.z, 1.0f);
-            latest.object_velocity =
-                VuVec(object.apiobj.velocity.x, object.apiobj.velocity.y, object.apiobj.velocity.z, 1.0f);
+            StoreObjectMotion(latest, &object);
         }
     }
     for (i32 index = 0; index < 10; ++index) {

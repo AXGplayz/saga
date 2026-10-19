@@ -118,12 +118,12 @@
 #include "legoapi/gizmos/traps/gizturret.h"
 #include "legoapi/world/levels.h"
 #include "legoapi/world/levels/hub.h"
+#include "legoapi/actions/character/suit.h"
 
 i8 adtabentries[9][4] = {{-1, -1, -1, -1}, {-1, -1, -1, 0}, {-1, -1, 0, 0}, {-1, 0, 0, 0}, {0, 0, 0, 0},
                          {1, 0, 0, 0},     {1, 1, 0, 0},    {1, 1, 1, 0},   {1, 1, 1, 1}};
 i8 (*adtab)[4] = &adtabentries[4];
 
-i32 Suit_GetIndex(SUIT_s *);
 extern i16 id_GAMORREANGUARD;
 f32 DEFENDTIME = 4.0f;
 i32 teleport_all_freeplay_modes = 1;
@@ -200,10 +200,6 @@ static void TestWalkAround(APIOBJECT *object, f32 *other_x, f32 *other_z, NUVEC 
     }
 }
 
-extern "C" {
-void SetScriptErrorLevel(SCRIPT_ERROR_LEVEL level);
-}
-
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 
 extern "C" {
@@ -215,17 +211,10 @@ inline void ThingManager::operator delete(void *thing, usize size) {
     theMemoryManager.FreePool(thing, size);
 }
 
-GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
-                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
-                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
-                                    bool first_match);
-
 GameObject_s *alert_obj;
 NUVEC alert_pos;
 f32 alert_timer;
 f32 alert_time = 10.0f;
-
-extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
 
 struct nuhspecial_s;
 struct nuvec_s;
@@ -235,8 +224,6 @@ static i32 AtOnce_attackersPerRow = 32;
 static f32 AtOnce_InitialRowDist = 0.75f;
 static f32 AtOnce_RowDist = 0.75f;
 static i32 AtOnce_maxAttackers = 1;
-
-extern "C" void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from, char *to, i32 *direction);
 
 extern AIACTIONDEF api_aiactiondefs[55];
 extern AICONDITIONDEF api_aiconditiondefs[50];
@@ -249,10 +236,6 @@ extern "C" {
 extern void (*checkantinodefns[3])(APIOBJECT *, AIANTINODE *, NUVEC *, f32);
     extern void (*checkantinodefns[3])(APIOBJECT_s *, AIANTINODE_s *, NUVEC *, f32);
 }
-
-extern "C" {
-void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
-} // extern "C"
 
 struct AIPATH_s;
 
@@ -281,10 +264,6 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 }
 
 extern "C" {
-void SetScriptErrorLevel(SCRIPT_ERROR_LEVEL level);
-}
-
-extern "C" {
 extern i32 party_under_cover;
 }
 
@@ -296,24 +275,6 @@ extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 struct APIOBJECT_s;
 struct AISYS_s;
 struct AIGROUP_s;
-
-extern "C" {
-    extern "C++" void DebrisProcessSpheres(uv1deb *, f32, debinftype *, debkeydatatype_s *, i32);
-}
-
-extern "C" {
-extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId();
-} // extern "C"
-
-extern "C" {
-void SetScriptErrorLevel(SCRIPT_ERROR_LEVEL level);
-
-}
-
-extern "C" {
-void *AIPAthFindPathCnx(AISYS_s *system, AIPATH_s *path, char *from_name, char *to_name, i32 *direction);
-
-}
 
 static char *LevelCharacterName(u8 character_index) {
     if (character_index == 0xff || CurrentStoryCList == NULL) {
@@ -585,7 +546,7 @@ static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *, VARIPTR 
     }
 
     i32 tag_length = static_cast<i8>(EdFileReadChar());
-    if (__builtin_expect(tag_length <= 8 && tag_length != 0, 0)) {
+    if (__builtin_expect(tag_length != 0 && tag_length <= 8, 0)) {
         char tag[16];
         EdFileRead(tag, tag_length);
         if (NuStrICmp(tag, "LEGO") == 0) {
@@ -710,9 +671,8 @@ static u32 AIBigJumpToDestination(APIOBJECT *object, NUVEC *destination) {
     GameObject_s *game_object = object->objptr;
     if (game_object->field_0xcc0 == NULL) {
         if ((object->character_data->model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
-            object->start_position = *destination;
+            object->start_position = object->position = *destination;
             object->velocity = v000;
-            object->position = *destination;
             ResetPlayerMoves(game_object);
             object->respawn_timer = 0.0f;
         } else {
@@ -822,13 +782,14 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                 if ((object->ai_awareness_mask & alert_mask) != 0) {
                     object->objptr->alert_target_timer = 5.0f;
                     object->objptr->alert_target = &alert_obj->apiobj;
-                } else if (WORLD->rooms_visible_ptr[object->objptr->room_id] != 0) {
+                } else if (__builtin_expect(WORLD->rooms_visible_ptr[object->objptr->room_id] != 0, 1)) {
                     difference.x = alert_pos.x - object->collision_position.x;
                     if (object->heardistance > difference.x) {
                         difference.z = alert_pos.z - object->collision_position.z;
                         if (object->heardistance > difference.z) {
                             difference.y = alert_pos.y - object->collision_position.y;
-                            if (object->maxviewheight > difference.y && difference.y > object->minviewheight) {
+                            if (__builtin_expect(
+                                    object->maxviewheight > difference.y && difference.y > object->minviewheight, 0)) {
                                 distance = difference.x * difference.x + difference.z * difference.z;
                                 if (!(object->heardistance * object->heardistance > distance))
                                     continue;
@@ -925,10 +886,16 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         distance = NuVecDist(&baddy->position, &goody->position, &difference);
                     GameObject_s *baddy_object = baddy->objptr;
                     i16 baddy_id = baddy_object->id;
-                    if (baddy_id != id_UGNAUGHT && baddy_id != id_JAWA) {
+                    if (baddy_id == id_UGNAUGHT || baddy_id == id_JAWA) {
+                        if (!ZapTarget(goody->objptr))
+                            baddy->objptr->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
+                        baddy_object = baddy->objptr;
+                        baddy_id = baddy_object->id;
+                    } else {
                         if (!(goody->character_data->model_flags & 0x80000)) {
-                            if (baddy_object->only_attack_players && goody->objptr != player &&
-                                goody->objptr != player2) {
+                            if (__builtin_expect(baddy_object->only_attack_players && goody->objptr != player &&
+                                                     goody->objptr != player2,
+                                                 0)) {
                                 baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
                             } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
                                 baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
@@ -936,11 +903,6 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         } else {
                             baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
                         }
-                    } else {
-                        if (!ZapTarget(goody->objptr))
-                            baddy->objptr->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
-                        baddy_object = baddy->objptr;
-                        baddy_id = baddy_object->id;
                     }
                     GameObject_s *goody_object = goody->objptr;
                     if (!((baddy_object->ai_opponent_exclusion_mask >> goody->field_0x289) & 1)) {
@@ -975,7 +937,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                     if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT ||
                         (baddy->character_data->model_flags & 0x80000))
                         goody_object->ai_opponent_exclusion_mask |= (u64)1 << baddy->field_0x289;
-                    if (!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1)) {
+                    if (__builtin_expect(!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1), 1)) {
                         AIPACKET *packet = goody->ai;
                         if (packet->pending_nearest_metric > distance) {
                             packet->pending_nearest_metric = distance;
@@ -1026,7 +988,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                 }
             }
         }
-        if (!complete)
+        if (__builtin_expect(!complete, 0))
             return;
         system->goody_idx = 0;
         nbaddies_can_see_players = 0;
@@ -1035,7 +997,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
             APIOBJECT_s *goody = goodies[i];
             for (i32 j = 0; j < baddy_count; ++j) {
                 APIOBJECT_s *baddy = baddies[j];
-                if (!((goody->ai_awareness_mask >> baddy->field_0x289) & 1)) {
+                if (__builtin_expect(!((goody->ai_awareness_mask >> baddy->field_0x289) & 1), 0)) {
                     if ((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1) {
                         goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
                     }
@@ -1044,7 +1006,8 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         goody->objptr->ai_seen_mask |= (u64)1 << baddy->field_0x289;
                 }
                 if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                    if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1)
+                    if (__builtin_expect(
+                            (WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1, 0))
                         baddy->objptr->ai_seen_mask |= (u64)1 << goody->field_0x289;
                 } else if ((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1) {
                     baddy->objptr->ai_seen_mask &= ~((u64)1 << goody->field_0x289);
@@ -1251,7 +1214,7 @@ void GameAISysStartFrame(AISYS_s *system) {
             NuVecRotateY(&local_position, &local_position, -area->rotation);
             const bool is_inside = local_position.x >= -area->half_width && local_position.y >= -0.1f &&
                                    local_position.z >= -area->half_depth && local_position.x <= area->half_width &&
-                                   local_position.y <= area->height && local_position.z <= area->half_depth;
+                                   local_position.y <= area->height && !(local_position.z > area->half_depth);
             if (!is_inside) {
                 // Outside removal addresses the full 64-bit area bit.
                 const u64 area_bit = 1ULL << area_index;
@@ -1416,10 +1379,8 @@ void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system) {
     }
 
     NULISTHDR *available = &system->available_controllers;
-    available->head = NULL;
-    available->tail = NULL;
-    system->active_controllers.head = NULL;
-    system->active_controllers.tail = NULL;
+    memset(available, 0, sizeof(*available));
+    memset(&system->active_controllers, 0, sizeof(system->active_controllers));
     memset(system->controllers, 0, system->controller_count * sizeof(*system->controllers));
     for (i32 i = 0; i < system->controller_count; ++i) {
         NuLinkedListAppend(available, &system->controllers[i].links);
@@ -1732,7 +1693,8 @@ void AIPathCnxControlSysUpdate(AIPATHCNXCONTROLSYS_s *system) {
                     on = 0;
                 break;
             case 8:
-                on = static_cast<GIZOBSTACLE_s *>(controller->target)->anim_set->state == GAMEANIMSET_STATE_AT_END;
+                if (static_cast<GIZOBSTACLE_s *>(controller->target)->anim_set->state != GAMEANIMSET_STATE_AT_END)
+                    on = 0;
                 break;
             case 9:
                 on = (static_cast<ZIPUP *>(controller->target)->flags & (ZIPUP_FLAG_ACTIVE | ZIPUP_FLAG_VISIBLE)) ==
@@ -1884,12 +1846,13 @@ void oneAtOnce_MaintainArray() {
             if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][2]) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
-            if (AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][3]) {
+            if (__builtin_expect(AtOnce_attackingPlayer[player][slot].object == previous_attackers[player][3], 0)) {
                 AtOnce_attackingPlayer[player][slot].distance *= 0.75f;
             }
             for (i32 adjacent = 1; adjacent <= attacker_count[player] - slot; ++adjacent) {
-                if (AtOnce_attackingPlayer[player][adjacent].distance <
-                    AtOnce_attackingPlayer[player][adjacent - 1].distance) {
+                if (__builtin_expect(AtOnce_attackingPlayer[player][adjacent].distance <
+                                         AtOnce_attackingPlayer[player][adjacent - 1].distance,
+                                     1)) {
                     GameObject_s *object = AtOnce_attackingPlayer[player][adjacent - 1].object;
                     const f32 distance = AtOnce_attackingPlayer[player][adjacent - 1].distance;
                     AtOnce_attackingPlayer[player][adjacent - 1].object =
@@ -2222,7 +2185,7 @@ void GameAIProcess() {
                 } else {
                     object->ai_jump_timer = 0.0f;
                 }
-            } else if (object->pad_gamepad->input_magnitude > threshold) {
+            } else if (!(object->pad_gamepad->input_magnitude <= threshold)) {
                 object->ai_jump_timer += FRAMETIME;
                 if (object->ai_jump_timer > 1.0f) {
                     object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
@@ -2273,12 +2236,12 @@ void GameAIProcess() {
                             object->input_toggle_hold_time = 0.25f;
                     }
                 }
-            } else if ((object->ai.capabilities & (LEGO_AIPATHCNX_R2D2GLIDE | LEGO_AIPATHCNX_JUMP)) != 0 &&
-                       object->field_0xe31 == 0) {
+            } else if ((object->ai.capabilities & (LEGO_AIPATHCNX_R2D2GLIDE | LEGO_AIPATHCNX_JUMP)) == 0 ||
+                       object->field_0xe31 != 0) {
+                object->ai.field_0x1e6 |= AIPACKET_RUNTIME_USING_PATH_WAYPOINT;
+            } else {
                 object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
                 object->apiobj.movement_stuck_time = 0.0f;
-            } else {
-                object->ai.field_0x1e6 |= AIPACKET_RUNTIME_USING_PATH_WAYPOINT;
             }
             goto ai_route;
         ai_wall_shuffle: {
@@ -2319,7 +2282,7 @@ void GameAIProcess() {
                                 wall_direction.z = -lateral.z;
                             }
                         }
-                    } else if (first_distance < 1.0e9f) {
+                    } else if (!(first_distance >= 1.0e9f)) {
                         wall_direction = lateral;
                     }
                 } else {
@@ -2577,7 +2540,7 @@ void GameAIProcess() {
                     } else if (second_timer > antinode_time) {
                         first_ai->antinode_timer = second_timer;
                         first_ai->antinode_clockwise = second->ai->antinode_clockwise;
-                    } else if (first_timer > 0.0f) {
+                    } else if (!(first_timer <= 0.0f)) {
                         second->ai->antinode_timer = first_timer;
                         second->ai->antinode_clockwise = first_ai->antinode_clockwise;
                     }
@@ -2707,7 +2670,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         if (group != NULL) {
             AddToAIGroup(group, &object->apiobj);
             offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
-            if (object->ai.group_column & 1)
+            if (__builtin_expect(object->ai.group_column & 1, 0))
                 offset.x = -offset.x;
             offset.z = -group->z_spacing * static_cast<u32>(object->ai.group_member);
             offset.y = 0.0f;
@@ -2765,8 +2728,8 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->ai.field_0x124 = -1;
     object->ai.field_0x138 = 0xff;
     object->ai.field_0x139 = 0;
-    if (has_no_spline) {
-        if (path_info != NULL) {
+    if (__builtin_expect(has_no_spline, 0)) {
+        if (__builtin_expect(path_info != NULL, 0)) {
             AISysCharacterSetPath(&object->ai, path_info->path);
             AISysCharacterSetPathCnx(&object->ai, &object->apiobj.position, path_info->connection,
                                      path_info->direction);

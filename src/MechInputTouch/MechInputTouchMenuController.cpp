@@ -131,6 +131,7 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
     LastTouchTime = GlobalTimer.time_elapsed;
     LastTouchPos = touch;
     AnyTouchesThisFrame = 3;
+    MENU &menu = GameMenu[GameMenuLevel];
 
     if (GetMenuID() == 12) {
         if (field_78 == 0) {
@@ -178,7 +179,6 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
 #undef CUSTOMISER_HIT
     }
 
-    MENU &menu = GameMenu[GameMenuLevel];
     if (GetMenuID() == 17) {
         GetFreePlayCollection(hub_freeplay_area);
         NUVEC delta = {touch.x - menu.item_x[0], touch.y - menu.item_y[0], 0.0f};
@@ -231,22 +231,23 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
         const f32 height = menu.item_height[index];
         const f32 x = down.x - menu.item_x[index];
         const f32 y = down.y - menu.item_y[index];
-        bool hit;
         if (height == 0.0f) {
             NUVEC delta = {x, y, 0.0f};
             delta.x /= GetAspectRatio();
-            hit = NuVecMag(&delta) < width;
+            if (!(NuVecMag(&delta) < width)) {
+                continue;
+            }
         } else {
             const f32 half_width = fabsf(0.5f * width);
             const f32 half_height = fabsf(0.5f * height);
-            hit = x > -half_width && x < half_width && y > -half_height && y < half_height;
+            if (!(x > -half_width && x < half_width && y > -half_height && y < half_height)) {
+                continue;
+            }
         }
-        if (hit) {
-            menu.queued_item = index;
-            menu.queued_column = menu.item_column[index];
-            menu.queued_row = menu.item_row[index];
-            return GetMenuID() != 25;
-        }
+        menu.queued_item = index;
+        menu.queued_column = menu.item_column[index];
+        menu.queued_row = menu.item_row[index];
+        return GetMenuID() != 25;
     }
     return false;
 }
@@ -313,7 +314,10 @@ MechInputTouchMenuController::MechInputTouchMenuController(i32 player_id)
 void VirtualControlDPad_LockButton::Process(float) {
     const f32 button_radius_x = radius_x;
     const f32 button_radius_y = radius_y;
-    position = dpad->position;
+    position.x = dpad->position.x;
+    position.y = dpad->position.y;
+    position.z = dpad->position.z;
+    position.w = dpad->position.w;
     const f32 desired_y = dpad->position.y - (dpad->position.w * 0.75f + button_radius_y);
     const f32 desired_x = dpad->position.z * 0.75f + button_radius_x + dpad->position.x;
     position.x = MAX(button_radius_x - 0.975f, MIN(desired_x, 0.1f));

@@ -102,7 +102,6 @@ extern "C" NUMTL *edbri_mtl, *edbri_mtl_zoff;
 extern "C" f32 edbri_length, edbri_width;
 extern "C" i32 edbri_rotz, edbri_roty, edbri_planks, edbri_post_interval;
 extern "C" i32 edbri_plank_instance_type, edbri_post_instance_type, edbri_bridges_used;
-extern "C" eduiitem_s *eduiItemColourPickCreate(usize, const void *, EdUiItemCallback, char *);
 extern f32 Scale;
 
 extern "C" {
@@ -111,10 +110,6 @@ extern "C" {
     extern i32 edpp_copy_mode, edpp_copyrotz, edpp_copyroty, edpp_copy_source_count, edpp_copy_enclosed;
     extern NUMTL *edpp_mtl, *edpp_boxmtl;
 }
-
-__attribute__((force_align_arg_pointer)) void EdDrawPolyCylinder(VuVec const &start, VuVec const &end, i32 sides,
-                                                                 i32 colour, i32 cap_colour, float radius, float limit,
-                                                                 float offset);
 
 eduiitem_s *eduiItemFileSelectorCreate(u32 data, eduiiattr_s *colours, EdUiItemCallback callback, char *text);
 
@@ -456,8 +451,6 @@ extern "C" {
     extern char edbits_general_save_extension[256];
 }
 
-void cbFileSaveEffects(eduimenu_s *, eduiitem_s *, u32);
-
 #if defined(__SSE__)
 #include <xmmintrin.h>
 #endif
@@ -478,8 +471,6 @@ extern "C" {
 // Particle-list editor UI/menu callbacks.
 
 // Particle editor UI/menu callbacks.
-
-void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32);
 
 // Particle list editor subsystem stubs (static, internal linkage).
 
@@ -780,20 +771,13 @@ extern "C" {
     NUMTX *ed_remap_mtx = NULL;
     i32 edmain_cursor_enabled = 0;
 
-void edanimUpdateObjects(float elapsed);
-
-void edbitsRegisterPlaySound(EDBITSPLAYSOUNDCALLBACK callback);
-void edbitsRegisterRequestSound(EDBITSREQUESTSOUNDCALLBACK callback);
     // Shared editor font; edmainInit receives and stores the font handle.
     void *ed_fnt;
 
     extern f32 globaltime;
 
-i32 edppFindAllSounds(i32 page, NUVEC *positions, i32 (*sounds)[4], i32 capacity, i32 skip);
-void edppSetSaveName(u32 page, char *name);
 edui_textpicker_s *eduiAddTextPickEntEx(eduimenu_s *menu, eduiitem_s *source, EdUiItemCallback callback);
     i32 bUsingMenuFocus;
-eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
 eduiitem_s *eduiItemColourSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
                                            f32 minimum, f32 range, f32 value, u8 red, u8 green, u8 blue, char *text);
 eduiitem_s *eduiItemGraphCreate(usize data, const void *colours, EdUiItemCallback callback, nugraph_s *graph,
@@ -894,7 +878,6 @@ __attribute__((visibility("hidden"), optimize("O3"))) void tpentPropOnEnter(edui
 
 extern f32 HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING;
-extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
 extern i16 tLOCKED;
 extern i16 tPOWERBRICK;
 extern f32 newgamecamtime;
@@ -909,19 +892,9 @@ extern i32 memcard_formatfailed;
 extern void (*drawslotinfofn)(f32, f32, i32, i32);
 extern void (*drawslotsfn)(MENU *, f32);
 
-void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                      void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled);
-
-void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
-                    void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
-
 extern "C" {
 extern f32 MENUBOTY;
 extern f32 MENUENTRYEXWIDTH;
-
-void MenuSetPreDrawFn(void (*draw_fn)(MENU *));
-
-void MenuSetHeaderDrawFn(void (*draw_fn)(void));
 } // extern "C"
 
 struct nuanimdatachunk_s;
@@ -931,13 +904,7 @@ extern GLuint g_colorRenderbuffer;
 extern GLuint g_depthRenderbuffer;
 }
 
-using NUHGOBJVIDEOMEMFN = void (*)(nuhgobj_s *);
-
-void NuPadRecordEndFrame(void);                      // nupad_interface.cpp
-
 extern "C" {
-    void NuShaderManagerSetfv(i32 semantic, const f32 *values);
-
     extern nurenderscene_s currentScene;
 } // extern "C"
 
@@ -962,22 +929,10 @@ extern "C" {
     extern void (*postRenderFlashingHack)(void);
     extern void (*nuapi_endframe_callbackfn)(void);
 
-void NuIOS_RecordFlurryEvent(char *event_name);
-
-    extern "C++" void NuAnimDataChunkDestroy(nuanimdatachunk_s *chunk);
-
-void NuQFntPrint2dW(NUQFNT *font, u16 *text);
-void NuQFntPrint3DU(NUQFNT *font, char *text);
-void NuQFntPrint3DW(NUQFNT *font, u16 *text);
-void NuQFntPrintV(NUQFNT *font, const char *format, va_list arguments);
 
     extern nurenderscene_s currentScene;
 
-    void NuWindUpdateArray(NUVEC **);
-
 #include "nu2api/nucore/nucore_plain_types.h"
-void NuHGobjFromVideoMem(NUHGOBJVIDEOMEMFN callback);
-void NuHGobjToVideoMem(NUHGOBJVIDEOMEMFN callback);
 
     // ---------------------------------------------------------------------------
     // Input / pad / key / mouse
@@ -1012,8 +967,6 @@ void NuHGobjToVideoMem(NUHGOBJVIDEOMEMFN callback);
                      i32 tree_index) __asm__("_ZL12ClipInstTreeP16NuInstanceTree_siP16nudisplayscene_sPc.isra.92");
     }
 
-    extern "C++" void OctreeRndr(u8 *visibility, nuoctreenode_s *root, i32 enabled);
-
 #ifndef ANDROID
     void NuGetCurrentThreadId(void) {
         STUBBED();
@@ -1026,7 +979,6 @@ void NuHGobjToVideoMem(NUHGOBJVIDEOMEMFN callback);
 #endif
 
     extern void (*nuapi_endframe_callbackfn)(void);
-void NuRegisterEndFrameCallBackFn(void (*callback)(void));
 } // extern "C"
 
 struct nupad_s;
@@ -1055,8 +1007,6 @@ extern "C" {
 
 DECOMP_ASSERT(sizeof(speedervals) == 0x70, "Speeder chase tuning table size");
 
-void SetLevelExBlowupFunc(i32 (*callback)(GIZMOBLOWUP_s *, i32));
-
 extern "C" {
     i32 edmain_auto_speed = 1;
 } // extern "C"
@@ -1065,8 +1015,6 @@ extern "C" i16 id_LANDSPEEDER;
 extern f32 newgamecamtime, cutscenecam_focalLength, CamStopBlend, EMPERORFIGHTA_CAMDYHACK;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
 extern NUMTX cutscenecammtx, CutCamMtx;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
 
 extern f32 EMPERORFIGHTA_CAMDYHACK;
 extern i32 movegamecamera_forcesock;
@@ -1140,13 +1088,6 @@ static __attribute__((noinline, noclone)) void RenderFileSel3Body(i32 draw_title
 
 extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
                              void (*callback)(char *, char *));
-
-extern "C" {
-void SaveSystemInitialiseEx(i32 slots, void *makeSaveHash, void *save, i32 saveSize, void *header, i32 headerSize,
-                                i32 autosave, void (*drawSaveIcon)(void));
-
-void SetSaveSuccessFn(void (*callback)(void));
-} // extern "C"
 
 extern f32 HUB_EPISODETITLEY;
 
@@ -1489,7 +1430,7 @@ static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignme
 static __used__ void eduiFntPrintClipEx(void *font, float x, float y, int alignment, float clip_x, float clip_width,
                                         char *format, ...) {
     va_list arguments;
-    if (__builtin_expect(!edui_donotdraw, 1)) {
+    if (!edui_donotdraw) {
         char text[1024];
         i32 screen_x = static_cast<i32>(x * 16.0f);
         i32 screen_y = static_cast<i32>(y * 8.0f);
@@ -1513,7 +1454,7 @@ static __used__ void eduiFntPrintClipEx(void *font, float x, float y, int alignm
             do {
                 *end-- = '\0';
                 width = static_cast<i32>(NuQFntPrintLenU(font, text));
-            } while (width > screen_clip_width && end != text);
+            } while (width > screen_clip_width && end > text);
         }
         NuQFntMove(font, screen_x, screen_y, 0.0f);
         NuQFntPrintU(font, text);
@@ -1738,7 +1679,7 @@ static void eduiFntPrintClipEx(void *font, i32 x, i32 y, i32, i32 clip_x, i32 cl
                 do {
                     *end-- = '\0';
                     width = static_cast<i32>(NuQFntPrintLenU(font, text));
-                } while (width > clip_width && end != text);
+                } while (width > clip_width && end > text);
             }
         }
         NuQFntMove(font, x, y, 0.0f);
@@ -1880,12 +1821,17 @@ extern "C" {
         eduiDrawRect(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
         eduiDrawFontSetLikely(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-        if (item->text_alignment == 16)
+        switch (item->text_alignment) {
+        case 16:
             eduiFntPrintExGeneric(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
-        else if (item->text_alignment == 32)
+            break;
+        case 32:
             eduiFntPrintExGeneric(edui_font, (x + width) << 4, (y << 3) + baseline, 32, item->text);
-        else
+            break;
+        default:
             eduiFntPrintExGeneric(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, item->text_alignment, item->text);
+            break;
+        }
         return height;
     }
 
@@ -1926,27 +1872,13 @@ extern "C" {
         f32 origin_u = picker->uv_x[picker->selected_corner] - 0.5f / picker->zoom;
         f32 origin_v = picker->uv_y[picker->selected_corner] - 0.5f / picker->zoom;
         f32 maximum = 1.0f - uv_span;
-        if (origin_u < 0.0f)
-            origin_u = maximum < 0.0f ? maximum : 0.0f;
-        else if (maximum < origin_u)
-            origin_u = maximum;
-        if (origin_v < 0.0f)
-            origin_v = maximum < 0.0f ? maximum : 0.0f;
-        else if (maximum < origin_v)
-            origin_v = maximum;
+        origin_u = MIN(maximum, MAX(0.0f, origin_u));
+        origin_v = MIN(maximum, MAX(0.0f, origin_v));
         f32 point_u[2];
         f32 point_v[2];
         for (i32 corner = 0; corner < 2; ++corner) {
-            point_u[corner] = (picker->uv_x[corner] - origin_u) / uv_span;
-            if (point_u[corner] < 0.0f)
-                point_u[corner] = 0.0f;
-            else if (point_u[corner] > 1.0f)
-                point_u[corner] = 1.0f;
-            point_v[corner] = (picker->uv_y[corner] - origin_v) / uv_span;
-            if (point_v[corner] < 0.0f)
-                point_v[corner] = 0.0f;
-            else if (point_v[corner] > 1.0f)
-                point_v[corner] = 1.0f;
+            point_u[corner] = MIN(1.0f, MAX(0.0f, (picker->uv_x[corner] - origin_u) / uv_span));
+            point_v[corner] = MIN(1.0f, MAX(0.0f, (picker->uv_y[corner] - origin_v) / uv_span));
         }
         colours[picker->selected_corner] = 0x80ffffff;
         if (!edui_donotdraw)
@@ -2396,9 +2328,11 @@ extern "C" {
         if (__builtin_expect(edui_cursor_buttons_db & EDUI_CURSOR_PRIMARY, 1)) {
             if (expander->changed)
                 expander->changed(menu, expander, 0);
-            if (edui_cursor_x >= expander->button_x && edui_cursor_y >= expander->button_y * 0.5f &&
-                edui_cursor_x < expander->button_x + expander->button_size &&
-                edui_cursor_y < (expander->button_y + expander->button_size) * 0.5f && expander->first_child) {
+            if (__builtin_expect(edui_cursor_x >= expander->button_x && edui_cursor_y >= expander->button_y * 0.5f &&
+                                     edui_cursor_x < expander->button_x + expander->button_size &&
+                                     edui_cursor_y < (expander->button_y + expander->button_size) * 0.5f &&
+                                     expander->first_child,
+                                 1)) {
                 if (!expander->open) {
                     expander->last_child->next = expander->next;
                     if (expander->next)
@@ -3339,10 +3273,11 @@ extern "C" {
             return NULL;
         memset(stage, 0, sizeof(*stage));
         edui_gradient_node_s *previous = NULL;
-        edui_gradient_node_s *next = item->first_stage;
-        while (next && !(next->time > time)) {
+        edui_gradient_node_s *next;
+        for (next = item->first_stage; next; next = next->next) {
+            if (next->time > time)
+                break;
             previous = next;
-            next = next->next;
         }
         if (previous)
             previous->next = stage;
@@ -3970,11 +3905,9 @@ extern "C" {
         NuQFntSetScale(edui_font, edui_font_scale_x, edui_font_scale_y);
 
         i32 width = 0;
-        if (menu->title) {
-            i32 title_width = static_cast<i32>(NuQFntPrintLenU(edui_font, menu->title)) >> 4;
-            if (title_width > width)
-                width = title_width;
-        }
+        i32 title_width = menu->title ? static_cast<i32>(NuQFntPrintLenU(edui_font, menu->title)) >> 4 : 0;
+        if (title_width > width)
+            width = title_width;
         i32 property_label_width = 0;
         i32 property_value_width = 0;
 
@@ -3999,7 +3932,7 @@ extern "C" {
                     i32 value_width = property->property_text
                                           ? static_cast<i32>(NuQFntPrintLenU(edui_font, property->property_text)) >> 4
                                           : 30;
-                    if (value_width > property_value_width)
+                    if (__builtin_expect(value_width > property_value_width, 1))
                         property_value_width = value_width;
                     item_text_width = value_width;
                     break;
@@ -4029,7 +3962,7 @@ extern "C" {
             width = property_width;
 
         for (eduiitem_s *item = menu->first; item; item = item->next) {
-            if (item->type == 17)
+            if (__builtin_expect(item->type == 17, 1))
                 static_cast<edui_prop_s *>(item)->label_width = static_cast<f32>(property_label_width + 1);
         }
         menu->width = width + padding;
@@ -5061,7 +4994,7 @@ extern "C" {
             if (item->type == 7)
                 eduiGradStageSetHSV(stage, cliph, clips, clipv);
             if (item->type == 8)
-                eduiGradStageSetHSV(stage, 0.0f, 0.0f, clipg);
+                eduiGradStageSetHSV(picker->selected_stage, 0.0f, 0.0f, clipg);
             if (picker->paste != nullptr)
                 picker->paste(menu, item, value);
         }
@@ -5645,13 +5578,13 @@ extern "C" {
                 return editor_return;
             if (ed_curr->deactivate)
                 ed_curr->deactivate();
-            if (result == 2)
+            if (__builtin_expect(result == 2, 1))
                 editor_return = 1;
             ed_module_active = 0;
             return editor_return;
         }
 
-        if (!ed_curr) {
+        if (__builtin_expect(!ed_curr, 0)) {
             ed_curr = ed_list;
             eduiSetActiveMenu(ed_main_menu);
             eduiSetDefaultActiveMenu(ed_main_menu);
@@ -5770,24 +5703,22 @@ extern "C" {
 
         if (configuration_file) {
             NuStrCpy(ed_levelfile, configuration_file);
-            if (ed_levelfile[0]) {
-                i32 file = NuFileOpen(ed_levelfile, NUFILE_READ);
-                if (file) {
-                    NuFileBeginBlkRead(file, 0x3032554e);
-                    i32 block;
-                    while ((block = NuFileBeginBlkRead(file, 0)) != 0) {
-                        for (ed_module_s *module = ed_list; module; module = module->next) {
-                            if (module->block_id == static_cast<u32>(block)) {
-                                if (module->read)
-                                    module->read(file);
-                                break;
-                            }
+            i32 file;
+            if (__builtin_expect(ed_levelfile[0] && (file = NuFileOpen(ed_levelfile, NUFILE_READ)) != 0, 1)) {
+                NuFileBeginBlkRead(file, 0x3032554e);
+                i32 block;
+                while ((block = NuFileBeginBlkRead(file, 0)) != 0) {
+                    for (ed_module_s *module = ed_list; module; module = module->next) {
+                        if (module->block_id == static_cast<u32>(block)) {
+                            if (module->read)
+                                module->read(file);
+                            break;
                         }
-                        NuFileEndBlkRead(file);
                     }
                     NuFileEndBlkRead(file);
-                    NuFileClose(file);
                 }
+                NuFileEndBlkRead(file);
+                NuFileClose(file);
             }
         } else {
             ed_levelfile[0] = '\0';
@@ -6142,7 +6073,7 @@ extern "C" {
             } else if (buttons == 3 || buttons == 4) {
                 movement.x += mouse_x * 0.0078125f;
                 movement.y -= mouse_y * 0.0078125f;
-            } else if (buttons == 1) {
+            } else if (__builtin_expect(buttons == 1, 0)) {
                 if (camera->freedoms & EDCAM_FREEDOM_PITCH) {
                     camera->pitch -= static_cast<i32>(mouse_y * 16.0f);
                     if (camera->pitch > 0x4000)
@@ -6442,7 +6373,7 @@ i32 EdFileOpen(char *filepath, NUFILEMODE mode) {
         return 0;
     }
 
-    if (edfile_pakfile != NULL) {
+    if (__builtin_expect(edfile_pakfile != NULL, 1)) {
         item_handle = NuFilePakGetItem(edfile_pakfile, filepath);
 
         if (item_handle != 0) {
@@ -7068,7 +6999,7 @@ i32 FS_FileNameFilter(char *name) {
                     if (match == NULL)
                         break;
                 }
-                if (match == NULL || (slot == 6 && filterblocks[i][72] != '\0'))
+                if (__builtin_expect(match == NULL || (slot == 6 && filterblocks[i][72] != '\0'), 0))
                     continue;
             }
             i32 dots = 0;
@@ -7175,7 +7106,7 @@ void FS_SetCursorToLastFileName() {
             FS_CurrentPos = entry;
             FS_CursorLine = 0;
             FS_CurrentPosFileNum = index;
-            if (index == 0 || index + 13 < FS_NumFiles) {
+            if (__builtin_expect(index == 0 || index + 13 < FS_NumFiles, 1)) {
                 return;
             }
             char *current = entry;
@@ -7223,8 +7154,9 @@ void FS_GetDirList(char *path, char *filter, char *filter_out) {
         next = FS_FileList + 10;
         while (i32 name_length = NuFileReadDir(directory, entry)) {
             char *name = entry + 0x18;
-            if (*reinterpret_cast<u16 *>(name) == '.' || (*reinterpret_cast<u32 *>(name) & 0xffffff) == 0x2e2e ||
-                !(entry[0] & 8)) {
+            if (__builtin_expect(*reinterpret_cast<u16 *>(name) == '.' ||
+                                     (*reinterpret_cast<u32 *>(name) & 0xffffff) == 0x2e2e || !(entry[0] & 8),
+                                 1)) {
                 continue;
             }
             if (next + name_length + 8 >= FS_FileList + sizeof(FS_FileList)) {
@@ -7258,7 +7190,7 @@ void FS_GetDirList(char *path, char *filter, char *filter_out) {
     if (directory != 0) {
         while (i32 name_length = NuFileReadDir(directory, entry)) {
             char *name = entry + 0x18;
-            if ((entry[0] & 8) || !FS_FileNameFilter(name)) {
+            if (__builtin_expect((entry[0] & 8) || !FS_FileNameFilter(name), 1)) {
                 continue;
             }
             if (next + name_length + 8 >= FS_FileList + sizeof(FS_FileList)) {
@@ -7519,11 +7451,16 @@ void edDrawLine(nuvec_s *, nuvec_s *, unsigned char, unsigned char, unsigned cha
 extern "C" {
 extern "C" void AddColourPick(eduimenu_s *parent, eduiitem_s *item, f32 *red, f32 *green, f32 *blue, u32 *rgba) {
     eduiMenuAttach(parent, colourmenu);
-    colourmenu->x = (item != nullptr ? item->x : parent->x) + 10;
-    i32 y = (item != nullptr ? item->y : parent->y) + 10;
+    if (item != nullptr) {
+        colourmenu->x = item->x + 10;
+        colourmenu->y = item->y + 10;
+    } else {
+        colourmenu->x = parent->x + 10;
+        colourmenu->y = parent->y + 10;
+    }
     i32 bottom = PS2_REZ_H - 20 - colourmenu->height;
-    colourmenu->y = y <= bottom ? y : bottom;
     cp_rgba = rgba;
+    colourmenu->y = colourmenu->y <= bottom ? colourmenu->y : bottom;
 
     f32 red_value;
     f32 green_value;
@@ -7579,7 +7516,7 @@ extern "C" void CreateColourPicker(void) {
     }
 }
 
-extern "C" void RndrOSphere(NUVEC *centre, f32 radius, i32 colour, i32 segments, i32) {
+extern "C" void RndrOSphere(NUVEC *centre, f32 radius, i32 colour, i32 segments, numtl_s *) {
     NUMTX_ALIGNED32 matrix = global_camera.mtx;
     matrix.m30 = centre->x;
     matrix.m31 = centre->y;
@@ -7627,7 +7564,7 @@ extern "C" void RndrCircleXZ(NUVEC *centre, f32 radius, i32 colour, i32 segments
     }
 }
 
-extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
+extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour, numtl_s *) {
     f32 corners[4][2] = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
     NUMTX_ALIGNED32 matrix = global_camera.mtx;
     matrix.m31 = centre->y;

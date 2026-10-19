@@ -44,18 +44,15 @@
 #include "legoapi/actions/character/legoapi_tag.h"
 #include "legoapi/lib/text.h"
 #include "nu2api/nucore/nu2api_nucore_misc.h"
+#include "legoapi/lib/camera.h"
+#include "legoapi/misc/utilities.h"
+#include "nu2api/nuandroid/ios_device.h"
 
 struct GameObject_s;
 struct WORLDINFO_s;
 struct NuIOS_InAppProduct;
-i32 NuIOS_AreInAppPurchasesAvailable();
-i32 NuIOS_CanMakeInAppPurchases();
-extern "C" void NuIOS_RecordFlurryEvent(char *);
 i32 LEGOMENU_PAUSESYNC = -1;
 i32 LEGOMENU_STORE_PURCHASE = 0x17;
-extern NuVec2 StoreTouchLastPos __asm__("_ZN28MechInputTouchMenuController12LastTouchPosE");
-void GameCam_HitRoll();
-void DrawRectRGBA(f32, f32, f32, f32, u32, numtl_s *, i32, f32);
 extern i16 tCONTINUE;
 extern i16 tACCEPT;
 extern u8 RAP_WARNING_R, RAP_WARNING_G, RAP_WARNING_B;
@@ -640,7 +637,7 @@ void MenuUpdateDebugStore(MENU_s *menu) {
 
 void Store_HubDrawFloorTargets(WORLDINFO_s *world) {
     (void)NuFmod(GameTimer.time_elapsed, 4.0f);
-    const u16 alpha_angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
+    const i32 alpha_angle = static_cast<i32>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
     const f32 frame_alpha = NU_SIN_LUT(alpha_angle) * 0.2f + 0.8f;
 
     for (i32 i = 0; i < 11; ++i) {
@@ -648,7 +645,7 @@ void Store_HubDrawFloorTargets(WORLDINFO_s *world) {
             continue;
         }
         if (Store_IsPackUnlocked(i) ||
-            (StorePack[i].field44_0x32 != 0xff && StorePack[i].field44_0x32 != GameCam->sock_position.location.sock)) {
+            (StorePack[i].field44_0x32 != 0xff && StorePack[i].field44_0x32 != static_cast<u8>(GameCam->sock_position.location.sock))) {
             continue;
         }
 
@@ -656,7 +653,7 @@ void Store_HubDrawFloorTargets(WORLDINFO_s *world) {
         Draw3DObjectAlpha(world, LEGOOBJ_ICON_FRAME_GREEN, &StorePack[i].custodian_position, 0x4000, frame_rotation, 0,
                           0.9f, 0.9f, 0.9f, 0, frame_alpha);
 
-        if (g_lowEndLevelBehaviour == 0 || Hub_LowEnd_IconsInsteadOfModels == 0 || StorePack[i].id == NULL ||
+        if (g_lowEndLevelBehaviour == 0 || Hub_LowEnd_IconsInsteadOfModels == 0 ||
             APICharacterLoaded(*StorePack[i].id) != NULL || big_icon_scene == NULL) {
             continue;
         }
@@ -843,7 +840,7 @@ void MenuDrawStore(MENU_s *) {
     if (product.description[0] != 0) {
         SmartTextEx(product.description, 0.0f, y, 1.0f, 0.3f, 0.3f, 0.3f, 1, 255, 127, 0, 1.9f, 2, &text_box, 0, MenuA);
         y -= text_box.height;
-        if (StoreIAP[0].width < text_box.width) {
+        if (!(StoreIAP[0].width >= text_box.width)) {
             StoreIAP[0].width = text_box.width;
         }
     }
@@ -970,8 +967,8 @@ void MenuUpdateStore(MENU_s *menu) {
             }
         }
         if (MenuAlpha >= 1.0f && MechInputTouchMenuController::AnyTouchesThisFrame > 0) {
-            const f32 dx = StoreTouchLastPos.x - position.x;
-            const f32 dy = StoreTouchLastPos.y - position.y;
+            const f32 dx = MechInputTouchMenuController::LastTouchPos.x - position.x;
+            const f32 dy = MechInputTouchMenuController::LastTouchPos.y - position.y;
             if (__builtin_expect(dx * dx + dy * dy < 0.01f, 0)) {
                 goto store_touch_selected;
             }
@@ -985,19 +982,13 @@ store_touch_selected:
         menu_i_bundle = StoreBundle_FindByName(menu_storepurchase_iap_name);
         NewMenu(LEGOMENU_STORE_PURCHASE, -1, -1);
 
-        const char *format;
-        char *item_name;
         if (menu_i_bundle != -1) {
-            format = "bundle_%s_bought";
-            item_name = StoreBundle[menu_i_bundle].name;
+            sprintf(event, "bundle_%s_bought", StoreBundle[menu_i_bundle].name);
+            NuIOS_RecordFlurryEvent(event);
         } else if (menu_i_pack != -1) {
-            format = "pack_%s_bought";
-            item_name = *reinterpret_cast<char **>(&StorePack[menu_i_pack].field1_0x4);
-        } else {
-            return;
+            sprintf(event, "pack_%s_bought", *reinterpret_cast<char **>(&StorePack[menu_i_pack].field1_0x4));
+            NuIOS_RecordFlurryEvent(event);
         }
-        sprintf(event, format, item_name);
-        NuIOS_RecordFlurryEvent(event);
         return;
     }
     if (TTab[0x60f] != NULL) {

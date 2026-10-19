@@ -595,11 +595,11 @@ static i32 GizObstacles_BoltHit(void *world, void *data, void *attacker_ptr, NUV
             continue;
         const NUVEC &position = obstacle->evaluated_position;
         const f32 obstacle_radius = obstacle->field_0x58;
-        if (__builtin_expect(position.x - obstacle_radius > maximum->x || minimum->x > position.x + obstacle_radius ||
-                                 position.z - obstacle_radius > maximum->z ||
-                                 minimum->z > position.z + obstacle_radius ||
-                                 position.y - obstacle_radius > maximum->y || minimum->y > position.y + obstacle_radius,
-                             1)) {
+        if (__builtin_expect(
+                position.x - obstacle_radius > maximum->x || !(minimum->x <= position.x + obstacle_radius) ||
+                    position.z - obstacle_radius > maximum->z || minimum->z > position.z + obstacle_radius ||
+                    position.y - obstacle_radius > maximum->y || minimum->y > position.y + obstacle_radius,
+                1)) {
             continue;
         }
         for (i32 point_index = point_count - 1; point_index >= 0; --point_index) {
@@ -624,9 +624,9 @@ static i32 GizObstacles_BoltHit(void *world, void *data, void *attacker_ptr, NUV
         BoltType_FindByID(bolt->type_id, WORLD);
         Cheats_CheckFlags(2);
     }
-    BOLTTYPE_s *type = BoltType_FindByID(bolt->type_id, static_cast<WORLDINFO_s *>(world));
+    const i32 damage = BoltType_FindByID(bolt->type_id, static_cast<WORLDINFO_s *>(world))->field_3c;
     const i32 player_index = bolt->owner != NULL ? static_cast<i8>(bolt->owner->apiobj.field_0x27c) : -1;
-    if (GizObstacles_Hit(world, nearest, &bolt->position, player_index, type->field_3c) != 0) {
+    if (GizObstacles_Hit(world, nearest, &bolt->position, player_index, damage) != 0) {
         if (attacker != NULL) {
             NewRumble(attacker->pad_gamepad->pad, 0.4f, 0);
             GameCam_HitJudder();
@@ -1269,7 +1269,7 @@ static void GizObstacleUpdate_Proximity(GIZOBSTACLE_s *obstacle) {
                 (object->field_0xf03 & GAMEOBJECT_F03_FLAG_OBSTACLE_TERRAIN_VALID) == 0 && object->field_0xe31 != 1;
             if (__builtin_expect(!!(requires_obstacle_platform), 1)) {
                 bool on_obstacle_platform = false;
-                if (obstacle->anim_set != NULL) {
+                if (__builtin_expect(obstacle->anim_set != NULL, 0)) {
                     for (GAMEANIMOBJ_s *anim_object = obstacle->anim_set->objects; anim_object != NULL;
                          anim_object = anim_object->next) {
                         i16 *object_data = static_cast<i16 *>(anim_object->object_data);

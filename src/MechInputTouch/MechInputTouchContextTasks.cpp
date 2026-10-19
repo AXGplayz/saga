@@ -15,18 +15,14 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/render/core/terrain.h"
+#include "legoapi/actions/character/legoapi_tag.h"
+#include "legoapi/actions/movement/climbing.h"
+#include "legoapi/characters/motion/move.h"
+#include "legoapi/gizmos/object/gizpanel.h"
 
 extern i16 id_YODA;
 extern i16 id_YODAGHOST;
 extern i16 id_WATTO;
-void GizPanel_Use(GameObject_s &, GIZPANEL_s &);
-void TakeOver2GetIn(GameObject_s *, GameObject_s *);
-i32 TagCode(GameObject_s *, GameObject_s *, i32, i32, i32);
-void SetForcedAttackOpponent(MechObjectInterface *);
-void SetWeaponOut(GameObject_s *);
-bool FireBountyHunterRocket(GameObject_s *);
-void SetBobaRocketTarget(MechObjectInterface *);
-f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 extern MechWeakPtr<MechObjectInterface, 4> NextThermalTarget;
 
 f32 s_mechTouchMoveToStuckVel = 0.2f;
@@ -130,7 +126,7 @@ bool MechTouchTaskGoTo::Update() {
                     controller->button_was_pressed[2] = 1;
                 }
             } else if (!(field_44 < 0.000001f) && !(field_40 < 0.1f)) {
-                if (field_4c != 0 && field_40 > s_mechTouchMoveToWalkAlwaysDist) {
+                if (field_4c != 0 && !(field_40 <= s_mechTouchMoveToWalkAlwaysDist)) {
                     // Far targets keep running at full speed.
                 } else {
                     direction.x *= s_mechTouchMoveToWalkSpeed;
@@ -232,8 +228,8 @@ MechTouchTaskJump::MechTouchTaskJump(MechInputTouchGestureBasedController &owner
             stick.x *= speed;
             stick.y *= speed;
             stick.x = -stick.x;
-            stick.x = stick.x < 1.0f ? MAX(-1.0f, stick.x) : MIN(stick.x, 1.0f);
-            stick.y = stick.y < 1.0f ? MAX(-1.0f, stick.y) : MIN(stick.y, 1.0f);
+            stick.y = MAX(-1.0f, MIN(stick.y, 1.0f));
+            stick.x = MAX(-1.0f, MIN(stick.x, 1.0f));
         }
     }
     flags |= 10;
@@ -277,7 +273,7 @@ bool MechTouchTaskJump::Update() {
             } else {
                 controller->stick_values[0] = stick.x;
                 controller->stick_values[1] = stick.y;
-                if (stick.x * stick.x + stick.y * stick.y < 1.1920928955078125e-7f) {
+                if (!(stick.x * stick.x + stick.y * stick.y >= 1.1920928955078125e-7f)) {
                     player->apiobj.velocity.x = player->target_velocity.x = 0.0f;
                     player->apiobj.velocity.z = player->target_velocity.z = 0.0f;
                 }
@@ -975,7 +971,7 @@ bool MechTouchTaskPlannedGoTo::Update() {
     f32 velocity_x;
     f32 velocity_y;
     f32 velocity_z;
-    const bool double_jump = dx * dx + dy * dy + dz * dz > 1.4f * 1.4f || dy > player->apiobj.scaled_height;
+    const bool double_jump = dx * dx + dy * dy + dz * dz > 1.4f * 1.4f || !(dy <= player->apiobj.scaled_height);
     if (!double_jump) {
         const VuVec velocity = TouchHacks::CalculateJumpVelToHitPoint(*player, waypoint.position);
         velocity_x = velocity.x;
@@ -1110,9 +1106,9 @@ void MechTouchTaskPlannedDoubleClickGoTo::OnResume() {
 
     VuVec position;
     target.Get()->GetPos(position, -1);
-    const f32 dx = position.x - player->apiobj.position.x;
     const f32 dy = position.y - player->apiobj.position.y;
     const f32 dz = position.z - player->apiobj.position.z;
+    const f32 dx = position.x - player->apiobj.position.x;
     const GAMECHARACTERDATA *character = player->apiobj.character_data->game_character;
     const f32 max_rise =
         -(character->jump_speed * character->jump_speed) / (character->gravity + character->gravity) * 2.5f;
@@ -1160,7 +1156,11 @@ void MechTouchTaskPlannedDoubleClickGoTo::OnResume() {
     packet.velocity.y = velocity_y;
     packet.velocity.z = velocity_z;
     packet.velocity.w = 1.0f;
-    *reinterpret_cast<VuVec *>(packet.field_1c) = position;
+    VuVec *destination = reinterpret_cast<VuVec *>(packet.field_1c);
+    destination->x = position.x;
+    destination->y = position.y;
+    destination->z = position.z;
+    destination->w = position.w;
     if (!controller->TriggerJumpTask(packet, true, true, true)) {
         player->apiobj.velocity.x = previous_x;
         player->apiobj.velocity.y = previous_y;

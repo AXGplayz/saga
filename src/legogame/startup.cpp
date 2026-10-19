@@ -88,23 +88,14 @@
 #include "legoapi/world/levels.h"
 #include "nu2api/nu3d/nu3d_includes.h"
 #include "nu2api/nuandroid/ios_device.h"
-
-extern "C" {
-    // nucore / nurndr plain stubs and editor helpers (extern "C" TUs).
-    void NuLanguageSet(i32 language);
-    void NuFrameBegin(void);
-    f32 NuFrameEnd(void);
-    void edGraEnableTerrainSwap(void);
-    void edGraDisableTerrainSwap(void);
-    void DrawMenu(i32 menu_id);
-}
-
-// C++ linkage — defined in their own TUs.
-void InitMemCard(void);                                         // saveload.cpp
-void Text_LoadFont(char *path, VARIPTR *buf, VARIPTR *buf_end); // text.cpp
-void *Text_IsFontLoaded(void);                                  // text.cpp
-void Movies_ConfigureList(char *path, VARIPTR *buf, VARIPTR *buf_end);
-GIZAIMESSAGESYS_s *CreateGizAIMessageSys(VARIPTR *buf, VARIPTR *buf_end, i32 size);
+#include "gameapi/edtools/edgra.h"
+#include "legoapi/gizmo/base/gizmessage.h"
+#include "legoapi/gizmos/object/gizobstacles.h"
+#include "legoapi/items/collect/bolt.h"
+#include "legoapi/menus/screens/gamemenuall.h"
+#include "legoapi/menus/screens/menu.h"
+#include "legoapi/menus/screens/movies.h"
+#include "nu2api/nucore/nuapi.h"
 
 // buffer globals owned by the batman TU (batman.h declares them extern "C")
 extern "C" {
@@ -112,19 +103,14 @@ extern "C" {
     extern VARIPTR characterbuffer_base;
     extern VARIPTR characterbuffer_end;
 }
-void UpdateGameMenu(GAMEPAD_s *pad, i32 a2);
 
 // Globals / objects declared elsewhere.
 extern i16 id_OBIWANKENOBI;
 extern "C" GAMEPAD_s GamePad[64]; // gamepads.cpp, bss @0x127a500
 extern u8 RAP_WARNING_R, RAP_WARNING_G, RAP_WARNING_B;
 
-void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size); // gameobjects.cpp
 struct CHARFIXUP;
 extern CHARFIXUP CharFixUp[222]; // characters.cpp
-
-// LSW gameplay hooks wired by LoadPermData.
-void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *);
 
 // ---------------------------------------------------------------------------
 // File-local constants and helpers.
@@ -226,10 +212,10 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     // Font path depends on language.  `Text_Language == 0` is Japanese in the
     // original; everything else uses the Latin font.
-    if (Text_Language == 0) {
-        Text_LoadFont((char *)"stuff\\text\\starwars_font_j", &permbuffer_ptr, &permbuffer_end);
-    } else {
+    if (Text_Language != 0) {
         Text_LoadFont((char *)"stuff\\text\\starwars_font", &permbuffer_ptr, &permbuffer_end);
+    } else {
+        Text_LoadFont((char *)"stuff\\text\\starwars_font_j", &permbuffer_ptr, &permbuffer_end);
     }
 
     // PAL builds show the language menu — the loader spins here until the menu
@@ -256,7 +242,11 @@ static void LoadPermData(BGPROCINFO *proc) {
         char legal_name[64];
         NuStrCpy(legal_path, "stuff\\legal\\");
         NuIOS_GetDeviceLanguage();
-        NuStrCpy(legal_name, Text_Language == 2 ? "LEGAL_FRENCH" : "LEGAL_ENGLISH");
+        if (Text_Language == 2) {
+            NuStrCpy(legal_name, "LEGAL_FRENCH");
+        } else {
+            NuStrCpy(legal_name, "LEGAL_ENGLISH");
+        }
         NuStrCat(legal_path, legal_name);
         legal_tid = NuTexRead(legal_path, &legal_tex_base, legal_tex_end);
         loadlegal_done = 1;
@@ -647,11 +637,11 @@ void LoadPerm(void) {
 
             if (intro_timer > 0.0f && intro_timer < 3.8f) {
                 f32 alpha;
-                if (intro_timer < 0.3f) {
+                if (!(intro_timer >= 0.3f)) {
                     alpha = intro_timer / 0.3f;
                 } else if (intro_timer < 3.3f) {
                     alpha = 1.0f;
-                } else if (intro_timer >= 3.6f) {
+                } else if (!(intro_timer < 3.6f)) {
                     alpha = 0.0f;
                 } else {
                     alpha = 1.0f - (intro_timer - 3.3f) / 0.29999995f;

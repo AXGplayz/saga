@@ -1,14 +1,12 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/actions/movement/dropinout.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/misc/utilities.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/nurndr.h"
-
-f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 terrain_mask);
-f32 DropInOutScale(GameObject_s *object);
-void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
 namespace {
     constexpr f32 kInvalidShadowHeight = 2000000.0f;
@@ -34,7 +32,7 @@ void CharShadows_Draw() {
               (CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_ALLOW_DISABLED_MOVEMENT_SHADOW) ==
                   0)) {
             if ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_DISABLE_BLOB_SHADOW) != 0 ||
-                !(object->shadow_opacity > 0.0f) || object->apiobj.model_draw_result == 0 ||
+                object->shadow_opacity <= 0.0f || object->apiobj.model_draw_result == 0 ||
                 object->shadow_joint_mask == 0 || object->hide_shadow ||
                 (CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_DISABLE_BLOB_SHADOW) != 0) {
                 continue;
@@ -45,7 +43,7 @@ void CharShadows_Draw() {
             if (alpha == 0xff) {
                 alpha = static_cast<u8>(WORLD->current_level->blob_shadow_alpha);
             }
-            if (alpha <= 0 || !(object->shadow_radius > 0.0f)) {
+            if (alpha <= 0 || object->shadow_radius <= 0.0f) {
                 continue;
             }
 
@@ -150,7 +148,7 @@ void CharShadows_Update() {
             const i32 layer_index = EShadowInfo();
             if (layer_index >= 0 && EShadY != kInvalidShadowHeight && layer_index <= 16 &&
                 (TerLayer[layer_index].flags & TERRAIN_LAYER_FLAG_REJECT_CHARACTER_SHADOW) != 0 &&
-                (EShadY > shadow_height || shadow_height > 0.075f + joint_position.y)) {
+                (!(EShadY <= shadow_height) || shadow_height > 0.075f + joint_position.y)) {
                 shadow.position.y = kInvalidShadowHeight;
                 ++shadow_index;
                 continue;

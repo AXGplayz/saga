@@ -353,6 +353,7 @@ extern "C" {
     void PlaySfxByIdAndSetVolumeAndPitch(i32 sfx_id, nuvec_s *position, f32 volume, f32 pitch);
     void RestoreGameMusic(void);
     void SetPreSeekStartPoint(f32 start_point);
+    void SetSoundBitsById(const i32 *sound_ids, void (*set_bit)(i32));
     void SetSoundVolume(f32);
     void SfxBitsRestore(SoundTable *table);
     void SfxBitsStore(SoundTable *table);
@@ -374,7 +375,7 @@ extern "C" {
     void edbriBridgesReset(void);
     void edbriStopPage(i8 page);
     void edgraInitAllClumps(void);
-    void edgraSetMemoryBuffer(VARIPTR start, VARIPTR end);
+    void edgraSetMemoryBuffer(VARIPTR *start, VARIPTR *end);
     void edgraSetThinning(i32 clumps, i32 elements);
     void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
     void edppDeleteEffect(i32 index);

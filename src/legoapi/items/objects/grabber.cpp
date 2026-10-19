@@ -26,6 +26,7 @@
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/core/rtl.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/numtx_inline.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/gizmo/base/gizmo.h"
@@ -34,6 +35,13 @@
 #include "nu2api/nu3d/nurndr.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/items/fx/explosions.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/core/input/qrand.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/misc/utilities.h"
+#include "legoapi/render/fx/parts.h"
+#include "legoapi/render/light/shadow.h"
 
 GRABBER_s *Grab_grabber;
 
@@ -52,43 +60,19 @@ static NUFPCOMJMP Grabber_ConfigKeywords[] = {
     {"invert_x", Grab_invert_x}, {"shadow", Grab_shadow},   {NULL, NULL}};
 
 extern "C++" float FRAMETIME;
-extern "C" {
-    struct nuvec_s;
-    void PlaySfx(char *, nuvec_s *);
-}
 
 // Static grabber victim-pos helper. Moved from gizmisc_stubs.cpp.
 
 extern ADDPART_s Default_ADDPART;
-extern "C" PART_s *AddPart(ADDPART_s *);
 // Retail only has the IPA-SRA clone of this function.
 static __attribute__((noinline, noclone)) void Grabber_Drop(GRABBER_s *grabber, NUVEC *previous_position)
     __asm__("_ZL12Grabber_DropP9GRABBER_sP7nuvec_s.isra.4");
 
-extern "C" {
-    void PlaySfxAndSetPitch(char *, NUVEC *, f32);
-}
 // ===========================================================================
 // Episode bookkeeping
 // ===========================================================================
 
-GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
-u16 GamePad_InputAngle(GameObject_s *, GAMEPAD_s *);
-f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
-void FindAnglesZX(NUVEC *, u16 *, u16 *);
-i32 qrand();
-void NewRumbleAllPlayers(f32, f32, i32, i32);
-void Hint_SetComplete(i32);
-GIZMOBLOWUP_s *FindNearestGizmoBlowUp(WORLDINFO_s *, NUVEC *, f32);
-
 extern i32 obstacle_gizmotype_id;
-
-void EnableShadowMapRendering(i32);
-void ResetShadowMapRendering();
-i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
-i32 MatrixReflectionVU0_AXISY(NUMTX *, f32, f32, NUMTX *);
 
 static void Grab_invert_x(nufpar_s *) {
     Grab_grabber->invert_x = 1;
@@ -482,7 +466,7 @@ void Grabber_Update(WORLDINFO_s *world) {
         if (next.y < -4.85f) {
             next.y = -4.85f;
             g->target_velocity.y = g->velocity.y = 0.0f;
-        } else if (next.y > -3.9f) {
+        } else if (!(next.y <= -3.9f)) {
             next.y = -3.9f;
             g->target_velocity.y = g->velocity.y = 0.0f;
         }
@@ -696,7 +680,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             if (g->flags_559 & 2)
                 break;
             f32 trigger = AnimListFrame(g->character_model, 103, 0);
-            if (trigger > 0 && *frame >= trigger)
+            if (trigger > 0 && !(*frame < trigger))
                 Grabber_Drop(g, &previous);
             break;
         }
@@ -771,25 +755,16 @@ void Grabber_Draw(WORLDINFO_s *world) {
                 position.y += 0.005f;
             position.z = g->grab_position.z;
             if (NuSpecialExistsFn(&g->shadow_special)) {
-                f32 sx = NU_SIN_LUT(g->shadow_x_angle), cx = NU_SIN_LUT(g->shadow_x_angle + 0x4000);
-                f32 sz = NU_SIN_LUT(g->shadow_z_angle), cz = NU_SIN_LUT(g->shadow_z_angle + 0x4000);
-                f32 zero_s = sz * 0.0f, zero_c = 0.0f * cz;
-                reflection.m00 = cx;
-                reflection.m02 = sx * sz + zero_c;
-                reflection.m01 = sx * cz - zero_s;
-                reflection.m03 = 0;
-                reflection.m11 = cx * cz - zero_s;
-                reflection.m10 = -sx;
-                reflection.m12 = cx * sz + zero_c;
-                reflection.m13 = 0;
-                reflection.m20 = 0;
-                reflection.m21 = zero_c - sz;
-                reflection.m22 = cz + zero_s;
-                reflection.m30 = 0;
-                reflection.m23 = 0;
-                reflection.m32 = zero_c + zero_s;
-                reflection.m31 = zero_c - zero_s;
-                reflection.m33 = 1;
+                // Inline NuMtxSetRotationZ by the x angle, then NuMtxRotateX by the z angle.
+                const NUANG x_angle = g->shadow_x_angle;
+                reflection.m00 = reflection.m11 = NU_COS_LUT(x_angle);
+                reflection.m01 = NU_SIN_LUT(x_angle);
+                reflection.m10 = -reflection.m01;
+                reflection.m22 = 1.0f;
+                reflection.m02 = reflection.m12 = reflection.m03 = reflection.m23 = reflection.m20 = reflection.m21 =
+                    reflection.m13 = reflection.m30 = reflection.m31 = reflection.m32 = 0.0f;
+                reflection.m33 = 1.0f;
+                NuMtxRotateXInline(&reflection, g->shadow_z_angle);
                 NuMtxTranslate(&reflection, &position);
                 NuSpecialDrawAt(&g->shadow_special, &reflection);
             } else

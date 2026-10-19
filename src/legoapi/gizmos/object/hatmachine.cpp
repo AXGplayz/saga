@@ -715,9 +715,9 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
         if (distance < (0.25f + object->apiobj.field_0x1dc) * machine->scale &&
             (special_pressed != 0 || (object->panel_use_request == 2 && object->big_jump_data != NULL))) {
             object->field_0x788 = machine;
+            object->apiobj.movement_facing_angle = machine->yaw;
             object->delayed_turn_timer = 0.0f;
             object->field_0x768 = 0.0f;
-            object->apiobj.movement_facing_angle = machine->yaw;
             object->field_0xe21 &= ~0x10;
             object->character_context = 0x61;
             object->field_0x7a3 = 0;
@@ -738,9 +738,10 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
             }
             AlertSurroundingCreatures(object, &object->apiobj.collision_position);
             machine = static_cast<HATMACHINE_s *>(object->field_0x788);
-            object->context_animation_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-            machine->animation_duration = object->context_animation_timer;
-            if (object->context_animation_timer <= 0.0f) {
+            const f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
+            object->context_animation_timer = duration;
+            machine->animation_duration = duration;
+            if (duration <= 0.0f) {
                 object->context_animation_timer = 2.0f;
             }
             object->field_0xdb0 = 0.0f;
@@ -758,64 +759,69 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
     if (object->apiobj.character_model->model_data_b[object->context_animation] == NULL ||
         AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) != NULL) {
         const f32 progress = object->field_0x768 + FRAMETIME;
-        object->field_0x768 = progress > 1.0f ? 1.0f : progress;
+        object->field_0x768 = progress <= 1.0f ? progress : 1.0f;
         object->context_animation_timer -= FRAMETIME;
 
-        if (object->field_0x7a3 == 1) {
-            if (machine->animation_state != 4) {
-                return;
-            }
-            if ((object->apiobj.character_data->game_character->flags_090 & 0x10) == 0 &&
-                (object->id != id_PRINCESSLEIABOUSHH || FreePlay == 0)) {
-                PlaySfx(const_cast<char *>("HatOn"), &object->apiobj.upper_position);
-                object->field_0x108e = static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat;
-                if (object->field_0x108e == 5) {
-                    MakeBaddiesForgetAboutParty(1);
+        switch (object->field_0x7a3) {
+            case 0: {
+                if (!(object->context_animation_timer <= 0.0f)) {
+                    return;
                 }
-                if (object->apiobj.player_controlled) {
-                    if (static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat == 5) {
-                        Hint_SetComplete(0x627);
-                    } else if (static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat == 6) {
-                        Hint_SetComplete(0x628);
-                    }
-                }
-            }
-            machine->current_hat = 0;
-            object->field_0x7a3 = 2;
-            machine->animation_state = 6;
-        } else if (object->field_0x7a3 == 0) {
-            if (!(object->context_animation_timer <= 0.0f)) {
-                return;
-            }
-            const bool disguise_blocked = (object->apiobj.character_data->game_character->flags_090 & 0x10) == 0 &&
-                                          (object->id != id_PRINCESSLEIABOUSHH || FreePlay == 0);
-            if (object->apiobj.character_model->model_data_b[0x6d] == NULL || disguise_blocked) {
-                if (object->apiobj.character_model->model_data_b[0x5e] == NULL) {
-                    if (machine->animation_state != 2) {
+                if (object->apiobj.character_model->model_data_b[0x6d] == NULL ||
+                    ((object->apiobj.character_data->game_character->flags_090 & 0x10) == 0 &&
+                     (object->id != id_PRINCESSLEIABOUSHH || FreePlay == 0))) {
+                    if (object->apiobj.character_model->model_data_b[0x5e] == NULL) {
+                        if (machine->animation_state != 2) {
+                            return;
+                        }
+                        object->context_animation = 1;
+                        object->field_0x7a3 = 1;
+                        machine->animation_duration = 0.2f;
                         return;
                     }
-                    object->context_animation = 1;
+                    if (machine->animation_state == 2) {
+                        object->context_animation = 0x5e;
+                        object->field_0x7a3 = 1;
+                        object->context_animation_timer = AnimDuration(object->id, 0x5e, 0.0f, 0.0f, 1);
+                        return;
+                    }
+                } else if (machine->animation_state == 2) {
+                    object->context_animation = 0x6d;
                     object->field_0x7a3 = 1;
-                    machine->animation_duration = 0.2f;
+                    object->context_animation_timer = AnimDuration(object->id, 0x6d, 0.0f, 0.0f, 1);
+                    machine->animation_duration = object->context_animation_timer * 0.35f;
                     return;
                 }
-                if (machine->animation_state == 2) {
-                    object->context_animation = 0x5e;
-                    object->field_0x7a3 = 1;
-                    object->context_animation_timer = AnimDuration(object->id, 0x5e, 0.0f, 0.0f, 1);
-                    return;
-                }
-            } else if (machine->animation_state == 2) {
-                object->context_animation = 0x6d;
-                object->field_0x7a3 = 1;
-                object->context_animation_timer = AnimDuration(object->id, 0x6d, 0.0f, 0.0f, 1);
-                machine->animation_duration = object->context_animation_timer * 0.35f;
+                object->context_animation = 1;
                 return;
             }
-            object->context_animation = 1;
-            return;
-        } else if (object->field_0x7a3 != 2) {
-            return;
+            case 1:
+                if (machine->animation_state != 4) {
+                    return;
+                }
+                if ((object->apiobj.character_data->game_character->flags_090 & 0x10) == 0 &&
+                    (object->id != id_PRINCESSLEIABOUSHH || FreePlay == 0)) {
+                    PlaySfx(const_cast<char *>("HatOn"), &object->apiobj.upper_position);
+                    object->field_0x108e = static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat;
+                    if (object->field_0x108e == 5) {
+                        MakeBaddiesForgetAboutParty(1);
+                    }
+                    if (object->apiobj.player_controlled) {
+                        if (static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat == 5) {
+                            Hint_SetComplete(0x627);
+                        } else if (static_cast<HATMACHINE_s *>(object->field_0x788)->current_hat == 6) {
+                            Hint_SetComplete(0x628);
+                        }
+                    }
+                }
+                machine->current_hat = 0;
+                object->field_0x7a3 = 2;
+                machine->animation_state = 6;
+                break;
+            case 2:
+                break;
+            default:
+                return;
         }
 
         if (!(object->context_animation_timer <= 0.0f)) {
@@ -844,13 +850,11 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
             NewRumble(object->pad_gamepad->pad, 0.5f, 0);
         } else {
             NewBuzz(object->pad_gamepad->pad, 0.1f, 0);
-            machine = static_cast<HATMACHINE_s *>(object->field_0x788);
-            machine->hat_delay = 0.6f;
-            if (machine->configured_hat == 6) {
+            static_cast<HATMACHINE_s *>(object->field_0x788)->hat_delay = 0.6f;
+            if (static_cast<HATMACHINE_s *>(object->field_0x788)->configured_hat == 6) {
                 PlaySfx(const_cast<char *>("Hunter_Granted"), &object->apiobj.collision_position);
-                machine = static_cast<HATMACHINE_s *>(object->field_0x788);
             }
-            if (machine->configured_hat == 5) {
+            if (static_cast<HATMACHINE_s *>(object->field_0x788)->configured_hat == 5) {
                 PlaySfx(const_cast<char *>("Trooper_Granted"), &object->apiobj.collision_position);
             }
         }

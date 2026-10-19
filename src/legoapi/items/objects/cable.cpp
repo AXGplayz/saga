@@ -68,6 +68,8 @@
 #include "legoapi/characters/motion/move.h"
 #include "legoapi/items/objects/cable.h"
 #include "legoapi/misc/utilities.h"
+#include "legoapi/misc.h"
+#include "legoapi/items/objects/gameobjects.h"
 
 f32 cable_ground_damping = 20.0f;
 f32 cable_damping = 2.0f;
@@ -75,7 +77,6 @@ f32 cable_gravity = 3.0f;
 f32 cable_speed = 20.0f;
 i32 atat_locators[4] = {0, 1, 2, 3};
 extern i32 TERRAINMASK_NONDROID;
-i32 XZLinesIntersect(NUVEC *, NUVEC *, NUVEC *, NUVEC *, f32 *, f32 *);
 f32 default_targetmomf = 4.0f;
 f32 targetmomf = 4.0f;
 f32 default_ownermomf = 5.0f;
@@ -108,11 +109,6 @@ extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 inline void ThingManager::operator delete(void *thing, usize size) {
     theMemoryManager.FreePool(thing, size);
 }
-
-GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
-                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
-                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
-                                    bool first_match);
 
 i32 solid_cable;
 i32 nsegments_drawn;
@@ -309,7 +305,7 @@ void UpdateCables() {
                 for (i32 i = 1; i < 4; ++i) {
                     f32 distance = NuVecDistSqr(
                         &path[0], NUMTX_GET_ROW_VEC(&cable->target->joint_matrices[atat_locators[i]], 3), &delta);
-                    if (nearest > distance) {
+                    if (!(nearest <= distance)) {
                         nearest = distance;
                         selected = i;
                     }
@@ -327,17 +323,17 @@ void UpdateCables() {
                 // Preserve the reverse-edge locators across the first intersection callback.
                 i32 previous_locator = atat_locators[previous];
                 i32 opposite_locator = atat_locators[(previous + 3) & 3];
-                if (!(XZLinesIntersect(&path[0], last_position,
-                                       NUMTX_GET_ROW_VEC(&target->joint_matrices[atat_locators[next]], 3),
-                                       NUMTX_GET_ROW_VEC(&target->joint_matrices[atat_locators[(last + 2) & 3]], 3),
-                                       &along0, &along1))) {
+                if (XZLinesIntersect(&path[0], last_position,
+                                     NUMTX_GET_ROW_VEC(&target->joint_matrices[atat_locators[next]], 3),
+                                     NUMTX_GET_ROW_VEC(&target->joint_matrices[atat_locators[(last + 2) & 3]], 3),
+                                     &along0, &along1)) {
+                    cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
+                } else {
                     if (XZLinesIntersect(
                             &path[0], last_position, NUMTX_GET_ROW_VEC(&target->joint_matrices[previous_locator], 3),
                             NUMTX_GET_ROW_VEC(&target->joint_matrices[opposite_locator], 3), &along0, &along1)) {
                         cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(previous);
                     }
-                } else {
-                    cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
                 }
             } else {
                 i32 next = (last + 1) & 3;
@@ -513,7 +509,7 @@ void UpdateCables() {
             cable->max_length = remaining;
             for (i32 i = 0; i < path_count - 1; ++i) {
                 f32 length = NuVecDist(&path[i + 1], &path[i], &delta);
-                if (!(remaining >= length)) {
+                if (remaining < length) {
                     cable->segment_lengths[i] = remaining;
                     cable->total_length += remaining;
                     f32 scale = NuFdiv(remaining, length);

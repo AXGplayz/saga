@@ -25,10 +25,9 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nuspecial.h"
-
-void SetEffectVisibility(char *name, i32 visible);
-i32 EffectOffProgress_Update(LEVEL_PROGRESS_s *progress, char *name, i32 visible);
-void PlayRadio(char *special_name, char *blowup_name, i32 play);
+#include "legoapi/audio/radio.h"
+#include "legoapi/render/fx/particles.h"
+#include "legoapi/world/levels/levels.h"
 
 static void GizActions_EnableSock(GIZFLOW_s *, FLOWBOX_s *, char **params, int count) {
     i32 sock_index = -1;
@@ -123,15 +122,15 @@ static void GizActions_HitBlowup(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
     }
     char *name = NULL;
     i32 damage = 0;
-    i8 gizmo_type = 0;
+    bool turret = false;
     for (i32 index = 0; index < count; ++index) {
         char *value = NuStrIStr(params[index], "name=");
         if (value != NULL) {
             name = value + NuStrLen("name=");
         } else if (NuStrICmp(params[index], "BLOWUP") == 0) {
-            gizmo_type = 0;
+            turret = false;
         } else if (NuStrICmp(params[index], "TURRET") == 0) {
-            gizmo_type = 1;
+            turret = true;
         } else if ((value = NuStrIStr(params[index], "damage=")) != NULL) {
             damage = static_cast<i32>(NuAToF(value + NuStrLen("damage=")));
         }
@@ -139,7 +138,7 @@ static void GizActions_HitBlowup(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
     if (damage == 0 || name == NULL) {
         return;
     }
-    if (gizmo_type != 1) {
+    if (!turret) {
         GIZMO_s *gizmo = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, name);
         if (gizmo != NULL && gizmo->object != NULL) {
             GizmoBlowupBlowup(static_cast<GIZMOBLOWUP_s *>(gizmo->object), 1, -1, damage, NULL, 1);
@@ -381,7 +380,7 @@ static void GizAction_SetAIState(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
             range_squared = range * range;
         } else if ((value = NuStrIStr(params[index], "type")) != NULL) {
             if (LevelCharacterTypeIDFn != NULL && LevelCharacterGlobalIDFn != NULL) {
-                u8 local_type = LevelCharacterTypeIDFn(value + 5);
+                const i32 local_type = static_cast<u8>(LevelCharacterTypeIDFn(value + 5));
                 if (local_type != 0xff) {
                     i32 global_type = LevelCharacterGlobalIDFn(local_type);
                     if (global_type != 0xff && type_count < 10) {
@@ -404,8 +403,9 @@ static void GizAction_SetAIState(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
     if (named_object != NULL) {
         origin = named_object->apiobj.collision_position;
     }
+    // Retail never resets the match flag, so every later in-range object of any type also switches state.
+    i32 matching_type = 0;
     for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index) {
-        i32 matching_type = type_count == 0;
         GameObject_s *object = &Obj[object_index];
         if ((object->apiobj.field_0x1f8 & (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER)) !=
                 (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER) ||
@@ -415,13 +415,20 @@ static void GizAction_SetAIState(GIZFLOW_s *, FLOWBOX_s *, char **params, int co
         NUVEC difference;
         NuVecSub(&difference, &origin, &object->apiobj.position);
         f32 distance_squared = difference.x * difference.x + difference.y * difference.y + difference.z * difference.z;
-        for (i32 type_index = 0; type_index < type_count; ++type_index) {
-            if (object->id == types[type_index]) {
-                matching_type = 1;
+        if (type_count == 0) {
+            if (range_squared > distance_squared) {
+                object->ai.script_process.next_state = AIStateFind(state_name, object->ai.script_process.script);
             }
-        }
-        if (range_squared > distance_squared && matching_type != 0) {
-            object->ai.script_process.next_state = AIStateFind(state_name, object->ai.script_process.script);
+        } else {
+            for (i32 type_index = 0; type_index < type_count; ++type_index) {
+                if (object->id == types[type_index]) {
+                    matching_type = 1;
+                }
+            }
+            if (matching_type != 0 && range_squared > distance_squared) {
+                object->ai.script_process.next_state =
+                    AIStateFind(state_name, object->apiobj.ai->script_process.script);
+            }
         }
     }
 }
@@ -514,6 +521,7 @@ static void GizAction_ChangeTechnoTgt(GIZFLOW_s *, FLOWBOX_s *, char **params, i
         char old_name[16];
         NuStrCpy(old_name, techno->target_name);
         i32 old_complete = (techno->flags & TECHNO_FLAG_COMPLETE) != 0;
+        void *old_controlled = techno->controlled_object;
         techno->controlled_object = NULL;
         NuStrNCpy(techno->target_name, target_name, 16);
         techno->target_mode = static_cast<u8>(target_kind);
@@ -523,7 +531,7 @@ static void GizAction_ChangeTechnoTgt(GIZFLOW_s *, FLOWBOX_s *, char **params, i
             techno->target_mode = 0;
             if (Technos_FindTgt(techno) == NULL) {
                 NuStrCpy(techno->target_name, old_name);
-                techno->controlled_object = techno->controlled_object;
+                techno->controlled_object = old_controlled;
                 techno->target_mode = static_cast<u8>(target_kind);
                 techno->flags = (techno->flags & ~TECHNO_FLAG_COMPLETE) | (old_complete << 3);
             }
@@ -664,7 +672,7 @@ static void GizAction_SetPickupVisibility(GIZFLOW_s *, FLOWBOX_s *, char **param
         return;
     }
     pickup = WORLD->gizmo_pickup_sys->pickups;
-    for (i32 index = 0; index < WORLD->gizmo_pickup_sys->pickup_count; ++index, ++pickup) {
+    for (i32 index = 0; pickup != NULL && index < WORLD->gizmo_pickup_sys->pickup_count; ++index, ++pickup) {
         if ((pickup->state_flags & 8) == 0 && pickup->activation_group == id) {
             pickup->state_enabled = visible;
             pickup->state_visible = visible;

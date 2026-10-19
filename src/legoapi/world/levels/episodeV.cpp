@@ -120,6 +120,7 @@
 #include "gameapi/ai/aisys/gameaiscript.h"
 #include "legoapi/actions/character/speederchase.h"
 #include "legoapi/gizmo/object/gizbuildit.h"
+#include "legoapi/ai/core/aisysall.h"
 #include "legoapi/world/levels/episodeV.h"
 
 extern i32 LevFlag[4];
@@ -127,7 +128,6 @@ extern i32 LevFlag[4];
 GIZPANEL_s *LevGizPanel;
 AILOCATOR_s *locator;
 GameObject_s *gameobj;
-extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
 extern i16 BoltType_FindIDByNameWide(char *, WORLDINFO_s *) asm("_Z21BoltType_FindIDByNamePcP11WORLDINFO_s");
 static GameObject_s *Vader_obj;
 static GIZAIMESSAGE_s *Vader_ai_message;
@@ -232,7 +232,6 @@ static inline void IncrementMinikitCounterFor(WORLDINFO_s *world, NUVEC *average
 struct nuhspecial_s;
 
 extern i16 tPOWERBRICK, tLOCKED, tGOLDBRICK;
-extern void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
 
 extern i16 id_ANAKINJEDISCARRED, id_WOOKIEE, id_TWOFACE;
 
@@ -263,15 +262,8 @@ inline void ThingManager::operator delete(void *thing, usize size) {
     theMemoryManager.FreePool(thing, size);
 }
 
-GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
-                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
-                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
-                                    bool first_match);
-
 extern "C" i16 id_LANDSPEEDER;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
 
 extern MechWeakPtr<MechObjectInterface, 4> nextShootTarget;
 extern MechWeakPtr<MechObjectInterface, 4> forceNextAttackOpponent;
@@ -290,14 +282,6 @@ extern "C" {
 }
 
 extern i16 id_MINIATST, id_MINIATTE;
-
-i32 GizmoFileReadGameAnimSet(GAMEANIMSET_s *set, void *world_ptr,
-                             void (*read_object_data)(GAMEANIMOBJ_s *, unsigned char), unsigned char version,
-                             char *prefix, char *suffix);
-
-extern "C" {
-    void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
-}
 
 extern speedup_s DogFightSpeedList[9];
 
@@ -418,7 +402,7 @@ static void Asteroids_Reset(WORLDINFO_s *world) {
     if (special_count == 0)
         return;
 
-    if (special_count > 0) {
+    if (__builtin_expect(special_count > 0, 1)) {
         for (i32 special_index = 0; special_index < special_count; ++special_index) {
             for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
                 NuSpecialCompare(&world->gizmo_blowup_types[type_index].special, &specials[special_index]);
@@ -434,7 +418,7 @@ static void Asteroids_Reset(WORLDINFO_s *world) {
                     asteroid_type = 0;
                 } else if (NuStrIStr(name, "asteroid_b") != NULL) {
                     asteroid_type = 1;
-                } else if (NuStrIStr(name, "asteroid_c") != NULL) {
+                } else if (__builtin_expect(NuStrIStr(name, "asteroid_c") != NULL, 1)) {
                     asteroid_type = 2;
                 } else {
                     asteroid_type = 0;
@@ -588,7 +572,7 @@ void ResetTrooperCannons(WORLDINFO_s *world, i32 trooper_id) {
                     AddDynamicCreature(trooper_id, &troopercannons[cannon_index].object->apiobj.collision_position,
                                        troopercannons[cannon_index].object->apiobj.field_0x276, "CannonTrooper",
                                        &troopercannons[cannon_index].object->ai.path_info, NULL, 0, NULL, NULL, 0, 0);
-                if (trooper != NULL)
+                if (__builtin_expect(trooper != NULL, 1))
                     TakeOverGameObject(trooper, troopercannons[cannon_index].object, 0, 1);
             }
         }
@@ -619,11 +603,12 @@ void UpdateTrooperCannons(WORLDINFO_s *) {
         if (cannon.object == NULL || netclient != 0)
             break;
 
-        GameObject_s *callback_object = cannon.object->field_0xcc0;
-        if (callback_object == NULL)
-            callback_object = cannon.object;
-        if (callback_object->field_0xeb4 == NULL)
-            callback_object->field_0xeb4 = KilledTrooperCannon;
+        if (cannon.object->field_0xcc0 != NULL) {
+            if (cannon.object->field_0xcc0->field_0xeb4 == NULL)
+                cannon.object->field_0xcc0->field_0xeb4 = KilledTrooperCannon;
+        } else if (cannon.object->field_0xeb4 == NULL) {
+            cannon.object->field_0xeb4 = KilledTrooperCannon;
+        }
     }
 }
 
@@ -1606,7 +1591,7 @@ void HothBattleE_Panel(WORLDINFO_s *) {
         case 1:
         case 2:
             for (i32 index = 0; index < melee.waves[0].initial_count; ++index) {
-                if (index == (melee.waves[0].initial_count >> 1) + 1) {
+                if (__builtin_expect(index == (melee.waves[0].initial_count >> 1) + 1, 1)) {
                     targets[count] = -1;
                     defeated[count] = 0;
                     ++count;
@@ -1937,7 +1922,7 @@ void HothBattleE_UpdateWave() {
                 melee.current_wave = melee.next_wave;
                 pending = 1;
             }
-        } else if (melee.transition_phase == 0 && MiniCutCam != 0) {
+        } else if (__builtin_expect(melee.transition_phase == 0 && MiniCutCam != 0, 0)) {
             melee.transition_phase = 1;
         }
     }
@@ -1947,7 +1932,8 @@ void HothBattleE_UpdateWave() {
         SpawnMeleeCreatureType(type);
     }
     HothBattle_ManageBackgroundCreatures();
-    if (melee.current_wave == 3 && melee.waves[0].creatures[0] != NULL && melee.waves[0].creatures[1] != NULL) {
+    if (__builtin_expect(
+            melee.current_wave == 3 && melee.waves[0].creatures[0] != NULL && melee.waves[0].creatures[1] != NULL, 0)) {
         AIANTINODE_s *node = AIAntinodeCreateSingleFrame(&melee.waves[0].creatures[0]->apiobj.collision_position,
                                                          melee.waves[0].creatures[type]->apiobj.field_0x1dc * 3.0f);
         node->excluded_character_types = ~(1 << melee.waves[0].creatures[1]->apiobj.field_0x289);

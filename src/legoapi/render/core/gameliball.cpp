@@ -114,6 +114,7 @@
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nu3d/android/nugscn_android.h"
 #include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nucore_includes.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/numem.h"
 #include "gamelib/nuwind/nuwind.h"
@@ -369,7 +370,6 @@ extern "C" {
         1.0f,                                     // scale
         0,                                        // unscaled_effect_index
     };
-    void NuRegisterEndFrameCallBackFn(void (*callback)(void));
 } // extern "C"
 
 extern "C" {
@@ -451,15 +451,14 @@ static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, e
 static __attribute__((used)) void edanimcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32);
 static __attribute__((used)) void edanimcbMCTBMenu(eduimenu_s *parent, eduiitem_s *, u32);
 static __attribute__((used)) void edanimcbLocalSoundMenu(eduimenu_s *parent, eduiitem_s *, u32);
-extern "C" eduiitem_s *eduiItemColourPickCreate(usize, const void *, EdUiItemCallback, char *);
 
 // Editor UI callbacks retained in the original editor's menu code.
 
 static i32 edbits_cubecount;
 static i32 edgra_clumpthin = 1;
 static i32 edgra_elementthin = 1;
-static VARIPTR gra_ptr;
-static VARIPTR gra_end;
+static VARIPTR *gra_ptr;
+static VARIPTR *gra_end;
 static char *edpp_save_names[6];
 static i32 edptl_count;
 static NUVEC entry_position;
@@ -1079,7 +1078,6 @@ extern "C" {
     extern f32 globaltime;
 
     i32 edqseed = 12345;
-eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
 
 }
 
@@ -1093,7 +1091,6 @@ extern "C" {
     extern u32 edgrey[4];
     extern i32 edbri_cam_ax, edbri_cam_ay, edbri_rotz, edbri_roty;
     extern f32 edbri_length, edbri_width;
-    eduiitem_s *eduiItemColourPickCreate(usize, const void *, EdUiItemCallback, char *);
 }
 
 static void edbricbCancelOptMenu(eduimenu_s *, eduimenu_s *);
@@ -1167,12 +1164,6 @@ static void edbricbFileSave(eduimenu_s *menu, eduiitem_s *, u32);
 static void edbricbFileLoad(eduimenu_s *menu, eduiitem_s *, u32);
 extern "C" u32 edblack[4];
 extern "C" u32 edgrey[4];
-
-static void edgraAttachMenu(eduimenu_s *parent, eduimenu_s *child) {
-    eduiMenuAttach(parent, child);
-    child->x = parent->x + 10;
-    child->y = parent->y + 40;
-}
 
 // The two fade sliders are retained while their respective menus are open.
 static edui_slider_s *globalfadeinitem;
@@ -1527,11 +1518,6 @@ extern AICONDITIONDEF lego_aiconditiondefs[178];
 
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 
-GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 required_flags, f32 radius,
-                                    f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
-                                    f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
-                                    bool first_match);
-
 extern "C" {
     extern i32 freechunkcontrolsptr;
 }
@@ -1564,8 +1550,6 @@ void AddChunkToRenderStack(particlechunkrendertype_s *, particlechunkrendertype_
 
 extern "C" i16 id_LANDSPEEDER;
 extern i32 CUTCAMONLY, GUNSHIPAHACK, netcamera, complexsockposition_forcesock, movegamecamera_forcesock;
-GameObject_s *FindNearestGameObject(NUVEC *, GameObject_s *, u32, f32, f32, i32, i32, i32, f32 *, i32,
-                                    i32 (*)(GameObject_s *), bool);
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -2041,15 +2025,10 @@ extern "C" {
     i32 edgra_page_on[8];
     i32 edgra_page_calculate_done[8];
     i32 edgra_page_vectors_valid[8];
-    NuWindGType *NuWindCreateMtx(u32 *, NUMTX *, i16, f32, f32, i32, f32, f32);
 
 }
 
 i32 SkinFlipTab[8] = {0, 1, 2, 3, 0, 2, 1, 3};
-
-SAGA_HOST_WEAK void InitStillRender(variptr_u *, variptr_u);
-
-void FadeLoop(char *text, i32 direction, float duration, void (*draw)(float));
 
 void GenDebMomAdjFromPos(debkeydatatype_s *, debinftype *, uv1deb *data) {
     dma_particle_s *particle = reinterpret_cast<dma_particle_s *>(data);
@@ -3187,17 +3166,17 @@ static void edppInit() {
     edpp_mtl = NuMtlCreate3D(1);
     edpp_mtl->diffuse_color = {0.5f, 0.5f, 0.5f};
     edpp_mtl->opacity = 1.0f;
-    u8 *attributes = reinterpret_cast<u8 *>(&edpp_mtl->attribs);
-    attributes[0] &= 0xf0;
-    attributes[1] = (attributes[1] & 0x0f) | 0x20;
+    edpp_mtl->attribs.alpha_mode = 0;
+    edpp_mtl->attribs.cull_mode = 2;
+    edpp_mtl->attribs.z_mode = 0;
     NuMtlUpdate(edpp_mtl);
 
     edpp_boxmtl = NuMtlCreate(1);
     edpp_boxmtl->diffuse_color = {0.5f, 0.5f, 0.5f};
     edpp_boxmtl->opacity = 1.0f;
-    attributes = reinterpret_cast<u8 *>(&edpp_boxmtl->attribs);
-    attributes[0] &= 0xf0;
-    attributes[1] = (attributes[1] & 0xcf) | 0xe0;
+    edpp_boxmtl->attribs.alpha_mode = 0;
+    edpp_boxmtl->attribs.cull_mode = 2;
+    edpp_boxmtl->attribs.z_mode = 3;
     NuMtlUpdate(edpp_boxmtl);
 
     edpp_nearest = -1;
@@ -3422,7 +3401,8 @@ static void cbPtlEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlEmitVelMenu, "Emitter Vel..."));
             eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlGravMenu, "Gravity..."));
 
-            if ((effect->generator_type & 0xf7) == 0 || effect->generator_type == 9 || effect->generator_type == 10) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10) {
                 eduiMenuAddItem(ptlemitmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlVarStartMenu, "Random Start..."));
             } else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
                        effect->generator_type == 12) {
@@ -3600,8 +3580,13 @@ static void cbPtlQuickDeleteMenu(eduimenu_s *menu, eduiitem_s *, u32) {
                     break;
                 }
             }
-            eduiMenuAddItem(edptl_quickdel_menu, eduiItemSelCreate(type, index < 512 ? edblack : eddarkred, 0, 1,
-                                                                   cbPtlQuickDeleteType, effect->name));
+            if (index < 512) {
+                eduiMenuAddItem(edptl_quickdel_menu,
+                                eduiItemSelCreate(type, edblack, 0, 1, cbPtlQuickDeleteType, effect->name));
+            } else {
+                eduiMenuAddItem(edptl_quickdel_menu,
+                                eduiItemSelCreate(type, eddarkred, 0, 1, cbPtlQuickDeleteType, effect->name));
+            }
         }
         eduiMenuAttach(menu, edptl_quickdel_menu);
         edptl_quickdel_menu->x = menu->x + 10;
@@ -3842,7 +3827,9 @@ static void edgracbClumpDistMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                                                               edgracbSetClumpDist, "Linear"));
     eduiMenuAddItem(edgra_clumpdist_menu, eduiItemCheckCreate(4, colours, GrassClumps[edgra_nearest].unknown_26 == 4, 1,
                                                               edgracbSetClumpDist, "Bell Curve"));
-    edgraAttachMenu(parent, edgra_clumpdist_menu);
+    eduiMenuAttach(parent, edgra_clumpdist_menu);
+    edgra_clumpdist_menu->x = parent->x + 10;
+    edgra_clumpdist_menu->y = parent->y + 40;
 }
 
 static void edgracbClumpAreaMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -3860,7 +3847,9 @@ static void edgracbClumpAreaMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                                                               edgracbSetClumpArea, "Square"));
     eduiMenuAddItem(edgra_clumparea_menu, eduiItemCheckCreate(4, colours, GrassClumps[edgra_nearest].unknown_25 == 4, 1,
                                                               edgracbSetClumpArea, "Grid"));
-    edgraAttachMenu(parent, edgra_clumparea_menu);
+    eduiMenuAttach(parent, edgra_clumparea_menu);
+    edgra_clumparea_menu->x = parent->x + 10;
+    edgra_clumparea_menu->y = parent->y + 40;
 }
 
 static void edgracbClumpModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -3883,7 +3872,9 @@ static void edgracbClumpModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     else
         eduiMenuAddItem(edgra_clumpmode_menu,
                         eduiItemCheckCreate(3, edblack, edgra_mode == 3, 1, edgracbSetClumpMode, "Individual FS Mode"));
-    edgraAttachMenu(parent, edgra_clumpmode_menu);
+    eduiMenuAttach(parent, edgra_clumpmode_menu);
+    edgra_clumpmode_menu->x = parent->x + 10;
+    edgra_clumpmode_menu->y = parent->y + 40;
 }
 
 static void edbricbDpadModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -4168,7 +4159,9 @@ static void edgracbClumpPropertiesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         eduiMenuAddItem(edgra_clumpproperties_menu,
                         eduiItemToggleCreate(0, colours, GrassClumps[edgra_nearest].flags, 1,
                                              edgracbToggleClumpReactive, "Collide with Player"));
-        edgraAttachMenu(parent, edgra_clumpproperties_menu);
+        eduiMenuAttach(parent, edgra_clumpproperties_menu);
+        edgra_clumpproperties_menu->x = parent->x + 10;
+        edgra_clumpproperties_menu->y = parent->y + 40;
     }
 }
 
@@ -4187,7 +4180,9 @@ static inline void edgracbClumpSizesMenu(eduimenu_s *parent, eduiitem_s *, u32) 
         eduiMenuAddItem(edgra_clumpsizes_menu,
                         eduiItemSliderCreate(0, colours, 0, edgracbSetClumpHeight, 0.1f, 9.9f,
                                              GrassClumps[edgra_nearest].field_20, "Bend Height"));
-    edgraAttachMenu(parent, edgra_clumpsizes_menu);
+    eduiMenuAttach(parent, edgra_clumpsizes_menu);
+    edgra_clumpsizes_menu->x = parent->x + 10;
+    edgra_clumpsizes_menu->y = parent->y + 40;
 }
 
 static void edptlcbGroupMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -4360,7 +4355,9 @@ static void edgracbSScaleMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edgra_sscale_menu) {
         eduiMenuAddItem(edgra_sscale_menu, eduiItemSliderCreateInt(0, edblack, 0, edgracbChangeSScale, 1, 99,
                                                                    edgra_superscale, "Super Scale"));
-        edgraAttachMenu(parent, edgra_sscale_menu);
+        eduiMenuAttach(parent, edgra_sscale_menu);
+        edgra_sscale_menu->x = parent->x + 10;
+        edgra_sscale_menu->y = parent->y + 40;
     }
 }
 
@@ -5071,7 +5068,8 @@ static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     ptlvaremitmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelVarEmitMenu, "Emitter Variation");
     if (ptlvaremitmenu != NULL) {
-        if ((effect->generator_type & 0xf7) == 0 || effect->generator_type == 9 || effect->generator_type == 10) {
+        if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+            effect->generator_type == 10) {
             eduiMenuAddItem(ptlvaremitmenu,
                             eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
                                                  effect->field_04c, "Rand Emit X"));
@@ -5283,7 +5281,9 @@ static void edgracbGlobalsMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
     eduiMenuAddItem(edgra_globals_menu,
                     eduiItemSelCreate(1, edblack, 0, 0, edgracbApplyGlobalFade, "Apply Globally (Careful!)"));
-    edgraAttachMenu(parent, edgra_globals_menu);
+    eduiMenuAttach(parent, edgra_globals_menu);
+    edgra_globals_menu->x = parent->x + 10;
+    edgra_globals_menu->y = parent->y + 40;
 }
 
 static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
@@ -5488,7 +5488,9 @@ static void cbChangeName(eduimenu_s *, eduiitem_s *item, u32) {
 static __attribute__((used)) void edanimcbSetLocalParticleType(eduimenu_s *menu, eduiitem_s *item, u32) {
     edanim_localparticletype_menu = NULL;
     AnimParams[edanim_nearest_param_id].effect_ids[edanim_nearest_particle] = item->data;
-    strcpy(AnimParams[edanim_nearest_param_id].effect_names[edanim_nearest_particle], debtab[item->data]->name);
+    // Retail copies the name of the effect indexed by the particle slot, not the chosen type.
+    strcpy(AnimParams[edanim_nearest_param_id].effect_names[edanim_nearest_particle],
+           debtab[edanim_nearest_particle]->name);
     edanim_particle_type = item->data;
     eduiMenuDetach(menu);
     eduiMenuDestroy(menu);
@@ -5587,8 +5589,11 @@ static void cbPtlTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
             }
         }
         const i32 selected = index == edpp_create_type;
-        eduiMenuAddItem(ptltypemenu, eduiItemCheckCreate(index, placed ? edblack : eddarkred, selected, 1, cbPtlSelType,
-                                                         effect->name));
+        if (placed)
+            eduiMenuAddItem(ptltypemenu, eduiItemCheckCreate(index, edblack, selected, 1, cbPtlSelType, effect->name));
+        else
+            eduiMenuAddItem(ptltypemenu,
+                            eduiItemCheckCreate(index, eddarkred, selected, 1, cbPtlSelType, effect->name));
         if (selected == 1) {
             found_selected = 1;
             ptltypemenu->selected = edui_last_item;
@@ -5797,7 +5802,9 @@ static void edgracbInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     eduiMenuAddItemFirst(edgra_instance_menu,
                          eduiItemCheckCreate(static_cast<usize>(-1), edblack, edgra_instance_type == -1, 1,
                                              edgracbSetInstanceType, "None"));
-    edgraAttachMenu(parent, edgra_instance_menu);
+    eduiMenuAttach(parent, edgra_instance_menu);
+    edgra_instance_menu->x = parent->x + 10;
+    edgra_instance_menu->y = parent->y + 40;
     if (selected_found)
         edgra_instance_menu->field_0c = edgra_instance_menu->selected;
 }
@@ -5913,7 +5920,7 @@ uv1deb *GenDebIndexImprovedRadial(debkeydatatype_s *key, debinftype *effect, flo
     f32 root = NuFsqrt(1.0f - sine * sine);
     f32 small = root < absolute ? root : absolute;
     f32 region = (absolute - 0.70710677f) * 3.40282e+38f;
-    region = region < 1.0f ? (region > -1.0f ? region : -1.0f) : 1.0f;
+    region = MAX(MIN(region, 1.0f), -1.0f);
     f32 sign = sine * 3.40282e+38f;
     sign = sign < 1.0f ? (sign > -1.0f ? sign : -1.0f) : 1.0f;
     f32 quadrant = region * sign;
@@ -6097,17 +6104,12 @@ uv1deb *GenDebIndexRadial(debkeydatatype_s *key, debinftype *effect, float time)
 }
 
 uv1deb *GenDebIndex(debkeydatatype_s *key, debinftype *effect, float time) {
-    u16 particle_index = key->field_18a;
-    u16 next_particle_index;
-    if (static_cast<i16>(particle_index) < key->particle_count) {
-        next_particle_index = particle_index + 1;
-    } else {
-        particle_index = 0;
-        next_particle_index = 1;
+    if (key->field_18a >= key->particle_count) {
+        key->field_18a = 0;
     }
-
+    u16 particle_index = key->field_18a;
     dma_particle_s *particle = DebrisParticleAt(key, particle_index, effect->particle_type);
-    key->field_18a = next_particle_index;
+    key->field_18a = particle_index + 1;
     particle->start_time = time;
     key->emission_epoch = time;
     particle->inverse_lifetime = 64.0f / effect->particle_lifetime;
@@ -6148,16 +6150,12 @@ uv1deb *GenDebIndex(debkeydatatype_s *key, debinftype *effect, float time) {
     particle->momentum.z += key->momentum.z;
 
     for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        u16 trail_index = key->field_18a;
-        u16 next_trail_index;
-        if (static_cast<i16>(trail_index) < key->particle_count) {
-            next_trail_index = trail_index + 1;
-        } else {
-            trail_index = 0;
-            next_trail_index = 1;
+        if (key->field_18a >= key->particle_count) {
+            key->field_18a = 0;
         }
+        u16 trail_index = key->field_18a;
         dma_particle_s *trail_particle = DebrisParticleAt(key, trail_index, effect->particle_type);
-        key->field_18a = next_trail_index;
+        key->field_18a = trail_index + 1;
         *trail_particle = *particle;
         trail_particle->start_time += static_cast<f32>(trail + 1) * effect->trail_time;
     }
@@ -6236,7 +6234,9 @@ static void edgracbClumpTerrainMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     eduiMenuAddItem(edgra_clumpterrain_menu,
                     eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpTerrainOffset, -1.0f, 2.0f,
                                          GrassClumps[edgra_nearest].field_44, "Terraining Offset"));
-    edgraAttachMenu(parent, edgra_clumpterrain_menu);
+    eduiMenuAttach(parent, edgra_clumpterrain_menu);
+    edgra_clumpterrain_menu->x = parent->x + 10;
+    edgra_clumpterrain_menu->y = parent->y + 40;
 }
 
 static void edbricbBridgePropertiesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -6309,7 +6309,9 @@ static void edgracbClumpFadeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
             fadeoutitem = static_cast<edui_slider_s *>(edui_last_item);
             eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
             eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
-            edgraAttachMenu(parent, edgra_clumpfade_menu);
+            eduiMenuAttach(parent, edgra_clumpfade_menu);
+            edgra_clumpfade_menu->x = parent->x + 10;
+            edgra_clumpfade_menu->y = parent->y + 40;
         }
     }
 }
@@ -6395,17 +6397,12 @@ static __attribute__((used)) void edanimcbMCTBCardPresent(eduimenu_s *menu, edui
 }
 
 uv1deb *GenDebIndexSpheroid(debkeydatatype_s *key, debinftype *effect, float time) {
-    u16 particle_index = key->field_18a;
-    u16 next_particle_index;
-    if (static_cast<i16>(particle_index) < key->particle_count) {
-        next_particle_index = particle_index + 1;
-    } else {
-        particle_index = 0;
-        next_particle_index = 1;
+    if (key->field_18a >= key->particle_count) {
+        key->field_18a = 0;
     }
-
+    u16 particle_index = key->field_18a;
     dma_particle_s *particle = DebrisParticleAt(key, particle_index, effect->particle_type);
-    key->field_18a = next_particle_index;
+    key->field_18a = particle_index + 1;
     particle->start_time = time;
     key->emission_epoch = time;
     particle->inverse_lifetime = 64.0f / effect->particle_lifetime;
@@ -6451,16 +6448,12 @@ uv1deb *GenDebIndexSpheroid(debkeydatatype_s *key, debinftype *effect, float tim
     particle->momentum.z += key->momentum.z;
 
     for (i32 trail = 0; trail < static_cast<i8>(effect->trail_count); ++trail) {
-        u16 trail_index = key->field_18a;
-        u16 next_trail_index;
-        if (static_cast<i16>(trail_index) < key->particle_count) {
-            next_trail_index = trail_index + 1;
-        } else {
-            trail_index = 0;
-            next_trail_index = 1;
+        if (key->field_18a >= key->particle_count) {
+            key->field_18a = 0;
         }
+        u16 trail_index = key->field_18a;
         dma_particle_s *trail_particle = DebrisParticleAt(key, trail_index, effect->particle_type);
-        key->field_18a = next_trail_index;
+        key->field_18a = trail_index + 1;
         *trail_particle = *particle;
         trail_particle->start_time += static_cast<f32>(trail + 1) * effect->trail_time;
     }
@@ -6499,42 +6492,14 @@ void CRC_Init(VARIPTR *buffer_start) {
     buffer_start->addr = reinterpret_cast<usize>(g_crc_table + 0x100);
 
     for (u32 i = 0; i < 0x100; i++) {
-        u32 crc = (i & 0x80U) != 0 ? (i << 25) ^ CRC32_POLY : i << 25;
+        u32 crc = i << 24;
 
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
+        for (i32 j = 0; j < 8; j++) {
+            u32 top_bit = crc & 0x80000000U;
             crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
-        }
-        if ((crc & 0x80000000U) != 0) {
-            crc = (crc << 1) ^ CRC32_POLY;
-        } else {
-            crc <<= 1;
+            if (top_bit != 0) {
+                crc ^= CRC32_POLY;
+            }
         }
         g_crc_table[i] = crc;
     }
@@ -7333,7 +7298,7 @@ static void fnAudioSample(nufpar_s *fpar) {
             g_soundInfo[NumSfxInst].nofade = 1;
         } else if (NuStrICmp(fpar->word_buf, "volume_rnd") == 0) {
             f32 volume_rnd = NuFParGetFloat(fpar);
-            g_soundInfo[NumSfxInst].volume_rnd = volume_rnd < -1.0f ? -1.0f : volume_rnd > 0.0f ? 0.0f : volume_rnd;
+            g_soundInfo[NumSfxInst].volume_rnd = !(volume_rnd >= -1.0f) ? -1.0f : volume_rnd > 0.0f ? 0.0f : volume_rnd;
         } else if (NuStrICmp(fpar->word_buf, "near") == 0) {
             f32 falloff_near = NuFParGetFloat(fpar);
             g_soundInfo[NumSfxInst].falloff_near = falloff_near < 0.0f     ? 0.0f
@@ -8492,22 +8457,22 @@ extern "C" {
                 stack_index = 0;
             }
             if (stack_index == debris_sort_this_stack) {
-                debris_sort_this_stack = stack_index;
-                if (ParticleChunkRenderStack[stack_index] == NULL) {
-                    return;
-                }
                 break;
             }
         }
         debris_sort_this_stack = stack_index;
 
         particlechunkrendertype_s *chunk = ParticleChunkRenderStack[stack_index];
+        if (chunk == NULL) {
+            return;
+        }
         while (chunk->next != NULL) {
             particlechunkrendertype_s *next = chunk->next;
             const u16 next_priority = static_cast<u16>(next->render_priority);
             const u16 priority = static_cast<u16>(chunk->render_priority);
             if (priority < next_priority ||
-                (priority == next_priority && chunk->effect->particle_type > next->effect->particle_type)) {
+                (priority == next_priority &&
+                 static_cast<i8>(chunk->effect->particle_type) > static_cast<i8>(next->effect->particle_type))) {
                 RemoveChunkFromRenderStack(next, &ParticleChunkRenderStack[stack_index]);
                 AddChunkToRenderStack(next, &ParticleChunkRenderStack[debris_sort_this_stack]);
                 return;
@@ -9465,7 +9430,7 @@ extern "C" void DebrisStartOffsetEx(debkeydatatype_s *key, f32 offset) {
         }
         start += interval;
         key->emission_time = start;
-        while (now < start) {
+        while (!(now >= start)) {
             start -= interval;
         }
         key->emission_time = start;
@@ -9881,7 +9846,7 @@ extern "C" {
         key->render_priority = render_priority;
 
     debris_keys_searched:
-        if (key == NULL) {
+        if (__builtin_expect(key == NULL, 0)) {
             return;
         }
 
@@ -9973,7 +9938,7 @@ extern "C" {
                     DebrisProcessSpheres(particle, emission_time, effect, key, 1);
                 }
                 emission_time = key->emission_epoch + emission_interval;
-            } while (emission_time <= end_time && ++i != 100);
+            } while (!(emission_time > end_time) && ++i != 100);
         }
 
         DebrisGetControlStackLock();
@@ -10361,11 +10326,10 @@ void DebrisProcessControlChunks(i32 panel_time) {
             f32 first, second;
             if (SolveQuadratic(effect->field_0a0, new_y, particle->position.y - control->collision_plane, &first,
                                &second) != 0) {
-                const f32 next_time = first > second ? first : second;
-                if (effect->particle_lifetime > next_time) {
-                    const f32 interval = next_time - control->collision_time;
-                    control->collision_time = next_time;
-                    if (interval > 0.02f) {
+                if (effect->particle_lifetime > (MAX(first, second))) {
+                    const f32 interval = (MAX(first, second)) - control->collision_time;
+                    control->collision_time = MAX(first, second);
+                    if (!(interval <= 0.02f)) {
                         control->expiry_time += interval;
                         AddChunkControlToStack(control, &debris_chunk_control_stack[panel_time]);
                         continue;
@@ -10741,15 +10705,16 @@ extern "C" {
         effect->field_048 *= scale;
         effect->field_0a0 *= scale;
 
-        const u8 generator_type = effect->generator_type;
-        if ((generator_type & 0xf7) == 0 || generator_type == 9 || generator_type == 10) {
+        if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+            effect->generator_type == 10) {
             effect->field_058 *= scale;
             effect->field_05c *= scale;
             effect->field_060 *= scale;
             effect->field_04c *= scale;
             effect->field_050 *= scale;
             effect->field_054 *= scale;
-        } else if (generator_type == 6 || generator_type == 7 || generator_type == 11 || generator_type == 12) {
+        } else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                   effect->generator_type == 12) {
             effect->field_058 *= scale;
             effect->field_04c *= scale;
         }
@@ -10984,19 +10949,17 @@ extern "C" {
             return -1;
         }
 
-        i32 limit = EDPP_MAX_TYPES;
         if (static_cast<u8>(page) < 8 && edpp_page_used[page] != 0) {
-            for (i32 i = 1; i < limit; ++i) {
+            for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
                 debinftype *effect = debtab[i];
                 if (effect != NULL && effect->page == static_cast<u8>(page)) {
                     if (NuStrICmp(effect->name, name) == 0)
                         return i;
-                    limit = EDPP_MAX_TYPES;
                 }
             }
         }
 
-        for (i32 i = 1; i < limit; ++i) {
+        for (i32 i = 1; i < EDPP_MAX_TYPES; ++i) {
             debinftype *effect = debtab[i];
             if (!(effect != NULL &&
                   ((effect->page == 0 && edpp_page_used[0] != 0) || (effect->page == 1 && edpp_page_used[1] != 0)))) {
@@ -11004,7 +10967,6 @@ extern "C" {
             }
             if (NuStrICmp(effect->name, name) == 0)
                 return i;
-            limit = EDPP_MAX_TYPES;
         }
         return -1;
     }
@@ -11220,12 +11182,12 @@ void DebrisProcessTriggers() {
                     key->emission_time -= shift;
                     key->field_1e4 -= shift;
                     key->emission_epoch = globaltime;
-                    if (key->process_collision_sound != 0) {
+                    if (__builtin_expect(key->process_collision_sound != 0, 1)) {
                         key->cutoff_distance = CameraEmitterDistance(&key->position);
                         f32 range = effect->sound_range_override;
                         if (range == 0.0f)
                             range = effect->sound_range;
-                        if (range == 0.0f)
+                        if (__builtin_expect(range == 0.0f, 0))
                             range = effect->clip_extent;
                         f32 volume = 0.0f;
                         if (range > key->cutoff_distance) {
@@ -11288,7 +11250,7 @@ extern "C" {
                 }
                 i32 visible = 1;
                 if (!assigned && effect->sound_range > 0.0f && effect->use_explicit_clip_box == 0 &&
-                    key->cutoff_distance > effect->sound_range)
+                    !(key->cutoff_distance <= effect->sound_range))
                     visible = 0;
                 if (key->field_2f7 == 0)
                     continue;
@@ -11601,7 +11563,7 @@ i32 DebrisSingleCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f32 rad
     do {
         {
             f32 age = globaltime - sphere->time;
-            if (!(age >= 0.0f && age <= effect->particle_lifetime))
+            if (!(age >= 0.0f && !(age > effect->particle_lifetime)))
                 goto next_sphere;
 
             const f32 x = sphere->momentum.x * age + sphere->position.x;
@@ -12358,16 +12320,16 @@ void edanimRenderSoundEmitters(i32 parameter_index) {
     nuhspecial_s special;
     NuGScnGetSpecial(&special, edbits_base_scene, AnimParams[parameter_index].instance_id);
     const NUVEC *base_position = NuSpecialGetPos(&special);
-    const auto *offset_cursor = AnimParams[parameter_index].sound_positions;
-    for (i32 sound = 0; sound < AnimParams[parameter_index].sound_count; ++sound, ++offset_cursor) {
+    for (i32 sound = 0; sound < AnimParams[parameter_index].sound_count; ++sound) {
         // The original skips sounds by their flags slot rather than the sound id.
         if (AnimParams[parameter_index].sound_flags[sound] == -1) {
             continue;
         }
         const i32 colour = edanim_sound_mode && edanim_nearest_sound == sound ? 0xffff0000 : 0xffffffff;
-        const auto &offset = *offset_cursor;
-        edbitsDrawDiagonalCross(base_position->x + offset[0], base_position->y + offset[1],
-                                base_position->z + offset[2], 0.25f, colour, edanim_mtl);
+        edbitsDrawDiagonalCross(base_position->x + AnimParams[parameter_index].sound_positions[sound][0],
+                                base_position->y + AnimParams[parameter_index].sound_positions[sound][1],
+                                base_position->z + AnimParams[parameter_index].sound_positions[sound][2], 0.25f,
+                                colour, edanim_mtl);
     }
 }
 
@@ -12468,13 +12430,13 @@ extern "C" void edbitsDrawCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, num
                         break;
                     case 4: {
                         const f32 distance = edanimPlayerAnimDistance(index);
-                        animation->playing = AnimParams[index].field_014 > distance;
+                        animation->playing = !(AnimParams[index].field_014 <= distance);
                         break;
                     }
                     case 5: {
                         animation->repeating = 0;
                         const f32 distance = edanimPlayerAnimDistance(index);
-                        if (AnimParams[index].field_014 > distance && !animation->playing) {
+                        if (!(AnimParams[index].field_014 <= distance) && !animation->playing) {
                             animation->playing = 1;
                             animation->backwards = 0;
                             animation->ltime = 1.0f;
@@ -13105,16 +13067,16 @@ static void edbriInit() {
     edbri_mtl = NuMtlCreate3D(1);
     edbri_mtl->diffuse_color = {0.5f, 0.5f, 0.5f};
     edbri_mtl->opacity = 1.0f;
-    u8 *attributes = reinterpret_cast<u8 *>(&edbri_mtl->attribs);
-    attributes[0] &= 0xf0;
-    attributes[1] = (attributes[1] & 0x0f) | 0x20;
+    edbri_mtl->attribs.alpha_mode = 0;
+    edbri_mtl->attribs.cull_mode = 2;
+    edbri_mtl->attribs.z_mode = 0;
     NuMtlUpdate(edbri_mtl);
     edbri_mtl_zoff = NuMtlCreate(1);
     edbri_mtl_zoff->diffuse_color = {0.5f, 0.5f, 0.5f};
     edbri_mtl_zoff->opacity = 1.0f;
-    attributes = reinterpret_cast<u8 *>(&edbri_mtl_zoff->attribs);
-    attributes[0] &= 0xf0;
-    attributes[1] = (attributes[1] & 0xcf) | 0xe0;
+    edbri_mtl_zoff->attribs.alpha_mode = 0;
+    edbri_mtl_zoff->attribs.cull_mode = 2;
+    edbri_mtl_zoff->attribs.z_mode = 3;
     NuMtlUpdate(edbri_mtl_zoff);
     edbri_plank_instance_type = -1;
     edbri_post_instance_type = -1;
@@ -13811,27 +13773,28 @@ static void edgraInit() {
     edgra_mtl = NuMtlCreate3D(1);
     edgra_mtl->diffuse_color = {0.5f, 0.5f, 0.5f};
     edgra_mtl->opacity = 1.0f;
-    auto *material_attributes = reinterpret_cast<u8 *>(&edgra_mtl->attribs);
-    material_attributes[0] &= 0xf0;
-    material_attributes[1] = (material_attributes[1] & 0x0f) | 0x20;
+    edgra_mtl->attribs.alpha_mode = 0;
+    edgra_mtl->attribs.cull_mode = 2;
+    edgra_mtl->attribs.z_mode = 0;
     NuMtlUpdate(edgra_mtl);
 
     edgra_mtl_zoff = NuMtlCreate(1);
     edgra_mtl_zoff->diffuse_color = {0.5f, 0.5f, 0.5f};
     edgra_mtl_zoff->opacity = 1.0f;
-    material_attributes = reinterpret_cast<u8 *>(&edgra_mtl_zoff->attribs);
-    material_attributes[0] &= 0xf0;
-    material_attributes[1] = (material_attributes[1] & 0xcf) | 0xe0;
+    edgra_mtl_zoff->attribs.alpha_mode = 0;
+    edgra_mtl_zoff->attribs.cull_mode = 2;
+    edgra_mtl_zoff->attribs.z_mode = 3;
     NuMtlUpdate(edgra_mtl_zoff);
 
-    if (gra_ptr.addr == 0) {
+    if (gra_ptr == NULL) {
         edgra_mtxbuffer = static_cast<NUMTX *>(NU_ALLOC(0xc0080, 4, 1, "", 0));
         edgra_vecbuffer = static_cast<NUVEC *>(NU_ALLOC(0x24000, 4, 1, "", 0));
     } else {
-        usize aligned = (gra_ptr.addr + 15) & ~usize(15);
-        edgra_vecbuffer = reinterpret_cast<NUVEC *>(aligned + 0xc0080);
-        edgra_mtxbuffer = reinterpret_cast<NUMTX *>(aligned);
-        gra_ptr.addr = aligned + 0xe4080;
+        gra_ptr->addr = (gra_ptr->addr + 15) & ~usize(15);
+        edgra_mtxbuffer = reinterpret_cast<NUMTX *>(gra_ptr->addr);
+        gra_ptr->addr += 0xc0080;
+        edgra_vecbuffer = reinterpret_cast<NUVEC *>(gra_ptr->addr);
+        gra_ptr->addr += 0x24000;
     }
     for (i32 index = 0; index < EDGRA_MAX_CLUMPS; ++index)
         GrassClumps[index].vector_buffer = NULL;
@@ -14106,7 +14069,7 @@ static void edgraRender() {
 }
 
 extern "C" {
-    void edgraSetMemoryBuffer(VARIPTR start, VARIPTR end) {
+    void edgraSetMemoryBuffer(VARIPTR *start, VARIPTR *end) {
         gra_ptr = start;
         gra_end = end;
     }
@@ -15160,8 +15123,7 @@ i32 edppSaveEffects(char *filename, char page) {
     EdFileWriteInt(0x29);
     EdFileWriteInt(effect_count);
 
-    i32 writer_limit = EDPP_MAX_TYPES;
-    for (i32 index = 1; index < writer_limit; ++index) {
+    for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
         if (debtab[index] == NULL)
             continue;
         if (category != 2) {
@@ -15445,7 +15407,6 @@ i32 edppSaveEffects(char *filename, char page) {
         EdFileWriteChar(effecttypes[index].radial_segments);
         EdFileWriteFloat(effecttypes[index].radial_floor);
         EdFileWriteFloat(effecttypes[index].scale_in_time);
-        writer_limit = EDPP_MAX_TYPES;
     }
 
     if (page == 1 || page == 2) {
@@ -15939,7 +15900,7 @@ extern "C" {
 
         i32 requested = EdFileReadInt();
         i32 skipped = 0;
-        if (requested + edpp_types_used > EDPP_MAX_TYPES) {
+        if (__builtin_expect(requested + edpp_types_used > EDPP_MAX_TYPES, 1)) {
             edbits_types_error = 300;
             skipped = requested + edpp_types_used - EDPP_MAX_TYPES;
             requested = EDPP_MAX_TYPES - edpp_types_used;
@@ -16503,7 +16464,7 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
     f32 *group_min_z = group_max_x - max_groups;
     f32 *group_max_z = group_min_z - max_groups;
 
-    if (ScaleTerrainT1 == NULL) {
+    if (__builtin_expect(ScaleTerrainT1 == NULL, 0)) {
         ScaleTerrainT1 = NU_ALLOC(0xc800, 4, NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "", NUMEMORY_CATEGORY_NONE);
     }
     if (ScaleTerrainT2 == NULL) {
@@ -18222,105 +18183,102 @@ void TerrDrawPlatCol(tertype *terrain, i16 index, i32 colour) {
     TERRAIN_DEBUG_RECORD *record = reinterpret_cast<TERRAIN_DEBUG_RECORD *>(terrain);
     TERRAIN_GROUP &group = CurTerr->groups[index];
     TERRAIN_PLATFORM &platform = CurTerr->platforms[group.scene_index];
-    if (platform.scene_transform != NULL) {
-        if ((platform.flags & TERRAIN_PLATFORM_FLAG_DISPLAY_LIST_BACKED) != 0) {
-            if ((*static_cast<u8 *>(platform.scene_transform) & 2) == 0)
-                return;
-        } else if ((*static_cast<u8 *>(platform.scene_transform) & 1) == 0) {
-            return;
-        }
-    }
+    if (platform.scene_transform == NULL ||
+        ((platform.flags & TERRAIN_PLATFORM_FLAG_DISPLAY_LIST_BACKED) != 0
+             ? (*static_cast<u8 *>(platform.scene_transform) & 2) != 0
+             : (*static_cast<u8 *>(platform.scene_transform) & 1) != 0)) {
 
-    NUVEC4 points[4];
-    for (i32 i = 0; i < 3; ++i) {
-        points[i].x = record->vertices[i].x;
-        points[i].y = record->vertices[i].y;
-        points[i].z = record->vertices[i].z;
-        points[i].w = 0.0f;
-    }
-    NUVEC4 normals[2];
-    normals[0].x = record->normals[0].x * 0.4f;
-    normals[0].y = record->normals[0].y * 0.4f;
-    normals[0].z = record->normals[0].z * 0.4f;
-    normals[0].w = 0.0f;
-    if ((platform.flags & TERRAIN_PLATFORM_FLAG_ROTATING) != 0) {
-        NuVec4MtxTransformVU0(&points[0], &points[0], static_cast<NUMTX *>(platform.scene_object));
-        NuVec4MtxTransformVU0(
-            &points[1], &points[1],
-            static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
-        NuVec4MtxTransformVU0(
-            &points[2], &points[2],
-            static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
-        NuVec4MtxTransformVU0(
-            &normals[0], &normals[0],
-            static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
-    }
-    const bool quad = !(record->normals[1].y > 65535.0f);
-    if (quad) {
-        points[3].x = record->vertices[3].x;
-        points[3].y = record->vertices[3].y;
-        points[3].z = record->vertices[3].z;
-        points[3].w = 0.0f;
-        NuVec4MtxTransformVU0(
-            &points[3], &points[3],
-            static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
-        normals[1].x = record->normals[1].x * 0.4f;
-        normals[1].y = record->normals[1].y * 0.4f;
-        normals[1].z = record->normals[1].z * 0.4f;
-        normals[1].w = 0.0f;
-        // Retail transforms the first normal again here, leaving the second in local space.
-        NuVec4MtxTransformVU0(
-            &normals[0], &normals[0],
-            static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
-    }
+        NUVEC4 points[4];
+        for (i32 i = 0; i < 3; ++i) {
+            points[i].x = record->vertices[i].x;
+            points[i].y = record->vertices[i].y;
+            points[i].z = record->vertices[i].z;
+            points[i].w = 0.0f;
+        }
+        NUVEC4 normals[2];
+        normals[0].x = record->normals[0].x * 0.4f;
+        normals[0].y = record->normals[0].y * 0.4f;
+        normals[0].z = record->normals[0].z * 0.4f;
+        normals[0].w = 0.0f;
+        if ((platform.flags & TERRAIN_PLATFORM_FLAG_ROTATING) != 0) {
+            NuVec4MtxTransformVU0(&points[0], &points[0], static_cast<NUMTX *>(platform.scene_object));
+            NuVec4MtxTransformVU0(
+                &points[1], &points[1],
+                static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
+            NuVec4MtxTransformVU0(
+                &points[2], &points[2],
+                static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
+            NuVec4MtxTransformVU0(
+                &normals[0], &normals[0],
+                static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
+        }
+        const bool quad = record->normals[1].y <= 65535.0f;
+        if (quad) {
+            points[3].x = record->vertices[3].x;
+            points[3].y = record->vertices[3].y;
+            points[3].z = record->vertices[3].z;
+            points[3].w = 0.0f;
+            NuVec4MtxTransformVU0(
+                &points[3], &points[3],
+                static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
+            normals[1].x = record->normals[1].x * 0.4f;
+            normals[1].y = record->normals[1].y * 0.4f;
+            normals[1].z = record->normals[1].z * 0.4f;
+            normals[1].w = 0.0f;
+            // Retail transforms the first normal again here, leaving the second in local space.
+            NuVec4MtxTransformVU0(
+                &normals[0], &normals[0],
+                static_cast<NUMTX *>(CurTerr->platforms[CurTerr->groups[index].scene_index].scene_object));
+        }
 
-    if (!quad) {
-        for (i32 i = 0; i < 2; ++i) {
-            const f32 t = static_cast<f32>(i);
+        if (!quad) {
+            for (i32 i = 0; i < 2; ++i) {
+                const f32 t = static_cast<f32>(i);
+                const NUVEC &origin = CurTerr->groups[index].origin;
+                NuRndrLine3dDbg(origin.x + points[0].x, origin.y + points[0].y, origin.z + points[0].z,
+                                origin.x + points[1].x + (points[2].x - points[1].x) * t,
+                                origin.y + points[1].y + (points[2].y - points[1].y) * t,
+                                origin.z + points[1].z + (points[2].z - points[1].z) * t, colour);
+            }
+            for (i32 i = 0; i < 2; ++i) {
+                const f32 t = static_cast<f32>(i);
+                const NUVEC &origin = CurTerr->groups[index].origin;
+                NuRndrLine3dDbg(origin.x + points[1].x, origin.y + points[1].y, origin.z + points[1].z,
+                                origin.x + points[0].x + (points[2].x - points[0].x) * t,
+                                origin.y + points[0].y + (points[2].y - points[0].y) * t,
+                                origin.z + points[0].z + (points[2].z - points[0].z) * t, colour);
+            }
+        } else {
+            for (i32 i = 0; i < 2; ++i) {
+                const f32 t = static_cast<f32>(i);
+                const NUVEC &origin = CurTerr->groups[index].origin;
+                NuRndrLine3dDbg(origin.x + points[0].x + (points[1].x - points[0].x) * t,
+                                origin.y + points[0].y + (points[1].y - points[0].y) * t,
+                                origin.z + points[0].z + (points[1].z - points[0].z) * t,
+                                origin.x + points[2].x + (points[3].x - points[2].x) * t,
+                                origin.y + points[2].y + (points[3].y - points[2].y) * t,
+                                origin.z + points[2].z + (points[3].z - points[2].z) * t, colour);
+            }
+            for (i32 i = 0; i < 2; ++i) {
+                const f32 t = static_cast<f32>(i);
+                const NUVEC &origin = CurTerr->groups[index].origin;
+                NuRndrLine3dDbg(origin.x + points[0].x + (points[2].x - points[0].x) * t,
+                                origin.y + points[0].y + (points[2].y - points[0].y) * t,
+                                origin.z + points[0].z + (points[2].z - points[0].z) * t,
+                                origin.x + points[1].x + (points[3].x - points[1].x) * t,
+                                origin.y + points[1].y + (points[3].y - points[1].y) * t,
+                                origin.z + points[1].z + (points[3].z - points[1].z) * t, colour);
+            }
             const NUVEC &origin = CurTerr->groups[index].origin;
-            NuRndrLine3dDbg(origin.x + points[0].x, origin.y + points[0].y, origin.z + points[0].z,
-                            origin.x + points[1].x + (points[2].x - points[1].x) * t,
-                            origin.y + points[1].y + (points[2].y - points[1].y) * t,
-                            origin.z + points[1].z + (points[2].z - points[1].z) * t, colour);
-        }
-        for (i32 i = 0; i < 2; ++i) {
-            const f32 t = static_cast<f32>(i);
-            const NUVEC &origin = CurTerr->groups[index].origin;
-            NuRndrLine3dDbg(origin.x + points[1].x, origin.y + points[1].y, origin.z + points[1].z,
-                            origin.x + points[0].x + (points[2].x - points[0].x) * t,
-                            origin.y + points[0].y + (points[2].y - points[0].y) * t,
-                            origin.z + points[0].z + (points[2].z - points[0].z) * t, colour);
-        }
-    } else {
-        for (i32 i = 0; i < 2; ++i) {
-            const f32 t = static_cast<f32>(i);
-            const NUVEC &origin = CurTerr->groups[index].origin;
-            NuRndrLine3dDbg(origin.x + points[0].x + (points[1].x - points[0].x) * t,
-                            origin.y + points[0].y + (points[1].y - points[0].y) * t,
-                            origin.z + points[0].z + (points[1].z - points[0].z) * t,
-                            origin.x + points[2].x + (points[3].x - points[2].x) * t,
-                            origin.y + points[2].y + (points[3].y - points[2].y) * t,
-                            origin.z + points[2].z + (points[3].z - points[2].z) * t, colour);
-        }
-        for (i32 i = 0; i < 2; ++i) {
-            const f32 t = static_cast<f32>(i);
-            const NUVEC &origin = CurTerr->groups[index].origin;
-            NuRndrLine3dDbg(origin.x + points[0].x + (points[2].x - points[0].x) * t,
-                            origin.y + points[0].y + (points[2].y - points[0].y) * t,
-                            origin.z + points[0].z + (points[2].z - points[0].z) * t,
-                            origin.x + points[1].x + (points[3].x - points[1].x) * t,
-                            origin.y + points[1].y + (points[3].y - points[1].y) * t,
-                            origin.z + points[1].z + (points[3].z - points[1].z) * t, colour);
+            NuRndrLine3dDbg(origin.x + points[3].x, origin.y + points[3].y, origin.z + points[3].z,
+                            origin.x + points[3].x + normals[1].x, origin.y + points[3].y + normals[1].y,
+                            origin.z + points[3].z + normals[1].z, 0xff);
         }
         const NUVEC &origin = CurTerr->groups[index].origin;
-        NuRndrLine3dDbg(origin.x + points[3].x, origin.y + points[3].y, origin.z + points[3].z,
-                        origin.x + points[3].x + normals[1].x, origin.y + points[3].y + normals[1].y,
-                        origin.z + points[3].z + normals[1].z, 0xff);
+        NuRndrLine3dDbg(origin.x + points[0].x, origin.y + points[0].y, origin.z + points[0].z,
+                        origin.x + points[0].x + normals[0].x, origin.y + points[0].y + normals[0].y,
+                        origin.z + points[0].z + normals[0].z, 0xff);
     }
-    const NUVEC &origin = CurTerr->groups[index].origin;
-    NuRndrLine3dDbg(origin.x + points[0].x, origin.y + points[0].y, origin.z + points[0].z,
-                    origin.x + points[0].x + normals[0].x, origin.y + points[0].y + normals[0].y,
-                    origin.z + points[0].z + normals[0].z, 0xff);
 }
 
 extern "C" {
@@ -18783,7 +18741,7 @@ i16 InsidePolLines(f32 point_x, f32 point_y, f32 point_z, f32 edge_a_x, f32 edge
         return InsideLineF(point_x, point_z, edge_b_x, edge_b_z, edge_a_x, edge_a_z) != 0;
     }
 
-    if (NuFabs(normal->y) > NuFabs(normal->x) || NuFabs(normal->z) > NuFabs(normal->x)) {
+    if (!(NuFabs(normal->y) <= NuFabs(normal->x)) || !(NuFabs(normal->z) <= NuFabs(normal->x))) {
         if (0.0f > normal->z) {
             if (InsideLineF(point_y, point_x, 0.0f, 0.0f, edge_a_y, edge_a_x) == 0 ||
                 InsideLineF(point_y, point_x, edge_b_y, edge_b_x, 0.0f, 0.0f) == 0) {
@@ -18922,7 +18880,7 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
     if (!cache_hit) {
         for (i32 cell_index = 0; cell_index < CurTerr->used_cell_count; ++cell_index) {
             const TERRAIN_CELL &cell = CurTerr->cells[cell_index];
-            if (!(max_x >= cell.min_x && max_z >= cell.min_z && cell.max_x >= min_x && cell.max_z >= min_z)) {
+            if (!(max_x >= cell.min_x && max_z >= cell.min_z && cell.max_x >= min_x && !(cell.max_z < min_z))) {
                 continue;
             }
             const i16 *group_indices = CurTerr->group_indices + cell.first_group;
@@ -18944,7 +18902,7 @@ void NewScan(nuvec_s *position, i32 terrain_mask, i32 scan_platforms) {
                 while (batch->marker >= 0) {
                     const i16 count = batch->shape_count;
                     TERRAIN_SHAPE *shape = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
-                    if (local_max_x >= batch->min_x && batch->max_x > local_min_x && local_max_z >= batch->min_z &&
+                    if (!(local_max_x < batch->min_x) && batch->max_x > local_min_x && local_max_z >= batch->min_z &&
                         batch->max_z > local_min_z) {
                         i32 remaining = count;
                         while (remaining > 0) {
@@ -19112,7 +19070,7 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
             f32 dx = (position->x + 1.0f) - cache.center_x;
             if (dx > 0.0f && dx < 2.0f) {
                 f32 dz = (position_z + 1.0f) - cache.center_z;
-                if (dz > 0.0f && dz < 2.0f) {
+                if (dz > 0.0f && !(dz >= 2.0f)) {
                     cache_index = i;
                     cache_hit = true;
                     break;
@@ -19169,11 +19127,11 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                 while (batch->marker >= 0) {
                     TERRAIN_SHAPE *shapes = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
                     const i32 count = batch->shape_count;
-                    if (local_max_x >= batch->min_x && batch->max_x > local_min_x && local_max_z >= batch->min_z &&
-                        batch->max_z > local_min_z) {
+                    if (local_max_x >= batch->min_x && batch->max_x > local_min_x && !(local_max_z < batch->min_z) &&
+                        !(batch->max_z <= local_min_z)) {
                         TERRAIN_SHAPE *shape = shapes;
                         for (i32 remaining = count; remaining > 0; --remaining, ++shape) {
-                            if (shape->min_x <= local_max_x && local_min_x < shape->max_x &&
+                            if (!(shape->min_x > local_max_x) && !(local_min_x >= shape->max_x) &&
                                 shape->min_z <= local_max_z && local_min_z < shape->max_z &&
                                 reinterpret_cast<u8 *>(writer.cursor) < writer.limit &&
                                 (shape->material[1] == 0 || (shape->material[1] & terrain_mask) != 0)) {
@@ -19190,7 +19148,7 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
         // Skin allocation can invalidate the cache while scanning groups.
         fill_cache = cache.cache_age <= 1;
     }
-    if (fill_cache) {
+    if (__builtin_expect(fill_cache, 0)) {
         reinterpret_cast<i16 *>(writer.group_header)[0] = 0;
         reinterpret_cast<i16 *>(writer.group_header)[1] = 0;
         cache.center_z = position->z;
@@ -19265,7 +19223,7 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                     local_max_x = (matrix->m30 - platform.previous_matrix.m30) * 1.5f + max_x - group.origin.x;
                 else
                     local_min_x = (matrix->m30 - platform.previous_matrix.m30) * 1.5f + min_x - group.origin.x;
-                if (matrix->m32 > platform.previous_matrix.m32)
+                if (!(matrix->m32 <= platform.previous_matrix.m32))
                     local_max_z = (matrix->m32 - platform.previous_matrix.m32) * 1.5f + max_z - group.origin.z;
                 else
                     local_min_z = (matrix->m32 - platform.previous_matrix.m32) * 1.5f + min_z - group.origin.z;
@@ -19321,10 +19279,10 @@ void NewScanRot(nuvec_s *position, i32 terrain_mask) {
                             NuVec4MtxTransformVU0(&vertices[3], &vertices[3], matrix);
                         } else
                             vertices[3] = vertices[2];
-                        if (!(vertices[0].x > local_min_x || vertices[1].x > local_min_x ||
+                        if (!(!(vertices[0].x <= local_min_x) || vertices[1].x > local_min_x ||
                               vertices[2].x > local_min_x || vertices[3].x > local_min_x))
                             continue;
-                        if (!(local_max_x > vertices[0].x || local_max_x > vertices[1].x ||
+                        if (!(!(local_max_x <= vertices[0].x) || local_max_x > vertices[1].x ||
                               local_max_x > vertices[2].x || local_max_x > vertices[3].x))
                             continue;
                         if (!(vertices[0].z > local_min_z || vertices[1].z > local_min_z ||
@@ -19430,7 +19388,7 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
                 f32 y = corner->y + CurTerr->groups[group_index].origin.y +
                         ((x - corner->x) * nx + (z - corner->z) * nz) / -ny;
                 if (__builtin_expect(surface->material[1] != 0, 0)) {
-                    if (__builtin_expect(position->y >= y && y > efloor_y && facing == 1, 0)) {
+                    if (position->y >= y && y > efloor_y && facing == 1) {
                         efloor_nx = nx;
                         efloor_ny = ny;
                         efloor_nz = nz;
@@ -19453,7 +19411,7 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
                         floor_poly = surface;
                         floor_y = y;
                         castnum = group_index;
-                    } else if (y > position->y && roof_y >= y && (y != roof_y || roof_ny > ny)) {
+                    } else if (!(y <= position->y) && roof_y >= y && (y != roof_y || roof_ny > ny)) {
                         roof_nx = nx;
                         roof_ny = ny;
                         roof_nz = nz;
@@ -19516,7 +19474,7 @@ f32 NewCast(nuvec_s *position, f32 height_above, f32 roof_range) {
         shape_count = *reinterpret_cast<i16 *>(scan);
     }
 
-    if (__builtin_expect(eroof_y < 2000000.0f && eroof_ny < 0.0f && roof_range + position->y > eroof_y, 0)) {
+    if (__builtin_expect(!(eroof_y >= 2000000.0f) && eroof_ny < 0.0f && roof_range + position->y > eroof_y, 0)) {
         if (roof_y < 2000000.0f && roof_ny < 0.0f && roof_range + position->y > roof_y && eroof_y > roof_y) {
             EShadRoofPoly = NULL;
             EShadRoofY = 2000000.0f;
@@ -19686,7 +19644,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
 
         const f32 distance = NuFsqrt(distance_sq);
         const f32 overlap_time = distance - query->collision_radius;
-        if (query->hit_time <= overlap_time) {
+        if (!(query->hit_time > overlap_time)) {
             return 0;
         }
 
@@ -19696,8 +19654,9 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
         local_normal.z = 0.0f;
         RotateVec(&local_normal, &local_normal);
         const NUVEC &surface_normal = query->working_surface->normals[0];
-        if (local_normal.x * surface_normal.x + local_normal.y * surface_normal.y + local_normal.z * surface_normal.z <=
-            0.0f) {
+        if (!(local_normal.x * surface_normal.x + local_normal.y * surface_normal.y +
+                  local_normal.z * surface_normal.z >
+              0.0f)) {
             return 0;
         }
 
@@ -19782,7 +19741,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     } else {
         hit_distance = height_offset - negative_closest_height;
     }
-    if (hit_distance >= 0.0f && hit_distance <= query->movement_length) {
+    if (!(hit_distance < 0.0f) && hit_distance <= query->movement_length) {
         const f32 edge_parameter = (-query->transformed_vertices[first_vertex].y * edge_direction.y -
                                     query->transformed_vertices[first_vertex].x * edge_direction.x) +
                                    (hit_distance - query->transformed_vertices[first_vertex].z) * edge_direction.z;
@@ -19811,9 +19770,9 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
 
     // No forward-time hit was found. Test whether the sphere already overlaps
     // the finite edge at the start of the sweep.
-    if ((query->transformed_vertices[first_vertex].z < -query->collision_radius &&
-         query->transformed_vertices[second_vertex].z < -query->collision_radius) ||
-        (query->transformed_vertices[first_vertex].z > query->collision_radius &&
+    if ((!(query->transformed_vertices[first_vertex].z >= -query->collision_radius) &&
+         !(query->transformed_vertices[second_vertex].z >= -query->collision_radius)) ||
+        (!(query->transformed_vertices[first_vertex].z <= query->collision_radius) &&
          query->transformed_vertices[second_vertex].z > query->collision_radius)) {
         return 0;
     }
@@ -19840,13 +19799,13 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     };
     const f32 distance_sq =
         edge_direction.x * edge_direction.x + edge_direction.y * edge_direction.y + edge_direction.z * edge_direction.z;
-    if (__builtin_expect(distance_sq >= query->collision_radius_sq, 1)) {
+    if (__builtin_expect(!(distance_sq < query->collision_radius_sq), 1)) {
         return 0;
     }
 
     const f32 distance = NuFsqrt(distance_sq);
     const f32 overlap_time = distance - query->collision_radius;
-    if (query->hit_time <= overlap_time) {
+    if (!(query->hit_time > overlap_time)) {
         return 0;
     }
 
@@ -19885,9 +19844,10 @@ i32 CheckSphere(i32 vertex_index) {
 
     f32 radial_extent = NuFsqrt(TerI->collision_radius_sq - radial_distance_sq);
     f32 hit_distance = TerI->transformed_vertices[vertex_index].z - radial_extent;
-    if (0.0f <= hit_distance && TerI->movement_length >= hit_distance) {
+    // The original rejection tests are ordered comparisons, so NaN distances fall through.
+    if (!(hit_distance < 0.0f) && !(hit_distance > TerI->movement_length)) {
         f32 hit_time = hit_distance / TerI->movement_length;
-        if (TerI->hit_time <= hit_time) {
+        if (!(TerI->hit_time > hit_time)) {
             return 0;
         }
 
@@ -19901,13 +19861,13 @@ i32 CheckSphere(i32 vertex_index) {
 
     f32 distance_sq =
         radial_distance_sq + TerI->transformed_vertices[vertex_index].z * TerI->transformed_vertices[vertex_index].z;
-    if (TerI->collision_radius_sq <= distance_sq) {
+    if (!(TerI->collision_radius_sq > distance_sq)) {
         return 0;
     }
 
     f32 distance = NuFsqrt(distance_sq);
     f32 overlap_time = distance - TerI->collision_radius;
-    if (TerI->hit_time <= overlap_time) {
+    if (!(TerI->hit_time > overlap_time)) {
         return 0;
     }
 
@@ -19915,7 +19875,7 @@ i32 CheckSphere(i32 vertex_index) {
     f32 primary_distance = (TerI->local_start.x - surface->vectors[vertex_index].x) * surface->normals[0].x +
                            (TerI->local_start.y - surface->vectors[vertex_index].y) * surface->normals[0].y +
                            (TerI->local_start.z - surface->vectors[vertex_index].z) * surface->normals[0].z;
-    if (0.0f >= primary_distance) {
+    if (!(primary_distance > 0.0f)) {
         return 0;
     }
 
@@ -19933,9 +19893,9 @@ i32 CheckSphere(i32 vertex_index) {
 
 i32 CheckSphereTer(NUVEC *position, f32 radius) {
     const f32 terrain_radius = TerI->collision_radius;
-    const f32 combined_radius = radius + terrain_radius;
+    const f32 combined_radius = terrain_radius + radius;
 
-    if (position->z < -combined_radius || position->z > TerI->movement_length + combined_radius) {
+    if (position->z < -terrain_radius - radius || position->z > TerI->movement_length + combined_radius) {
         return 0;
     }
 
@@ -19947,9 +19907,10 @@ i32 CheckSphereTer(NUVEC *position, f32 radius) {
 
     const f32 radial_extent = NuFsqrt(combined_radius_sq - radial_distance_sq);
     const f32 hit_distance = position->z - radial_extent;
-    if (hit_distance >= 0.0f && hit_distance <= TerI->movement_length) {
+    // The original rejection tests are ordered comparisons, so NaN distances fall through.
+    if (!(hit_distance < 0.0f) && !(hit_distance > TerI->movement_length)) {
         const f32 hit_time = hit_distance / TerI->movement_length;
-        if (hit_time >= TerI->hit_time) {
+        if (!(TerI->hit_time > hit_time)) {
             return 0;
         }
 
@@ -19962,7 +19923,7 @@ i32 CheckSphereTer(NUVEC *position, f32 radius) {
     }
 
     const f32 distance_sq = radial_distance_sq + position->z * position->z;
-    if (distance_sq >= combined_radius_sq) {
+    if (!(combined_radius_sq > distance_sq)) {
         return 0;
     }
 
@@ -20289,7 +20250,7 @@ i32 HitWallSpline() {
         hit = 1.0f;
     }
     TerI->unclamped_hit_time = TerI->hit_time;
-    if (TerI->hit_time < 0.0f)
+    if (!(TerI->hit_time >= 0.0f))
         TerI->hit_time = 0.0f;
     return hit;
 }
@@ -20361,7 +20322,7 @@ i32 HitTerrain() {
                                              (query->local_end.y - secondary_point.y) * secondary_normal.y +
                                              (query->local_end.z - secondary_point.z) * secondary_normal.z - radius -
                                              query->compare_epsilon;
-                    if (0.0f > secondary_end_distance) {
+                    if (!(0.0f <= secondary_end_distance)) {
                         secondary_start_distance = (query->local_start.x - secondary_point.x) * secondary_normal.x +
                                                    (query->local_start.y - secondary_point.y) * secondary_normal.y +
                                                    (query->local_start.z - secondary_point.z) * secondary_normal.z -
@@ -20516,7 +20477,7 @@ void ScanWallSplineTerrain(i32, i32 terrain_mask, i32) {
                 NUVEC &a = *point;
                 NUVEC &b = point[1];
                 if (!((a.x >= wall_bounds.min_x && wall_bounds.max_x >= b.x) ||
-                      (b.x >= wall_bounds.min_x && wall_bounds.max_x >= a.x)))
+                      (!(b.x < wall_bounds.min_x) && wall_bounds.max_x >= a.x)))
                     continue;
                 if (!((a.z >= wall_bounds.min_z && wall_bounds.max_z >= b.z) ||
                       (b.z >= wall_bounds.min_z && wall_bounds.max_z >= a.z)))
@@ -20588,7 +20549,7 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
             bounds.min_x = scan_query->position.x - 0.02f - radius;
             bounds.max_x = scan_query->position.x + scan_query->movement.x + 0.02f + radius;
         }
-        if (!(scan_query->movement.y > 0.0f)) {
+        if (__builtin_expect(!(scan_query->movement.y > 0.0f), 0)) {
             bounds.min_y = scan_query->position.y + scan_query->movement.y - 0.02f - radius;
             bounds.max_y = scan_query->position.y + 0.02f + radius;
         } else {
@@ -20695,7 +20656,7 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
         local_bounds_min_z -= group.origin.z;
         local_bounds_max_z -= group.origin.z;
         if (__builtin_expect(!(local_bounds_max_x >= group.bounds_min.x && local_bounds_max_y >= group.bounds_min.y &&
-              local_bounds_max_z >= group.bounds_min.z && group.bounds_max.x >= local_bounds_min_x &&
+              !(local_bounds_max_z < group.bounds_min.z) && group.bounds_max.x >= local_bounds_min_x &&
               group.bounds_max.y > local_bounds_min_y && group.bounds_max.z > local_bounds_min_z) ||
             group.chunk_type == -1, 0)) {
             continue;
@@ -20742,11 +20703,11 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
     bounds.max_y += 0.05f;
     bounds.max_z += 0.05f;
     TerI->scan_list = writer.group_header;
-    if (scan_type != 0) {
+    if (__builtin_expect(scan_type != 0, 1)) {
 
         const i16 *groups = CurTerr->active_platform_groups;
         i32 count = CurTerr->active_platform_count;
-        if (!(bounds.min_x > CurTerr->platform_scan_min.x && CurTerr->platform_scan_max.x > bounds.max_x &&
+        if (!(!(bounds.min_x <= CurTerr->platform_scan_min.x) && CurTerr->platform_scan_max.x > bounds.max_x &&
               bounds.min_z > CurTerr->platform_scan_min.z && CurTerr->platform_scan_max.z > bounds.max_z)) {
             const TERRAIN_CELL &cell = CurTerr->cells[TERRAIN_PLATFORM_CELL];
             count = static_cast<i16>(cell.group_count);
@@ -20857,8 +20818,10 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
                                     if (__builtin_expect(!(vertices[0].x > local_min_x || vertices[1].x > local_min_x ||
                                           vertices[2].x > local_min_x || vertices[3].x > local_min_x), 0))
                                         continue;
-                                    if (__builtin_expect(!(vertices[0].x < local_max_x || vertices[1].x < local_max_x ||
-                                          vertices[2].x < local_max_x || vertices[3].x < local_max_x), 0))
+                                    if (__builtin_expect(!(vertices[0].x < local_max_x ||
+                                                           !(vertices[1].x >= local_max_x) ||
+                                                           vertices[2].x < local_max_x || vertices[3].x < local_max_x),
+                                                         0))
                                         continue;
                                     if (!(vertices[0].z > local_min_z || vertices[1].z > local_min_z ||
                                           vertices[2].z > local_min_z || vertices[3].z > local_min_z))
@@ -21667,7 +21630,7 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
         return 1;
     NUMTX *previous = &CurTerr->platforms[platform_index].previous_matrix;
     if (previous->m30 == matrix->m30 && previous->m31 == matrix->m31 && previous->m32 == matrix->m32) {
-        if (!(CurTerr->platforms[platform_index].flags & 1))
+        if (__builtin_expect(!(CurTerr->platforms[platform_index].flags & 1), 0))
             return 1;
         if (__builtin_expect(previous->m00 == matrix->m00 && previous->m01 == matrix->m01 && previous->m02 == matrix->m02 &&
             previous->m10 == matrix->m10 && previous->m11 == matrix->m11 && previous->m12 == matrix->m12 &&
@@ -21747,7 +21710,7 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
                         static_cast<NUMTX *>(
                             CurTerr->platforms[CurTerr->groups[old_query->terrain_group_index].scene_index]
                                 .scene_object));
-                    bool quad = source->normals[1].y < 65535.0f;
+                    bool quad = !(source->normals[1].y >= 65535.0f);
                     if (!quad) {
                         vertices[3] = vertices[2];
                     } else {
@@ -22004,7 +21967,7 @@ i32 TerrainPlatformEmbedded(nuvec_s *movement_delta) {
         }
     }
     i16 *header = reinterpret_cast<i16 *>(query->scan_list_storage);
-    if (__builtin_expect(count != 0, 0)) {
+    if (count != 0) {
         header[0] = count;
         header[1] = old_query->terrain_group_index;
         header = reinterpret_cast<i16 *>(cursor);
@@ -22231,7 +22194,7 @@ i32 PlatformChecks(i32 count, nuvec_s *movement) {
             return count;
         }
     }
-    if (query->movement_normal.y >= 0.707f && query->terrain_group_index >= 0 && group->chunk_type == 1)
+    if (!(query->movement_normal.y < 0.707f) && query->terrain_group_index >= 0 && group->chunk_type == 1)
         CurTerr->platforms[platform_index].flags |= 2;
     old_query->platform_position.x = query->platform_position.x;
     old_query->platform_position.y = query->platform_position.y + old_query->collision_radius;
@@ -22271,7 +22234,7 @@ i32 PlatformChecks(i32 count, nuvec_s *movement) {
     if (opposing_contact || clear != 0) {
         TerrPoly = query->surface;
         TerI->position = TerI->platform_position;
-        if (!(movement->y < 0.0f)) {
+        if (movement->y >= 0.0f) {
             TerI->movement.y *= 0.75f;
         } else {
             FullDeflect(&ShadNorm, &TerI->movement, &TerI->movement);
@@ -23184,8 +23147,10 @@ extern "C" u8 *CrashDataPtr(void) {
 
     i32 NewMSituTerrEx(NUVEC *position, void *data, NUVEC *minimum, NUVEC *maximum, f32 radius) {
         TERRSET *terrain = CurTerr;
-        if (terrain == NULL || terrain->group_index_count >= terrain->max_group_indices ||
-            terrain->group_count >= terrain->max_groups)
+        if (terrain == NULL)
+            return -1;
+        i32 index_count = terrain->group_index_count;
+        if (index_count >= terrain->max_group_indices || terrain->group_count >= terrain->max_groups)
             return -1;
         i16 group_index = terrain->group_count;
         TERRAIN_GROUP &group = terrain->groups[group_index];
@@ -23198,7 +23163,8 @@ extern "C" u8 *CrashDataPtr(void) {
         group.scene_index = -1;
         group.chunk_type = 0;
         group.radius = radius;
-        terrain->group_indices[terrain->group_index_count++] = group_index;
+        terrain->group_indices[index_count] = group_index;
+        terrain->group_index_count = index_count + 1;
         ++terrain->cells[TERRAIN_PLATFORM_CELL].group_count;
         ++terrain->group_count;
         return terrain->group_count - 1;
@@ -24193,7 +24159,7 @@ i16 *NewScanHandelSubset(i16 *subset, nuvec_s *position, nuvec_s *movement, f32 
         NUMTX *matrix = platform != NULL ? static_cast<NUMTX *>(platform->scene_object) : NULL;
         if (matrix != NULL) {
             TerrainScanBounds local;
-            if (matrix->m30 > platform->previous_matrix.m30) {
+            if (__builtin_expect(matrix->m30 > platform->previous_matrix.m30, 1)) {
                 local.max_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.max_x - group.origin.x;
                 local.min_x = bounds.min_x - group.origin.x;
             } else {
@@ -24432,7 +24398,7 @@ void ScanTerrainHandel(i32 terrain_mask, i16 *handle) {
             for (i32 i = 0; i < count; ++i) {
                 TERRAIN_SHAPE *shape = shapes[i];
                 if (bounds.max_x - origin.x >= shape->min_x && shape->max_x > bounds.min_x - origin.x &&
-                    bounds.max_z - origin.z >= shape->min_z && shape->max_z > bounds.min_z - origin.z &&
+                    bounds.max_z - origin.z >= shape->min_z && !(shape->max_z <= bounds.min_z - origin.z) &&
                     bounds.max_y - origin.y >= shape->min_y && shape->max_y > bounds.min_y - origin.y &&
                     reinterpret_cast<u8 *>(writer.cursor) < writer.limit &&
                     (shape->material[1] == 0 || (shape->material[1] & terrain_mask) != 0)) {
@@ -24619,7 +24585,7 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
         scan_radius = NuFsqrt(reach + 1.0f);
     } else {
         f32 radius = query->collision_radius;
-        if (__builtin_expect(!(query->movement.x > 0.0f), 0)) {
+        if (!(query->movement.x > 0.0f)) {
             bounds.max_x = query->position.x + 0.02f + radius;
             bounds.min_x = (query->movement.x + query->position.x - 0.02f) - radius;
         } else {
@@ -24662,7 +24628,7 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
             local.max_x += (matrix->m30 - platform->previous_matrix.m30) * 1.5f;
         else
             local.min_x += (matrix->m30 - platform->previous_matrix.m30) * 1.5f;
-        if (!(platform->previous_matrix.m31 < matrix->m31))
+        if (__builtin_expect(!(platform->previous_matrix.m31 < matrix->m31), 1))
             local.min_y += (matrix->m31 - platform->previous_matrix.m31) * 1.5f;
         else
             local.max_y += (matrix->m31 - platform->previous_matrix.m31) * 1.5f;
@@ -24682,13 +24648,13 @@ void ScanTerrainPlatform(i32 group_index, i32 terrain_mask) {
     if ((platform->flags & TERRAIN_PLATFORM_FLAG_ROTATING) == 0) {
         if (group->bounds_min.x <= local.max_x && group->bounds_min.y <= local.max_y &&
             group->bounds_min.z <= local.max_z && local.min_x <= group->bounds_max.x &&
-            local.min_y < group->bounds_max.y && local.min_z < group->bounds_max.z && group->chunk_type != -1) {
+            local.min_y < group->bounds_max.y && !(local.min_z >= group->bounds_max.z) && group->chunk_type != -1) {
             TERRAIN_SHAPE_BATCH *batch = static_cast<TERRAIN_SHAPE_BATCH *>(group->data);
             while (batch->marker >= 0) {
                 i32 shape_count = batch->shape_count;
                 TERRAIN_SHAPE *source = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
                 TERRAIN_SHAPE *next = source + shape_count;
-                if (local.max_x < batch->min_x || batch->max_x <= local.min_x || local.max_z < batch->min_z ||
+                if (local.max_x < batch->min_x || batch->max_x <= local.min_x || !(local.max_z >= batch->min_z) ||
                     batch->max_z <= local.min_z) {
                     source = next;
                 } else {

@@ -384,8 +384,6 @@ extern i16 tCHAPTER;
 
 CUTSCENEPLAYER_s *CutScenePlayer = NULL;
 
-extern void (*CutScene_OverrideConfigFileNameFn)(char *, i32, i32);
-
 struct ani3_animheader_s;
 
 extern "C" {
@@ -830,8 +828,8 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
 
     if (instance->field_15 != animation_index) {
         const u8 requested_animation = static_cast<u8>(animation_index);
-        if (!(blend_time > 0.0f) || instance->field_15 == 0xff) {
-            instance->animation_frame_a = !(animation_start_frame > 1.0f) ? 1.0f : animation_start_frame;
+        if (blend_time <= 0.0f || instance->field_15 == 0xff) {
+            instance->animation_frame_a = animation_start_frame <= 1.0f ? 1.0f : animation_start_frame;
             instance->field_16 = requested_animation;
         } else {
             if ((instance->field_14 & 1) == 0) {
@@ -863,7 +861,7 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
     bool blending = (instance->field_14 & 1) != 0;
     u32 animation_a_index = instance->field_16;
     if (blending) {
-        if (blend_time <= 0.0f) {
+        if (!(blend_time > 0.0f)) {
             instance->blend_progress = 0;
             animation_a_index = instance->field_17;
             instance->field_14 ^= 1;
@@ -872,7 +870,7 @@ static void CutScene_DrawCharacter(instNUGCUTSCENE_s *cutscene_instance, NUGCUTS
             blending = false;
         } else {
             instance->blend_progress += (1.0f / blend_time) * (FRAMETIME * 60.0f);
-            if (__builtin_expect(instance->blend_progress >= 1.0f, 0)) {
+            if (__builtin_expect(!(instance->blend_progress < 1.0f), 0)) {
                 instance->blend_progress = 0;
                 animation_a_index = instance->field_17;
                 instance->field_16 = instance->field_17;
@@ -1984,8 +1982,9 @@ void CutScenes_Draw(WORLDINFO_s *world) {
         if (CUTDRAWWORLD != 0 && world->current_gscn != NULL) {
             SetLevelLights(world->rtl_set, 1.0f);
             NuGScnRndr3(world->current_gscn);
-            if (world->gizmo_sys != NULL && CutStopInfo != NULL &&
-                (static_cast<CUTINFO *>(CutStopInfo)->flags & 0x8000) != 0) {
+            if (__builtin_expect(world->gizmo_sys != NULL && CutStopInfo != NULL &&
+                                     (static_cast<CUTINFO *>(CutStopInfo)->flags & 0x8000) != 0,
+                                 0)) {
                 GizmoSysDraw(world->gizmo_sys, world, FRAMETIME);
             }
         }
@@ -2070,7 +2069,7 @@ void CutScenePlayer_Configure(char *file, VARIPTR *buffer, VARIPTR *, i16 *clip_
                 } else if (NuStrICmp(fp->word_buf, "name") == 0) {
                     if (NuFParGetWord(fp) && NuStrLen(fp->word_buf) <= 63)
                         NuStrCpy(clip->name, fp->word_buf);
-                } else if (NuStrICmp(fp->word_buf, "intro") == 0)
+                } else if (__builtin_expect(NuStrICmp(fp->word_buf, "intro") == 0, 1))
                     clip->type = CLIP_INTRO;
                 else if (NuStrICmp(fp->word_buf, "midtro") == 0)
                     clip->type = CLIP_MIDTRO;
@@ -2405,7 +2404,7 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
                 continue;
             }
             instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
-            if (instance->rate > 0.0f) {
+            if (!(instance->rate <= 0.0f)) {
                 for (i32 j = 0; j < 6; ++j) {
                     CUTSCENESFX *sfx = &cut->sfx[j];
                     if (sfx->id != -1 && cut->previous_frame < sfx->frame &&
@@ -2643,7 +2642,7 @@ void CutScenes_Reset(WORLDINFO_s *world) {
             if (cut == NULL)
                 cut = world->cutscene_sys->cuts[0];
         }
-        if (cut == NULL && cutskip_dontplaylevelintro == 0) {
+        if (__builtin_expect(cut == NULL && cutskip_dontplaylevelintro == 0, 1)) {
             for (i32 i = 0; i < world->cutscene_sys->count; ++i) {
                 if ((world->cutscene_sys->cuts[i]->flags & 0x1000) == 0) {
                     continue;

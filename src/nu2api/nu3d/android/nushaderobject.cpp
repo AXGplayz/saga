@@ -27,7 +27,9 @@ void __attribute__((weak)) GLSLParameter::setElementsMatrix(i32 first_element, i
     const NUMTX *source = reinterpret_cast<const NUMTX *>(values);
     NUMTX *destination = transposed;
     for (i32 i = 0; i < count; ++i) {
-        NuMtxTranspose(destination++, const_cast<NUMTX *>(source++));
+        NuMtxTranspose(destination, const_cast<NUMTX *>(source));
+        destination++;
+        source++;
     }
 
     const i32 vectors_remaining = element_count - first_element * 4;
@@ -49,13 +51,17 @@ static const GLSLTypeInfo typeInfoTable[] = {
 };
 
 NUSHADERUSAGEMASK *GetUsageMask(NUSHADERUSAGEMASK *mask) {
-    for (u32 i = 0; i < static_cast<u32>(g_semanticMaskCount); ++i) {
+    u32 i;
+    for (i = 0; i < static_cast<u32>(g_semanticMaskCount); ++i) {
         if (g_semanticMasks[i].semantics[0] == mask->semantics[0] &&
             g_semanticMasks[i].semantics[1] == mask->semantics[1] &&
             g_semanticMasks[i].semantics[2] == mask->semantics[2] &&
             g_semanticMasks[i].semantics[3] == mask->semantics[3]) {
-            return &g_semanticMasks[i];
+            break;
         }
+    }
+    if (i < static_cast<u32>(g_semanticMaskCount)) {
+        return &g_semanticMasks[i];
     }
     NUSHADERUSAGEMASK *result = &g_semanticMasks[g_semanticMaskCount++];
     memmove(result, mask, sizeof(*mask));
@@ -443,7 +449,7 @@ extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
             usage_mask.semantics[semantic >> 5] |= 1u << (semantic & 31);
 
             const GLSLTypeInfo *type_info = GetGLSLTypeInfo(type);
-            if (type_info != NULL) {
+            if (__builtin_expect(type_info != NULL, 1)) {
                 parameter.parameter_type = type_info->parameter_type;
                 parameter.setter_class = type_info->setter_class;
                 parameter.element_count = type_info->element_count;
@@ -794,13 +800,13 @@ static void NuShaderObjectGLSLSetCustomSetterParameters(nushaderobjectglsl_s *gl
                     if (values52[1] <= 0.0f) {
                         values52[1] = 0.0f;
                     }
-                } else if (g_alphaFunc == 3) {
+                } else if (__builtin_expect(g_alphaFunc == 3, 0)) {
                     values52[0] = -1.0f;
                     values52[1] = static_cast<f32>(0u - g_alphaRef) * (1.0f / 255.0f);
                 } else if (g_alphaFunc == 5) {
                     values52[0] = 1.0f;
                     values52[1] = alpha_ref;
-                } else if (g_alphaFunc == 6) {
+                } else if (__builtin_expect(g_alphaFunc == 6, 0)) {
                     values52[0] = 1.0f;
                     values52[1] = alpha_ref + (1.0f / 255.0f);
                 } else {
@@ -889,7 +895,7 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct n
                         BIND_MATERIAL_2D(mtl->shader_desc.field_1e8);
                         break;
                     case 18:
-                        if (NuWindCurrent(nuapi.wind) >= 0) {
+                        if (__builtin_expect(NuWindCurrent(nuapi.wind) >= 0, 0)) {
                             const u32 texture_unit = static_cast<u16>(parameter.location) & 0x7ff;
                             NuTexSetTextureWithStagePS(NuTexGetNative(NuWindCurrent(nuapi.wind)), texture_unit);
                         }
@@ -1015,7 +1021,7 @@ extern "C" void NuShaderObjectGLSLSetupTextureStates(NUSHADEROBJECT *shader, num
                 NuCheckGLErrorsFL(source, 0x4b5);
                 break;
             case 18:
-                if (NuWindCurrent(nuapi.wind) >= 0) {
+                if (__builtin_expect(NuWindCurrent(nuapi.wind) >= 0, 1)) {
                     const u32 unit = static_cast<u16>(parameter.location) & 0x7ff;
                     NuTexSetTextureWithStagePS(NuTexGetNative(NuWindCurrent(nuapi.wind)), unit);
                     REPEAT_STATE();

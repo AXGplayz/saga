@@ -38,6 +38,9 @@
 #include "legoapi/items/collect/thermaldetonators.h"
 #include "legoapi/menus/core/hint.h"
 #include "legoapi/props/objects/zipup.h"
+#include "legoapi/actions/movement/pushblocks.h"
+#include "legoapi/gizmos/traps/gizforce.h"
+#include "legoapi/menus/screens/shop.h"
 
 LSW_HINTCONDITIONS_s LSW_HintConditions;
 HINTSYS_s hintsys = {};
@@ -139,17 +142,11 @@ void MechHintUIButton::Process(float elapsed) {
     }
     disabled = (GetMenuID() != -1 && GetMenuID() != 13) || Paused != 0 || NewMode != 0 || NewLData != NULL ||
                CUTSTOPGAME != 0 || MiniCutCam != 0 || FadeSys.fade > 0.0f || player == NULL;
-    if (!pulse_active && (slide_duration < 0.0f || slide_elapsed >= slide_duration + slide_delay) && slide > -1.0f)
+    if (!pulse_active && (slide_duration < 0.0f || !(slide_elapsed < slide_duration + slide_delay)) && slide > -1.0f)
         StartPulse();
 }
 
-void Hint_Process(float elapsed);
-
-void Hint_CancelCurrent();
-
 // Static game message and hint helpers. Stubbed to satisfy the symbol baseline.
-
-void RegisterWithHintSys(void (*update_fn)(HINT_s *, i32), HINT_s *hints, u32 *save_bits, i32 save_bit_count);
 
 // The hint icon transitions and the touch icon x position are dynamically
 // initialized in this unit's static constructor in the reference.
@@ -175,7 +172,6 @@ u8 show_hatmachine_hint;
 
 static __used__ i32 HatMachine_UpdateHint(HINT_s *hint);
 
-void RegisterWithHintSys(void (*)(HINT_s *, i32), HINT_s *, u32 *, i32);
 i32 id_HINT_LSW_AUTOJUMP = -1;
 i32 id_HINT_LSW_AUTOJUMP_FAIL = -1;
 
@@ -184,9 +180,6 @@ static __used__ void PlayerButton_PlayHint(HINT_s *);
 static __used__ i32 UnlockHubStuff_UpdateHint(HINT_s *hint);
 static __used__ i32 PlayerButton_UpdateHint(HINT_s *hint);
 
-i32 GizForce_UpdateHint(HINT_s *);
-i32 Push_UpdateHints(HINT_s *);
-i32 Shop_UpdateHint(HINT_s *);
 HINT_s Hints_LSW[55] = {
     {{356, 356}, 12, {255, 0, 0}, 0, 6.0f, 2.0f, {NULL}, NULL, {0, 0, 0, 0}, 0.0f},
     {{601, 375}, 0, {255, 0, 0}, 0, 6.0f, 2.0f, {GizForce_UpdateHint}, NULL, {0, 0, 0, 0}, 0.0f},
@@ -477,7 +470,7 @@ static void DrawHint_LSWBody(HINT_s *hint, i32 max_lines) {
 
     const i32 slide_angle = static_cast<i32>(alpha * 16384.0f);
     const f32 wave_x = (icon_x + 1.1f) * NU_SIN_LUT(slide_angle) - 1.1f;
-    if (hintIconPos.duration < 0.0f || hintIconPos.elapsed >= hintIconPos.duration + hintIconPos.delay)
+    if (!(hintIconPos.duration >= 0.0f) || hintIconPos.elapsed >= hintIconPos.duration + hintIconPos.delay)
         hintIconPos.value.x = wave_x;
 
     if ((hint->flags & HINT_DIRECT_DISPLAY) != 0) {
@@ -607,7 +600,8 @@ void MenuDrawHints(MENU_s *menu) {
         const f32 start_x = -1.0f - (1.0f - __builtin_fabsf(icon_x));
         icon_x = start_x + (icon_x - start_x) * NU_SIN_LUT(static_cast<i32>(MenuAlpha * 16384.0f));
     }
-    f32 y = -0.15f - -0.35f * updatehints_current_y[MechInputTouchSystem::s_baseControlMode];
+    const f32 scroll = -0.35f * updatehints_current_y[MechInputTouchSystem::s_baseControlMode];
+    f32 y = -0.15f - scroll;
     const f32 height = 0.15f / GetAspectRatio();
     Text3D(ASCII_UP, 0.85f, 0.15f, 1.0f, 1.2f, 1.2f, 1.2f, 0, red, green, blue);
     menu->item_column[0] = 0;

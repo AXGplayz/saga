@@ -15,6 +15,7 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/misc/utilities.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
@@ -24,8 +25,6 @@
 #include "nu2api/numath/nuvec.h"
 
 #include <string.h>
-
-void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
 static void Signal_SetVisibility(SIGNAL *signal, i32 visible);
 
@@ -184,7 +183,7 @@ static void Signals_Update(void *world_info, void *, float) {
                     f32 along_normal = NuVecDot(&offset, &signal->normal);
                     f32 distance = NuVecMag(&offset);
                     f32 radius = player->apiobj.field_0x1dc + 0.3f;
-                    if (distance * distance - along_normal * along_normal < radius * radius) {
+                    if (__builtin_expect(distance * distance - along_normal * along_normal < radius * radius, 0)) {
                         break;
                     }
                 }
@@ -266,7 +265,7 @@ static void Signals_Reset(void *world_info, void *, void *progress_data) {
         }
         signal->character_letter = signal->suit->group;
         signal->suit_letter = signal->suit->letter;
-        if (signal->character_letter == 'r') {
+        if (__builtin_expect(signal->character_letter == 'r', 0)) {
             signal->animation_0 = 0x3a;
             signal->animation_1 = 0x3b;
             signal->animation_2 = 0x3c;
@@ -317,7 +316,7 @@ static void Signal_SetVisibility(SIGNAL *signal, i32 visible) {
     u8 was_visible = signal->visible;
     signal->visible = visible != 0;
 
-    if (signal->visible) {
+    if (visible) {
         if (!was_visible) {
             signal->platform_id = NewPlatPickupInst(&signal->matrix, 2);
         }
@@ -474,5 +473,3 @@ void Signal_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
         }
     }
 }
-
-void SetTexAnimSignals();

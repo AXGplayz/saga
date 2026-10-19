@@ -357,18 +357,16 @@ i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s 
         if (static_cast<i8>(Player[0]->apiobj.flags_low) < 0)
             first_distance = NuVecDist(&Player[0]->apiobj.position, &shot_position, NULL);
         f32 second_distance = 9999.0f;
-        if (__builtin_expect(static_cast<i8>(Player[1]->apiobj.flags_low) < 0, 1))
+        if (static_cast<i8>(Player[1]->apiobj.flags_low) < 0)
             second_distance = NuVecDist(&Player[1]->apiobj.position, &shot_position, NULL);
 
-        GameObject_s *target;
         if (second_distance > first_distance && first_distance < 60.0f) {
-            target = Player[0];
-        } else if (second_distance < 60.0f) {
-            target = Player[1];
+            NuVecSub(&direction, &Player[0]->apiobj.position, &shot_position);
+        } else if (__builtin_expect(second_distance < 60.0f, 0)) {
+            NuVecSub(&direction, &Player[1]->apiobj.position, &shot_position);
         } else {
             return 0;
         }
-        NuVecSub(&direction, &target->apiobj.position, &shot_position);
     } else {
         minitrooperteam_s *teams = static_cast<minitrooperteam_s *>(world->mini_trooper_teams);
         f32 nearest_distance_squared = 1.0e9f;
@@ -389,7 +387,7 @@ i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s 
             }
         }
 
-        if (nearest_distance_squared >= 1.0e9f || target == NULL)
+        if (!(nearest_distance_squared < 1.0e9f) || target == NULL)
             return 0;
         NuVecSub(&direction, &target->position, &shot_position);
     }
@@ -576,7 +574,7 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
                         const f32 target_z = teams[team_index].origin_z + slot->formation_z;
                         const f32 dx = trooper->shot_position.x - target_x;
                         const f32 dz = trooper->shot_position.z - target_z;
-                        if (dx * dx + dz * dz <= 0.2f * 0.2f) {
+                        if (!(dx * dx + dz * dz > 0.2f * 0.2f)) {
                             trooper->stopped = 1;
                             ++stopped_count;
                         }

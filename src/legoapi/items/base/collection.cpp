@@ -549,7 +549,7 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
             for (COLLECTID *current = CollectList; current != end; ++current) {
                 COLLECTID &source = *current;
                 const i32 id = source.id;
-                if (id < 0) {
+                if (__builtin_expect(id < 0, 0)) {
                     continue;
                 }
                 if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
@@ -694,7 +694,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
     f32 dx = base_dx * scale;
     f32 size = base_size * scale;
     const i32 rows = count % columns != 0 ? count / columns + 1 : count / columns;
-    if (Game_OptionsSave != NULL && __builtin_expect(Game_OptionsSave->field11_0xb != 0, 0)) {
+    if (Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0) {
         dx *= 0.75f;
         size *= 0.875f;
     }
@@ -732,7 +732,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
             i32 id = entry->id;
             *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(entry) + 0x14) = px;
             *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(entry) + 0x18) = py;
-            if (alpha <= 0.0f)
+            if (!(alpha > 0.0f))
                 continue;
             i32 frame = LEGOOBJ_ICON_FRAME_NEUTRAL;
             f32 opacity = 1.0f;
@@ -833,7 +833,8 @@ i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 requ
     i32 result_count = 0;
     for (i32 index = 0; index < collection->count_y; ++index) {
         const i16 id = collection->list[index].id;
-        if ((CDataList[id].model_flags & model_flag_mask) != required_model_flags || Collection_Got(id) == 0) {
+        if (__builtin_expect(
+                (CDataList[id].model_flags & model_flag_mask) != required_model_flags || Collection_Got(id) == 0, 1)) {
             continue;
         }
 

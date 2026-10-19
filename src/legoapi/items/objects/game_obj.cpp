@@ -107,6 +107,9 @@
 #include "legoapi/world/levels/episodeV.h"
 #include "legoapi/world/levels/hub.h"
 #include "nu2api/nusound/nusound3_include.h"
+#include "legoapi/characters/core/characters.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
 
 // Game-object update, hit and part-kill code (retail game_obj.cpp).
 
@@ -125,9 +128,6 @@ extern i16 id_ANAKINJEDI, id_ANAKINJEDISCARRED, id_GAMORREANGUARD, id_MOUSEDROID
     id_WOOKIEE;
 extern i16 id_BUGGY, id_RADIOCAR, id_POLICECAR, id_MOWER;
 extern i32 objhitobj_noattackerrumble, objhitobj_nohurtsfx, objhitobj_noimpactsfx, objhitobj_throwkillpartsup;
-
-void UpdateCoinPacket(COINPACKET_s *, i32, i32);
-void UpdateRumble(RUMBLEPACKET *);
 
 void TiePart_Kill(PART_s *, i32) asm("_ZL12TiePart_KillP6PART_si") __attribute__((visibility("hidden")));
 void TiePart_Move(PART_s *, f32) asm("_ZL12TiePart_MoveP6PART_sf") __attribute__((visibility("hidden")));
@@ -702,7 +702,7 @@ void ManageGameObjects() {
                     i64 mask = static_cast<i32>(1u << (area & 31));
                     if (player == NULL || (player->apiobj.ai_area_mask & mask) == 0 ||
                         Game.difficulty < creature->activation_difficulty) {
-                        if (creature->count > 1 && creature->start_stagger > 0.0f)
+                        if (creature->count > 1 && !(creature->start_stagger <= 0.0f))
                             object->ai_spawn_delay = static_cast<f32>(static_cast<u32>(object->ai.group_member_index)) *
                                                      creature->start_stagger;
                         continue;
@@ -867,7 +867,7 @@ void CollideGameObjects(WORLDINFO_s *world) {
                 for (i32 player_index = 0; player_index < 8; ++player_index) {
                     GameObject_s *player = Player[player_index];
                     if (player == NULL || (player->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player == object ||
-                        !(player->field_0xdc4 > 0.0f) ||
+                        player->field_0xdc4 <= 0.0f ||
                         player->apiobj.supporting_platform_id != object->field_0x107c ||
                         (object->field_0x107c == player->field_0x1078 &&
                          (player->apiobj.field_0x27d != 0 || GameObjectNearFloor(player, 3.0f, NULL) != 0))) {
@@ -1032,7 +1032,7 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
                 if ((api.character_data->model_flags & 0x100) != 0 &&
                     api.character_data->game_character->field_0x28 == 0.0f &&
                     (api.character_data->game_character->flags_090 & 0x100) != 0 && api.field_0x218 != 2000000.0f) {
-                    alignment = api.field_0x1e0 > api.collision_min.y - api.field_0x218;
+                    alignment = !(api.field_0x1e0 <= api.collision_min.y - api.field_0x218);
                 }
             }
         }
@@ -1064,7 +1064,7 @@ void GameObjectRotation(GameObject_s *object, i32 mode) {
         } else if (reflection) {
             api.pitch_angle = object->field_0x1068;
             api.roll_angle = object->field_0x106a;
-        } else if (alignment == 2 || object->surface_normal.y > NuTrigTable[0x3000]) {
+        } else if (alignment == 2 || !(object->surface_normal.y <= NuTrigTable[0x3000])) {
             api.pitch_angle = x;
             api.roll_angle = z;
         } else {
@@ -1428,7 +1428,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         object->field_0x1024 -= FRAMETIME;
         if (object->field_0x1024 < -1.0f)
             SetFlicker(object, 0.0f);
-        if (object->timer_d28 > 0.0f)
+        if (!(object->timer_d28 <= 0.0f))
             object->timer_d28 -= FRAMETIME;
         if (object->timer_d50 > 0.0f)
             object->timer_d50 -= FRAMETIME;
@@ -1509,7 +1509,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 flicker_decay = 0.5f;
         }
         object->field_0x1024 -= flicker_decay * FRAMETIME;
-        if (object->field_0x1024 < -1.0f)
+        if (!(object->field_0x1024 >= -1.0f))
             SetFlicker(object, 0.0f);
         if (object->timer_d28 > 0.0f)
             object->timer_d28 -= FRAMETIME;
@@ -1519,15 +1519,13 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         if ((object->apiobj.field_0x1f4 & 0x40000) != 0) {
             MovePlayer_NETWORK(object);
         } else {
-            if (!object->apiobj.player_controlled) {
-                if (FreePlay != 0) {
-                    Player_ToggleCharacter(object, 0, 0);
-                }
-            } else {
+            if (object->apiobj.player_controlled) {
                 if (object->pad_gamepad->pad != NULL) {
                     UpdateRumble(&object->pad_gamepad->rumble_packet);
                     Player_ToggleCharacter(object, 0, 1);
                 }
+            } else if (FreePlay != 0) {
+                Player_ToggleCharacter(object, 0, 0);
             }
             if (TimingBarSet == 3)
                 TBOPENFN("Move", 3);
@@ -1796,20 +1794,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
     CollideGameObjects(world);
     if (TimingBarSet == 2)
         TBCLOSEFN("Coll", 2);
-    if (do_player_tag == 0) {
-        if (player_tag_timer > 0.0f) {
-            player_tag_timer -= FRAMETIME;
-            if (player_tag_timer < 0.0f || player_tag_to == NULL || player_tag_from == NULL ||
-                (player_tag_to->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player_tag_to->apiobj.field_0x287 != 0 ||
-                (player_tag_to->tag_flags & 2) != 0 || (player_tag_from->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
-                player_tag_from->apiobj.field_0x287 != 0 || (player_tag_from->tag_flags & 2) != 0) {
-                player_tag_to = NULL;
-                player_tag_timer = 0.0f;
-                player_tag_from = NULL;
-                do_player_tag = 0;
-            }
-        }
-    } else {
+    if (do_player_tag != 0) {
         i32 result = 0;
         if (player_tag_to != NULL && player_tag_from != NULL && player_tag_to != player_tag_from &&
             (player_tag_to->apiobj.field_0x1f8 & 0x1001) == 0x1001 && player_tag_to->apiobj.field_0x287 == 0 &&
@@ -1825,6 +1810,17 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             }
         }
         if (result != 2) {
+            player_tag_to = NULL;
+            player_tag_timer = 0.0f;
+            player_tag_from = NULL;
+            do_player_tag = 0;
+        }
+    } else if (player_tag_timer > 0.0f) {
+        player_tag_timer -= FRAMETIME;
+        if (player_tag_timer < 0.0f || player_tag_to == NULL || player_tag_from == NULL ||
+            (player_tag_to->apiobj.field_0x1f8 & 0x1001) != 0x1001 || player_tag_to->apiobj.field_0x287 != 0 ||
+            (player_tag_to->tag_flags & 2) != 0 || (player_tag_from->apiobj.field_0x1f8 & 0x1001) != 0x1001 ||
+            player_tag_from->apiobj.field_0x287 != 0 || (player_tag_from->tag_flags & 2) != 0) {
             player_tag_to = NULL;
             player_tag_timer = 0.0f;
             player_tag_from = NULL;
@@ -2181,7 +2177,6 @@ void KillParts(GameObject_s *object, i32 animation, i32 excluded_layer, i32 mode
     if ((object->apiobj.character_data->flags & 1) != 0 && VehicleArea != 0 &&
         (object->apiobj.character_data->model_flags & 0x2000) != 0 &&
         object->apiobj.character_data->game_character->field_0x28 > 0.0f) {
-        extern nuhspecial_s *CharScene_FindHSpecial(WORLDINFO_s *, i32);
         nuhspecial_s *special = CharScene_FindHSpecial(WORLD, object->id);
         if (special != NULL) {
             NUMTX matrix = object->apiobj.field_0xb8;
@@ -2391,10 +2386,12 @@ i32 KillGameObject(GameObject_s *object, i32 requested_reason, i32) {
     ReleaseLever(object);
     Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
     if (object->apiobj.player_controlled) {
-        while (object->torpedo != NULL && object->torpedo->count != 0) {
-            AddVariableShotDebrisEffect(WORLD->debris_sys->entries[71].effect,
-                                        &object->torpedo->pickup_positions[object->torpedo->count], 30, 0, 0);
-            --object->torpedo->count;
+        if (object->torpedo != NULL) {
+            while (object->torpedo->count != 0) {
+                AddVariableShotDebrisEffect(WORLD->debris_sys->entries[71].effect,
+                                            &object->torpedo->pickup_positions[object->torpedo->count], 30, 0, 0);
+                --object->torpedo->count;
+            }
         }
         if (object->apiobj.field_0x287 == 0 || !object->apiobj.player_controlled ||
             (object->apiobj.character_data->model_flags & 0x2000) == 0 ||
@@ -3083,8 +3080,7 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
     GameObject_s *target = Obj;
     GameObject_s *best = NULL, *previous = NULL;
     f32 nearest_distance = range_squared;
-    i32 count = HIGHGAMEOBJECT;
-    for (i32 i = 0; i < count; ++i, ++target) {
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++target) {
         if (__builtin_expect(target == object || (target->apiobj.flags_high & 0x10) == 0 || target->apiobj.field_0x287 != 0 ||
             (require_drawn != 0 && target->apiobj.model_draw_result == 0) || (target->field_0xf00 & 1) != 0, 1))
             continue;
@@ -3133,7 +3129,6 @@ GameObject_s *TargetGameObject(GameObject_s *object, nuvec_s *position, nuvec_s 
                 }
             }
         }
-        count = HIGHGAMEOBJECT;
     }
     return best != NULL ? best : previous;
 }
