@@ -4,13 +4,25 @@
 
 #include "nu2api/nucore/common.h"
 
-#if defined(__ANDROID__) && defined(__cplusplus)
+// Layout checks hold for the Android target and for the i686 Windows build,
+// which shares its struct layouts. (i686 Linux still differs where structs
+// embed glibc's larger mutex and semaphore types.)
+#if (defined(__ANDROID__) || (defined(_WIN32) && defined(__i386__))) && defined(__cplusplus)
 #define DECOMP_ASSERT(condition, message) static_assert(condition, message)
 #else
 #define DECOMP_ASSERT(condition, message)
 #endif
 
 DECOMP_ASSERT(sizeof(void *) == 4, "Unsupported pointer size");
+
+// Whether alias("name") can target an asm-labelled symbol. Clang cannot on
+// i686 Windows, where symbol names carry a '_' prefix that asm labels lack;
+// that build forwards to the target instead.
+#if defined(_WIN32) && defined(__i386__)
+#define DECOMP_ASM_ALIAS 0
+#else
+#define DECOMP_ASM_ALIAS 1
+#endif
 
 // Define undefined* types from ghidra
 typedef u8 undefined;
