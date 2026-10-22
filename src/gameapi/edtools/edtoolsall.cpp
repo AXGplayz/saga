@@ -238,80 +238,6 @@ inline void EdVectorControl::operator delete(void *memory) {
     theMemoryManager.FreePool(memory, sizeof(EdVectorControl));
 }
 
-void EdClassInterface::ClearLevel(i32) {
-}
-
-void EdClassInterface::DefunctObject(void *) {
-}
-
-void EdClassInterface::ReviveObject(void *) {
-}
-
-void EdClassInterface::SetObjectGuid(void *, i32) {
-}
-
-i32 EdClassInterface::GetObjectGuid(void *) {
-    return 0;
-}
-
-i32 EdClassInterface::GetConstructorData(void *, void *, i32) {
-    return 0;
-}
-
-void EdClassInterface::Construct(void *, void *) {
-}
-
-void EdClassInterface::Process(void *, EdInputContext &) {
-}
-
-void EdClassInterface::Render(void *, i32) {
-}
-
-void EdClassInterface::EnterEditor() {
-}
-
-void EdClassInterface::ExitEditor() {
-}
-
-void EdClassInterface::EnterLevel() {
-}
-
-void EdClassInterface::ExitLevel() {
-}
-
-void EdClassInterface::UpdateLists(MemoryBuffer *, MemoryBuffer *) {
-}
-
-void EdClassInterface::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-}
-
-void EdClassInterface::PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-}
-
-void EdClassInterface::PreSaveInitialisation() {
-}
-
-void EdClassInterface::PostSaveInitialisation() {
-}
-
-void EdClassInterface::SerialiseObject(EdStream &, void *) {
-}
-
-void EdClassInterface::AddMenuItems(eduimenu_s *) {
-}
-
-void EdClassInterface::Import() {
-}
-
-void SplineHelper::Flush() {
-    last_object = NULL;
-    first_object = NULL;
-    object_count = 0;
-}
-
-void KnotHelper::Flush() {
-}
-
 inline EdClassObjectNameControl::~EdClassObjectNameControl() {
 }
 
@@ -562,10 +488,8 @@ static inline void eduiSetFontColourLikely(NUQFNT *font, u32 colour) {
         NuQFntSetColour(font, colour);
 }
 
-static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
-                                                                                int alignment, char *format, ...)
-    __asm__("_ZL14eduiFntPrintExPviiiPcz");
-static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
+static __used__ __attribute__((noclone)) void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format,
+                                                             ...);
 
 static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
                                                                   char *format, ...)
@@ -575,28 +499,6 @@ static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int
                                                                     char *format, ...)
     __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
 
-#if defined(__clang__)
-static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
-    __asm__("eduiFntPrintExFormatted");
-static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...) {
-    char text[1024];
-    va_list arguments;
-    va_start(arguments, format);
-    NuVSPrintf(text, format, arguments);
-    va_end(arguments);
-    eduiFntPrintExGeneric(font, x, y, alignment, const_cast<char *>("%s"), text);
-}
-#else
-static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
-                                                                 char *format, ...) {
-    if (__builtin_constant_p(alignment) && alignment == 16)
-        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
-    else if (__builtin_constant_p(alignment) && alignment == 64)
-        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
-    else
-        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
-}
-#endif
 
 static void eduiFntPrintEx(void *font, float x, float y, int alignment, char *format, ...) {
     va_list arguments;
@@ -1402,7 +1304,7 @@ extern "C" {
 
 }
 
-static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...) {
+static __used__ void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...) {
     if (edui_donotdraw) {
         return;
     }
@@ -1778,11 +1680,11 @@ extern "C" {
         eduiDrawFontSet(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         if (gradient->change_timer && gradient->selected_stage) {
-            eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, "%1.03f",
-                           gradient->selected_stage->time);
+            eduiFntPrintExCentre(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, "%1.03f",
+                                 gradient->selected_stage->time);
             --gradient->change_timer;
         } else
-            eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
+            eduiFntPrintExCentre(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
 
         i32 half_height = height >> 1;
         edui_gradient_node_s *stage = gradient->first_stage;
@@ -1823,13 +1725,13 @@ extern "C" {
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         switch (item->text_alignment) {
         case 16:
-            eduiFntPrintExGeneric(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
+            eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
             break;
         case 32:
-            eduiFntPrintExGeneric(edui_font, (x + width) << 4, (y << 3) + baseline, 32, item->text);
+            eduiFntPrintEx(edui_font, (x + width) << 4, (y << 3) + baseline, 32, item->text);
             break;
         default:
-            eduiFntPrintExGeneric(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, item->text_alignment, item->text);
+            eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, item->text_alignment, item->text);
             break;
         }
         return height;
@@ -1847,8 +1749,8 @@ extern "C" {
         char format[512];
         NuStrCpy(format, item->text);
         NuStrCat(format, slider->format);
-        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format,
-                       static_cast<i32>(slider->value));
+        eduiFntPrintExCentre(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format,
+                             static_cast<i32>(slider->value));
         i32 bottom = (y + height + height - 1) << 3;
         i32 top = (y + height) << 3;
         f32 span = width;
@@ -1898,8 +1800,9 @@ extern "C" {
                      uimtls[ui_bgmtl]);
         eduiDrawFontSet(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (label_y << 3) + baseline, 64, "%1.03f,%1.03f",
-                       picker->uv_x[picker->selected_corner] * 256.0f, picker->uv_y[picker->selected_corner] * 256.0f);
+        eduiFntPrintExCentre(edui_font, (x * 2 + width) << 3, (label_y << 3) + baseline, 64, "%1.03f,%1.03f",
+                             picker->uv_x[picker->selected_corner] * 256.0f,
+                             picker->uv_y[picker->selected_corner] * 256.0f);
         return width + height;
     }
 
@@ -1915,8 +1818,8 @@ extern "C" {
         char format[512];
         NuStrCpy(format, item->text);
         NuStrCat(format, ": %s");
-        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, format,
-                       selector->options[static_cast<i32>(selector->value)]);
+        eduiFntPrintExLeft(edui_font, x << 4, (y << 3) + baseline, 16, format,
+                           selector->options[static_cast<i32>(selector->value)]);
         return height;
     }
 
@@ -1932,7 +1835,7 @@ extern "C" {
         char format[512];
         NuStrCpy(format, item->text);
         NuStrCat(format, number->format);
-        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, format, number->value);
+        eduiFntPrintExLeft(edui_font, x << 4, (y << 3) + baseline, 16, format, number->value);
         return height;
     }
 
@@ -1954,7 +1857,8 @@ extern "C" {
         if (!picker->graph) {
             eduiDrawFontSet(edui_font);
             eduiSetFontColour(edui_font, 0x80000080);
-            eduiFntPrintEx(edui_font, (x + total_width) << 3, (y + total_height) << 2, 64, "Invalid Graph Pointer");
+            eduiFntPrintExCentre(edui_font, (x + total_width) << 3, (y + total_height) << 2, 64,
+                                 "Invalid Graph Pointer");
             return total_height;
         }
         eduiDrawFontSet(edui_font);
@@ -1967,9 +1871,9 @@ extern "C" {
                 u32 colour = 0x80260000;
                 if (tick % label_interval == 0) {
                     eduiDrawFontSet(edui_font);
-                    eduiFntPrintEx(edui_font, static_cast<i32>(plot_x + tick_offset) << 4,
-                                   (plot_bottom << 3) - 48 + static_cast<i32>(NuQFntHeight(edui_font)), 64, "%1.01f",
-                                   static_cast<f32>(tick) * picker->x_scale);
+                    eduiFntPrintExCentre(edui_font, static_cast<i32>(plot_x + tick_offset) << 4,
+                                         (plot_bottom << 3) - 48 + static_cast<i32>(NuQFntHeight(edui_font)), 64,
+                                         "%1.01f", static_cast<f32>(tick) * picker->x_scale);
                     colour = 0x80340000;
                 }
                 i32 line_x = static_cast<i32>(plot_x + tick_offset) << 4;
@@ -1998,7 +1902,8 @@ extern "C" {
         eduiFntPrintEx(edui_font, (plot_x + graph_width) << 4, (y << 3) + static_cast<i32>(NuQFntHeight(edui_font)), 32,
                        picker->x_label);
         eduiFntPrintEx(edui_font, (x + total_width - 3) << 4, (y + total_height) << 3, 32, picker->y_label);
-        eduiFntPrintEx(edui_font, plot_x << 4, (y << 3) + static_cast<i32>(NuQFntHeight(edui_font)), 16, picker->title);
+        eduiFntPrintExLeft(edui_font, plot_x << 4, (y << 3) + static_cast<i32>(NuQFntHeight(edui_font)), 16,
+                           picker->title);
         eduiFntPrintEx(edui_font, (x + 28) << 4, (plot_bottom << 3) - 48 + static_cast<i32>(NuQFntHeight(edui_font)),
                        32, "0.0");
         u32 cursor_colour = selected ? 0x80707070 : 0x80303030;
@@ -2038,10 +1943,10 @@ extern "C" {
             i32 help_y = plot_y << 3;
             help_y += static_cast<i32>(NuQFntHeight(edui_font));
             eduiSetFontColour(edui_font, 0x80808080);
-            eduiFntPrintEx(edui_font, help_x, help_y, 64, "Scaling %c Axis", show_x_scale_help ? 'X' : 'Y');
+            eduiFntPrintExCentre(edui_font, help_x, help_y, 64, "Scaling %c Axis", show_x_scale_help ? 'X' : 'Y');
             help_y += static_cast<i32>(NuQFntHeight(edui_font));
-            eduiFntPrintEx(edui_font, help_x, help_y, 64, "%1.03f",
-                           show_x_scale_help ? picker->graph->x_scale : picker->graph->y_scale);
+            eduiFntPrintExCentre(edui_font, help_x, help_y, 64, "%1.03f",
+                                 show_x_scale_help ? picker->graph->x_scale : picker->graph->y_scale);
             help_y += static_cast<i32>(NuQFntHeight(edui_font));
         }
         i32 label_height = static_cast<i32>(NuQFntHeight(edui_font) * 1.125f) >> 3;
@@ -2055,9 +1960,9 @@ extern "C" {
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         if (picker->selected_point >= 0) {
             i32 point = picker->selected_point;
-            eduiFntPrintEx(edui_font, (x + 2) << 4, label_y + label_baseline, 16, "Point %d = %1.02f, %1.02f", point,
-                           picker->graph->x[point] * picker->graph->x_scale * picker->graph->x_extent,
-                           picker->graph->y[point] * picker->graph->y_scale * picker->graph->y_extent);
+            eduiFntPrintExLeft(edui_font, (x + 2) << 4, label_y + label_baseline, 16, "Point %d = %1.02f, %1.02f",
+                               point, picker->graph->x[point] * picker->graph->x_scale * picker->graph->x_extent,
+                               picker->graph->y[point] * picker->graph->y_scale * picker->graph->y_extent);
         }
         eduiFntPrintEx(edui_font, (x + total_width - 4) << 4, label_y + label_baseline, 32,
                        "Cursor pos = %1.02f, %1.02f",
@@ -2077,8 +1982,8 @@ extern "C" {
             eduiDrawFontSet(edui_font);
             eduiSetFontColour(edui_font, item->colours[item->highlighted]);
             i32 centre = (x * 2 + width) << 3;
-            eduiFntPrintEx(edui_font, centre, (y << 3) + baseline, 64, item->text);
-            eduiFntPrintEx(edui_font, centre, ((y + height) << 3) + baseline, 64, picker->format, picker->name);
+            eduiFntPrintExCentre(edui_font, centre, (y << 3) + baseline, 64, item->text);
+            eduiFntPrintExCentre(edui_font, centre, ((y + height) << 3) + baseline, 64, picker->format, picker->name);
             return height * 2;
         }
         eduiDrawRect(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
@@ -2086,7 +1991,7 @@ extern "C" {
         sprintf(formatted, picker->format, picker->name);
         eduiDrawFontSet(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, "%s %s", item->text, formatted);
+        eduiFntPrintExCentre(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, "%s %s", item->text, formatted);
         return height;
     }
 
@@ -2099,7 +2004,7 @@ extern "C" {
         eduiDrawRect(x << 4, y << 3, width << 4, height << 3, item->colours[2], uimtls[ui_bgmtl]);
         eduiDrawFontSetLikely(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
+        eduiFntPrintExLeft(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
 
         i32 top = (y << 3) + 16;
         i32 left = ((x - height + width - 2) << 4) + 16;
@@ -2157,9 +2062,9 @@ extern "C" {
         eduiDrawRect(x << 4, y << 3, width << 4, height << 4, item->colours[2 + item->highlighted], uimtls[0]);
         eduiDrawFontSet(edui_font);
         eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-        eduiFntPrintEx(edui_font, (x + 64) << 4, (y << 3) + baseline, 64, item->text);
-        eduiFntPrintEx(edui_font, (x + 116) << 4, (y << 3) + baseline, 64, slider->format,
-                       static_cast<i32>(slider->value));
+        eduiFntPrintExCentre(edui_font, (x + 64) << 4, (y << 3) + baseline, 64, item->text);
+        eduiFntPrintExCentre(edui_font, (x + 116) << 4, (y << 3) + baseline, 64, slider->format,
+                             static_cast<i32>(slider->value));
 
         i32 colour = slider->red + (slider->green << 8) + (slider->blue << 16);
         i32 colours[4] = {static_cast<i32>(0xff000000), colour, static_cast<i32>(0xff000000), colour};
@@ -2207,8 +2112,8 @@ extern "C" {
                         eduiSetFontColour(edui_font, item->colours[0]);
                     }
                     letter[0] = textrow[row][column];
-                    eduiFntPrintEx(edui_font, (x + height * column) << 4, ((y + row * height) << 3) + baseline, 16,
-                                   letter);
+                    eduiFntPrintExLeft(edui_font, (x + height * column) << 4, ((y + row * height) << 3) + baseline, 16,
+                                       letter);
                 };
                 draw_key(0);
                 draw_key(1);
@@ -2224,7 +2129,7 @@ extern "C" {
             eduiDrawFontSetLikely(edui_font);
             eduiSetFontColour(edui_font, item->colours[1]);
             i32 value_y = ((y + height * 4) << 3) + baseline;
-            eduiFntPrintEx(edui_font, x << 4, value_y, 16, picker->value);
+            eduiFntPrintExLeft(edui_font, x << 4, value_y, 16, picker->value);
             if (--cursor_flash < 1)
                 cursor_flash = 32;
             if (cursor_flash >= 16 && !edui_donotdraw) {
@@ -2243,9 +2148,9 @@ extern "C" {
             if (picker->keyboard_flags & 2) {
                 eduiDrawFontSet(edui_font);
                 eduiSetFontColour(edui_font, item->colours[0]);
-                eduiFntPrintEx(edui_font, x << 4, ((y + height * 5) << 3) + baseline, 16,
-                               TextPickCopyBuffer[0] ? TextPickCopyBuffer
-                                                     : const_cast<char *>("Copy L2+R2 Paste L1+R1"));
+                eduiFntPrintExLeft(edui_font, x << 4, ((y + height * 5) << 3) + baseline, 16,
+                                   TextPickCopyBuffer[0] ? TextPickCopyBuffer
+                                                         : const_cast<char *>("Copy L2+R2 Paste L1+R1"));
             }
             return total_height;
         } else {
@@ -2256,8 +2161,8 @@ extern "C" {
                 sprintf(formatted, picker->format, picker->value);
                 eduiDrawFontSet(edui_font);
                 eduiSetFontColour(edui_font, item->colours[item->highlighted]);
-                eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, const_cast<char *>("%s %s"), item->text,
-                               formatted);
+                eduiFntPrintExLeft(edui_font, x << 4, (y << 3) + baseline, 16, const_cast<char *>("%s %s"), item->text,
+                                   formatted);
                 return height;
             }
             {
@@ -2267,8 +2172,8 @@ extern "C" {
             eduiDrawFontSetLikely(edui_font);
             eduiSetFontColourLikely(edui_font, item->colours[item->highlighted]);
             i32 centre = (x * 2 + width) << 3;
-            eduiFntPrintEx(edui_font, centre, (y << 3) + baseline, 64, item->text);
-            eduiFntPrintEx(edui_font, centre, ((y + height) << 3) + baseline, 64, picker->format, picker->value);
+            eduiFntPrintExCentre(edui_font, centre, (y << 3) + baseline, 64, item->text);
+            eduiFntPrintExCentre(edui_font, centre, ((y + height) << 3) + baseline, 64, picker->format, picker->value);
             return height * 2;
         }
     }
@@ -2285,7 +2190,7 @@ extern "C" {
         char format[512];
         NuStrCpy(format, item->text);
         NuStrCat(format, slider->format);
-        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format, slider->value);
+        eduiFntPrintExCentre(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format, slider->value);
         if (slider->normalized_value >= 0.0f && slider->normalized_value <= 1.0f) {
             i32 bottom = (y + height + height - 1) << 3;
             i32 top = (y + height) << 3;
@@ -2634,7 +2539,7 @@ extern "C" {
             eduiDrawFontSet(edui_font);
             eduiSetFontColour(edui_font, item->colours[item->highlighted]);
         }
-        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, item->text);
+        eduiFntPrintExCentre(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, item->text);
         f32 red, green, blue;
         if (item->type != 7) {
             red = clipg;

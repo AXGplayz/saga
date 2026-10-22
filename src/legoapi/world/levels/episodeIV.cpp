@@ -98,9 +98,6 @@
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/ai/core/aisysall.h"
 
-void TrenchMove(GameObject_s *) asm("_ZL10TrenchMoveP12GameObject_s") __attribute__((visibility("hidden")));
-void TrenchKilledCallback(GameObject_s *) asm("_ZL20TrenchKilledCallbackP12GameObject_s")
-    __attribute__((visibility("hidden")));
 extern "C" {
     extern i16 id_STORMTROOPER;
     extern i16 id_IMPERIALSHUTTLEPILOT;
@@ -137,51 +134,16 @@ f32 trench_seek_y = 0.5f;
 f32 trench_seek_x = 4.0f;
 f32 LOOPTIME = 1.5f;
 
-__used__ void TrenchMove(GameObject_s *object);
-
-__used__ void TrenchKilledCallback(GameObject_s *object);
-
 extern speedup_s DogFightSpeedList[9];
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
 #endif
 
-static __used__ __attribute__((noclone)) void eduiFntPrintExGeneric(void *font, int x, int y,
-                                                                                int alignment, char *format, ...)
-    __asm__("_ZL14eduiFntPrintExPviiiPcz");
-static __used__ void eduiFntPrintExGeneric(void *font, int x, int y, int alignment, char *format, ...);
-
-static __attribute__((noclone)) void eduiFntPrintExLeft(void *font, int x, int y, int alignment,
-                                                                  char *format, ...)
-    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.67");
-
-static __attribute__((noclone)) void eduiFntPrintExCentre(void *font, int x, int y, int alignment,
-                                                                    char *format, ...)
-    __asm__("_ZL14eduiFntPrintExPviiiPcz.constprop.68");
-
-#if defined(__clang__)
-static void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...)
-    __asm__("eduiFntPrintExFormatted");
-#else
-static inline __attribute__((always_inline)) void eduiFntPrintEx(void *font, int x, int y, int alignment,
-                                                                 char *format, ...) {
-    if (__builtin_constant_p(alignment) && alignment == 16)
-        eduiFntPrintExLeft(font, x, y, alignment, format, __builtin_va_arg_pack());
-    else if (__builtin_constant_p(alignment) && alignment == 64)
-        eduiFntPrintExCentre(font, x, y, alignment, format, __builtin_va_arg_pack());
-    else
-        eduiFntPrintExGeneric(font, x, y, alignment, format, __builtin_va_arg_pack());
-}
-#endif
-
 extern "C" {
 __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
                                                                                    i32 x, i32 y, i32 width, i32);
 }
-
-static void eduiFntPrintExLeft(void *font, int x, int y, int, char *format, ...);
-static void eduiFntPrintExCentre(void *font, int x, int y, int, char *format, ...);
 
 #if defined(__SSE__)
 #include <xmmintrin.h>
@@ -329,7 +291,7 @@ static i32 PartKill_DrawCreature(PART_s *) {
     return false;
 }
 
-__used__ void TrenchKilledCallback(GameObject_s *object) {
+static __used__ void TrenchKilledCallback(GameObject_s *object) {
     for (i32 i = 0; i < 3; ++i) {
         if (trenchrun.objects[i] == object) {
             trenchrun.objects[i] = NULL;
@@ -350,7 +312,7 @@ static void PartKill_EjectedCreature(PART_s *part, i32) {
     }
 }
 
-__used__ void TrenchMove(GameObject_s *object) {
+static __used__ void TrenchMove(GameObject_s *object) {
     APIOBJECT_s &api = object->apiobj;
     api.field_0x214 = api.field_0x218;
     api.start_position = api.position;
