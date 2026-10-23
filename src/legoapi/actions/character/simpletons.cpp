@@ -215,7 +215,7 @@ void InitMiniSnowTroopers(WORLDINFO_s *world, i32 team_count, i32 trooper_count,
 
         trooperteamcount = team_count;
 
-        if (world->mini_trooper_teams == NULL) {
+        if (__builtin_expect(world->mini_trooper_teams == NULL, 0)) {
             world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
             world->mini_trooper_teams = world->giz_buffer.void_ptr;
             world->giz_buffer.void_ptr = static_cast<minitrooperteam_s *>(world->giz_buffer.void_ptr) + team_count;
@@ -374,7 +374,8 @@ i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s 
 
         for (i32 i = 0; i < trooperteamcount; ++i) {
             minitrooperteam_s *candidate = &teams[i];
-            if (i == team_index || (candidate->state_flags & 1) == 0 || team->team_side == candidate->team_side)
+            if (__builtin_expect(
+                    i == team_index || (candidate->state_flags & 1) == 0 || team->team_side == candidate->team_side, 1))
                 continue;
 
             const f32 x = candidate->position.x - team->position.x;
@@ -407,7 +408,7 @@ i32 TrooperShoot(WORLDINFO_s *world, minitrooperteam_s *team, minisnowtrooper_s 
     NuMtxRotateYInline(&matrix, *shot_angle);
 
     BOLT_s *bolt = Bolt_Add(NULL, &shot_position, &matrix, team->bolt_type, 0);
-    if (bolt != NULL)
+    if (__builtin_expect(bolt != NULL, 1))
         Bolt[bolt->index].flags &= ~4;
     return 1;
 }
@@ -455,8 +456,11 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
                 GameObject_s *nearest = player;
                 const f32 player_x = player->apiobj.collision_position.x - teams[team_index].position.x;
                 const f32 player_z = player->apiobj.collision_position.z - teams[team_index].position.z;
-                if (player2 != NULL && player2->apiobj.collision_position.x - teams[team_index].position.x > player_x &&
-                    player2->apiobj.collision_position.z - teams[team_index].position.z > player_z) {
+                if (__builtin_expect(player2 != NULL &&
+                                         player2->apiobj.collision_position.x - teams[team_index].position.x >
+                                             player_x &&
+                                         player2->apiobj.collision_position.z - teams[team_index].position.z > player_z,
+                                     1)) {
                     nearest = player2;
                 }
                 if (__builtin_expect(
@@ -500,7 +504,7 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
                 i32 shot = 0;
                 u8 stopped_count = 0;
                 for (i32 i = 0; i < teams[team_index].trooper_count; ++i, ++trooper) {
-                    if (i == selected && shoot_due != 0)
+                    if (__builtin_expect(i == selected && shoot_due != 0, 1))
                         shot = TrooperShoot(world, &teams[team_index], trooper, &shot_angle, team_index);
 
                     if (trooper->stopped != 0) {
@@ -607,7 +611,8 @@ void UpdateMiniSnowTroopers(WORLDINFO_s *world) {
                     total.x += trooper->shot_position.x;
                     total.z += trooper->shot_position.z;
                 }
-                if (aligned_count == teams[team_index].trooper_count && stopped_count == aligned_count)
+                if (__builtin_expect(aligned_count == teams[team_index].trooper_count && stopped_count == aligned_count,
+                                     1))
                     TrooperTeamSetStateCode(&teams[team_index]);
                 break;
             }

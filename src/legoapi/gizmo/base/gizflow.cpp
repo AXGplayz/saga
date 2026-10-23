@@ -351,7 +351,7 @@ static void xAction(nufpar_s *parser) {
         action->parameters = NULL;
         action->parameter_count = 0;
         action->definition = NULL;
-        if (previous != NULL)
+        if (__builtin_expect(previous != NULL, 1))
             previous->next = action;
         else
             load_flowbox->actions = action;
@@ -618,7 +618,7 @@ static void ProcessFlowBox(GIZFLOW_s *system, FLOWBOX_s *box, u8 frame) {
     box->state_flags_low = (box->state_flags_low & ~1) | 2;
     if (box->type == 0) {
         if (box->state_flags_low & 0x18) {
-            if (box->child_count != 0) {
+            if (__builtin_expect(box->child_count != 0, 0)) {
                 box->state_flags_low |= 0x20;
             } else {
                 FLOWBOXGIZMODATA_s *data = box->data;
@@ -793,7 +793,7 @@ static i32 ProcessConditionFlowBox(GIZFLOW_s *flow, FLOWBOX_s *box, u8) {
             u8 *outputs = box->output_indices;
             for (i32 i = 0; i < box->parent_count; ++i) {
                 FLOWBOX_s *parent = parents[i];
-                if (flowboxtypes[parent->type].check_output(flow, parent, outputs[i]) != 0) {
+                if (__builtin_expect(flowboxtypes[parent->type].check_output(flow, parent, outputs[i]) != 0, 0)) {
                     return 0;
                 }
             }
@@ -994,7 +994,7 @@ void ResetGizFlow(GIZFLOW_s *system, GIZFLOWPROGRESS_s *progress) {
         if (box->type == 1 && box->condition_data[0] == 4) {
             box->loop_parent_count = Loop_CountLoopingInputs(box);
             box->state_flags_high |= 4;
-            if (box->parent_count == box->loop_parent_count) {
+            if (__builtin_expect(box->parent_count == box->loop_parent_count, 1)) {
                 box->state_flags_high |= 8;
                 box->state_flags_low |= 1;
             } else

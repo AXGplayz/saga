@@ -324,7 +324,7 @@ void Players_InitPositions(WORLDINFO *world) {
     // --- hub exit-door lookup ---
     if (HUB_ADATA != NULL && HUB_ADATA == world->area) {
         if (world->level_sub_id != last_area && hub_from_cutsceneplayer == 0) {
-            if (hub_from_superstory != -1) {
+            if (__builtin_expect(hub_from_superstory != -1, 1)) {
                 i32 area =
                     Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
                 void *door = Door_FindByIndex(world, area, -1, NULL);
@@ -408,7 +408,8 @@ void Players_InitPositions(WORLDINFO *world) {
         hub_from_arcade = -1;
         if (hub_from_cutsceneplayer != 0) {
             void *av = CutScenePlayer_Available();
-            if (av != NULL && static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available())->return_door != -1) {
+            if (__builtin_expect(
+                    av != NULL && static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available())->return_door != -1, 1)) {
                 void *door = Door_FindByIndex(
                     world, -1, static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available())->return_door, NULL);
                 HubStartDoor = door;
@@ -741,7 +742,7 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
             }
             right = pad->buttons_held & right_mask;
             left = pad->buttons_held & left_mask;
-            if ((right != 0 && left != 0) || (left | right) == 0) {
+            if (__builtin_expect((right != 0 && left != 0) != 0, 1) || (left | right) == 0) {
                 object->input_toggle_hold_time = TOGGLEHOLDTIME;
                 return;
             }
@@ -790,7 +791,8 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
             if ((CDataList[id].model_flags & 0x2000) == 0 &&
                 !(BonusArea != 0 && (CDataList[id].model_flags & 0x4000000) != 0) &&
                 (i32)GCDataList[id].flags_090 >= 0 &&
-                !(BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 && (GCDataList[id].flags_094[3] & 2) != 0)) {
+                __builtin_expect(
+                    !(BonusArea != 0 && Cheats_CheckFlags(0x100) != 0 && (GCDataList[id].flags_094[3] & 2) != 0), 0)) {
                 goto next_character;
             }
             if (BonusArea != 0) {
@@ -803,8 +805,10 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
                                                                    (GCDataList[id].flags_094[3] & 2) != 0)) {
                     goto next_character;
                 }
-                if (object->apiobj.field_0x27f <= 16 && (TerLayer[(i8)object->apiobj.field_0x27f].flags & 1) != 0 &&
-                    GCDataList[id].field_0x28 <= 0.0f) {
+                if (__builtin_expect(object->apiobj.field_0x27f <= 16 &&
+                                         (TerLayer[(i8)object->apiobj.field_0x27f].flags & 1) != 0 &&
+                                         GCDataList[id].field_0x28 <= 0.0f,
+                                     1)) {
                     goto next_character;
                 }
             }
@@ -829,10 +833,10 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
             GameAudio_PlaySfx(0x32, &object->apiobj.collision_position, 0, 0);
             goto next_character;
         }
-        if (attempts >= apicharsys->loaded_model_count) {
+        if (__builtin_expect(attempts >= apicharsys->loaded_model_count, 0)) {
             return;
         }
-        if ((object->apiobj.flags_low & 0x80) != 0) {
+        if (__builtin_expect((object->apiobj.flags_low & 0x80) != 0, 0)) {
             Hint_SetComplete(LEGOHINT_FREEPLAYTOGGLE);
             if (VehicleArea == 0) {
                 GameCam_Blend(GameCam, 1.0f, 0.0f, 1);
@@ -847,7 +851,7 @@ void Player_ToggleCharacter(GameObject_s *object, i32 direction, i32 sound) {
         if (sound != 0) {
             if (left != 0) {
                 GameAudio_PlaySfx(0x23, &object->apiobj.collision_position, 0, 0);
-            } else if (right != 0) {
+            } else if (__builtin_expect(right != 0, 0)) {
                 GameAudio_PlaySfx(0x24, &object->apiobj.collision_position, 0, 0);
             }
         }

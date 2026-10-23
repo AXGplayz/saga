@@ -3015,7 +3015,7 @@ void EdDrawPolySector(VuVec const &center, float radius, i32 axis, i32 first_ang
     const float negative_radius = -radius;
     do {
         const i32 previous_angle = angle;
-        if (__builtin_expect(remaining > step, 1)) {
+        if (remaining > step) {
             angle += step;
             remaining -= step;
         } else {
@@ -3069,7 +3069,7 @@ void EdDrawPolySector(VuVec const &center, float radius, i32 axis, i32 first_ang
         second.y += center.y;
         second.z += center.z;
         EdDrawPolyTri(center, first, second, colour);
-    } while (remaining > 0);
+    } while (__builtin_expect(remaining > 0, 1));
 }
 
 void EdDrawPolyCylinder(VuMtx const &transform, float half_length, float radius, float end_radius, i32 sides,
@@ -7310,7 +7310,7 @@ void EdRegistry::SerialiseObjects(EdStream &stream, EdRegistry *source_registry)
             if (object_class->interface == NULL)
                 continue;
             if (stream.flags & 0x400000) {
-                if (object_class->flags & 0x400000)
+                if (__builtin_expect(object_class->flags & 0x400000 != 0, 0))
                     continue;
             } else if (object_class->flags & 0x10000000) {
                 continue;
@@ -7325,7 +7325,7 @@ void EdRegistry::SerialiseObjects(EdStream &stream, EdRegistry *source_registry)
             if (stream.flags & 0x400000) {
                 if (object_class->flags & 0x400000)
                     continue;
-            } else if (object_class->flags & 0x10000000) {
+            } else if (__builtin_expect(object_class->flags & 0x10000000 != 0, 1)) {
                 continue;
             }
             stream.BeginBlock("ObjectList");
@@ -7360,7 +7360,7 @@ void EdRegistry::SerialiseObjects(EdStream &stream, EdRegistry *source_registry)
                 } else if (filter_flags & 0x10000000) {
                     continue;
                 }
-                if (group != stream.unknown_10)
+                if (__builtin_expect(group != stream.unknown_10, 0))
                     continue;
                 i32 object_flags = 0;
                 get_attribute(object_class, object, 1, EdType_Int, &object_flags, 0);
@@ -7789,7 +7789,8 @@ void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_c
     const f32 chord_y = end.y - start.y;
     const f32 chord_x = end.x - start.x;
     const f32 chord_z = end.z - start.z;
-    if (!(chord_x * chord_x + chord_y * chord_y + chord_z * chord_z > threshold) || bezier_draw_depth > 15) {
+    if (__builtin_expect(
+            !(chord_x * chord_x + chord_y * chord_y + chord_z * chord_z > threshold) || bezier_draw_depth > 15, 1)) {
         EdDrawLineSegment(start, end, colour);
         return;
     }
@@ -7985,10 +7986,7 @@ void SplineObject::ReverseKnots() {
     knots.count = 0;
     while (old.last != NULL) {
         SplineKnot *knot = old.last;
-        if (knot->next != NULL)
-            knot->next->previous = knot->previous;
-        else
-            old.last = knot->previous;
+        if (!(knot->next != NULL)) old.last = knot->previous; else knot->next->previous = knot->previous;
         if (__builtin_expect(knot->previous != NULL, 1))
             knot->previous->next = knot->next;
         else
@@ -8002,7 +8000,7 @@ void SplineObject::ReverseKnots() {
         if (knots.last != NULL)
             knots.last->next = knot;
         knots.last = knot;
-        if (__builtin_expect(knots.first == NULL, 1))
+        if (__builtin_expect(knots.first == NULL, 0))
             knots.first = knot;
         ++knots.count;
     }
@@ -8184,7 +8182,7 @@ i32 LevelEditor::Load(char *filename, variptr_u *buffer, variptr_u *buffer_end, 
     void *file_data = scratch.position->void_ptr;
     i32 file_size = NuFileLoadBuffer(save_filename, file_data, scratch.remaining);
     if (file_size > 0) {
-        if (static_cast<u32>(file_size) < scratch.end->addr - scratch.position->addr) {
+        if (__builtin_expect(static_cast<u32>(file_size) < scratch.end->addr - scratch.position->addr, 1)) {
             scratch.position->addr += file_size;
             scratch.used += file_size;
             scratch.remaining -= file_size;
@@ -8371,10 +8369,10 @@ void LevelEditor::ProcessEvenWhenPaused(ThingProcessData *data) {
     }
     if (field_0x28 != 0) {
         if (eduiGetCameraEnabled()) {
-            if (edlevel_mouseandkeyboard == 0) {
-                edcamMove(pad);
-            } else {
+            if (edlevel_mouseandkeyboard != 0) {
                 edcamMove(NULL);
+            } else {
+                edcamMove(pad);
             }
             edcamGetPosAng(reinterpret_cast<NUVEC *>(background_colour), &field_0x20, &field_0x24);
         }
@@ -8395,13 +8393,13 @@ void LevelEditor::ProcessEvenWhenPaused(ThingProcessData *data) {
         if (eduiMenuProcess(edLevelActiveMenu, data->t, pad) != 0) {
             input.Clear(3);
         } else if (edLevelActiveMenu != edLevelPinnedMenu) {
-            if (input.GetPress(3) != 0.0f) {
+            if (__builtin_expect(input.GetPress(3) != 0.0f, 0)) {
                 eduiSetCameraEnabled(1);
                 eduiMenuDestroy(edLevelActiveMenu);
                 edLevelActiveMenu = NULL;
                 eduiSetDefaultActiveMenu(NULL);
             }
-            if (input.GetPress(4) != 0.0f) {
+            if (__builtin_expect(input.GetPress(4) != 0.0f, 1)) {
                 eduiMenuDestroy(edLevelActiveMenu);
                 edLevelActiveMenu = NULL;
                 theLevelEditor.CreateMenu();

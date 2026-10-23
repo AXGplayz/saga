@@ -100,7 +100,7 @@ void MenuDrawMissions(MENU_s *menu) {
                 DrawCharIcon(MissionSys->missions[i].find_char, x, -0.725f, 0.0f, size,
                              Game.mission_save.completed[i] >= 1 ? 168 : 167, opacity,
                              (i == hub_mission && menu_flash ? 0.7f : 1.0f) * opacity, 1, NULL);
-            if (opacity == 0.0f)
+            if (__builtin_expect(opacity == 0.0f, 0))
                 size = 0.0f;
         }
         menu->item_x[i] = x;
@@ -113,7 +113,7 @@ void MenuDrawMissions(MENU_s *menu) {
     f32 opacity = MenuPacket.active_player[0] ? 1.0f : DROPINALPHA;
     DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, opacity, opacity, 1, NULL);
     i32 select[2], cancel[2], status[2];
-    if (!(MenuPacket.active_player[0] && MenuPacket.active_player[1])) {
+    if (__builtin_expect(!(MenuPacket.active_player[0] && MenuPacket.active_player[1]), 1)) {
         select[0] = select[1] = tSELECT;
         cancel[0] = cancel[1] = tEXIT;
         status[0] = status[1] = tSELECTING;
@@ -122,14 +122,14 @@ void MenuDrawMissions(MENU_s *menu) {
         select[1] = tSELECT;
         cancel[1] = tEXIT;
         status[1] = tSELECTING;
-        if (MenuPacket.reserved_1[0]) {
-            select[0] = -1;
-            cancel[0] = tCANCEL;
-            status[0] = tSELECTED;
-        } else {
+        if (!(MenuPacket.reserved_1[0])) {
             select[0] = tSELECT;
             cancel[0] = tEXIT;
             status[0] = tSELECTING;
+        } else {
+            select[0] = -1;
+            cancel[0] = tCANCEL;
+            status[0] = tSELECTED;
         }
     }
     DrawPlayerIconPrompts(MenuPacket.active_player[0], select[0], 1.0f, -1, cancel[0], -1, status[0],
@@ -184,16 +184,16 @@ void MenuUpdateMissions(MENU_s *menu) {
                     start = 1;
                     goto collected_input;
                 }
-                if (__builtin_expect(!MenuPacket.reserved_1[0], 1)) {
+                if (!MenuPacket.reserved_1[0]) {
                     MenuPacket.reserved_1[0] = 1;
-                    if (MenuPacket.reserved_1[1]) {
+                    if (__builtin_expect(MenuPacket.reserved_1[1] != 0, 1)) {
                         start = 1;
                         goto collected_input;
                     }
                     GameAudio_PlaySfx(0x30, NULL, 0, 0);
                 }
             } else if (pressed & GAMEPAD_MENUCANCEL) {
-                if (!MenuPacket.active_player[1] || !MenuPacket.reserved_1[0]) {
+                if (__builtin_expect(!MenuPacket.active_player[1] || !MenuPacket.reserved_1[0], 0)) {
                     cancel = 1;
                     goto collected_input;
                 }
@@ -223,7 +223,7 @@ void MenuUpdateMissions(MENU_s *menu) {
                     GameAudio_PlaySfx(0x30, NULL, 0, 0);
                 }
             } else if (pressed & GAMEPAD_MENUCANCEL) {
-                if (!MenuPacket.active_player[0] || !MenuPacket.reserved_1[1]) {
+                if (!MenuPacket.active_player[0] || __builtin_expect(!MenuPacket.reserved_1[1], 0)) {
                     cancel = 1;
                     goto collected_input;
                 }
@@ -233,7 +233,8 @@ void MenuUpdateMissions(MENU_s *menu) {
                 const u32 directions = GamePad[1].unknown_10;
                 if ((directions & GAMEPAD_DLEFT) || (pressed & (GAMEPAD_DLEFT | GAMEPAD_TOGGLELEFT)))
                     left = 1;
-                else if ((directions & GAMEPAD_DRIGHT) || (pressed & (GAMEPAD_DRIGHT | GAMEPAD_TOGGLERIGHT)))
+                else if (__builtin_expect((directions & GAMEPAD_DRIGHT) != 0, 0) ||
+                         (pressed & (GAMEPAD_DRIGHT | GAMEPAD_TOGGLERIGHT)))
                     right = 1;
             }
         }
@@ -242,7 +243,7 @@ void MenuUpdateMissions(MENU_s *menu) {
 collected_input:
     if (menu->input_activity) {
         if (menu->confirm_pressed) {
-            if (hub_mission == menu->selected_column)
+            if (__builtin_expect(hub_mission == menu->selected_column, 1))
                 start = 1;
             else
                 hub_mission = menu->selected_column;
@@ -265,7 +266,7 @@ collected_input:
         GameAudio_PlaySfx(0x30, NULL, 0, 0);
         NextArea_FreePlay = FreePlay = 0;
         NewLData = &LDataList[MissionSys->mission->level];
-    } else if (cancel) {
+    } else if (__builtin_expect(cancel != 0, 0)) {
         GameAudio_PlaySfx(0x31, NULL, 0, 0);
         EndMissionsMenu();
     } else if (left) {

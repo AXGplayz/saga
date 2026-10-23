@@ -1072,7 +1072,7 @@ f32 FindReflectionNoPlatforms(nuvec_s *position) {
 }
 
 f32 BlobShadowFade(NUVEC *position, f32 fade_start, f32 fade_end, f32 alpha) {
-    if (alpha <= 0.0f) {
+    if (__builtin_expect(alpha <= 0.0f, 0)) {
         return 0.0f;
     }
 
@@ -1123,11 +1123,11 @@ void PointAlongSpline(NUGSPLINE *spline, f32 along, NUVEC *position, u16 *angle,
     position->x += (next->x - current->x) * fraction;
     position->y += (next->y - current->y) * fraction;
     position->z += (next->z - current->z) * fraction;
-    if (angle != NULL || pitch != NULL) {
+    if (__builtin_expect(angle != NULL || pitch != NULL, 1)) {
         u16 next_angle, next_pitch;
         SplinePointAngles(spline, index, looping, pitch != NULL ? &next_pitch : NULL,
                           angle != NULL ? &next_angle : NULL);
-        if (angle != NULL)
+        if (__builtin_expect(angle != NULL, 1))
             *angle += (i32)(RotDiff(*angle, next_angle) * fraction);
         if (pitch != NULL)
             *pitch += (i32)(RotDiff(*pitch, next_pitch) * fraction);
@@ -1271,7 +1271,7 @@ f32 XZLinesClosest(nuvec_s *a, nuvec_s *b, nuvec_s *c, nuvec_s *d, f32 *first, f
     NuVecRotateY(&bc, &bc, -angle);
 
     if (NuFsign(ca.x) != NuFsign(da.x)) {
-        if (NuFsign(ac.x) != NuFsign(bc.x)) {
+        if (__builtin_expect(NuFsign(ac.x) != NuFsign(bc.x), 0)) {
             *first = NuFabs(ac.x) / (NuFabs(ac.x) + NuFabs(bc.x));
             *second = NuFabs(ca.x) / (NuFabs(ca.x) + NuFabs(da.x));
             return 0.0f;
@@ -1312,7 +1312,10 @@ f32 XZLinesClosest(nuvec_s *a, nuvec_s *b, nuvec_s *c, nuvec_s *d, f32 *first, f
         *second = 1.0f;
         closest = distance;
     }
-    if (!(ac.z < 0.0f)) {
+    if (ac.z < 0.0f) {
+        distance = NuVecXZDist(c, &ac, NULL);
+        fraction = 0.0f;
+    } else {
         if (ac.z > cd_length) {
             distance = NuVecXZDist(d, &ac, NULL);
             fraction = 1.0f;
@@ -1320,17 +1323,14 @@ f32 XZLinesClosest(nuvec_s *a, nuvec_s *b, nuvec_s *c, nuvec_s *d, f32 *first, f
             fraction = ac.z / cd_length;
             distance = NuFabs(ac.x);
         }
-    } else {
-        distance = NuVecXZDist(c, &ac, NULL);
-        fraction = 0.0f;
     }
     if (distance < closest) {
         *second = fraction;
         *first = 0.0f;
         closest = distance;
     }
-    if (!(bc.z < 0.0f)) {
-        if (bc.z > cd_length) {
+    if (__builtin_expect(!(bc.z < 0.0f), 1)) {
+        if (__builtin_expect(bc.z > cd_length, 0)) {
             distance = NuVecXZDist(d, &bc, NULL);
             fraction = 1.0f;
         } else {
@@ -1341,7 +1341,7 @@ f32 XZLinesClosest(nuvec_s *a, nuvec_s *b, nuvec_s *c, nuvec_s *d, f32 *first, f
         distance = NuVecXZDist(c, &bc, NULL);
         fraction = 0.0f;
     }
-    if (distance < closest) {
+    if (__builtin_expect(distance < closest, 1)) {
         *second = fraction;
         *first = 1.0f;
         closest = distance;

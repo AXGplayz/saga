@@ -291,7 +291,7 @@ void UpdateCables() {
             continue;
         }
         if (target->id != id_ATAT) {
-            if (target->id == id_DRAGBOMB) {
+            if (__builtin_expect(target->id == id_DRAGBOMB, 1)) {
                 target->character_context = 0x34;
                 cable->target->context_animation_timer = 0.0f;
             }
@@ -316,7 +316,44 @@ void UpdateCables() {
             }
             i32 last = cable->wrap_indices[cable->wrap_count - 1];
             NUVEC *last_position = NUMTX_GET_ROW_VEC(&target->joint_matrices[atat_locators[last]], 3);
-            if (!(cable->wrap_count > 1)) {
+            if (cable->wrap_count > 1) {
+                i32 next = (last + 1) & 3;
+                i32 previous = cable->wrap_indices[cable->wrap_count - 2];
+                i32 direction = 1;
+                if (next == previous) {
+                    next = (last + 3) & 3;
+                    direction = -1;
+                }
+                i32 next_locator = atat_locators[next];
+                i32 previous_locator = atat_locators[previous];
+                NuVecSub(&delta, &path[0], last_position);
+                i32 angle = NuAtan2D(delta.x, delta.z);
+                NuVecSub(&delta, NUMTX_GET_ROW_VEC(&target->joint_matrices[next_locator], 3), last_position);
+                i32 next_angle = NuAtan2D(delta.x, delta.z);
+                i32 turn = NuAngSub(next_angle, angle);
+                if (!(cable->wrap_count < 15 && turn * direction > 0)) {
+                    NuVecSub(&delta, last_position, NUMTX_GET_ROW_VEC(&target->joint_matrices[previous_locator], 3));
+                    i32 previous_angle = NuAtan2D(delta.x, delta.z);
+                    if (NuAngSub(previous_angle, angle) * direction < 0) {
+                        // The original clears the slot at the old count, which overlaps point_count at 15.
+                        if (cable->wrap_count == 15)
+                            cable->point_count = 0xff;
+                        else
+                            cable->wrap_indices[cable->wrap_count] = 0xff;
+                        --cable->wrap_count;
+                    }
+                } else {
+                    cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
+                    if (__builtin_expect(cable->wrap_count == 15, 1)) {
+                        if (WORLD->current_level == HOTHBATTLED_LDATA)
+                            DeactivatePlayer(cable->target, 60.0f, NULL);
+                        else
+                            DeactivatePlayer(cable->target, 30.0f, NULL);
+                        PlaySfx("AT_AT_FALL", &cable->target->apiobj.collision_position);
+                        lost_target = true;
+                    }
+                }
+            } else {
                 f32 along0, along1;
                 i32 next = (last + 1) & 3;
                 i32 previous = (last + 3) & 3;
@@ -335,49 +372,14 @@ void UpdateCables() {
                         cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(previous);
                     }
                 }
-            } else {
-                i32 next = (last + 1) & 3;
-                i32 previous = cable->wrap_indices[cable->wrap_count - 2];
-                i32 direction = 1;
-                if (next == previous) {
-                    next = (last + 3) & 3;
-                    direction = -1;
-                }
-                i32 next_locator = atat_locators[next];
-                i32 previous_locator = atat_locators[previous];
-                NuVecSub(&delta, &path[0], last_position);
-                i32 angle = NuAtan2D(delta.x, delta.z);
-                NuVecSub(&delta, NUMTX_GET_ROW_VEC(&target->joint_matrices[next_locator], 3), last_position);
-                i32 next_angle = NuAtan2D(delta.x, delta.z);
-                i32 turn = NuAngSub(next_angle, angle);
-                if (cable->wrap_count < 15 && turn * direction > 0) {
-                    cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
-                    if (cable->wrap_count == 15) {
-                        DeactivatePlayer(cable->target, WORLD->current_level == HOTHBATTLED_LDATA ? 60.0f : 30.0f,
-                                         NULL);
-                        PlaySfx("AT_AT_FALL", &cable->target->apiobj.collision_position);
-                        lost_target = true;
-                    }
-                } else {
-                    NuVecSub(&delta, last_position, NUMTX_GET_ROW_VEC(&target->joint_matrices[previous_locator], 3));
-                    i32 previous_angle = NuAtan2D(delta.x, delta.z);
-                    if (NuAngSub(previous_angle, angle) * direction < 0) {
-                        // The original clears the slot at the old count, which overlaps point_count at 15.
-                        if (cable->wrap_count == 15)
-                            cable->point_count = 0xff;
-                        else
-                            cable->wrap_indices[cable->wrap_count] = 0xff;
-                        --cable->wrap_count;
-                    }
-                }
             }
         }
         i32 path_count;
-        if (cable->wrap_count != 0) {
+        if (__builtin_expect(cable->wrap_count != 0, 1)) {
             path_count = 1;
             for (i32 i = cable->wrap_count - 1; i >= 0; --i) {
                 i32 index = cable->wrap_indices[i];
-                if (cable->target->apiobj.character_model->points_of_interest[index]) {
+                if (__builtin_expect(cable->target->apiobj.character_model->points_of_interest[index] != 0, 1)) {
                     path[path_count++] = *NUMTX_GET_ROW_VEC(&cable->target->joint_matrices[atat_locators[index]], 3);
                 }
             }
@@ -390,49 +392,52 @@ void UpdateCables() {
             ReleaseCable(cable, 0);
             continue;
         }
-        if ((cable->source->apiobj.character_data->game_character->flags_090 & 0x400) == 0) {
+        if (__builtin_expect((cable->source->apiobj.character_data->game_character->flags_090 & 0x400) == 0, 0)) {
             target = cable->target;
             ReleaseCable(cable, 0);
             continue;
         }
         f32 distance_sq = NuVecDistSqr(&path[0], &path[1], &delta);
-        if (GameRayCast(&path[1], &delta, 0.0f, TERRAINMASK_NONDROID | 0x1f)) {
+        if (__builtin_expect(GameRayCast(&path[1], &delta, 0.0f, TERRAINMASK_NONDROID | 0x1f) != 0, 0)) {
             target = cable->target;
             ReleaseCable(cable, 1);
             continue;
         }
+        NUVEC target_impulse;
         i32 obstruction = 0;
         for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
             GameObject_s *object = &Obj[i];
             if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
-                (object->field_0xe20 & 0x20) || object->apiobj.player_controlled)
+                __builtin_expect((object->field_0xe20 & 0x20) != 0, 1) ||
+                __builtin_expect(object->apiobj.player_controlled != 0, 1))
                 continue;
-            if (WORLD->area != NULL && WORLD->area == HOTHBATTLE_ADATA && object->id != id_ATAT &&
-                object->id != id_DRAGBOMB && object->id != id_ATST && object->id != id_ATST_LOWRES)
+            if (__builtin_expect(WORLD->area != NULL, 0) && __builtin_expect(WORLD->area == HOTHBATTLE_ADATA, 0) &&
+                object->id != id_ATAT && object->id != id_DRAGBOMB && object->id != id_ATST &&
+                object->id != id_ATST_LOWRES)
                 continue;
             if (object->cable != NULL &&
                 (object->cable->target == cable->target || object->cable->target == cable->source))
                 continue;
-            if (!(object == cable->source || object == cable->target)) {
+            if (__builtin_expect(!(object == cable->source || object == cable->target), 1)) {
 
                 f32 line_distance =
                     NuLineToPointDistSqrEx(&path[0], &path[1], &object->apiobj.collision_position, &closest);
                 f32 radius = object->apiobj.field_0x1dc;
                 f32 half_height = object->apiobj.field_0x1e0;
                 f32 combined = radius + half_height;
-                if (combined * combined > line_distance &&
+                if (__builtin_expect(combined * combined > line_distance, 1) &&
                     object->apiobj.collision_position.y + half_height > closest.y &&
                     closest.y > object->apiobj.collision_position.y - half_height) {
-                    f32 dz = object->apiobj.collision_position.z - closest.z;
-                    f32 dx = object->apiobj.collision_position.x - closest.x;
-                    if (radius * radius > dx * dx + dz * dz) {
+                    target_impulse.x = object->apiobj.collision_position.x - closest.x;
+                    target_impulse.z = object->apiobj.collision_position.z - closest.z;
+                    if (radius * radius > target_impulse.x * target_impulse.x + target_impulse.z * target_impulse.z) {
                         obstruction = 1;
                         break;
                     }
                 }
             }
         }
-        if (obstruction) {
+        if (__builtin_expect(obstruction != 0, 0)) {
             target = cable->target;
             ReleaseCable(cable, 1);
             continue;
@@ -442,8 +447,10 @@ void UpdateCables() {
             if (target->id != id_ATAT) {
                 target->field_0xf01 |= 2;
                 AIScriptSetBaseScriptStateByName(&cable->target->ai.script_process, "BeingTowed");
-                cable->target->ai.opponent = cable->source;
-                FaceOpponent(cable->target, &cable->source->apiobj.collision_position);
+                GameObject_s *towed = cable->target;
+                GameObject_s *owner = cable->source;
+                towed->ai.opponent = owner;
+                FaceOpponent(towed, &owner->apiobj.collision_position);
                 target = cable->target;
                 if ((target->field_0xefd & 0x80) && !(CInfo[static_cast<i8>(target->character_context)].flags & 1))
                     target->apiobj.movement_facing_angle += 0x8000;
@@ -454,7 +461,7 @@ void UpdateCables() {
                 f32 maximum_sq = max_cable_length * max_cable_length;
                 f32 strength = distance_sq > maximum_sq ? distance_sq / maximum_sq : 1.0f;
                 NuVecScale(&delta, &delta, FRAMETIME);
-                NUVEC target_impulse, source_impulse;
+                NUVEC source_impulse;
                 NuVecScale(&target_impulse, &delta, strength * targetmomf);
                 NuVecScale(&source_impulse, &delta, strength * ownermomf);
                 if (cable->max_length == 1000000000.0f && cable->target->id != id_ATAT) {
@@ -509,7 +516,7 @@ void UpdateCables() {
             cable->max_length = remaining;
             for (i32 i = 0; i < path_count - 1; ++i) {
                 f32 length = NuVecDist(&path[i + 1], &path[i], &delta);
-                if (remaining < length) {
+                if (__builtin_expect(!(remaining >= length), 0)) {
                     cable->segment_lengths[i] = remaining;
                     cable->total_length += remaining;
                     f32 scale = NuFdiv(remaining, length);
@@ -673,7 +680,7 @@ GameObject_s *CableTargetGameObject(GameObject_s *source, nuvec_s *position, f32
         if ((CInfo[context].flags & 0x8000) != 0 || context == 0x17) {
             continue;
         }
-        if (!(context == 0x3b || context == 0x41 || context == 0x3d)) {
+        if (__builtin_expect(!(context == 0x3b || context == 0x41 || context == 0x3d), 0)) {
             if (candidate->id != id_DRAGBOMB && candidate->id != id_ATAT && candidate->id != id_ATST &&
                 candidate->id != id_ATST_LOWRES) {
                 continue;
@@ -692,7 +699,7 @@ GameObject_s *CableTargetGameObject(GameObject_s *source, nuvec_s *position, f32
             } else if (candidate->id == id_ATAT) {
                 distance *= 0.9f;
             }
-            if (!(distance < radius_squared)) {
+            if (__builtin_expect(!(distance < radius_squared), 0)) {
                 continue;
             }
             if (distance < nearest_distance) {

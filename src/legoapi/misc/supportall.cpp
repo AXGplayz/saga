@@ -80,19 +80,19 @@ void CloakMovement(GameObject_s *object) {
     f32 high_weight;
     if (LEGOACT_FALL != -1) {
         i16 animation;
-        if (object->apiobj.anim_packet.blending == 0) {
+        if (__builtin_expect(object->apiobj.anim_packet.blending == 0, 0)) {
             animation = object->apiobj.anim_packet.animation_index;
         } else {
             animation = object->apiobj.anim_packet.blend_animation_b;
         }
         if (animation == LEGOACT_FALL) {
             phase = FRAMETIME + FRAMETIME + phase;
-            if (phase <= 1.0f) {
-                high_weight = phase * phase;
-                low_weight = 1.0f - high_weight;
-            } else {
+            if (phase > 1.0f) {
                 high_weight = 1.0f;
                 low_weight = 0.0f;
+            } else {
+                high_weight = phase * phase;
+                low_weight = 1.0f - high_weight;
             }
             goto apply_weights;
         }
@@ -400,7 +400,7 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
     } else {
         for (i32 i = 0; i < this->count; ++i) {
             if (this->things[i] != NULL && (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED) == 0) {
-                if (__builtin_expect(this->things[i]->profiling_0xc != 0, 0)) {
+                if (__builtin_expect(this->things[i]->profiling_0xc != 0, 1)) {
                     _NuTimeBarSlotBegin(this->timebar, 0, name);
                 }
                 this->things[i]->ProcessOnlyWhenPaused(data);

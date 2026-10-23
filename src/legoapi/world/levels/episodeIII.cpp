@@ -554,7 +554,7 @@ void CruiserDUpdate(WORLDINFO_s *) {
         }
     }
 
-    if (CruiserD_LiftAnim->playing)
+    if (__builtin_expect(CruiserD_LiftAnim->playing != 0, 0))
         PlaySfx("Cru_HugeWallMoveLp", NuSpecialGetDrawPos(&CruiserD_Lift));
 
     CruiserD_frame = CruiserD_LiftAnim->ltime;
@@ -749,14 +749,14 @@ i32 Action_BoulderSection(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKE
     if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
         return 1;
     GameObject_s *object = packet->owner->apiobj.objptr;
-    if (first_time != 0) {
+    if (__builtin_expect(first_time != 0, 1)) {
         processor->action_data_4 = 1.0f;
         processor->action_data_5 = 1.0f;
         for (i32 index = 0; index < param_count; ++index) {
             char *value = NuStrIStr(params[index], "boulder_range=");
             if (value != NULL) {
                 processor->action_data_4 = AIParamToFloat(&packet->script_process, value + 14);
-            } else if ((value = NuStrIStr(params[index], "attack_time=")) != NULL) {
+            } else if (__builtin_expect((value = NuStrIStr(params[index], "attack_time=")) != NULL, 1)) {
                 processor->action_data_5 = AIParamToFloat(&packet->script_process, value + 12);
             } else {
                 packet->movement_instruction_parameter = AIParamToFloat(processor, params[index]);
@@ -765,7 +765,7 @@ i32 Action_BoulderSection(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKE
     }
     const bool can_attack = FreePlay == 0 || CharCategory_IsCategory(object, 0) != 0 ||
                             CharCategory_IsCategory(object, 1) != 0 || CharCategory_IsCategory(object, 8) != 0;
-    if (!can_attack) {
+    if (__builtin_expect(!can_attack, 0)) {
         processor->action_timer -= FRAMETIME;
         if (!(processor->action_timer >= 0.0f)) {
             processor->action_timer = 0.5f;
@@ -785,12 +785,12 @@ i32 Action_BoulderSection(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKE
     }
     if (boulder_part[1] != NULL) {
         const f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &boulder_part[1]->position, &difference);
-        if (distance < nearest_distance)
+        if (__builtin_expect(distance < nearest_distance, 1))
             nearest = boulder_part[1];
     }
     // The retail third probe reads padding past this two-entry array. Do not
     // reproduce that out-of-bounds access or enlarge the recovered global.
-    if (nearest != NULL) {
+    if (__builtin_expect(nearest != NULL, 0)) {
         packet->movement_look_target = &nearest->position;
         if (can_attack)
             object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
@@ -877,7 +877,7 @@ void VaderA_Update(WORLDINFO_s *) {
     if (vader_a.timer_message != NULL)
         vader_a.timer_message->value += FRAMETIME;
 
-    if (netclient == 0) {
+    if (__builtin_expect(netclient == 0, 1)) {
         if (vader_a.collapse_started != 0) {
             vader_a.collapse_started = 0;
             if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 1) != 0)
@@ -921,7 +921,7 @@ void VaderA_Update(WORLDINFO_s *) {
             if (time_limits[static_cast<i16>(vader_a.count)] > vader_a.timer) {
                 if (vader_a.count == 1) {
                     SetGizAIMessage(gizaimessagesys, "ceiling_collapse", 2.0f, vader_a.ceiling_collapse_message);
-                } else if (vader_a.count == 2) {
+                } else if (__builtin_expect(vader_a.count == 2, 1)) {
                     SetGizAIMessage(gizaimessagesys, "ceiling_collapse", 3.0f, vader_a.ceiling_collapse_message);
                     vader_a.timer = 2.0f;
                     NuCameraGetMtx();
@@ -1040,10 +1040,12 @@ void VaderC_Update(WORLDINFO_s *world) {
                 progress |= 1;
                 vader_c.field_0x94 = progress;
             }
-            if (Player[1] != NULL && vader_c.platform_ids[i] != -1 && Player[1]->apiobj.field_0x27d != 0 &&
-                Player[1]->apiobj.supporting_platform_id == vader_c.platform_ids[i] &&
-                Player[1]->apiobj.position.y >=
-                    static_cast<NUMTX *>(CurTerr->platforms[vader_c.platform_ids[i]].scene_object)->m31) {
+            if (__builtin_expect(
+                    Player[1] != NULL && vader_c.platform_ids[i] != -1 && Player[1]->apiobj.field_0x27d != 0 &&
+                        Player[1]->apiobj.supporting_platform_id == vader_c.platform_ids[i] &&
+                        Player[1]->apiobj.position.y >=
+                            static_cast<NUMTX *>(CurTerr->platforms[vader_c.platform_ids[i]].scene_object)->m31,
+                    1)) {
                 progress |= 2;
                 vader_c.field_0x94 = progress;
             }

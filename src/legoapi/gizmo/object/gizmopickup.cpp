@@ -1143,22 +1143,22 @@ void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject
                 ++counts[type];
                 coins = remaining;
             }
-        } else if (coins > 0) {
+        } else if (__builtin_expect(coins > 0, 1)) {
             for (i32 i = 3; coins > 0; --i) {
                 i32 type = CoinTab[i];
-                while (coins - GizmoPickupType[type].score >= 0) {
+                while (__builtin_expect(coins - GizmoPickupType[type].score >= 0, 1)) {
                     coins -= GizmoPickupType[type].score;
                     ++counts[type];
                 }
             }
         }
-        if (static_cast<u32>(player) > 1)
+        if (__builtin_expect(static_cast<u32>(player) > 1, 1))
             player = -1;
         NUVEC target;
         target.x = player == 1 ? PANEL_COINX : -PANEL_COINX;
         i32 main_total = CoinsGoToMainTotal() != 0;
         f32 target_scale;
-        if (main_total) {
+        if (__builtin_expect(main_total != 0, 0)) {
             target.y = STATSPOSY;
             target_scale = COINTOTAL_COINSIZE;
         } else {
@@ -1176,7 +1176,7 @@ void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject
                 i32 model = base_model;
                 if (type->random_model_count != 0)
                     model += qrand() / (65535 / type->random_model_count + 1);
-                if (world->lev_objs[model].active == 0 || player == -1)
+                if (world->lev_objs[model].active == 0 || __builtin_expect(player == -1, 0))
                     continue;
                 ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
                 message.position = position;
@@ -1375,7 +1375,8 @@ i32 IsACoinType(i32 type) {
 i32 LoseCoins(GameObject_s *object, i32 cause) {
     if (Player_HasInvincibility(object) != 0 ||
         (object->apiobj.character_data->game_character->flags_090 & 0x8000) != 0 || object->coinpacket == NULL ||
-        (Arcade != 0 && (Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].field8_0x8 & 8) != 0)) {
+        __builtin_expect(
+            (Arcade != 0 && (Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].field8_0x8 & 8) != 0) != 0, 1)) {
         return 0;
     }
     u32 lost = 0;
@@ -1391,7 +1392,7 @@ i32 LoseCoins(GameObject_s *object, i32 cause) {
         } else if (adjustment == -1) {
             lost >>= 1;
         }
-        if (lost > object->coinpacket->coins) {
+        if (__builtin_expect(lost > object->coinpacket->coins, 0)) {
             lost = object->coinpacket->coins;
             object->coinpacket->coins = 0;
         } else if (lost != 0) {
@@ -1421,10 +1422,10 @@ void GizmoPickups_SetOnOff() {
             GizmoPickupType[index].field_0x0f = 1;
         } else if (index == 4 && SuperStory != 0) {
             GizmoPickupType[index].field_0x0f = 1;
-        } else if (index == 9 && world->area != NULL && (world->area->flags & 0x100) != 0) {
-            GizmoPickupType[index].field_0x0f = 1;
-        } else {
+        } else if (!(index == 9 && world->area != NULL && (world->area->flags & 0x100) != 0)) {
             GizmoPickupType[index].field_0x0f = (arcade_flags & 0x20) != 0 && index != 9 && index != 5;
+        } else {
+            GizmoPickupType[index].field_0x0f = 1;
         }
     }
 }

@@ -342,7 +342,7 @@ i32 ItemMenu(MENU_s *menu) {
     i32 cancel = 0;
     if (menu->confirm_pressed != 0 && menu->selected_row == 0) {
         candidate = static_cast<i32>(menu->selected_column) + 1;
-        if (candidate == entry_picked) {
+        if (__builtin_expect(candidate == entry_picked, 0)) {
             input.value[8] = 1;
         }
     }
@@ -370,7 +370,7 @@ i32 ItemMenu(MENU_s *menu) {
             if (picked == 0) {
                 picked = 1;
                 candidate = entry_picked;
-            } else if (picked == 5) {
+            } else if (__builtin_expect(picked == 5, 1)) {
                 picked = SHOPGOLDBRICKS != 0 ? 4 : 3;
                 candidate = entry_picked;
             } else
@@ -431,7 +431,7 @@ i32 ItemMenu(MENU_s *menu) {
         f32 old_factor = 1.0f - ShopSinePhase(1.0f - reverse_phase);
         f32 forward_factor = 1.0f - ShopSinePhase(reverse_phase);
 
-        if (lastitem != -1) {
+        if (__builtin_expect(lastitem != -1, 1)) {
             old_factor = ShopClamp01(old_factor);
             topscale[lastitem] = TopBigScale[lastitem] + (TopShelfScale[lastitem] - TopBigScale[lastitem]) * old_factor;
             forward_factor = ShopClamp01(forward_factor);
@@ -447,7 +447,7 @@ i32 ItemMenu(MENU_s *menu) {
     }
 
     if (SubMenu == 0) {
-        if (ExitMenu && slidetimer < 0.0f) {
+        if (ExitMenu && __builtin_expect(slidetimer < 0.0f, 0)) {
             menuptr = nullptr;
             return 5;
         }
@@ -459,7 +459,7 @@ i32 ItemMenu(MENU_s *menu) {
 
     picked = lastitem;
     SubMenu = 0;
-    if (TopShelf[lastitem].type == 3) {
+    if (__builtin_expect(TopShelf[lastitem].type == 3, 0)) {
         lastitem = -1;
         easesubin = 1;
         inoutscale = 0.0f;
@@ -612,7 +612,7 @@ i32 CodeMenu(MENU_s *) {
         if (right) {
             lastitem = col;
             ++col;
-            if (col > 5)
+            if (__builtin_expect(col > 5, 1))
                 col = 5;
             codevalid = 0;
             if (!usercode[col])
@@ -776,10 +776,10 @@ void DrawSubItemMenu2D() {
             const i32 id = static_cast<u16>(items[ids[3]].item_id);
             NuStrCpy(subtitle, TTab[Cheat[id].text_id ? *Cheat[id].text_id : tUNKNOWN]);
             name = subtitle;
-            i8 area = static_cast<i8>(Cheat[id].area);
             if (items[ids[3]].unlocked == 1)
                 show_name = 1;
-            else if (id <= 7 || area == -1 || Game.area_save[area].red_brick_collected)
+            else if (id <= 7 || static_cast<i8>(Cheat[id].area) == -1 ||
+                     Game.area_save[static_cast<i8>(Cheat[id].area)].red_brick_collected)
                 buyable = show_name = 1;
             else {
                 sprintf(title, "%s %i", TTab[tPOWERBRICK], id - 7);
@@ -869,7 +869,7 @@ void DrawSubItemMenu2D() {
                 if (since_touch > 4.0f) {
                     i32 angle = static_cast<i32>(NuFmod(since_touch, 4.0f) * 0.25f * 65536.0f);
                     f32 value = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
-                    if (value >= 0.0f)
+                    if (!(value < 0.0f))
                         pulse = value + 1.0f;
                 }
             }
@@ -1141,19 +1141,21 @@ void InitShop(WORLDINFO_s *world) {
     SHOPCHARCOUNT = 0;
     i32 code_count = 0;
     for (i32 i = 0; i < ShopCollection.count_y && i < 100; ++i) {
-        shopitem_s *item = &CharItems[SHOPCHARCOUNT];
         COLLECTID *collect = &ShopCollection.list[i];
-        item->unlocked = 0;
+        if (collect == NULL)
+            continue;
+        const i16 character_id = collect->id;
+        CharItems[SHOPCHARCOUNT].unlocked = 0;
+        shopitem_s *item = &CharItems[SHOPCHARCOUNT];
         item->type = 1;
 
-        if (((static_cast<u64>(Game.shop_character_purchased_bits[SHOPCHARCOUNT >> 5]) >> (SHOPCHARCOUNT & 0x1f)) &
-             1) != 0) {
+        if (((static_cast<u64>(Game.shop_character_purchased_bits[SHOPCHARCOUNT / 32]) >> (SHOPCHARCOUNT % 32)) & 1) !=
+            0) {
             item->unlocked = 1;
         }
 
-        const i32 character_id = collect->id;
         if (CDataList[character_id].name_id == -1) {
-            NuStrCpy(item->name, CDataList[character_id].dir);
+            NuStrCpy(item->name, CDataList[character_id].file);
         } else {
             NuStrCpy(item->name, TTab[CDataList[character_id].name_id]);
         }
@@ -1215,11 +1217,9 @@ void InitShop(WORLDINFO_s *world) {
     shopcampos = shopcamspline != NULL ? shopcamspline->pts : NULL;
     LoadShelfSplines();
 
-    if (SHOPCHARCOUNT > 0) {
-        for (i32 i = 0; i < 7; ++i) {
-            CharShelfIds[i] = (SHOPCHARCOUNT + i - 3) % SHOPCHARCOUNT;
-            CharCurPos[i] = SubShelfPos[i];
-        }
+    for (i32 i = 0; i < 7; ++i) {
+        CharShelfIds[i] = (SHOPCHARCOUNT + i - 3) % SHOPCHARCOUNT;
+        CharCurPos[i] = SubShelfPos[i];
     }
     if (SHOPHINTCOUNT > 0) {
         for (i32 i = 0; i < 7; ++i) {
@@ -1234,31 +1234,29 @@ void InitShop(WORLDINFO_s *world) {
         }
     }
 
-    const i32 brick_shelf_ids[7] = {11, 12, 13, 0, 1, 2, 3};
-    for (i32 i = 0; i < 7; ++i) {
-        BrickShelfIds[i] = brick_shelf_ids[i];
-        BrickCurPos[i] = SubShelfPos[i];
-    }
-
     for (i32 i = 0; i < SHOPGOLDBRICKS; ++i) {
         shopitem_s *item = &BrickItems[i];
         item->item_id = i;
         item->type = 4;
         item->price = 10000 + i * 5000;
+        item->special = TopShelf[4].special;
         item->unlocked = SAVE_OFF;
         if ((static_cast<u64>((&Game.shop_gold_brick_purchased_bits)[i >> 5]) >> (i & 31)) & 1)
             item->unlocked = SAVE_ON;
-        item->special = TopShelf[4].special;
+    }
+
+    for (i32 i = 0; i < 7; ++i) {
+        BrickShelfIds[i] = (14 + i - 3) % 14;
+        BrickCurPos[i] = SubShelfPos[i];
     }
 
     SHOPCUTCOUNT = CutScenePlayCount;
     for (i32 i = 0; i < CutScenePlayCount && i < 128; ++i) {
-        shopitem_s *item = &CutItems[i];
-        item->item_id = i;
-        item->type = 5;
-        item->price = 0;
-        item->unlocked = 0;
-        item->special = TopShelf[5].special;
+        CutItems[i].type = 5;
+        CutItems[i].item_id = i;
+        CutItems[i].price = 0;
+        CutItems[i].unlocked = 0;
+        CutItems[i].special = TopShelf[5].special;
     }
 
     if (shop_from_cutsceneplayer == 0 && CutScenePlayCount > 0) {
@@ -1269,29 +1267,32 @@ void InitShop(WORLDINFO_s *world) {
     }
 
     const f32 shelf_scale[6] = {0.9f, 0.28f, 0.9f, 0.95f, 0.8f, 0.9f};
+    memcpy(TopShelfScale, shelf_scale, sizeof(TopShelfScale));
+    for (i32 i = 0; i < 6; ++i)
+        topscale[i] = TopShelfScale[i];
+    picked = oldpicked;
+    subpicked = 0;
+    scalenorm = 1.0f;
+    scalepicked = 1.4f;
+    scale2 = scalenorm;
+    scale3 = scalepicked;
+    scale4 = scalenorm;
+    const f32 big_scale[6] = {0.9f * 1.6f, 0.28f * 1.6f, 0.9f * 1.6f, 0.95f * 1.65f, 1.35f, 0.9f * 1.6f};
+    memcpy(TopBigScale, big_scale, sizeof(TopBigScale));
     const f32 shelf_push[6] = {0.045f, 0.045f, 0.045f, 0.05f, 0.015f, 0.045f};
     const f32 current_push[6] = {0.0f, 0.0f, -0.005f, 0.0f, -0.01f, 0.0f};
-    memcpy(TopShelfScale, shelf_scale, sizeof(TopShelfScale));
-    memcpy(topscale, shelf_scale, sizeof(topscale));
     memcpy(TopShelfPush, shelf_push, sizeof(TopShelfPush));
     memcpy(TopBigPush, current_push, sizeof(TopBigPush));
-    memcpy(toppush, current_push, sizeof(toppush));
-    const f32 big_scale[6] = {1.44f, 0.448f, 1.44f, 1.5675f, 1.35f, 1.44f};
-    memcpy(TopBigScale, big_scale, sizeof(TopBigScale));
+    for (i32 i = 0; i < 6; ++i)
+        toppush[i] = TopBigPush[i];
     SubBigCharPush = 0.05f;
     SubNormCharPush = 0.02f;
     subpush[0] = subpush[2] = SubNormCharPush;
     subpush[1] = SubBigCharPush;
     for (i32 i = 0; i < 6; ++i) {
-        codebigscale[i] = 1.254f;
+        codebigscale[i] = 0.95f * 1.32f;
         codeshelfscale[i] = codemenuscale[i] = 0.76f;
     }
-    picked = oldpicked;
-    subpicked = 0;
-    scalenorm = 1.0f;
-    scalepicked = 1.4f;
-    scale2 = scale4 = scalenorm;
-    scale3 = scalepicked;
     shopcutsceneplayer = CutScenePlayer_Available();
 }
 
@@ -1366,7 +1367,7 @@ i32 SelectShopItem(shopitem_s *items, i32 index) {
         }
         case 2: {
             id = static_cast<u16>(item->item_id);
-            if (item->unlocked == 1 || ((Game.extra_purchased_bits[id >> 5] >> (id & 31)) & 1))
+            if (__builtin_expect(item->unlocked == 1 || ((Game.extra_purchased_bits[id >> 5] >> (id & 31)) & 1), 1))
                 return 0;
             area = static_cast<i8>(Cheat[id].area);
             if (area != -1 && !Game.area_save[area].red_brick_collected)
@@ -1663,7 +1664,7 @@ static inline i32 SubItemMenu(MENU_s *menu) {
             left = 1;
         else if (input.right_held)
             right = 1;
-        else if (input.confirm && !ExitMenu)
+        else if (__builtin_expect(input.confirm && !ExitMenu, 1))
             confirm = 1;
         else if (input.cancel)
             cancel = 1;
@@ -1676,7 +1677,7 @@ static inline i32 SubItemMenu(MENU_s *menu) {
                 confirm = 1;
             else {
                 moveitems = menu->selected_column - 3;
-                if (moveitems < 0)
+                if (__builtin_expect(moveitems < 0, 0))
                     left = 1;
                 else if (moveitems > 0)
                     right = 1;
@@ -1953,7 +1954,7 @@ void DrawTopShelf(i32) {
     const f32 item_push = toppush[2];
     const f32 item_scale = topscale[2];
     const u16 item_angle = shelfang;
-    if (NuSpecialExistsFn(&TopShelf[2].special) != 0) {
+    if (__builtin_expect(NuSpecialExistsFn(&TopShelf[2].special) != 0, 0)) {
         NUMTX &matrix = item_matrix;
         NUANGVEC rotation = {0, item_angle, 0};
         NuMtxSetRotateXYZVU0(&matrix, &rotation);
@@ -2178,7 +2179,34 @@ void DrawSubItems() {
             }
             case 2: {
                 u16 spin = rotation;
-                if (items[shelf_ids[slot]].unlocked == 1) {
+                if (items[shelf_ids[slot]].unlocked != 1) {
+                    const u16 angle = shelfang + (item->unlocked == 1 ? spin : 0);
+                    DrawItem(&toolblank, &position, scale, 1.0f, ypush, 0, angle, 0);
+                    const i32 current_id = shelf_ids[slot];
+                    shopitem_s *current_item = &items[current_id];
+                    const i32 id = static_cast<u16>(current_item->item_id);
+                    if (!(!(Game.extra_purchased_bits[id >> 5] >> (id & 31) & 1) && id > 7 &&
+                          static_cast<i8>(Cheat[id].area) != -1 &&
+                          !Game.area_save[static_cast<i8>(Cheat[id].area)].red_brick_collected)) {
+                        if (NuSpecialExistsFn(&current_item->special) != 0) {
+                            NUANGVEC item_rotation;
+                            
+                            NUVEC item_scale;
+                            item_rotation.y = angle;
+                            item_rotation.x = 0;
+                            item_rotation.z = 0;
+                            NuMtxSetRotateXYZVU0(&item_matrix_b, &item_rotation);
+                            item_scale.x = item_scale.y = item_scale.z = scale;
+                            NuMtxScaleVU0(&item_matrix_b, &item_scale);
+                            *reinterpret_cast<NUVEC *>(&item_matrix_b.m30) = position;
+                            item_matrix_b.m31 += ypush;
+                            NuSpecialDrawAt(&current_item->special, &item_matrix_b);
+                        }
+                    } else {
+                        if (NuSpecialExistsFn(&extrasils[current_id]) != 0)
+                            DrawItem(&extrasils[shelf_ids[slot]], &position, scale, 1.0f, ypush, 0, angle, 0);
+                    }
+                } else {
                     if (pickedbing > 0.0f && slot == 3)
                         spin += static_cast<i32>(NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f);
                     else
@@ -2200,33 +2228,6 @@ void DrawSubItems() {
                             *reinterpret_cast<NUVEC *>(&item_matrix_a.m30) = position;
                             item_matrix_a.m31 += ypush;
                             NuSpecialDrawAt(&current_item->special, &item_matrix_a);
-                        }
-                    }
-                } else {
-                    const u16 angle = shelfang + (item->unlocked == 1 ? spin : 0);
-                    DrawItem(&toolblank, &position, scale, 1.0f, ypush, 0, angle, 0);
-                    const i32 current_id = shelf_ids[slot];
-                    shopitem_s *current_item = &items[current_id];
-                    const i32 id = static_cast<u16>(current_item->item_id);
-                    if (!(Game.extra_purchased_bits[id >> 5] >> (id & 31) & 1) && id > 7 &&
-                        static_cast<i8>(Cheat[id].area) != -1 &&
-                        !Game.area_save[static_cast<i8>(Cheat[id].area)].red_brick_collected) {
-                        if (NuSpecialExistsFn(&extrasils[current_id]) != 0)
-                            DrawItem(&extrasils[shelf_ids[slot]], &position, scale, 1.0f, ypush, 0, angle, 0);
-                    } else {
-                        if (NuSpecialExistsFn(&current_item->special) != 0) {
-                            NUANGVEC item_rotation;
-                            
-                            NUVEC item_scale;
-                            item_rotation.y = angle;
-                            item_rotation.x = 0;
-                            item_rotation.z = 0;
-                            NuMtxSetRotateXYZVU0(&item_matrix_b, &item_rotation);
-                            item_scale.x = item_scale.y = item_scale.z = scale;
-                            NuMtxScaleVU0(&item_matrix_b, &item_scale);
-                            *reinterpret_cast<NUVEC *>(&item_matrix_b.m30) = position;
-                            item_matrix_b.m31 += ypush;
-                            NuSpecialDrawAt(&current_item->special, &item_matrix_b);
                         }
                     }
                 }

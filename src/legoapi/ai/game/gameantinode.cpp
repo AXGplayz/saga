@@ -64,7 +64,7 @@ void GameAntinode_Update(GAMEANTINODESYS_s *system) {
     }
     for (GAMEANTINODE_s *node = system->active, *next; node != NULL; node = next) {
         next = node->next;
-        if (!(node->remaining_time <= 0.0f)) {
+        if (__builtin_expect(!(node->remaining_time <= 0.0f), 1)) {
             node->remaining_time -= FRAMETIME;
             if (node->remaining_time <= 0.0f) {
                 GameAntinode_UnregisterAntiNode(system, node);
@@ -241,7 +241,7 @@ GAMEANTINODE_s *GameAntinode_UpdateAntiNodeUsingData(GAMEANTINODESYS_s *system, 
             f32 radius = node->radius;
             if (node->shape == 1)
                 radius = node->extent_x > node->extent_z ? node->extent_x : node->extent_z;
-            else if (node->shape == 2)
+            else if (__builtin_expect(node->shape == 2, 0))
                 radius = NuFsqrt(node->extent_x * node->extent_x + node->extent_z * node->extent_z);
 
             // Unlike registration, updates use the enclosing radius only for grid coverage.

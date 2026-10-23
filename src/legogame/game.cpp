@@ -1197,10 +1197,10 @@ static i32 CheckMusicOther() {
     if (level == KAMINOE_LDATA) {
         return KaminoInside() == 0;
     }
-    if (level == MOSEISLEYD_LDATA) {
+    if (__builtin_expect(level == MOSEISLEYD_LDATA, 0)) {
         return socket_position.location.sock == 3;
     }
-    if (level == DEATHSTARBATTLED_LDATA) {
+    if (__builtin_expect(level == DEATHSTARBATTLED_LDATA, 0)) {
         if (DeathStarShieldDown() != 0) {
             deathstar_hold_count = 30;
             return 1;
@@ -1211,7 +1211,7 @@ static i32 CheckMusicOther() {
         }
     } else if (level == ASTEROIDCHASEB_LDATA) {
         return GameCam->sock_position.location.sock == 4;
-    } else if (level == SARLACCPITB_LDATA) {
+    } else if (__builtin_expect(level == SARLACCPITB_LDATA, 0)) {
         return SarlaccPitDiscoActive(WORLD) != 0;
     }
     return 0;
@@ -1356,13 +1356,13 @@ static i32 ActionMusicFn() {
         level == DEATHSTARRESCUEE_LDATA) {
         return 1;
     }
-    if (level == MOSEISLEYD_LDATA && CheckMusicOther() != 0) {
+    if (__builtin_expect(level == MOSEISLEYD_LDATA && CheckMusicOther() != 0, 0)) {
         return 1;
     }
     if (level == CLOUDCITYESCAPEA_LDATA) {
         return 1;
     }
-    if (level == SPEEDERCHASEA_LDATA) {
+    if (__builtin_expect(level == SPEEDERCHASEA_LDATA, 0)) {
         nuvec_s position;
         SOCKPOSITION_s socket_position;
         if (Players_AveragePos(&position, &socket_position) != 0) {
@@ -1381,10 +1381,10 @@ static i32 ActionMusicFn() {
     }
     for (i32 i = 0; i < 2; ++i) {
         GameObject_s *player = Player[i];
-        if (player != NULL &&
+        if (__builtin_expect(player != NULL &&
             (player->ai.opponent != NULL || (player->ai.nearest_opponent != NULL &&
                                              static_cast<APIOBJECT *>(player->ai.nearest_opponent)->field_0x287 == 0 &&
-                                             player->ai.nearest_opponent_metric < 3.0f))) {
+                                             player->ai.nearest_opponent_metric < 3.0f)), 1)) {
             return 1;
         }
     }
@@ -1579,7 +1579,7 @@ void InitGameBeforeConfig(void) {
 i32 DoBuckStart(GameObject_s *object) {
     NUVEC delta;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    if (world->current_level != HOTHESCAPEB_LDATA || object->id != id_SNOWMOB)
+    if (__builtin_expect(world->current_level != HOTHESCAPEB_LDATA || object->id != id_SNOWMOB, 0))
         return 0;
     static NUVEC forward = {0.0f, 0.0f, 1.0f};
     i32 jumped = 0;
@@ -1637,16 +1637,16 @@ void InitGameAfterConfig(void) {
 
     if (EPISODECOUNT > 0) {
         i32 p = (EPISODECOUNT - 1) * POINTS_PER_SUPERSTORY;
+        COMPLETIONPOINTS = p + (POINTS_PER_SUPERSTORY + COMPLETIONPOINTS);
         CompletionPointInfo[0] = POINTS_PER_SUPERSTORY + CompletionPointInfo[0] + p;
-        COMPLETIONPOINTS = p + POINTS_PER_SUPERSTORY + COMPLETIONPOINTS;
     }
 
     AREADATA *pAVar10 = ADataList;
 
-    if (0 < AREACOUNT) {
-        i32 areaIndex;
+    i32 areaIndex;
+    if (__builtin_expect(0 < AREACOUNT, 1)) {
         i32 areaId = 0;
-        AREADATA *area = ADataList;
+        AREADATA *area = pAVar10;
         u16 areaFlags;
         do {
             i32 episode = Episode_ContainsArea(areaId, &areaIndex);
@@ -1654,7 +1654,14 @@ void InitGameAfterConfig(void) {
             area->area_index = (byte)areaIndex;
             if (area != HUB_ADATA) {
                 if ((areaFlags = area->flags, (areaFlags & 0x2022) == 0)) {
-                    if ((areaFlags & 0x100) == 0) {
+                    if ((areaFlags & 0x100) != 0) {
+                        COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_SUPERBONUSCOMPLETE;
+                        CompletionPointInfo[1] = CompletionPointInfo[1] + POINTS_PER_SUPERBONUSCOMPLETE;
+                        if (GOLDBRICKFORSUPERBONUS == 0)
+                            goto LAB_0012ca68;
+                    LAB_0012ca5f:
+                        GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
+                    } else {
                         if ((areaFlags & 4) != 0) {
                             COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_TIMETRIAL;
                             CompletionPointInfo[1] = CompletionPointInfo[1] + POINTS_PER_TIMETRIAL;
@@ -1662,11 +1669,11 @@ void InitGameAfterConfig(void) {
                         }
                         COMPLETIONPOINTS = POINTS_PER_STORY + COMPLETIONPOINTS;
                         CompletionPointInfo[1] = POINTS_PER_STORY + CompletionPointInfo[1];
-                        if ((areaFlags & AREAFLAG_NO_GOLDBRICK) == 0) {
+                        if (__builtin_expect((areaFlags & AREAFLAG_NO_GOLDBRICK) == 0, 1)) {
                             GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
                         }
 
-                        if ((areaFlags & 0x10) != 0) {
+                        if (__builtin_expect((areaFlags & 0x10) != 0, 1)) {
                             i32 local_24 = COMPLETIONPOINTS + POINTS_PER_MINIKIT + POINTS_PER_TRUEJEDI;
                             i32 iVar4 = GOLDBRICKPOINTS + 2;
                             i32 local_28 = POINTS_PER_MINIKIT + POINTS_PER_TRUEJEDI + CompletionPointInfo[1];
@@ -1688,13 +1695,6 @@ void InitGameAfterConfig(void) {
                                 GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
                             }
                         }
-                    } else {
-                        COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_SUPERBONUSCOMPLETE;
-                        CompletionPointInfo[1] = CompletionPointInfo[1] + POINTS_PER_SUPERBONUSCOMPLETE;
-                        if (GOLDBRICKFORSUPERBONUS == 0)
-                            goto LAB_0012ca68;
-                    LAB_0012ca5f:
-                        GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
                     }
                 LAB_0012ca68:
                     if (area->cheat != 0xff) {
@@ -1718,7 +1718,7 @@ void InitGameAfterConfig(void) {
 
     // i16 uVar4 = tUNKNOWN;
 
-    AREADATA *pAVar2 = ADataList;
+    LEVELDATA *level = LDataList;
     i32 iVar3 = AREACOUNT;
     i32 areaId = LEVELCOUNT;
 
@@ -1727,18 +1727,16 @@ void InitGameAfterConfig(void) {
     u8 episode;
     u8 bVar1;
 
-    i32 areaIndex;
-
     if (0 < LEVELCOUNT) {
         i32 i = 0;
-        LEVELDATA *level = LDataList;
+        AREADATA *pAVar2 = ADataList;
         do {
             if (static_cast<u16>(level->unknown_060) > 799) {
                 level->unknown_060 = tUNKNOWN;
             }
-            level->area_level_index = 0xff;
             level->area_index = 0xff;
-            if (iVar3 < 1) {
+            level->area_level_index = 0xff;
+            if (__builtin_expect(iVar3 < 1, 0)) {
                 areaIndex = 0;
             } else {
                 areaIndex = 0;
@@ -1763,7 +1761,8 @@ void InitGameAfterConfig(void) {
                                     level->camera_judder_distance = 0x32;
                                     level->unknown_0da = 0x14;
                                 }
-                                if (((bVar1 != 0xff) && ((pAVar2[(char)episode].flags & 0x106) == 0)) &&
+                                if (__builtin_expect(
+                                        ((bVar1 != 0xff) && ((pAVar2[(char)episode].flags & 0x106) == 0)) != 0, 1) &&
                                     ((level->flags & (LEVEL_STATUS | LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0)) {
                                     level->flags |= 0x2000;
                                 }
@@ -1830,20 +1829,20 @@ void InitGameAfterConfig(void) {
     troopers_gdeb[3] = 0x4b;
     LEGOHINT_SHOOTCAMERAS = 0x266;
     extern i32 LEGOHINT_PUSHBLOCKS;
-    LEGOHINT_BUILD = 0x25c;
     LEGOHINT_PUSHBLOCKS = 0x267;
+    LEGOHINT_BUILD = 0x25c;
     LEGOHINT_FREEPLAYTOGGLE = 600;
     PUNCHGAP = 0.3f;
     PUNCHCHARGAP = 0.3f;
-    //  f64Jump_AlwaysReachJump2Height = 1;
-    //  f64Jump_JediSlam = 1;
+    DoubleJump_AlwaysReachJump2Height = 1;
+    DoubleJump_JediSlam = 1;
     extern i32 CanPunchGirls;
     CanPunchGirls = 0;
-    //  ExtraHurtSfxFn = ExtraHurtSfx_LSW;
-    //  ExtraDieSfxFn = ExtraDieSfx_LSW;
-    REDBRICKPOSX = 0.0f;
+    ExtraHurtSfxFn = ExtraHurtSfx_LSW;
+    ExtraDieSfxFn = ExtraDieSfx_LSW;
     BuckStartExtraFn = BuckStartExtra_LSW;
     BoltInitSfxFn = BoltInitSfx_LSW;
+    REDBRICKPOSX = 0.0f;
     REDBRICKPOSY = -0.5f;
     REDBRICKPOS2X = 1.25f;
     REDBRICKPOS2Y = 0.0f;
@@ -1859,10 +1858,10 @@ void InitGameAfterConfig(void) {
     extern f32 SUPERCARRY_RELEASESPEED_XZ;
     extern i32 SuperCarry_UseActionButton;
     SUPERCARRY_THROWSPEED_XZ = 2.0f;
-    SUPERCARRY_RELEASESPEED_XZ = 1.0f;
     SUPERCARRY_THROWSPEED_Y = 1.5f;
+    SUPERCARRY_RELEASESPEED_XZ = 1.0f;
     SuperCarry_UseActionButton = 1;
-    //  CutScene_OverrideConfigFileNameFn = CutScene_OverrideConfigFileName_LSW;
+    CutScene_OverrideConfigFileNameFn = CutScene_OverrideConfigFileName_LSW;
     CharPivot_Init(CharPivot_LSW);
     DIEAIRSPEED = 3.5f;
     DIEAIRJUMPSPEED = 2.5f;
@@ -1871,7 +1870,7 @@ void InitGameAfterConfig(void) {
     ForcePush_SuperMindTrick = 1;
     Lighting_HighlightFlash = 1;
     Lighting_BlueFlickerFn = ObjZappedBlue;
-    //  AddGameMsg_Default._56_4_ = GameMsg_EndDelay_Game;
+    AddGameMsg_Default.delay_fn = GameMsg_EndDelay_Game;
     WorldInfo_InitMenuFn = Game_WorldInfo_InitMenu;
     WorldInfo_InitLastFn = Game_WorldInfo_InitLast;
     *reinterpret_cast<u16 *>(&TerSurface[12].field_0x08) = 0x15;
@@ -1889,7 +1888,7 @@ void InitGameAfterConfig(void) {
     LEGOACT_FALL = 5;
     LEGOACT_FALLLAND = 0x59;
     LEGOACT_BACKPACKFALLLAND = 0xb3;
-    LEGOACT_BACKFLIP = 0x77;
+
     LEGOACT_DEACTIVATED = 0x41;
     LEGOACT_PUNCH_BEHIND = 0x94;
     LEGOACT_SHOOTRIGHT = 0x5b;
@@ -1941,7 +1940,7 @@ void InitGameAfterConfig(void) {
     LEGOACT_LUNGE = 0x1f;
     LEGOACT_LUNGELAND = 0x20;
     LEGOACT_SLAM = 0x21;
-    LEGOCONTEXT_JUMP = 0;
+
     DoubleJump_JediSlam = 1;
     DoubleJump_AlwaysReachJump2Height = 1;
     LEGOACT_SLAMLAND = 0x22;
@@ -1971,7 +1970,7 @@ void InitGameAfterConfig(void) {
     LEGOCONTEXT_LEDGETERRAIN = 0x55;
     LEGOCONTEXT_CLIMB = 0x43;
     LEGOCONTEXT_HANG = 0x4e;
-    //  LEGOCONTEXT_JUMP = 0;
+    LEGOCONTEXT_JUMP = 0;
     LEGOCONTEXT_BIGJUMP = 0x1f;
     LEGOCONTEXT_WALLSHUFFLE = 0x45;
     LEGOCONTEXT_COMBO = 5;
@@ -2068,35 +2067,35 @@ void InitGameAfterConfig(void) {
     IsWearingBackPackFn = IsWearingBackPack_Game;
     extern i32 Grass_Available;
     Grass_Available = 1;
-    //  PauseGame_ExtraCodeFn = PauseGame_ExtraCode;
-    CheckMusicOtherFn = CheckMusicOther;
+    PauseGame_ExtraCodeFn = PauseGame_ExtraCode;
     Hub_PanelBusyFn = Hub_PanelBusy;
+    CheckMusicOtherFn = CheckMusicOther;
     GizBuildIt_CanStartBuildingFn = GizBuildIt_CanStartBuildingFn_Game;
     GizBuildIt_FinishFn = GizBuildIt_FinishFn_Game;
     extern i16 tPOWERUP;
     POWERUP_TEXTID = tPOWERUP;
-    //  BackDrop_AlphaFn = BackDrop_Alpha;
-    //  Game_100PercentFn = LEGO_100PercentFn;
-    //  Game_AllGoldBricksFn = LEGO_AllGoldBricksFn;
+    BackDrop_AlphaFn = BackDrop_Alpha;
+    Game_100PercentFn = LEGO_100PercentFn;
+    Game_AllGoldBricksFn = LEGO_AllGoldBricksFn;
     LastSafePosExtraFn = LastSafePosExtra;
     GameAudio_ActionMusicFn = ActionMusicFn;
     //  PauseRenderOffFn = PauseRenderOff;
     FindSlamOrigin_UseCPosFn = FindSlamOrigin_UseCPos;
     GizmoBlowUp_NoTargetFn = GizmoBlowUp_NoTarget;
-    //  MatrixReflection_CanOverrideFn = MatrixReflection_CanOverride;
+    MatrixReflection_CanOverrideFn = reinterpret_cast<i32 (*)(f32)>(MatrixReflection_CanOverride);
     Jump_PreventJumpFn = Jump_PreventJump;
     //  SurfaceInfo_ExtraReflectFn = SurfaceInfo_ExtraReflect;
     Hint_AlphaTargetFn = Hint_AlphaTarget;
     //  Arcade_TextCrawlID = 0x1f1;
     //  Arcade_TextCrawlParagraphs = 2;
     //  GizmoPickups_Collide2DFn = GizmoPickups_Collide2D;
-    GizmoBlowUp_SfxFn = GizmoBlowUp_Sfx;
     LEGOOBJ_DEFAULTLASTCOIN = 0xb7;
-    //  Collection_GetSelectingPlayerIDsFn = Collection_GetSelectingPlayerIDs;
     Tag_NoHiddenIconFn = Tag_NoHiddenIcon;
+    Collection_GetSelectingPlayerIDsFn = Collection_GetSelectingPlayerIDs;
+    GizmoBlowUp_SfxFn = GizmoBlowUp_Sfx;
     APIObjResetShadowMapRenderingFn = ResetShadowMapRenderingFn;
     APIObjEnableShadowMapRenderingFn = EnableShadowMapRenderingFn;
-    //  GameMsg_GetExtraObjFn = GameMsg_GetExtraObj;
+    GameMsg_GetExtraObjFn = GameMsg_GetExtraObj;
     Jump_EndOfLandContextFn = Jump_EndOfLandContext;
     BigJump_EndOfLandFn = BigJump_EndOfLand;
 
@@ -2110,7 +2109,9 @@ void InitGameAfterConfig(void) {
     }
 
     CUTSCENEPLAYER_s *clip_player = static_cast<CUTSCENEPLAYER_s *>(CutScenePlayer_Available());
-    CutScenePlayCount = clip_player != NULL ? clip_player->clip_count : 0;
+    CutScenePlayCount = 0;
+    if (clip_player != NULL)
+        CutScenePlayCount = clip_player->clip_count;
     if (g_lowEndLevelBehaviour != 0) {
         Reflections_On = 0;
         extern u8 CharClipToBlobShadows;
@@ -2190,12 +2191,12 @@ void ReCalculateCompletionPoints() {
         CompletionPointInfo_ReCalculate[1] += POINTS_PER_STORY;
         if (save->area_complete != 0) {
             AddToCompletionPoints(POINTS_PER_STORY);
-            if ((area->flags & AREAFLAG_NO_GOLDBRICK) == 0) {
+            if (__builtin_expect((area->flags & AREAFLAG_NO_GOLDBRICK) == 0, 0)) {
                 AddToGoldBricks();
             }
         }
 
-        if ((area->flags & AREAFLAG_MINIKIT) == 0) {
+        if (__builtin_expect((area->flags & AREAFLAG_MINIKIT) == 0, 0)) {
             if ((area->flags & AREAFLAG_TRUE_JEDI) != 0 &&
                 (save->true_hero_complete[0] != 0 || save->true_hero_complete[1] != 0)) {
                 AddToCompletionPoints(POINTS_PER_TRUEJEDI);
@@ -2235,7 +2236,7 @@ void ReCalculateCompletionPoints() {
         }
 
         CompletionPointInfo_ReCalculate[1] += POINTS_PER_CHALLENGE;
-        if (save->reserved_0x7 != 0) {
+        if (__builtin_expect(save->reserved_0x7 != 0, 1)) {
             AddToCompletionPoints(POINTS_PER_CHALLENGE);
             if (GOLDBRICKFORCHALLENGE != 0) {
                 AddToGoldBricks();
@@ -2243,7 +2244,7 @@ void ReCalculateCompletionPoints() {
         }
     }
 
-    if (MissionSys != NULL && MissionSys->count != 0) {
+    if (__builtin_expect(MissionSys != NULL && MissionSys->count != 0, 1)) {
         for (i32 index = 0; index < MissionSys->count; ++index) {
             CompletionPointInfo_ReCalculate[3] += POINTS_PER_MISSION;
             if (Game.mission_save.completed[index] != 0) {
@@ -2941,11 +2942,11 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
             if (part->owner == object) {
                 if (part->scale_time < 0.5f)
                     continue;
-            } else if (api->field_0x27c != -1 && part->scale_time < 0.25f)
+            } else if (api->field_0x27c != -1 && __builtin_expect(part->scale_time < 0.25f, 0))
                 continue;
         } else if ((part->flags & 0x8000) == 0 && part->owner == object)
             continue;
-        if (context == 0x39 || context == 0x3b || context == 0x3c)
+        if (context == 0x39 || context == 0x3b || __builtin_expect(context == 0x3c, 0))
             continue;
         if ((part->flags & 0x4000) != 0 && part->field_207 == api->field_0x289)
             continue;
@@ -2985,7 +2986,7 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
                     ReleasePush(object);
                     if (object->field_0xd24 >= 1.0f)
                         ObjHitShield(part->owner, object, object->field_0xe37, NULL);
-                    else if (!CannotKill(object)) {
+                    else if (__builtin_expect(!CannotKill(object), 0)) {
                         ObjHitObj((part->flags & 0x10000) != 0 ? NULL : part->owner, object, part->field_204,
                                   static_cast<u16>(part->force_flags), 0, 1);
                     } else if (part->owner != NULL) {
@@ -2996,7 +2997,7 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
             }
             if (api->field_0x287 != 0 || (api->flags_low & 2) != 0)
                 continue;
-            if ((part->active & 1) == 0) {
+            if (__builtin_expect((part->active & 1) == 0, 0)) {
                 f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
                 if (api->scaled_radius > 1.0f)
                     speed /= api->scaled_radius;
@@ -3005,7 +3006,8 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
                 api->velocity.x += direction.x * speed;
                 api->velocity.z += direction.z * speed;
             }
-            if ((part->flags & 0x2000000) != 0 && ((part->flags & 0x4000000) == 0 || (part->active & 2) != 0)) {
+            if (__builtin_expect(
+                    (part->flags & 0x2000000) != 0 && ((part->flags & 0x4000000) == 0 || (part->active & 2) != 0), 1)) {
                 u16 angle = NuAtan2D(api->position.x - part->position.x, api->position.z - part->position.z);
                 f32 speed = static_cast<GAMECHARACTERDATA_s *>(api->character_data->field11_0x24)->run_speed;
                 api->field_0x1fc = NU_SIN_LUT(angle) * speed;
@@ -3017,8 +3019,9 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
                 if (part_pickup_type == 0xcb) {
                     if (part->scale_time < 0.5f)
                         continue;
-                    if (VehicleArea == 0 && (static_cast<i8>(object->current_hp) <= 0 ||
-                                             static_cast<i8>(object->current_hp) >= object->hitpoints))
+                    if (__builtin_expect(VehicleArea == 0, 0) &&
+                        (static_cast<i8>(object->current_hp) <= 0 ||
+                         static_cast<i8>(object->current_hp) >= object->hitpoints))
                         continue;
                 } else if (!(part->scale_time >= 0.1f))
                     continue;

@@ -737,7 +737,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
         }
         f32 state = LevAIMessage[1]->value;
         if (state == 1.0f) {
-            if (packet->player_floor_mask) {
+            if (__builtin_expect(packet->player_floor_mask != 0, 1)) {
                 if (packet->zap) {
                     eFloor_timer += FRAMETIME;
                     if ((packet->state == 1 || packet->state == 3) && eFloor_timer > 2.0f) {
@@ -784,7 +784,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
     if (__builtin_expect(hspecial_efloor != NULL && packet->player_floor_mask, 1)) {
         for (i32 floor = 0; floor < 20; ++floor) {
             nuinstanim_s *animation = NuSpecialGetInstAnim(&hspecial_efloor[floor]);
-            if (animation == NULL || !(animation->ltime > 1.0f))
+            if (__builtin_expect(animation == NULL, 0) || !(animation->ltime > 1.0f))
                 continue;
             NUVEC *floor_position = NuSpecialGetDrawPos(&hspecial_efloor[floor]);
             floor_active = true;
@@ -809,7 +809,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 if (!(player->apiobj.field_0x1f4 & 0x40000))
                     ObjHitObj(NULL, player, 1, 0, 0, 1);
                 player = Player[i];
-                if (__builtin_expect(!(dx <= 0.0f), 0))
+                if (!(dx <= 0.0f))
                     player->apiobj.velocity.x += 0.2f;
                 else
                     player->apiobj.velocity.x -= 0.2f;
@@ -823,7 +823,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                 floor_end.x += 0.2f - (random + random) * 0.2f;
                 if (floor_end.x > floor_position->x + 0.35f)
                     floor_end.x = floor_position->x + 0.35f;
-                else if (floor_position->x - 0.35f > floor_end.x)
+                else if (__builtin_expect(floor_position->x - 0.35f > floor_end.x, 0))
                     floor_end.x = floor_position->x - 0.35f;
                 floor_end.y = floor_position->y;
                 floor_end.z = Player[i]->apiobj.collision_position.z;
@@ -872,7 +872,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
             floor_route_on = 0;
             update_routes = true;
         }
-        if (update_routes) {
+        if (__builtin_expect(update_routes != 0, 1)) {
             AIPATH *path = world->ai_sys->path_sys->active_path;
             for (i32 i = 0; i < path->connection_count; ++i) {
                 AIPATHCNX *connection = &path->connections[i];
@@ -885,17 +885,17 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
                         connection->traversal_flags[1] |= 0x80000000;
                     }
                 } else if (connection->route_mask & static_cast<u32>(routemask_efloor_off)) {
-                    if (floor_route_on) {
-                        connection->traversal_flags[0] |= 0x80000000;
-                        connection->traversal_flags[1] |= 0x80000000;
-                    } else {
+                    if (!(floor_route_on)) {
                         connection->traversal_flags[0] &= 0x7fffffff;
                         connection->traversal_flags[1] &= 0x7fffffff;
+                    } else {
+                        connection->traversal_flags[0] |= 0x80000000;
+                        connection->traversal_flags[1] |= 0x80000000;
                     }
                 }
             }
             for (i32 i = 0; i < 2; ++i)
-                if (Player[i] != NULL && (Player[i]->apiobj.object_flags & 0x1001) == 0x1001)
+                if (__builtin_expect(Player[i] != NULL, 1) && (Player[i]->apiobj.object_flags & 0x1001) == 0x1001)
                     AISysGetCharacterPathPos(WORLD->ai_sys, &Player[i]->apiobj, &Player[i]->ai, 0xff, 1);
             if (LevGameObject[0] != NULL)
                 AISysGetCharacterPathPos(WORLD->ai_sys, &LevGameObject[0]->apiobj, &LevGameObject[0]->ai, 0xff, 1);
@@ -925,7 +925,7 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
             GizObstacle_PlayForwards(LevGizObst[3]);
             break;
     }
-    if (!LevFlag[4]) {
+    if (__builtin_expect(!LevFlag[4], 1)) {
         {
             if (!LevFlag[1] && NuSpecialGetVisibilityFn(&LevHSpecial[1 + 2])) {
                 PlaySfx("env_block_light_on", NuSpecialGetDrawPos(&LevHSpecial[1 + 2]));
@@ -1386,6 +1386,15 @@ void SarlaccPitB_Reset(WORLDINFO_s *world) {
         GizObstacle_Stop(static_cast<GIZOBSTACLE_s *>(obstMirrorBall->object));
 }
 
+static i32 SarlaccDiscoPickPanel(i32 state, i32 exclude) {
+    i32 candidates[16];
+    i32 count = 0;
+    for (i32 index = 0; index < sarlaccdisco.count; ++index)
+        if (index != exclude && sarlaccdisco.panel_state[index] == state)
+            candidates[count++] = index;
+    return count != 0 ? candidates[NuRand(NULL) % count] : -1;
+}
+
 void SarlaccPitB_Update(WORLDINFO_s *world) {
 
     static NUVEC lumppos;
@@ -1407,7 +1416,6 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
         }
 
         switch (sarlaccdisco.phase) {
-            i32 candidates[16];
             case 0:
                 sarlaccb_netpacket->disco_active = 0;
                 if (NuSpecialExistsFn(&LevSpecial[0]) && ready &&
@@ -1418,16 +1426,8 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                        static_cast<i32>(1u << ((sarlaccdisco.area - world->ai_sys->areas) & 31)))))) {
                     sarlaccdisco.phase = 1;
                     sarlaccdisco.timer = 0.0f;
-                    i32 count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                    sarlaccdisco.first_panel = SarlaccDiscoPickPanel(0, -1);
+                    sarlaccdisco.second_panel = SarlaccDiscoPickPanel(0, sarlaccdisco.first_panel);
                     if (sarlaccdisco.first_panel != -1 && sarlaccdisco.second_panel != -1) {
                         sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
                         sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
@@ -1447,11 +1447,11 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                 NUVEC *position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
                 for (i32 index = 0; index < 8; ++index) {
                     GameObject_s *object = Player[index];
-                    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                    if (object != NULL && (~object->apiobj.field_0x1f8 & 0x1001) == 0 &&
                         object->apiobj.field_0x27d != 0) {
                         f32 dx = position->x - object->apiobj.position.x;
                         f32 dz = position->z - object->apiobj.position.z;
-                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
+                        if (__builtin_expect(dx * dx + dz * dz < 0.2f * 0.2f, 1)) {
                             sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 2;
                             first_occupied = 1;
                             if (object == player)
@@ -1476,7 +1476,7 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                         object->apiobj.field_0x27d != 0) {
                         f32 dx = position->x - object->apiobj.position.x;
                         f32 dz = position->z - object->apiobj.position.z;
-                        if (!(dx * dx + dz * dz >= 0.2f * 0.2f)) {
+                        if (dx * dx + dz * dz < 0.2f * 0.2f) {
                             sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 2;
                             second_occupied = 1;
                             if (object == player)
@@ -1491,16 +1491,26 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                         NUMTX_GET_ROW_VEC(NuSpecialGetDrawMtx(&sarlaccdisco.on[sarlaccdisco.second_panel]), 3);
                     sarlaccb_netpacket->sound_mask |= 1 << sarlaccdisco.second_panel;
                 }
-                if (!(first_occupied && second_occupied)) {
+                if (first_occupied && second_occupied) {
+                    sarlaccdisco.timer = 0.0f;
+                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
+                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
+                    sarlaccdisco.first_panel = SarlaccDiscoPickPanel(0, -1);
+                    sarlaccdisco.second_panel = SarlaccDiscoPickPanel(0, sarlaccdisco.first_panel);
+                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
+                        sarlaccdisco.phase = 2;
+                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
+                            sarlaccdisco.panel_state[index] = 4;
+                    } else {
+                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
+                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
+                    }
+                } else {
                     sarlaccdisco.timer += FRAMETIME;
                     if (sarlaccdisco.timer > 2.5f) {
                         sarlaccdisco.timer = 0.0f;
                         for (i32 pass = 0; pass < 2; ++pass) {
-                            i32 count = 0;
-                            for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                                if (sarlaccdisco.panel_state[index] == 3)
-                                    candidates[count++] = index;
-                            i32 selected = count != 0 ? candidates[NuRand(NULL) % count] : -1;
+                            i32 selected = SarlaccDiscoPickPanel(3, -1);
                             if (selected != -1)
                                 sarlaccdisco.panel_state[selected] = 0;
                         }
@@ -1511,9 +1521,9 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                             partner = Player[1];
                         if (partner != NULL) {
                             NUVEC *help_position = NULL;
-                            if (controlled_panel == sarlaccdisco.first_panel)
+                            if (__builtin_expect(controlled_panel == sarlaccdisco.first_panel, 0))
                                 help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.second_panel]);
-                            else if (controlled_panel == sarlaccdisco.second_panel)
+                            else if (__builtin_expect(controlled_panel == sarlaccdisco.second_panel, 0))
                                 help_position = NuSpecialGetPos(&sarlaccdisco.flash[sarlaccdisco.first_panel]);
                             if (help_position != NULL) {
                                 SetGizAIMessage(gizaimessagesys, "HelpWithDisco", 1.0f, sarlaccdisco.help_message);
@@ -1521,28 +1531,6 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
                                 LevelLocator->position.z = help_position->z;
                             }
                         }
-                    }
-                } else {
-                    sarlaccdisco.timer = 0.0f;
-                    sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 3;
-                    sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 3;
-                    i32 count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.first_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    count = 0;
-                    for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                        if (index != sarlaccdisco.first_panel && sarlaccdisco.panel_state[index] == 0)
-                            candidates[count++] = index;
-                    sarlaccdisco.second_panel = count != 0 ? candidates[NuRand(NULL) % count] : -1;
-                    if (sarlaccdisco.first_panel == -1 || sarlaccdisco.second_panel == -1) {
-                        sarlaccdisco.phase = 2;
-                        for (i32 index = 0; index < sarlaccdisco.count; ++index)
-                            sarlaccdisco.panel_state[index] = 4;
-                    } else {
-                        sarlaccdisco.panel_state[sarlaccdisco.first_panel] = 1;
-                        sarlaccdisco.panel_state[sarlaccdisco.second_panel] = 1;
                     }
                 }
                 break;
@@ -1590,15 +1578,16 @@ void SarlaccPitB_Update(WORLDINFO_s *world) {
     }
     if (LevFlag[0] == 0 && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
         lumppos = *NuSpecialGetDrawPos(&LevHSpecial[0]);
-        LevFlag[0] = 1;
         enginetimer = 0.05f;
+        LevFlag[0] = 1;
     }
     if (LevFlag[0] != 0) {
+        f32 base = lumppos.z;
         enginetimer -= FRAMETIME;
         if (__builtin_expect(enginetimer <= 0.0f, 0))
             enginetimer = 0.1f;
         f32 offset = 1.0f - (NU_SIN_LUT(enginetimer * 10.0f * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
-        f32 z = lumppos.z + (offset * 0.01f - 0.005f);
+        f32 z = base + (offset * 0.01f - 0.005f);
         NuSpecialGetDrawPos(&LevHSpecial[0])->z = z;
         PlaySfx("env_curtain_lp", NuSpecialGetDrawPos(&LevHSpecial[0]));
     }

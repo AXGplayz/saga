@@ -268,7 +268,7 @@ static i32 *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *result_posi
             tangent.x = NuTrigTable[((angle + 0x4000) & 0xffff) >> 1];
             tangent.z = NuTrigTable[((angle + 0x8000) >> 1) & 0x7fff];
             NUVEC facing = *direction;
-            if (directional == 0) {
+            if (__builtin_expect(directional == 0, 1)) {
                 NuVecRotateY(&facing, &v001,
                              NuAtan2D(spinner->position.x - position->x, spinner->position.z - position->z));
             }
@@ -289,14 +289,14 @@ static i32 *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *result_posi
             NuVecNorm(&delta, &delta);
             float dot = NuVecDot(&delta, &aim);
             u16 target_angle;
-            if (TargetDist_Near2 > distance && directional != 0) {
+            if (__builtin_expect(TargetDist_Near2 > distance && directional != 0, 0)) {
                 target_angle = TargetDeg_Near;
-            } else if (TargetDist_Mid2 > distance) {
-                target_angle = TargetDeg_Mid;
-            } else {
+            } else if (TargetDist_Mid2 <= distance) {
                 target_angle = TargetDeg_Far;
+            } else {
+                target_angle = TargetDeg_Mid;
             }
-            if (!(dot > NuTrigTable[((target_angle + 0x4000) >> 1) & 0x7fff])) {
+            if (__builtin_expect(!(dot > NuTrigTable[((target_angle + 0x4000) >> 1) & 0x7fff]), 0)) {
                 continue;
             }
 
@@ -441,10 +441,10 @@ i32 GizSpinner_UsingSpecial(GIZMO **results, void *world_ptr, i32 capacity, char
     if (world != NULL && results != NULL && world->spinners != NULL) {
         nuhspecial_s special;
         NuSpecialFind(world->current_gscn, &special, name, 0);
-        if (NuSpecialExistsFn(&special) != 0) {
+        if (__builtin_expect(NuSpecialExistsFn(&special) != 0, 1)) {
             i32 type_id = -1;
             for (u32 index = 0; index < world->current_level->max_spinners && count < capacity; ++index) {
-                if ((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) == 0) {
+                if (__builtin_expect((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) == 0, 0)) {
                     continue;
                 }
                 for (GAMEANIMOBJ_s *object = world->spinners[index].anim_set->objects; object != NULL;
@@ -529,7 +529,7 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
         const i32 special_name_length = static_cast<signed char>(EdFileReadChar());
         EdFileRead(special_name, special_name_length);
         nuhspecial_s special;
-        const bool special_missing = !GizSpinner_FindSpecial(world, &special, special_name);
+        const i32 special_missing = GizSpinner_FindSpecial(world, &special, special_name) ? 0 : 1;
         world->spinners[index].special = special;
 
         const u8 output_count = static_cast<u8>(EdFileReadChar());
@@ -620,35 +620,33 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
 
         spinner = &world->spinners[index];
         if (version <= 6) {
-            initial_animation_point = animation_speed;
             if (spinner->anim_set != NULL && spinner->primary_anim_obj != NULL) {
                 const f32 start_frame = spinner->primary_anim_obj->start_frame;
                 const f32 duration = spinner->primary_anim_obj->end_frame - start_frame;
                 if (__builtin_expect(output_points > 0, 1)) {
                     {
                         const f32 interval = duration / static_cast<f32>(output_points - 1);
+                        f32 *points = &spinner->animation_points[1];
                         for (i32 point = 0; point < output_points; ++point) {
-                            spinner->animation_points[point + 1] =
+                            points[point] =
                                 static_cast<f32>(static_cast<i32>(static_cast<f32>(point) * interval)) + start_frame;
                         }
                     }
                 }
-                if (output_points <= 7) {
-                    for (i32 point = output_points + 1; point < 9; ++point) {
-                        spinner->animation_points[point] = -1.0f;
-                    }
+                for (i32 point = output_points; point <= 7; ++point) {
+                    (&spinner->animation_points[1])[point] = -1.0f;
                 }
             }
+            initial_animation_point = animation_speed;
         } else {
             if (output_points > 0) {
                 for (i32 point = 1; point <= output_points; ++point) {
                     world->spinners[index].animation_points[point] = EdFileReadFloat();
                 }
             }
-            spinner = &world->spinners[index];
             if (output_points <= 7) {
-                for (i32 point = output_points + 1; point < 9; ++point) {
-                    spinner->animation_points[point] = -1.0f;
+                for (i32 point = output_points; point <= 7; ++point) {
+                    (&spinner->animation_points[1])[point] = -1.0f;
                 }
             }
             if (version == 7) {
@@ -830,7 +828,7 @@ int GizSpinner_Update(GIZSPINNER_s *spinner) {
                 movement_angle = NuAtan2D(api->velocity.x, api->velocity.z);
                 speed = NuFsqrt(api->velocity.x * api->velocity.x + api->velocity.z * api->velocity.z);
                 GAMECHARACTERDATA_s *character = api->character_data->game_character;
-                if (speed < character->tiptoe_speed) {
+                if (__builtin_expect(speed < character->tiptoe_speed, 1)) {
                     speed = character->tiptoe_speed;
                 } else if (speed < character->run_speed) {
                     speed = character->run_speed;
@@ -856,13 +854,13 @@ int GizSpinner_Update(GIZSPINNER_s *spinner) {
             } else {
                 const f32 blend = NU_SIN_LUT(static_cast<i32>((1.0f - spinner->field_0x090 * 4.0f) * 16384.0f));
                 i32 difference = RotDiff(spinner->previous_rotation, spinner->target_rotation);
-                if ((spinner->state_flags & SPINNER_STATE_ROTATE_POSITIVE) != 0) {
-                    if (difference < 0) {
-                        difference += 0x10000;
-                    }
-                } else {
+                if ((spinner->state_flags & SPINNER_STATE_ROTATE_POSITIVE) == 0) {
                     if (difference > 0) {
                         difference -= 0x10000;
+                    }
+                } else {
+                    if (difference < 0) {
+                        difference += 0x10000;
                     }
                 }
                 spinner->rotation = static_cast<u16>(static_cast<f32>(spinner->previous_rotation) +
@@ -893,7 +891,7 @@ int GizSpinner_Update(GIZSPINNER_s *spinner) {
         }
         if (GameAnimSet_IsAnimationReset(spinner->anim_set) != 0)
             goto stop_animation;
-        if (spinner->animation_speed == 0.0f || spinner->animation_points[0] == 0.0f)
+        if (__builtin_expect(spinner->animation_speed == 0.0f || spinner->animation_points[0] == 0.0f, 0))
             goto stop_animation;
         {
             const i32 rotation_step =
@@ -980,11 +978,11 @@ void GizSpinners_Update(void *world_ptr, void *, float) {
             spinner->state_flags = (spinner->state_flags & ~SPINNER_STATE_ROTATING) | SPINNER_STATE_STOP_ANIMATION;
             // The reference indexes Player by spinner index after finding an
             // owner. Detach the actual owners instead of an unrelated/OOB slot.
-            if (LEGOCONTEXT_PUSHSPINNER != -1) {
+            if (__builtin_expect(LEGOCONTEXT_PUSHSPINNER != -1, 1)) {
                 for (i32 player = 0; player < 8; ++player) {
                     GameObject_s *owner = Player[player];
                     if (owner != NULL && owner->character_context == LEGOCONTEXT_PUSHSPINNER &&
-                        owner->field_0x788 == spinner) {
+                        __builtin_expect(owner->field_0x788 == spinner, 0)) {
                         owner->character_context = -1;
                         owner->field_0x788 = NULL;
                     }
@@ -995,7 +993,7 @@ void GizSpinners_Update(void *world_ptr, void *, float) {
             const u32 flags = spinner->state_flags;
             spinner->state_flags = (flags & ~SPINNER_STATE_ROTATING) | SPINNER_STATE_STOP_ANIMATION;
             spinner->output_pause_time -= FRAMETIME;
-            if (spinner->output_pause_time <= 0.0f) {
+            if (__builtin_expect(spinner->output_pause_time <= 0.0f, 0)) {
                 spinner->output_pause_time = 0.0f;
                 spinner->state_flags = flags & ~(SPINNER_STATE_STOP_ANIMATION | SPINNER_STATE_ROTATING);
             }
@@ -1020,20 +1018,21 @@ void GizSpinners_Update(void *world_ptr, void *, float) {
             output = candidate;
             break;
         }
-        if (output == -1 && frame < length + margin && length - margin < frame)
+        if (__builtin_expect(output == -1 && __builtin_expect(frame < length + margin, 1) && length - margin < frame,
+                             1))
             output = last;
         if (output == -1) {
             spinner->flags &= static_cast<u8>(~SPINNER_RUNTIME_AT_OUTPUT);
             continue;
         }
-        if ((spinner->flags & SPINNER_RUNTIME_AT_OUTPUT) == 0 && spinner->field_0x2d8 > 0.0f) {
+        if (__builtin_expect((spinner->flags & SPINNER_RUNTIME_AT_OUTPUT) == 0 && spinner->field_0x2d8 > 0.0f, 1)) {
             spinner->output_pause_time = spinner->field_0x2d8;
             spinner->flags |= SPINNER_RUNTIME_AT_OUTPUT;
-            if (LEGOCONTEXT_PUSHSPINNER != -1) {
+            if (__builtin_expect(LEGOCONTEXT_PUSHSPINNER != -1, 1)) {
                 for (i32 player = 0; player < 8; ++player) {
                     GameObject_s *owner = Player[player];
                     if (owner != NULL && owner->character_context == LEGOCONTEXT_PUSHSPINNER &&
-                        owner->field_0x788 == spinner && owner->pad_gamepad != NULL) {
+                        __builtin_expect(owner->field_0x788 == spinner, 0) && owner->pad_gamepad != NULL) {
                         NewRumble(owner->pad_gamepad->pad, 0.8f, 0);
                         break;
                     }
@@ -1072,7 +1071,7 @@ void GizSpinners_Update(void *world_ptr, void *, float) {
             GameAnimSet_Play(spinner->anim_set, -0.25f, 1);
             spinner->rotation =
                 static_cast<u16>(spinner->rotation - static_cast<i32>(direction * (step * difference * 5461.0f)));
-        } else if (target > spinner->field_70) {
+        } else if (__builtin_expect(target > spinner->field_70, 1)) {
             GameAnimSet_Play(spinner->anim_set, 0.25f, 1);
             spinner->rotation =
                 static_cast<u16>(spinner->rotation + static_cast<i32>(direction * (step * difference * 5461.0f)));
@@ -1206,7 +1205,7 @@ i32 GizSpinner_Push(GIZSPINNER_s *spinner, i32 context) {
                 clear_context = 1;
                 goto stop_at_endpoint;
             }
-            if (!at_end || spinner->anim_set->object_count == 0) {
+            if (__builtin_expect(!at_end || spinner->anim_set->object_count == 0, 1)) {
                 goto rotate;
             }
             goto stop_at_endpoint;
@@ -1232,7 +1231,7 @@ i32 GizSpinner_Push(GIZSPINNER_s *spinner, i32 context) {
             } else {
                 spinner->rotation -= rotation_step;
             }
-        } else if ((flags & 2) != 0) {
+        } else if (__builtin_expect((flags & 2) != 0, 0)) {
             spinner->rotation -= rotation_step;
         } else {
             spinner->rotation += rotation_step;
@@ -1242,7 +1241,7 @@ i32 GizSpinner_Push(GIZSPINNER_s *spinner, i32 context) {
     }
 
 finalize:
-    if (!(RotDiff(spinner->rotation, spinner->previous_rotation) < 0)) {
+    if (__builtin_expect(!(RotDiff(spinner->rotation, spinner->previous_rotation) < 0), 1)) {
         spinner->state_flags &= ~1u;
     } else {
         spinner->state_flags |= 1;

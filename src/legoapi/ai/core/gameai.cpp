@@ -396,12 +396,12 @@ static char *AI_GetGizmoName(GIZMO *gizmo) {
     }
 
     LEVELSCRIPTPROCESS *level_process = static_cast<LEVELSCRIPTPROCESS *>(gizmo->object);
-    if (NuStrLen(level_process->name) != 0) {
+    if (__builtin_expect(NuStrLen(level_process->name) != 0, 0)) {
         return level_process->name;
     }
 
     AISCRIPTPROCESS *process = &level_process->processor;
-    if (process->script != NULL && process->script->name != NULL) {
+    if (__builtin_expect(process->script != NULL && process->script->name != NULL, 1)) {
         NuStrNCpy(name, process->script->name, sizeof(name));
     } else {
         NuStrCpy(name, "");
@@ -421,7 +421,7 @@ static char *AI_GetGizmoName(GIZMO *gizmo) {
         i8 total = length;
         total += NuStrLen("()");
         total += NuStrLen(process->unknown_a4->name);
-        if (total <= 15) {
+        if (__builtin_expect(total <= 15, 0)) {
             NuStrCat(name, "(");
             NuStrCat(name, process->unknown_a4->name);
             NuStrCat(name, ")");
@@ -840,12 +840,14 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                     } else if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) {
                         distance = NuVecDist(&baddy->position, &goody->position, &difference);
                         have_distance = 1;
+                        const f32 diff_x = difference.x;
+                        const f32 diff_z = difference.z;
                         if ((!party_under_cover || ((goody->field_0x1f4 & 0x400) && (baddy->field_0x1f4 & 0x400))) &&
-                            (((awareness >> baddy->field_0x289) & 1) ||
+                            (__builtin_expect((awareness >> baddy->field_0x289) & 1, 0) ||
                              (((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1) &&
                               ((goody->flags_high & 8) ||
-                               difference.x * goody->objptr->facing_direction.x +
-                                       difference.z * goody->objptr->facing_direction.z >=
+                               diff_x * goody->objptr->facing_direction.x +
+                                       diff_z * goody->objptr->facing_direction.z >=
                                    0.0f ||
                                (goody->heardistance > distance && (baddy->objptr->field_0xef9 & 8)))))) {
                             goody->ai_awareness_mask |= (u64)1 << baddy->field_0x289;
@@ -863,16 +865,21 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         have_distance = 1;
                         if (distance >= baddy->viewdistance + goody->visibility_range_extension)
                             baddy->ai_awareness_mask &= ~((u64)1 << goody->field_0x289);
-                    } else if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) {
+                    } else if (__builtin_expect(
+                                   (WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) &
+                                       1 != 0,
+                                   1)) {
                         if (!have_distance)
                             distance = NuVecDist(&baddy->position, &goody->position, &difference);
                         have_distance = 1;
+                        const f32 diff_x = difference.x;
+                        const f32 diff_z = difference.z;
                         if ((!party_under_cover || ((baddy->field_0x1f4 & 0x400) && (goody->field_0x1f4 & 0x400))) &&
                             (((awareness >> goody->field_0x289) & 1) ||
                              (((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1) &&
                               ((baddy->flags_high & 8) ||
-                               -difference.z * baddy->objptr->facing_direction.z -
-                                       difference.x * baddy->objptr->facing_direction.x >=
+                               -diff_z * baddy->objptr->facing_direction.z -
+                                       diff_x * baddy->objptr->facing_direction.x >=
                                    0.0f ||
                                (baddy->heardistance > distance && (goody->objptr->field_0xef9 & 8)))))) {
                             baddy->ai_awareness_mask |= (u64)1 << goody->field_0x289;
@@ -895,7 +902,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         if (!(goody->character_data->model_flags & 0x80000)) {
                             if (__builtin_expect(baddy_object->only_attack_players && goody->objptr != player &&
                                                      goody->objptr != player2,
-                                                 0)) {
+                                                 1)) {
                                 baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
                             } else if (goody->objptr->id == id_DRAGBOMB && baddy_id != id_ATAT) {
                                 baddy_object->ai_opponent_exclusion_mask |= (u64)1 << goody->field_0x289;
@@ -935,9 +942,9 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                         }
                     }
                     if (baddy_id == id_JAWA || baddy_id == id_UGNAUGHT ||
-                        (baddy->character_data->model_flags & 0x80000))
+                        __builtin_expect((baddy->character_data->model_flags & 0x80000) != 0, 0))
                         goody_object->ai_opponent_exclusion_mask |= (u64)1 << baddy->field_0x289;
-                    if (__builtin_expect(!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1), 1)) {
+                    if (!((goody_object->ai_opponent_exclusion_mask >> baddy->field_0x289) & 1)) {
                         AIPACKET *packet = goody->ai;
                         if (packet->pending_nearest_metric > distance) {
                             packet->pending_nearest_metric = distance;
@@ -997,19 +1004,16 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
             APIOBJECT_s *goody = goodies[i];
             for (i32 j = 0; j < baddy_count; ++j) {
                 APIOBJECT_s *baddy = baddies[j];
-                if (__builtin_expect(!((goody->ai_awareness_mask >> baddy->field_0x289) & 1), 0)) {
-                    if ((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1) {
-                        goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
-                    }
-                } else {
+                if (__builtin_expect((goody->ai_awareness_mask >> baddy->field_0x289) & 1, 1)) {
                     if ((WORLD->api_object_sys->line_of_sight[goody->field_0x289] >> baddy->field_0x289) & 1)
                         goody->objptr->ai_seen_mask |= (u64)1 << baddy->field_0x289;
+                } else if (__builtin_expect((goody->objptr->ai_seen_mask >> baddy->field_0x289) & 1, 0)) {
+                    goody->objptr->ai_seen_mask &= ~((u64)1 << baddy->field_0x289);
                 }
                 if ((baddy->ai_awareness_mask >> goody->field_0x289) & 1) {
-                    if (__builtin_expect(
-                            (WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1, 0))
+                    if ((WORLD->api_object_sys->line_of_sight[baddy->field_0x289] >> goody->field_0x289) & 1)
                         baddy->objptr->ai_seen_mask |= (u64)1 << goody->field_0x289;
-                } else if ((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1) {
+                } else if (__builtin_expect((baddy->objptr->ai_seen_mask >> goody->field_0x289) & 1, 1)) {
                     baddy->objptr->ai_seen_mask &= ~((u64)1 << goody->field_0x289);
                 }
             }
@@ -1235,7 +1239,7 @@ void GameAISysStartFrame(AISYS_s *system) {
             }
             if ((object->apiobj.field_0x1f4 & 1) != 0) {
                 area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_SET;
-            } else if ((object->apiobj.field_0x1f4 & 4) == 0) {
+            } else if (__builtin_expect((object->apiobj.field_0x1f4 & 4) == 0, 1)) {
                 area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_CLEAR;
             }
         }
@@ -1501,7 +1505,7 @@ AIPATHCNXCONTROLLER_s *AIPathCnxControllerCreate(AIPATHCNXCONTROLSYS_s *control_
                         break;
                     }
                     case 5:
-                        if (fake_animation_id != 0) {
+                        if (__builtin_expect(fake_animation_id != 0, 1)) {
                             return NULL;
                         }
                         break;
@@ -1902,11 +1906,11 @@ void GameAIProcess() {
         object->field_0x107e = 0;
         if (__builtin_expect(object->use_action_frames != 0, 1)) {
             --object->use_action_frames;
-        } else if (object->use_action_parameter > 0.0f) {
-            object->use_action_parameter -= frame_time;
-        } else {
+        } else if (!(object->use_action_parameter > 0.0f)) {
             object->can_use_object = NULL;
             object->use_action = 0;
+        } else {
+            object->use_action_parameter -= frame_time;
         }
         if (object->field_0x1094 != 0)
             --object->field_0x1094;
@@ -1949,8 +1953,9 @@ void GameAIProcess() {
         party_follow_offsets[index] = 0.5f;
     }
     party_under_cover = cover_result;
-    if ((VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && (all_under_cover != 0) &&
-        party_cant_be_under_cover == 0) {
+    if (__builtin_expect((VADER_ADATA == NULL || WORLD->area != VADER_ADATA) && (all_under_cover != 0) &&
+                             party_cant_be_under_cover == 0,
+                         1)) {
         party_under_cover = 1;
     }
     AITriggerSetSysProcess(WORLD->ai_trigger_set_sys);
@@ -2112,14 +2117,10 @@ void GameAIProcess() {
                               (ai_update_flags >> 3) & 1);
         goto ai_precombat;
     ai_combat:
-        if ((object->apiobj.field_0x1f8 & 0x180) == 0x80) {
-            object->field_0xefc &= ~4;
-            object->apiobj.flags_high =
-                (object->apiobj.flags_high & ~2) | ((object->apiobj.character_data->model_flags >> 27) & 2);
-        } else {
+        if ((object->apiobj.field_0x1f8 & 0x180) != 0x80) {
             object->apiobj.flags_high &= ~2;
             i32 defend = false;
-            if ((object->field_0xef8 & 0x80) != 0 && object->ai.opponent_object != NULL) {
+            if ((object->field_0xef8 & 0x80) != 0 && __builtin_expect(object->ai.opponent_object != NULL, 1)) {
                 BOLTTYPE_s *bolt = BoltType_FindByID(0, WORLD);
                 if (bolt->field_10 * bolt->field_14 > object->ai.opponent_metric) {
                     NUVEC forward;
@@ -2154,7 +2155,7 @@ void GameAIProcess() {
                         object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
                 }
             }
-            if (object->use_weapon) {
+            if (__builtin_expect(object->use_weapon != 0, 1)) {
                 defend = true;
                 if ((object->field_0xe22 & 1) != 0) {
                     object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
@@ -2171,6 +2172,10 @@ void GameAIProcess() {
                        object->character_context != 6 && object->field_0xe32 == 0) {
                 object->pad_gamepad->buttons_pressed |= GAMEPAD_SPECIAL;
             }
+        } else {
+            object->field_0xefc &= ~4;
+            object->apiobj.flags_high =
+                (object->apiobj.flags_high & ~2) | ((object->apiobj.character_data->model_flags >> 27) & 2);
         }
         if ((object->apiobj.character_data->game_character->flags_094[3] & 0x10) != 0 &&
             !object->apiobj.player_controlled) {
@@ -2185,14 +2190,14 @@ void GameAIProcess() {
                 } else {
                     object->ai_jump_timer = 0.0f;
                 }
-            } else if (!(object->pad_gamepad->input_magnitude <= threshold)) {
+            } else if (__builtin_expect(object->pad_gamepad->input_magnitude <= threshold, 1)) {
+                object->ai_jump_timer = 0.0f;
+            } else {
                 object->ai_jump_timer += FRAMETIME;
                 if (object->ai_jump_timer > 1.0f) {
                     object->pad_gamepad->buttons_pressed |= GAMEPAD_JUMP;
                     object->ai_jump_timer = 0.0f;
                 }
-            } else {
-                object->ai_jump_timer = 0.0f;
             }
         }
         if (__builtin_expect(object->ai.action_target_ref != NULL, 1))
@@ -2209,7 +2214,7 @@ void GameAIProcess() {
                 (object->ai.capabilities & LEGO_AIPATHCNX_R2D2GLIDE) == 0)
                 object->field_0xe31 = 0;
             if (object->character_context == 0x4b && object->suit != NULL &&
-                (static_cast<SUIT_s *>(object->suit)->flags & 0x10) != 0)
+                __builtin_expect((static_cast<SUIT_s *>(object->suit)->flags & 0x10) != 0, 1))
                 object->pad_gamepad->buttons_held |= GAMEPAD_SPECIAL;
             AIPATHCNX *connection = object->ai.path_info.connection;
             if (connection != NULL && (connection->traversal_flags[object->ai.path_info.direction] &
@@ -2230,7 +2235,7 @@ void GameAIProcess() {
                         Player_ToggleCharacter(object, 1, 0);
                         if (object->id == id_DROIDEKA)
                             Player_ToggleCharacter(object, 1, 0);
-                        if (object->apiobj.model_draw_result == 0)
+                        if (__builtin_expect(object->apiobj.model_draw_result == 0, 1))
                             object->input_toggle_hold_time = 0.0f;
                         else
                             object->input_toggle_hold_time = 0.25f;
@@ -2252,11 +2257,7 @@ void GameAIProcess() {
             u8 other_node = connection->node_indices[direction == 0];
             u8 node = connection->node_indices[direction];
             u16 angle;
-            if (object->character_context == 0x45) {
-                angle = object->takeover_start_angle;
-                wall_direction = v001;
-                NuVecRotateY(&wall_direction, &wall_direction, angle);
-            } else {
+            if (!(object->character_context == 0x45)) {
                 NuVecSub(&lateral, &nodes[other_node].position, &nodes[node].position);
                 lateral.y = 0.0f;
                 NuVecNorm(&lateral, &lateral);
@@ -2298,6 +2299,10 @@ void GameAIProcess() {
                     }
                 }
                 angle = NuAtan2D(wall_direction.x, wall_direction.z);
+            } else {
+                angle = object->takeover_start_angle;
+                wall_direction = v001;
+                NuVecRotateY(&wall_direction, &wall_direction, angle);
             }
             movement.x = object->ai.movement_position.x - object->apiobj.position.x;
             movement.y = 0.0f;
@@ -2320,7 +2325,7 @@ void GameAIProcess() {
             if (!object->apiobj.player_controlled && object->character_context != 0x0b) {
                 if (drop_in_teleport == 1 && VehicleArea == 0 && (Arcade != 0 || teleport_all_freeplay_modes != 0) &&
                     object->apiobj.model_draw_result == 0 && (object->tag_flags & 2) == 0 &&
-                    drop_back_in_timer > 0.0f) {
+                    __builtin_expect(drop_back_in_timer > 0.0f, 0)) {
                     NUVEC position = player->apiobj.last_safe_position;
                     if (position.x == player->apiobj.position.x && position.y == player->apiobj.position.y &&
                         position.z == player->apiobj.position.z)
@@ -2494,8 +2499,9 @@ void GameAIProcess() {
                 if (difference.z > radius || difference.z < -radius)
                     continue;
                 if (first->collision_min.y > second->collision_max.y ||
-                    second->collision_min.y > first->collision_max.y || first->collision_link == second ||
-                    second->collision_link == first)
+                    second->collision_min.y > first->collision_max.y ||
+                    __builtin_expect(first->collision_link == second, 0) ||
+                    __builtin_expect(second->collision_link == first, 0))
                     continue;
                 bool fixed_first = first->player_controlled;
                 bool fixed_second = second->player_controlled;
@@ -2670,7 +2676,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         if (group != NULL) {
             AddToAIGroup(group, &object->apiobj);
             offset.x = ((object->ai.group_column + 1) / 2) * group->x_spacing;
-            if (__builtin_expect(object->ai.group_column & 1, 0))
+            if (__builtin_expect(object->ai.group_column & 1, 1))
                 offset.x = -offset.x;
             offset.z = -group->z_spacing * static_cast<u32>(object->ai.group_member);
             offset.y = 0.0f;

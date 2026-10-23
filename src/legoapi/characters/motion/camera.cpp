@@ -407,8 +407,9 @@ mode_selected:
                     (BonusWinner != -1 && BonusWinner != i))
                     continue;
                 vehicle_player[i] = object->apiobj.character_data->model_flags & 0x2000;
-                if (!(SPEEDERCHASEA_LDATA != NULL && WORLD->current_level == SPEEDERCHASEA_LDATA &&
-                      object->id == id_SPEEDERBIKE && disable_narrow_socks) &&
+                if (__builtin_expect(!(SPEEDERCHASEA_LDATA != NULL && WORLD->current_level == SPEEDERCHASEA_LDATA &&
+                                       object->id == id_SPEEDERBIKE && disable_narrow_socks),
+                                     1) &&
                     vehicle_player[i]) {
                     vehicle_count++;
                     if (object->id == id_LANDSPEEDER) {
@@ -425,7 +426,7 @@ mode_selected:
                         }
                     }
                 }
-                if (PODRACE_ADATA != NULL && WORLD->area == PODRACE_ADATA) {
+                if (PODRACE_ADATA != NULL && __builtin_expect(WORLD->area == PODRACE_ADATA, 0)) {
                     player_focus[player_count] = Player[i]->apiobj.collision_position;
                     NUVEC &pod_offset = mode_scratch;
                     pod_offset.y = 0.0f;
@@ -602,7 +603,7 @@ mode_selected:
                 if (WORLD->current_level == BONUS_GUNSHIPB_LDATA && camera->sock_position.location.sock != -1) {
                     position.x += target.x * 0.0625f;
                     position.z += target.z * 0.0625f;
-                } else if (WORLD->current_level == EMPERORFIGHTA_LDATA && player != NULL &&
+                } else if (__builtin_expect(WORLD->current_level == EMPERORFIGHTA_LDATA, 1) && player != NULL &&
                            player->sock_position.location.sock == 11 && WORLD->current_level != NULL)
                     position.y += EMPERORFIGHTA_CAMDYHACK;
             rail_vehicle_focus:
@@ -693,7 +694,7 @@ mode_selected:
                     NuVecSub(&offset, &rail_position, &average_position);
                     f32 magnitude = NuVecMagSqr(&offset);
                     f32 blend = 0.0f;
-                    if (player2 == NULL) {
+                    if (__builtin_expect(player2 == NULL, 1)) {
                         blend = magnitude / 125.0f;
                         if (blend > 0.75f)
                             blend = 0.6f;
@@ -844,10 +845,10 @@ mode_selected:
                     ViewCam.distance += static_cast<f32>(static_cast<u32>(ViewCam.gamepad->pad->analog_r2)) * zoom_step;
                     if ((selected_pad->pad->digital_buttons & 0x40) != 0) {
                         addViewLDy += FRAMETIME;
-                    } else if ((selected_pad->pad->digital_buttons & 0x20) != 0) {
-                        addViewLDy -= FRAMETIME;
-                    } else {
+                    } else if ((selected_pad->pad->digital_buttons & 0x20) == 0) {
                         addViewLDy = 0.0f;
+                    } else {
+                        addViewLDy -= FRAMETIME;
                     }
                     ViewCam.distance += addViewLDy;
                     ViewCam.distance = NuFmax(0.1f, ViewCam.distance);
@@ -965,7 +966,7 @@ mode_selected:
                 offset.x = lateral.x * projection + offset.x;
                 offset.z = projection * lateral.z + offset.z;
                 ++shared_count;
-                if (shared_count == 2) {
+                if (__builtin_expect(shared_count == 2, 0)) {
                     offset.x *= 0.5f;
                     offset.z *= 0.5f;
                 }
@@ -1097,7 +1098,9 @@ mode_selected:
         camera->yaw = yaw;
         camera->roll = roll;
     } else {
-        if (pitch_override == -1) {
+        if (pitch_override != -1)
+            camera->pitch = pitch_override;
+        else {
             if (((camera->pitch - pitch) & 0xffff) > 0x7fff) {
                 CamStopBlend += FRAMETIME;
                 if (CamStopBlend > 1.0f)
@@ -1105,12 +1108,11 @@ mode_selected:
             }
             f32 pitch_seek = camera->angle_seek;
             camera->pitch = SeekRot(camera->pitch, pitch, NuFsqrt(CamStopBlend) * pitch_seek);
-        } else
-            camera->pitch = pitch_override;
-        if (yaw_override == -1)
-            camera->yaw = SeekRot(camera->yaw, yaw, camera->angle_seek * CamStopBlend);
-        else
+        }
+        if (yaw_override != -1)
             camera->yaw = yaw_override;
+        else
+            camera->yaw = SeekRot(camera->yaw, yaw, camera->angle_seek * CamStopBlend);
         if (roll_override == -1)
             roll = SeekRot(camera->roll, roll,
                            (roll_seek_override > 0.0f ? roll_seek_override : camera->angle_seek) * CamStopBlend);

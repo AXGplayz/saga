@@ -63,7 +63,7 @@ static i32 Customiser_FindSetFromNamePart(char *name) {
     return -1;
 }
 
-static inline i32 Customiser_FindSetFromName(char *name) {
+static inline __attribute__((always_inline)) i32 Customiser_FindSetFromName(char *name) {
     if (NuStrICmp(name, "hathair") == 0)
         return 0;
     if (NuStrICmp(name, "head") == 0)
@@ -499,7 +499,7 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
                     world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 0x40);
                     resource->scene = NuGScnRead(&world->giz_buffer, world->unknown_0108, path);
                 }
-                if (resource->scene != NULL) {
+                if (__builtin_expect(resource->scene != NULL, 1)) {
                     NuSpecialFind(resource->scene, &resource->special, piece_name, 1);
                 }
                 continue;
@@ -509,11 +509,11 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
                 continue;
             }
             PLATFORMS_SUPPORTED platform = NuPlatform::Get()->GetCurrentPlatform();
-            if (platform != IOS_PLATFORM && platform != ANDROID_ATITC_PLATFORM) {
+            if (__builtin_expect(platform != IOS_PLATFORM && platform != ANDROID_ATITC_PLATFORM, 1)) {
                 NuStrCat(path, ".pnt");
             }
 
-            if (texture_pack != NULL) {
+            if (__builtin_expect(texture_pack != NULL, 1)) {
                 char converted_path[0x80];
                 reinterpret_cast<i32 (*)(char *, char *, i32)>(&NuFileExtConvert)(converted_path, path,
                                                                                    sizeof(converted_path));
@@ -525,7 +525,7 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
                     resource->texture_id = NuTexCreateNative(static_cast<NUNATIVETEX *>(texture_data), true);
                 }
             }
-            if (resource->texture_id == 0) {
+            if (__builtin_expect(resource->texture_id == 0, 1)) {
                 resource->texture_id = NuTexRead(path, &world->giz_buffer, world->unknown_0108);
             }
         }
@@ -670,37 +670,11 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
     memset(pieces, 0, sizeof(pieces));
     char *names = buffer->char_ptr;
     i32 count = 0;
-    while (NuFParGetLine(parser) != 0) {
+    while (__builtin_expect(NuFParGetLine(parser) != 0, 0)) {
         if (NuFParGetWord(parser) == 0)
             break;
         i32 category = Customiser_FindSetFromName(parser->word_buf);
-        if (!(category != -1 && NuFParGetWord(parser) != 0)) {
-            if (NuStrICmp(parser->word_buf, "locator") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    category = Customiser_FindSetFromName(parser->word_buf);
-                    if (category != -1) {
-                        i32 locator = NuFParGetInt(parser);
-                        locators[category] = static_cast<u32>(locator) < 16 ? locator : -1;
-                        if (static_cast<u32>(locator) < 16) {
-                            while (NuFParGetWord(parser) != 0) {
-                                if (NuStrICmp(parser->word_buf, "xoffset") == 0)
-                                    x_offsets[category] = NuFParGetFloat(parser);
-                                else if (NuStrICmp(parser->word_buf, "yoffset") == 0)
-                                    y_offsets[category] = NuFParGetFloat(parser);
-                            }
-                        }
-                    }
-                }
-            } else if (NuStrICmp(parser->word_buf, "layer") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    category = Customiser_FindSetFromName(parser->word_buf);
-                    if (category != -1) {
-                        i32 layer = NuFParGetInt(parser);
-                        layers[category] = static_cast<u32>(layer) < 32 ? layer : -1;
-                    }
-                }
-            }
-        } else {
+        if (category != -1 && NuFParGetWord(parser) != 0) {
             categories[count] = category;
             CUSTOMPIECE *piece = &pieces[count];
             piece->name = names;
@@ -721,7 +695,7 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
             if (CustomSetData[category].name == NULL && weapon_from_name != NULL)
                 piece->weapon_model = weapon_from_name(piece->name);
             while (NuFParGetWord(parser) != 0) {
-                if (NuStrICmp(parser->word_buf, "from") == 0) {
+                if (__builtin_expect(NuStrICmp(parser->word_buf, "from") == 0, 0)) {
                     if (NuFParGetWord(parser) != 0)
                         piece->character_id = CharIDFromName(parser->word_buf);
                 } else if (NuStrICmp(parser->word_buf, "icon_from") == 0) {
@@ -730,15 +704,15 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
                 } else if (NuStrICmp(parser->word_buf, "from_variant") == 0) {
                     if (NuFParGetWord(parser) != 0)
                         piece->collection_type = CharVariant_Find(parser->word_buf);
-                } else if (NuStrICmp(parser->word_buf, "no_hat") == 0) {
+                } else if (__builtin_expect(NuStrICmp(parser->word_buf, "no_hat") == 0, 0)) {
                     piece->availability_flags |= 1;
-                } else if (NuStrICmp(parser->word_buf, "hat_off") == 0) {
+                } else if (__builtin_expect(NuStrICmp(parser->word_buf, "hat_off") == 0, 0)) {
                     piece->availability_flags |= 0x20;
                 } else if (NuStrICmp(parser->word_buf, "cape_off") == 0) {
                     piece->availability_flags |= 0x40;
                 } else if (NuStrICmp(parser->word_buf, "helmet") == 0) {
                     piece->availability_flags |= 2;
-                } else if (NuStrICmp(parser->word_buf, "big_head") == 0) {
+                } else if (__builtin_expect(NuStrICmp(parser->word_buf, "big_head") == 0, 0)) {
                     piece->availability_flags |= 4;
                 } else if (NuStrICmp(parser->word_buf, "big_hat") == 0) {
                     piece->availability_flags |= 8;
@@ -747,7 +721,7 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
                 } else if (NuStrICmp(parser->word_buf, "100_percent") == 0) {
                     if (NuFParGetWord(parser) != 0) {
                         i32 side = NuAToI(parser->word_buf);
-                        if (side == 1)
+                        if (__builtin_expect(side == 1, 1))
                             piece->availability_flags |= 0x80;
                         else if (side == 2)
                             piece->availability_flags |= 0x100;
@@ -765,12 +739,40 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
                 }
             }
             ++count;
+        } else {
+            if (NuStrICmp(parser->word_buf, "locator") == 0) {
+                if (NuFParGetWord(parser) != 0) {
+                    category = Customiser_FindSetFromName(parser->word_buf);
+                    if (category != -1) {
+                        i32 locator = NuFParGetInt(parser);
+                        if (static_cast<u32>(locator) < 16) {
+                            locators[category] = locator;
+                            while (NuFParGetWord(parser) != 0) {
+                                if (__builtin_expect(NuStrICmp(parser->word_buf, "xoffset") == 0, 0))
+                                    x_offsets[category] = NuFParGetFloat(parser);
+                                else if (__builtin_expect(NuStrICmp(parser->word_buf, "yoffset") == 0, 1))
+                                    y_offsets[category] = NuFParGetFloat(parser);
+                            }
+                        } else {
+                            locators[category] = -1;
+                        }
+                    }
+                }
+            } else if (NuStrICmp(parser->word_buf, "layer") == 0) {
+                if (NuFParGetWord(parser) != 0) {
+                    category = Customiser_FindSetFromName(parser->word_buf);
+                    if (category != -1) {
+                        i32 layer = NuFParGetInt(parser);
+                        layers[category] = static_cast<u32>(layer) < 32 ? layer : -1;
+                    }
+                }
+            }
         }
         if (count >= 440)
             break;
     }
     NuFParDestroy(parser);
-    if (count == 0)
+    if (__builtin_expect(count == 0, 0))
         return NULL;
 
     // Retail uses four-byte arena alignment. Pointer-bearing native records
@@ -803,7 +805,7 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
         if (customiser->piece_counts[category] > 0)
             buffer->addr = ALIGN(reinterpret_cast<usize>(output), alignof(CUSTOMPIECE));
     }
-    if (customiser->save == NULL) {
+    if (__builtin_expect(customiser->save == NULL, 0)) {
         customiser->save = static_cast<CUSTOMISESAVE_s *>(buffer->void_ptr);
         // The serialized save occupies a four-byte-rounded arena allocation.
         buffer->addr = ALIGN(buffer->addr + sizeof(CUSTOMISESAVE_s) * 2, 4);

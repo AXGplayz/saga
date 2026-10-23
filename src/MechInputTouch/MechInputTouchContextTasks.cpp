@@ -726,7 +726,7 @@ void MechTouchTaskPlannedGoTo::AnalysePath() {
         position.y = path_points[path_index].y + step_y;
         ++path_index;
     }
-    if (path_index <= end) {
+    if (__builtin_expect(path_index <= end, 0)) {
         if (last_index > 0) {
             for (i32 i = last_index + 1; i <= path_count; ++i) {
                 path_points[i].y = -1000000000.0f;
@@ -792,13 +792,13 @@ void MechTouchTaskPlannedGoTo::GenerateWaypoints() {
             waypoints[waypoint_index + 1].target_position.position.y = current_point_y;
             waypoints[waypoint_index + 1].target_position.position.z = current_point_z;
             waypoints[waypoint_index + 1].target_position.position.w = current_point_w;
-            if (current == path_count || path_points[current + 1].y == -1000000000.0f) {
+            if (__builtin_expect(current == path_count || path_points[current + 1].y == -1000000000.0f, 1)) {
                 break;
             }
             waypoint_index += 2;
         }
         const i32 next = current + 1;
-        if (next > path_count || waypoint_index > 30 || path_points[next].y == -1000000000.0f) {
+        if (__builtin_expect(next > path_count || waypoint_index > 30 || path_points[next].y == -1000000000.0f, 0)) {
             goto write_final_waypoint;
         }
         current = next;
@@ -827,7 +827,7 @@ write_final_waypoint: {
 }
 
 cleanup:
-    if (field_6fd == 0) {
+    if (__builtin_expect(field_6fd == 0, 0)) {
         move_to_marker = NuMechPtr<MoveToMarker, 4>(MechSystems::Get()->NewMoveToMarker(target_position));
     }
     delete[] path_points;

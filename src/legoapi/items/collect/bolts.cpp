@@ -634,10 +634,10 @@ void BoltTypes_Configure(WORLDINFO_s *world, char *config) {
         }
 
         if (reading_type != 0) {
-            if (NuStrICmp(parser->word_buf, const_cast<char *>("bolttype_end")) == 0) {
-                if (type.name[0] != '\0') {
+            if (__builtin_expect(NuStrICmp(parser->word_buf, const_cast<char *>("bolttype_end")) == 0, 1)) {
+                if (__builtin_expect(type.name[0] != '\0', 0)) {
                     for (i32 i = 0; i < 8; ++i) {
-                        if (NuStrLen(world->bolt_types[i].name) != 0) {
+                        if (__builtin_expect(NuStrLen(world->bolt_types[i].name) != 0, 1)) {
                             continue;
                         }
                         world->bolt_types[i] = type;
@@ -709,7 +709,7 @@ PART_s *Bolt_HitParts(BOLT_s *bolt, NUVEC *points, NUVEC *minimum, NUVEC *maximu
             continue;
         BoltSys->debris(bolt, points, hit, &part->velocity, 0);
         Bolt_PlayHitSfx(bolt);
-        if (bolt->owner != NULL && (bolt->owner->apiobj.flags_low & 1) != 0)
+        if (__builtin_expect(bolt->owner != NULL && (bolt->owner->apiobj.flags_low & 1) != 0, 1))
             NewRumble(bolt->owner->pad_gamepad->pad, 0.7f, 0);
         Bolt_End(bolt, 1);
         if (BoltSys->hit_part != NULL && BoltSys->hit_part(bolt, part) == 1)
@@ -835,7 +835,7 @@ void Bolt_Init(void *storage, NetMessage &message) {
             bolt->surface_x_rotation = owner->field_0x105e;
             bolt->surface_z_rotation = owner->field_0x1060;
         }
-        if (owner->field_0x1020 != 2000000.0f && owner->field_0x1087 == 2)
+        if (__builtin_expect(owner->field_0x1020 != 2000000.0f && owner->field_0x1087 == 2, 1))
             bolt->field_0xe8 = owner->field_0x1020;
     }
     f32 collision_radius = bolt->radius;
@@ -902,29 +902,32 @@ void Bolt_Init(void *storage, NetMessage &message) {
             if ((bolt->flags & 0x10000) == 0 && !Bolt_HitGameObjects(bolt, points, &bolt->bounds_min, &bolt->bounds_max,
                                                                      bolt->collision_radius, NULL)) {
                 bool hit = false;
-                if ((bolt->flags & 0x13) != 0 ||
-                    (bolt->owner != NULL && (bolt->owner->can_shoot_obstructions || bolt->owner->use_action == 5))) {
+                if (__builtin_expect(__builtin_expect((bolt->flags & 0x13) != 0, 0) ||
+                                         (bolt->owner != NULL &&
+                                          (bolt->owner->can_shoot_obstructions || bolt->owner->use_action == 5)),
+                                     1)) {
                     hit = bolt->hit_platform != -1 && Bolt_HitPlat(bolt, NULL);
                     if (!hit)
                         hit = GizmoSys_BoltHit(world->gizmo_sys, world, bolt, points, &bolt->bounds_min,
                                                &bolt->bounds_max, bolt->collision_radius, NULL) != 0;
                     if (!hit) {
                         bool single = (bolt->flags & 0x200) != 0;
-                        if (GizmoBlowUp_Hit(bolt->owner, single ? &points[1] : points, single ? 1 : 3,
-                                            bolt->collision_radius, &bolt->bounds_min, &bolt->bounds_max, bolt, 1,
-                                            NULL)) {
+                        if (!(GizmoBlowUp_Hit(bolt->owner, single ? &points[1] : points, single ? 1 : 3,
+                                              bolt->collision_radius, &bolt->bounds_min, &bolt->bounds_max, bolt, 1,
+                                              NULL)))
+                            hit = Bolt_HitParts(bolt, points, &bolt->bounds_min, &bolt->bounds_max,
+                                                bolt->collision_radius, Bolt_HitPartMode(bolt)) != NULL;
+                        else {
                             BoltSys->debris(bolt, points, -1, NULL, 0);
                             if (bolt->owner != NULL)
                                 NewRumble(bolt->owner->pad_gamepad->pad, 0.6f, 0);
                             Bolt_End(bolt, 1);
                             Bolt_PlayHitSfx(bolt);
                             hit = true;
-                        } else
-                            hit = Bolt_HitParts(bolt, points, &bolt->bounds_min, &bolt->bounds_max,
-                                                bolt->collision_radius, Bolt_HitPartMode(bolt)) != NULL;
+                        }
                     }
                 }
-                if (!hit)
+                if (__builtin_expect(!hit, 0))
                     Bolt_PlayHitSfx(bolt);
                 if (BoltSys->stop_targeting != NULL && bolt->owner != NULL &&
                     (bolt->owner->apiobj.flags_low & 0x80) != 0)
@@ -1209,7 +1212,7 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
             EdFileSwapEndianess16(&bolt_index);
         message.read_offset += 2;
     }
-    if (message.data != NULL) {
+    if (__builtin_expect(message.data != NULL, 1)) {
         memmove(&object_index, message.data->bytes + message.read_offset, 2);
         if (message.swap_endianness)
             EdFileSwapEndianess16(&object_index);
@@ -1234,7 +1237,7 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
     }
     if (message.data != NULL) {
         memmove(&client, message.data->bytes + message.read_offset, 4);
-        if (message.swap_endianness)
+        if (__builtin_expect(message.swap_endianness != 0, 1))
             EdFileSwapEndianess32(&client);
         message.read_offset += 4;
     }
@@ -1275,8 +1278,10 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
         if (((bolt->flags & 0x40) == 0 || deflect) && object->apiobj.player_controlled &&
             ((LEGOCONTEXT_BLOCK != -1 && object->character_context == LEGOCONTEXT_BLOCK) || cheat_deflect) &&
             (object->apiobj.character_data->model_flags & 8) != 0) {
-            if (bolt->owner == NULL || (bolt->owner->apiobj.flags_low & 1) == 0 ||
-                ((bolt->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 && bolt->owner->apiobj.field_0x287 == 0))
+            if (__builtin_expect(
+                    bolt->owner == NULL || (bolt->owner->apiobj.flags_low & 1) == 0 ||
+                        ((bolt->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 && bolt->owner->apiobj.field_0x287 == 0),
+                    0))
                 goto reflected;
         }
         if (!TouchHacks::TouchControlsActive) {
@@ -1341,8 +1346,8 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
             }
             Bolt_PlayHitSfx(bolt);
             GameObject_s *owner = bolt->owner;
-            if (owner != NULL && (owner->apiobj.flags_low & 1) != 0 && (owner->apiobj.flags_low & 0x80) == 0 &&
-                (owner->apiobj.field_0x1f4 & 1) != 0 &&
+            if (owner != NULL && (owner->apiobj.flags_low & 1) != 0 &&
+                __builtin_expect((owner->apiobj.flags_low & 0x80) == 0, 1) && (owner->apiobj.field_0x1f4 & 1) != 0 &&
                 ((owner->apiobj.field_0x1f4 ^ object->apiobj.field_0x1f4) & 1) == 0)
                 goto owner_feedback;
             objhitobj_bolt = bolt;
@@ -1367,7 +1372,7 @@ finish:
         object->apiobj.velocity.x += bolt->field_0xac.x * amount;
         object->apiobj.velocity.z += bolt->field_0xac.z * amount;
     }
-    if (object->apiobj.player_controlled)
+    if (__builtin_expect(object->apiobj.player_controlled != 0, 1))
         GameCam_HitJudder();
     Bolt_End(bolt, 1);
 }
@@ -1494,7 +1499,7 @@ void Bolts_Update(WORLDINFO_s *world) {
                     f32 time = bolt->time;
                     f32 ray_time = bolt->ray_time;
                     bolt->lifetime = time + ray_time * NewRayCastGetTOFI();
-                    if (bolt->type->ricochet_callback != NULL)
+                    if (__builtin_expect(bolt->type->ricochet_callback != NULL, 0))
                         bolt->type->ricochet_callback(bolt, &normal);
                 }
                 bolt->field_0xe8 = 2000000.0f;
@@ -1505,7 +1510,7 @@ void Bolts_Update(WORLDINFO_s *world) {
                         FindAnglesZX(&ShadNorm, &bolt->surface_x_rotation, &bolt->surface_z_rotation);
                     }
                     u32 surface = ShadowInfo();
-                    if (surface <= 31 && (TerSurface[surface].flags & 2) != 0)
+                    if (__builtin_expect(surface <= 31, 1) && (TerSurface[surface].flags & 2) != 0)
                         bolt->field_0xe8 = height;
                     else if (static_cast<f32>(NewShadowOnPlatform()) != -1.0f)
                         bolt->field_0xe8 = FindReflectionNoPlatforms(&bolt->position);
@@ -1554,7 +1559,7 @@ void Bolts_Update(WORLDINFO_s *world) {
 
                 Bolt_Reflect(&bolt->hit_normal, &bolt->velocity, &reflection);
                 NuVecScale(&reflection, &reflection, 0.2f);
-                if (bolt->hit_platform != -1 && bolt->field_0x104 != -1 &&
+                if (bolt->hit_platform != -1 && __builtin_expect(bolt->field_0x104 != -1, 1) &&
                     (TerSurface[bolt->field_0x104].flags & 0x1000) != 0)
                     BoltSys->debris(bolt, points, -1, &reflection, 1);
                 else
@@ -1585,8 +1590,10 @@ void Bolts_Update(WORLDINFO_s *world) {
                 }
             }
             if (handled == 0) {
-                if (surface_hit && bolt->field_0x104 >= 0 && bolt->field_0x104 <= 31 &&
-                    (TerSurface[bolt->field_0x104].flags & 0x800) != 0 && (bolt->flags & 0x8000) == 0) {
+                if (__builtin_expect(surface_hit && bolt->field_0x104 >= 0 && bolt->field_0x104 <= 31 &&
+                                         (TerSurface[bolt->field_0x104].flags & 0x800) != 0 &&
+                                         (bolt->flags & 0x8000) == 0,
+                                     1)) {
                     GameAudio_PlaySfx(41, &bolt->position, 0, 0);
                     Bolt_AddDeflectedBolt(bolt, &bolt->velocity, &bolt->hit_normal, processed);
                 } else if ((bolt->flags & 0x80000) == 0)
@@ -1600,7 +1607,7 @@ void Bolts_Update(WORLDINFO_s *world) {
             for (i32 i = 0; i < 2; ++i) {
                 i16 effect = static_cast<i16>(static_cast<u32>(bolt->type->field_30) >> (i * 16));
                 u16 count = static_cast<u16>(static_cast<u32>(bolt->type->field_34) >> (i * 16));
-                if (effect != -1 && count != 0)
+                if (__builtin_expect(effect != -1 && count != 0, 1))
                     AddVariableShotDebrisEffectTimed5(world_debris_sys->entries[effect].effect, &bolt->position, NULL,
                                                       &bolt->velocity, count, FRAMETIME, NULL, NULL, 20000, 0);
             }

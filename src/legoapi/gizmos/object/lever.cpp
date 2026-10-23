@@ -91,15 +91,15 @@ void Lever_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 f32 frame = *playing;
                 if (!(frame >= AnimListFrame(object->apiobj.character_model, object->context_animation, 0)))
                     return;
-            } else if (object->context_animation_timer < 0.25f) {
+            } else if (__builtin_expect(object->context_animation_timer < 0.25f, 0)) {
                 return;
             }
         }
-        if (!(object->apiobj.character_data->model_flags & 4)) {
+        if (object->apiobj.character_data->model_flags & 4) {
+            static_cast<LEVER_s *>(object->field_0x788)->baddie = 1;
+        } else {
             if (!(object->apiobj.character_data->model_flags & 0x200))
                 static_cast<LEVER_s *>(object->field_0x788)->goodie = 1;
-        } else {
-            static_cast<LEVER_s *>(object->field_0x788)->baddie = 1;
         }
         static_cast<LEVER_s *>(object->field_0x788)->flags_high |= 8;
         object->context_flags |= 0x40;
@@ -109,7 +109,7 @@ void Lever_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     }
     if (object->apiobj.character_model->model_data_b[0x5d] == NULL || object->apiobj.field_0x27d == 0)
         return;
-    if (!(!ObjLandReady(object) && !objInNetWaitContext(object, 0x4a))) {
+    if (__builtin_expect(!(!ObjLandReady(object) && !objInNetWaitContext(object, 0x4a)), 1)) {
         LEVER_s *lever = Lever_FindNearest(world, &object->apiobj.lower_position, object, &distance);
         if (objInNetWaitContext(object, 0x4a)) {
             object->context_animation_timer -= FRAMETIME;
@@ -126,9 +126,10 @@ void Lever_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 show_lever_hint = 1;
         }
         f32 range = (object->apiobj.field_0x1dc + 0.25f) * lever->target_indicator_scale;
-        if (!(distance < range * range))
+        if (__builtin_expect(!(distance < range * range), 0))
             return;
-        if (!(object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) && !objInNetWaitContext(object, 0x4a))
+        if (!(object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) &&
+            __builtin_expect(!objInNetWaitContext(object, 0x4a), 0))
             return;
         Lever_StartPull(object, lever);
     }
@@ -380,8 +381,9 @@ static void Levers_Draw(void *world_ptr, void *, float) {
                 draw_target = world->lev_objs[LEVER_SPECIAL_TARGET].active != 0;
             }
 
-            if ((lever.flags & LEVER_FLAG_IDLE_STATE_MASK) == LEVER_FLAG_ENABLED &&
-                world->lev_objs[LEVER_SPECIAL_READY].active != 0) {
+            if (__builtin_expect((lever.flags & LEVER_FLAG_IDLE_STATE_MASK) == LEVER_FLAG_ENABLED &&
+                                     world->lev_objs[LEVER_SPECIAL_READY].active != 0,
+                                 0)) {
                 NuSpecialDrawAtAlpha(&world->lev_objs[LEVER_SPECIAL_READY].special, &target_matrix, ready_alpha);
             } else if (!draw_target) {
                 goto draw_status;

@@ -104,7 +104,8 @@ static void GizObstacles_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *, voi
 static void GizObstacles_Update(void *world_ptr, void *data, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     GIZOBSTACLESYS_s *obstacle_sys = static_cast<GIZOBSTACLESYS_s *>(data);
-    if (obstacle_sys == NULL || world == NULL || world->gizmo_sys == NULL || world->gizmo_sys->sets == NULL) {
+    if (__builtin_expect(
+            obstacle_sys == NULL || world == NULL || world->gizmo_sys == NULL || world->gizmo_sys->sets == NULL, 0)) {
         return;
     }
 
@@ -121,11 +122,13 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
 
         GameObject_s *previous_triggering_object = obstacle->triggering_object;
         obstacle->triggering_object = NULL;
-        if ((obstacle->progress_flags & GIZOBSTACLE_PROGRESS_FLAG_VISIBLE) == 0 ||
-            (obstacle->progress_flags &
-             (GIZOBSTACLE_PROGRESS_FLAG_ENABLED | GIZOBSTACLE_PROGRESS_FLAG_EXTERNAL_CONTROL)) == 0 ||
-            obstacle->anim_set == NULL || (obstacle->control_flags & GIZOBSTACLE_CONTROL_FLAG_REVERSE_ACTIVE) != 0 ||
-            (obstacle->runtime_flags & GIZOBSTACLE_RUNTIME_FLAG_DESTROYED) != 0) {
+        if (__builtin_expect((obstacle->progress_flags & GIZOBSTACLE_PROGRESS_FLAG_VISIBLE) == 0 ||
+                                 (obstacle->progress_flags & (GIZOBSTACLE_PROGRESS_FLAG_ENABLED |
+                                                              GIZOBSTACLE_PROGRESS_FLAG_EXTERNAL_CONTROL)) == 0 ||
+                                 obstacle->anim_set == NULL ||
+                                 (obstacle->control_flags & GIZOBSTACLE_CONTROL_FLAG_REVERSE_ACTIVE) != 0 ||
+                                 (obstacle->runtime_flags & GIZOBSTACLE_RUNTIME_FLAG_DESTROYED) != 0,
+                             1)) {
             continue;
         }
 
@@ -133,7 +136,7 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
         if (obstacle->mode == 7) {
             if ((obstacle->progress_flags & GIZOBSTACLE_PROGRESS_FLAG_PUSH_CONTROL) != 0) {
                 obstacle->triggering_object = previous_triggering_object;
-                if (obstacle->animation_speed != 0.0f) {
+                if (__builtin_expect(obstacle->animation_speed != 0.0f, 1)) {
                     GizObstacle_PlayForwards(obstacle);
                     anim_set = obstacle->anim_set;
                 } else {
@@ -141,7 +144,7 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
                     anim_set = obstacle->anim_set;
                 }
             } else {
-                if (obstacle->state == 1) {
+                if (__builtin_expect(obstacle->state == 1, 0)) {
                     obstacle->animation_speed = -1.0f;
                     GizObstacle_PlayForwards(obstacle);
                     anim_set = obstacle->anim_set;
@@ -151,7 +154,7 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
                     anim_set = obstacle->anim_set;
                 }
             }
-        } else if ((obstacle->progress_flags & GIZOBSTACLE_PROGRESS_FLAG_EXTERNAL_CONTROL) == 0) {
+        } else if (__builtin_expect((obstacle->progress_flags & GIZOBSTACLE_PROGRESS_FLAG_EXTERNAL_CONTROL) == 0, 0)) {
             GIZOBSTACLEUPDATEFN update_fn = gizobstacleupdatefns[obstacle->mode];
             if (update_fn != NULL) {
                 update_fn(obstacle);
@@ -180,14 +183,14 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
             }
 
             anim_set = obstacle->anim_set;
-            if (obstacle->animation_speed < 0.0f) {
-                if (obstacle->stop_sfx_id != -1 &&
-                    (anim_set->state == GAMEANIMSET_STATE_AT_END || IsSfxLooping(obstacle->stop_sfx_id) != 0))
-                    GameAudio_PlaySfxById(obstacle->stop_sfx_id, &obstacle->evaluated_position, 0, 0);
-            } else {
+            if (!(obstacle->animation_speed < 0.0f)) {
                 if (obstacle->start_sfx_id != -1 &&
                     (anim_set->state == GAMEANIMSET_STATE_AT_START || IsSfxLooping(obstacle->start_sfx_id) != 0))
                     GameAudio_PlaySfxById(obstacle->start_sfx_id, &obstacle->evaluated_position, 0, 0);
+            } else {
+                if (obstacle->stop_sfx_id != -1 &&
+                    (anim_set->state == GAMEANIMSET_STATE_AT_END || IsSfxLooping(obstacle->stop_sfx_id) != 0))
+                    GameAudio_PlaySfxById(obstacle->stop_sfx_id, &obstacle->evaluated_position, 0, 0);
             }
             anim_set = obstacle->anim_set;
         }
@@ -201,7 +204,9 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
         const bool animation_finished =
             ((anim_set->flags & GAMEANIMSET_FLAG_STOP_REQUESTED) != 0 || anim_set->animated_object_count == 0) &&
             anim_set->state == GAMEANIMSET_STATE_AT_END;
-        if (completion_mode && animation_finished && (obstacle->blowup_type != -1 || obstacle->pickup_count != 0)) {
+        if (__builtin_expect(completion_mode && animation_finished &&
+                                 (obstacle->blowup_type != -1 || obstacle->pickup_count != 0),
+                             1)) {
             if (obstacle->blowup_type != -1) {
                 if ((obstacle->config_flags & GIZOBSTACLE_CONFIG_BLOWUP_AT_ANIM_OBJECTS) == 0) {
                     GizmoBlowUpTypeBlowUp(world, obstacle->blowup_type, &obstacle->evaluated_position);
@@ -230,7 +235,7 @@ static void GizObstacles_Update(void *world_ptr, void *data, float) {
                 obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_PICKUPS_SPAWNED;
             }
 
-            if (obstacle->state == 3) {
+            if (__builtin_expect(obstacle->state == 3, 1)) {
                 GameAnimSet_JumpToStart(obstacle->anim_set);
                 GizObstacle_EvalAveragePosAndRadius(obstacle, 2);
                 GameAnimSet_SetVisibility(obstacle->anim_set, 1);
@@ -482,7 +487,7 @@ static i32 *GizObstacles_GetBestBoltTarget(GIZMOSET *set, float *result_distance
         return NULL;
     }
     GIZOBSTACLESYS_s *system = static_cast<GIZOBSTACLESYS_s *>(set->unknown);
-    if (system == NULL || bolt_type == NULL) {
+    if (__builtin_expect(system == NULL || bolt_type == NULL, 0)) {
         return NULL;
     }
 
@@ -617,10 +622,10 @@ static i32 GizObstacles_BoltHit(void *world, void *data, void *attacker_ptr, NUV
             }
         }
     } while (system->active_gizmo_count > ++index);
-    if (nearest == NULL) {
+    if (__builtin_expect(nearest == NULL, 0)) {
         return 0;
     }
-    if (__builtin_expect(hit_type != 7, 0) && hit_type != 2 && bolt != NULL) {
+    if (__builtin_expect(__builtin_expect(hit_type != 7, 0) && hit_type != 2 && bolt != NULL, 1)) {
         BoltType_FindByID(bolt->type_id, WORLD);
         Cheats_CheckFlags(2);
     }
@@ -842,7 +847,7 @@ static i32 GizObstacles_Load(void *world_ptr, void *data) {
             } else {
                 char blowup_name[32];
                 const i32 name_length = static_cast<i8>(EdFileReadChar());
-                if (name_length != 0) {
+                if (__builtin_expect(name_length != 0, 0)) {
                     EdFileRead(blowup_name, name_length);
                     obstacle.blowup_type = static_cast<i16>(GizmoBlowupGetNameTableId(blowup_name));
                     if (obstacle.blowup_type != -1) {

@@ -570,8 +570,10 @@ static __used__ void ClimbObject_FindNormal(CLIMBOBJECT_s *object) {
         origin.x = node->position.x;                                                                                   \
         origin.y = (node->max_height + node->min_height) * 0.5f;                                                       \
         origin.z = node->position.z;                                                                                   \
-        if (GameRayCast(&origin, &displacement, 0.0f, TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID | 0x5f) != 0 &&     \
-            (TerSurface[static_cast<i8>(NewRayCastGetImpactTerrainType())].flags & 0x10000) != 0) {                    \
+        if (__builtin_expect(                                                                                          \
+                GameRayCast(&origin, &displacement, 0.0f, TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID | 0x5f) != 0 && \
+                    (TerSurface[static_cast<i8>(NewRayCastGetImpactTerrainType())].flags & 0x10000) != 0,              \
+                0)) {                                                                                                  \
             goto found_normal;                                                                                         \
         }                                                                                                              \
     } while (0)
@@ -658,15 +660,15 @@ void LedgeTerrain_MoveCode(GameObject_s *object) {
                     NuFsqrt(-2.0f * object->apiobj.character_data->game_character->gravity * height);
             return;
         }
-        if (object->apiobj.field_0x27d & 2) {
+        if (__builtin_expect(object->apiobj.field_0x27d & 2 != 0, 0)) {
             object->character_context = -1;
             return;
         }
-        if (object->field_0x7a3 || object->context_animation != LEGOACT_LEDGE_GRAB ||
+        if (object->field_0x7a3 || __builtin_expect(object->context_animation != LEGOACT_LEDGE_GRAB, 0) ||
             AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0)) {
             object->context_animation_timer += FRAMETIME;
         }
-        if (!object->field_0x7a3 && object->context_animation_timer >= object->field_0x768)
+        if (!object->field_0x7a3 && __builtin_expect(object->context_animation_timer >= object->field_0x768, 1))
             object->field_0x7a3 = 1;
         f32 travelled = 0.0f;
         if (LedgeTerrain_Attach(object, object->apiobj.movement_facing_angle, &position, &wall_angle)) {
@@ -685,7 +687,7 @@ void LedgeTerrain_MoveCode(GameObject_s *object) {
             travelled = NuFsqrt(x * x + z * z);
         } else {
             object->airborne_action_duration -= FRAMETIME;
-            if (object->airborne_action_duration <= 0.0f) {
+            if (__builtin_expect(object->airborne_action_duration <= 0.0f, 1)) {
                 object->character_context = -1;
                 return;
             }
@@ -706,12 +708,12 @@ void LedgeTerrain_MoveCode(GameObject_s *object) {
                 object->context_animation = LEGOACT_LEDGE_RIGHT;
                 speed = fabsf(AnimSpeed(object->apiobj.character_model, LEGOACT_LEDGE_RIGHT));
             } else {
-                if (LedgeTerrain_CheckAnims)
+                if (__builtin_expect(LedgeTerrain_CheckAnims != 0, 1))
                     return;
                 speed = 0.5f;
                 goto move;
             }
-        } else if (push < -NuTrigTable[0x3555]) {
+        } else if (__builtin_expect(push < -NuTrigTable[0x3555], 1)) {
             if (LEGOACT_LEDGE_LEFT != -1 && object->apiobj.character_model->model_data_b[LEGOACT_LEDGE_LEFT] != NULL) {
                 object->context_animation = LEGOACT_LEDGE_LEFT;
                 speed = -fabsf(AnimSpeed(object->apiobj.character_model, LEGOACT_LEDGE_LEFT));
@@ -725,12 +727,12 @@ void LedgeTerrain_MoveCode(GameObject_s *object) {
             object->context_animation = LEGOACT_LEDGE_IDLE;
             return;
         }
-        if (speed == 0.0f)
+        if (__builtin_expect(speed == 0.0f, 0))
             return;
         if (LedgeTerrain_CheckAnims && !AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0))
             return;
     move:
-        if (speed < 0.0f)
+        if (__builtin_expect(speed < 0.0f, 1))
             travelled = -travelled;
         f32 distance = speed * FRAMETIME + travelled;
         NUVEC offset;
@@ -746,8 +748,9 @@ void LedgeTerrain_MoveCode(GameObject_s *object) {
     if (LedgeTerrain_CheckAnims &&
         (LEGOACT_LEDGE_IDLE == -1 || object->apiobj.character_model->model_data_b[LEGOACT_LEDGE_IDLE] == NULL))
         return;
-    if (object->character_context != -1 &&
-        !(LEGOCONTEXT_CLIMB != -1 && object->character_context == LEGOCONTEXT_CLIMB)) {
+    if (__builtin_expect(object->character_context != -1 &&
+                             !(LEGOCONTEXT_CLIMB != -1 && object->character_context == LEGOCONTEXT_CLIMB),
+                         1)) {
         if (LEGOCONTEXT_JUMP == -1 || object->character_context != LEGOCONTEXT_JUMP ||
             !(object->context_animation_timer >= 0.1f))
             return;
@@ -1256,8 +1259,9 @@ void WeaponOutCode(GameObject_s *object) {
 after_weapon_touch:
     if (LEGOCONTEXT_WEAPONOUT == -1 || object->character_context != LEGOCONTEXT_WEAPONOUT)
         return;
-    if (object->pad_gamepad->input_magnitude > 0.0f &&
-        (object->apiobj.character_data->game_character->field_0x94 & 0x1000) == 0) {
+    if (__builtin_expect(object->pad_gamepad->input_magnitude > 0.0f &&
+                             (object->apiobj.character_data->game_character->field_0x94 & 0x1000) == 0,
+                         0)) {
         if (object->weapon_scale == 0.0f && object->weapon_scale_state != WEAPON_SCALE_EXTENDING) {
             FastWeaponOut(object, 0);
         }
@@ -1412,7 +1416,7 @@ i32 NewBlockAction(GameObject_s *object) {
     if (count != 1) {
         do {
             action = actions[qrand() / (0xffff / count + 1)];
-        } while (action == object->previous_block_animation);
+        } while (__builtin_expect(action == object->previous_block_animation, 0));
     }
     object->previous_block_animation = action;
     object->context_animation = action;
@@ -1477,7 +1481,7 @@ i32 StepBackFromTarget(GameObject_s *object) {
     float speed = AnimSpeed(object->apiobj.character_model, object->context_animation);
     if (speed != 0.0f) {
         float distance_squared = NuVecXZDistSqr(&object->apiobj.collision_position, target_position, NULL);
-        if (!(distance_squared >= outer_distance * outer_distance)) {
+        if (__builtin_expect(!(distance_squared >= outer_distance * outer_distance), 1)) {
             float blend = 1.0f;
             if (!(inner_distance * inner_distance >= distance_squared)) {
                 blend = 1.0f - (NuFsqrt(distance_squared) - inner_distance) / (outer_distance - inner_distance);

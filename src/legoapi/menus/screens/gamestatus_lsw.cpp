@@ -553,10 +553,7 @@ void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float ela
     switch (stage->field_0x14) {
         case 0:
             newminikitcount = packet->new_minikits;
-            if (newminikitcount > 0)
-                currentminikit = Game.area_save[packet->area->index].field_0x5[0] - newminikitcount;
-            else
-                currentminikit = Game.area_save[packet->area->index].field_0x5[0];
+            if (newminikitcount <= 0) currentminikit = Game.area_save[packet->area->index].field_0x5[0]; else currentminikit = Game.area_save[packet->area->index].field_0x5[0] - newminikitcount;
             stage->field_0x18 = 0.0f;
             stage->field_0x1c = 1.0f;
             stage->field_0x14 = 1;
@@ -606,7 +603,7 @@ void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float ela
                     }
                     stage->field_0x1c = 1.0f;
                     stage->field_0x14 = 4;
-                } else if (stage->field_0x14 != 4)
+                } else if (__builtin_expect(stage->field_0x14 != 4, 1))
                     return;
             }
             if (__builtin_expect((packet->field_0xb0 & 0x10) == 0, 0))
@@ -1232,9 +1229,9 @@ void Prompt_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elap
                                     (packet->next_area == -1 || (packet->area->flags & 2) != 0 ||
                                      Game.area_save[packet->next_area].complete != 0)) ||
                                    (packet->mode_flags & 1) != 0 || packet->challenge_state != 0 ||
-                                   packet->mission_state != 0) {
+                                   __builtin_expect(packet->mission_state != 0, 1)) {
                             if (status_prompt < 1) {
-                                if (((buttons | pad->left_directions) & GAMEPAD_DDOWN) != 0) {
+                                if (__builtin_expect(((buttons | pad->left_directions) & GAMEPAD_DDOWN) != 0, 1)) {
                                     GameAudio_PlaySfx(0x2f, NULL, 0, 0);
                                     ++status_prompt;
                                     moved_down = 1;
@@ -1252,7 +1249,7 @@ void Prompt_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elap
                         break;
                     }
                 } while (player < 2 && (moved_down | moved_up) == 0);
-                if (__builtin_expect(selected != 0, 0)) {
+                if (__builtin_expect(selected != 0, 1)) {
                     packet->prompt_choice = (packet->field_0xb0 & 8) != 0 && packet->next_area != -1 &&
                                                     (packet->area->flags & 2) == 0 &&
                                                     Game.area_save[packet->next_area].complete == 0
@@ -1267,7 +1264,7 @@ void Prompt_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elap
             break;
         }
         case 1: {
-            if (__builtin_expect(stage->field_0x18 == 0.0f, 1)) {
+            if (__builtin_expect(stage->field_0x18 == 0.0f, 0)) {
                 BackupMenu();
             }
             stage->field_0x18 += elapsed;
@@ -1700,7 +1697,7 @@ void Coins_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 active) {
         alpha = !(alpha >= 0.0f) ? 0.0f : alpha > 1.0f ? 1.0f : alpha;
         Text3DEx(TTab[tCOINTOTAL], 0.0f, STATUS_TITLE_Y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 255, 255,
                  static_cast<u8>(static_cast<i32>(alpha * 128.0f)));
-    } else if (stage->field_0x12 != 0) {
+    } else if (__builtin_expect(stage->field_0x12 != 0, 1)) {
         const f32 alpha = getFinishedStatusAlpha(packet);
         CoinTotal_Draw(*packet->score,
                        (STATSPOSY - STATSPOS2Y) * NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] +

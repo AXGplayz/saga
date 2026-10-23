@@ -881,8 +881,8 @@ extern "C" {
 GameObject_s *CutDeadVehiclePlayer;
 
 __attribute__((optimize("O2", "tree-vectorize"))) void LevelStreaming_Update(WORLDINFO_s *world) {
-    if (LOADEROFF == 0 && BGLOAD != 0 && world->area != NULL && (world->area->flags & 8) == 0 && NewLData == NULL &&
-        Mission_Active(NULL) == NULL) {
+    if (LOADEROFF == 0 && BGLOAD != 0 && world->area != NULL && __builtin_expect((world->area->flags & 8) == 0, 1) &&
+        NewLData == NULL && Mission_Active(NULL) == NULL) {
 
         other_level = -1;
         if (no_more_loads == 0) {
@@ -922,7 +922,7 @@ __attribute__((optimize("O2", "tree-vectorize"))) void LevelStreaming_Update(WOR
                     if (i < LevelLoadCount) {
                         const i16 first_level = load->first_level;
                         const i16 second_level = load->second_level;
-                        if (first_level != second_level) {
+                        if (__builtin_expect(first_level != second_level, 0)) {
                             if (LEGOSPL_SPLIT != -1 && world->camera_splines[LEGOSPL_SPLIT] != NULL) {
                                 NUVEC *points = world->camera_splines[LEGOSPL_SPLIT]->pts;
                                 if (InsideLineXZ(position.x, position.z, points[0].x, points[0].z, points[1].x,
@@ -1621,7 +1621,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
                     }
                 }
 
-                if (NuStrICmp(parser->word_buf, "test_level") == 0) {
+                if (__builtin_expect(NuStrICmp(parser->word_buf, "test_level") == 0, 1)) {
                     cur_level->flags |= LEVEL_TEST;
                 } else if (NuStrICmp(parser->word_buf, "intro_level") == 0) {
                     cur_level->flags |= LEVEL_INTRO;
@@ -2039,9 +2039,10 @@ void LevelObjects_InitForLevel(WORLDINFO_s *world) {
 
             case LEVEL_OBJECT_SCENE_THINGS:
             default:
-                if (area_scene != NULL && world->area != NULL &&
-                    (world->area->flags & AREAFLAG_OVERRIDE_THINGS_SCENE) != 0) {
-                    if (NuSpecialFind(area_scene, &object.special, object_type.name, 1) != 0) {
+                if (__builtin_expect(area_scene != NULL && world->area != NULL &&
+                                         (world->area->flags & AREAFLAG_OVERRIDE_THINGS_SCENE) != 0,
+                                     1)) {
+                    if (__builtin_expect(NuSpecialFind(area_scene, &object.special, object_type.name, 1) != 0, 0)) {
                         goto object_resolved;
                     }
                 }
@@ -2055,7 +2056,7 @@ void LevelObjects_InitForLevel(WORLDINFO_s *world) {
 
     object_resolved:
         object.active = static_cast<u8>(NuSpecialExistsFn(&object.special));
-        if (object.active != 0) {
+        if (__builtin_expect(object.active != 0, 0)) {
             NuSpecialSetVisibility(&object.special, 0);
         }
     }

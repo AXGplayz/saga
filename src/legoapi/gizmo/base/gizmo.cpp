@@ -492,7 +492,7 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
                 }
                 NuStrICmp(addgizmo->prefix, gizmotypes->types[i].prefix);
                 i = i + 1;
-            } while (i != n);
+            } while (__builtin_expect(i != n, 0));
         }
 
     copy_data:
@@ -539,7 +539,7 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
                     void *pvVar5 = gizmo->fns.allocate_progress_data_fn(buffer, buffer_end);
                     pvVar3[i].void_ptr = pvVar5;
                     i = i + 1;
-                    if (gizmotypes->unknown <= i)
+                    if (__builtin_expect(gizmotypes->unknown <= i, 0))
                         break;
                     pvVar3 = gizmo_buffer;
                 }
@@ -635,7 +635,7 @@ void GizmoSysClearLevelProgress(void *unknown, i32 type_id) {
 
 void GizmoSysStoreProgress(GIZMOSYS_s *system, void *world, i32 progress_index) {
     GizmoSysClearLevelProgress(world, progress_index);
-    if (gizmotypes == NULL || system == NULL)
+    if (__builtin_expect(gizmotypes == NULL || system == NULL, 1))
         return;
     GIZMOTYPE *type = gizmotypes->types;
     GIZMOSET *set = system->sets;
@@ -792,9 +792,11 @@ void LoadGizmoSys(GIZMOSYS_s *gizmo_sys, void *world, char *config_file) {
 
                     i32 data_length = EdFileReadInt();
                     i32 type_id = GizmoGetTypeIDByName(gizmo_sys, gizmo_name);
-                    if (data_length > 0 && type_id >= 0 && type_id < gizmotypes->count &&
-                        gizmotypes->types[type_id].fns.load_fn != NULL &&
-                        gizmotypes->types[type_id].fns.load_fn(world, gizmo_sys->sets[type_id].unknown) != 0) {
+                    if (__builtin_expect(
+                            data_length > 0 && type_id >= 0 && type_id < gizmotypes->count &&
+                                gizmotypes->types[type_id].fns.load_fn != NULL &&
+                                gizmotypes->types[type_id].fns.load_fn(world, gizmo_sys->sets[type_id].unknown) != 0,
+                            1)) {
                         name_length = EdFileReadInt();
                         continue;
                     }
@@ -809,7 +811,7 @@ void LoadGizmoSys(GIZMOSYS_s *gizmo_sys, void *world, char *config_file) {
             }
 
             // File callbacks may replace or clear the registry before post-load dispatch.
-            if (gizmotypes != NULL) {
+            if (__builtin_expect(gizmotypes != NULL, 1)) {
                 GIZMOSET *set = gizmo_sys->sets;
                 GIZMOTYPE *type = gizmotypes->types;
                 for (i32 type_id = 0; type_id < gizmotypes->count; ++type_id, ++type, ++set) {
@@ -1107,7 +1109,7 @@ i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
 i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
     nuhspecial_s special;
     GIZMO gizmo;
-    if (gizmotypes == NULL) {
+    if (__builtin_expect(gizmotypes == NULL, 0)) {
         return 0;
     }
     if (NuFileExists(path)) {
@@ -1133,7 +1135,7 @@ i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
             }
             length = NuStrLen(type->prefix) + 1;
             EdFileWriteChar(static_cast<char>(length));
-            if (length != 0) {
+            if (__builtin_expect(length != 0, 0)) {
                 EdFileWrite(type->prefix, length);
             }
             EdFileWriteInt(set->count);
@@ -1171,7 +1173,7 @@ i32 GizmoSysWriteInfo(GIZMOSYS_s *gizmo_sys, char *path, nugscn_s *scene) {
         GIZMOTYPE *special_type = &gizmotypes->types[gizspecial_gizmotype_id];
         i32 length = NuStrLen(special_type->prefix) + 1;
         EdFileWriteChar(static_cast<char>(length));
-        if (length != 0) {
+        if (__builtin_expect(length != 0, 0)) {
             EdFileWrite(special_type->prefix, length);
         }
 

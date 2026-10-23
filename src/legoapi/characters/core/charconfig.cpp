@@ -912,7 +912,43 @@ i32 InModelListDataFlags(APICHARACTERMODELLIST_s *models, u32 model_flags, u32 g
             }
         }
     } else {
-        if (reject_flag_80 == 0) {
+        if (reject_flag_80 != 0) {
+            if (reject_flag_40 == 0) {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (__builtin_expect(Collection_Got(id) == 0, 0))
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) == 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            } else {
+                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
+                    if (__builtin_expect(Collection_Got(id) == 0, 0))
+                        continue;
+                    const i32 current_id = models->model_id;
+                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
+                    if ((game_data.flags_090 & game_flags) != game_flags ||
+                        (CDataList[current_id].model_flags & model_flags) != model_flags)
+                        continue;
+                    if ((game_data.flags_094[1] & 0x40) != 0)
+                        continue;
+                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
+                        continue;
+                    if (CanWearHatsInFreePlay(current_id) == 0)
+                        continue;
+                    return 1;
+                }
+                return 0;
+            }
+        } else {
             if (__builtin_expect(reject_flag_40 != 0, 0)) {
                 for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
                     if (Collection_Got(id) == 0)
@@ -937,42 +973,6 @@ i32 InModelListDataFlags(APICHARACTERMODELLIST_s *models, u32 model_flags, u32 g
                     const GAMECHARACTERDATA &game_data = GCDataList[current_id];
                     if ((game_data.flags_090 & game_flags) != game_flags ||
                         (CDataList[current_id].model_flags & model_flags) != model_flags)
-                        continue;
-                    if (CanWearHatsInFreePlay(current_id) == 0)
-                        continue;
-                    return 1;
-                }
-                return 0;
-            }
-        } else {
-            if (reject_flag_40 != 0) {
-                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
-                    if (__builtin_expect(Collection_Got(id) == 0, 0))
-                        continue;
-                    const i32 current_id = models->model_id;
-                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
-                    if ((game_data.flags_090 & game_flags) != game_flags ||
-                        (CDataList[current_id].model_flags & model_flags) != model_flags)
-                        continue;
-                    if ((game_data.flags_094[1] & 0x40) != 0)
-                        continue;
-                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
-                        continue;
-                    if (CanWearHatsInFreePlay(current_id) == 0)
-                        continue;
-                    return 1;
-                }
-                return 0;
-            } else {
-                for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
-                    if (__builtin_expect(Collection_Got(id) == 0, 0))
-                        continue;
-                    const i32 current_id = models->model_id;
-                    const GAMECHARACTERDATA &game_data = GCDataList[current_id];
-                    if ((game_data.flags_090 & game_flags) != game_flags ||
-                        (CDataList[current_id].model_flags & model_flags) != model_flags)
-                        continue;
-                    if (static_cast<i8>(game_data.flags_094[1]) < 0)
                         continue;
                     if (CanWearHatsInFreePlay(current_id) == 0)
                         continue;
@@ -1607,12 +1607,7 @@ static void CC_anim_start(NUFPAR *parser) {
                 } else if (NuStrICmp(parser->word_buf, "extra_character_off") == 0) {
                     CC_SetAnimMiscFlags(parser, &animation, 8);
                 } else if (NuStrICmp(parser->word_buf, "effect_start") == 0) {
-                    if ((charconfig.flags & 0x60) != 0x60) {
-                        while (NuFParGetLine(parser) != 0) {
-                            if (NuFParGetWord(parser) != 0 && NuStrICmp(parser->word_buf, "effect_end") == 0)
-                                break;
-                        }
-                    } else {
+                    if ((charconfig.flags & 0x60) == 0x60) {
                         if (charconfig.effect_count < 32 && animation.action_id != -1) {
                             CHARACTER_EFFECT_s *effect = &charconfig.effect_scratch[charconfig.effect_count];
                             effect->frame_1 = 1.0f;
@@ -1762,6 +1757,11 @@ static void CC_anim_start(NUFPAR *parser) {
                                     break;
                                 }
                             }
+                        }
+                    } else {
+                        while (NuFParGetLine(parser) != 0) {
+                            if (NuFParGetWord(parser) != 0 && NuStrICmp(parser->word_buf, "effect_end") == 0)
+                                break;
                         }
                     }
                 } else if (NuStrICmp(parser->word_buf, "anim_end") == 0) {
@@ -3019,7 +3019,8 @@ static i32 CharConfig(i32 character_id, char *directory, char *filename, VARIPTR
     charconfig.layer_scratch = layers;
     memset(effects, 0, sizeof(effects));
     GAMECHARACTERDATA_s *data = charconfig.runtime;
-    if (data->layers == NULL && (character->model_flags & 1) == 0 && arena != NULL && arena_end != NULL) {
+    if (__builtin_expect(
+            data->layers == NULL && (character->model_flags & 1) == 0 && arena != NULL && arena_end != NULL, 0)) {
         data->layers = layers;
         data->layer_count = 0;
         charconfig.flags |= 2;
@@ -3129,7 +3130,9 @@ void CharConfig_ConfigureAll(i32 permanent, NUFPCOMJMP *game_keywords) {
         if (pak == NULL) {
             VARIPTR *end = permanent != 0 ? &permbuffer_end : NULL;
             VARIPTR *arena = permanent != 0 ? &permbuffer_ptr : NULL;
-            if (CharConfig(id, directory, filename, arena, end, permanent != 0, NULL, 0, 1, game_keywords) == 2) {
+            if (__builtin_expect(
+                    CharConfig(id, directory, filename, arena, end, permanent != 0, NULL, 0, 1, game_keywords) == 2,
+                    1)) {
                 SecondCharConfigure = 1;
                 CharConfig(id, directory, filename, arena, end, permanent != 0, NULL, 0, 0, game_keywords);
             }

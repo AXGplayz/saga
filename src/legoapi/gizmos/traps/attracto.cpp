@@ -309,7 +309,7 @@ void Attracto_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     NUVEC position;
     char text[32];
     i32 available = 0;
-    if (__builtin_expect((object->apiobj.flags_low & 0x80) != 0, 1) && object->suit != NULL &&
+    if (__builtin_expect((object->apiobj.flags_low & 0x80) != 0, 1) && __builtin_expect(object->suit != NULL, 1) &&
         __builtin_expect((static_cast<SUIT_s *>(object->suit)->flags & 0x80) != 0, 1)) {
 
         sprintf(text, "%i", object->field_0x106e);
@@ -329,16 +329,16 @@ void Attracto_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
         if ((object->pad_gamepad->buttons_held & GAMEPAD_SPECIAL) != 0) {
             object->context_animation_timer += FRAMETIME;
             object->airborne_action_duration -= FRAMETIME;
-            if (!(object->airborne_action_duration <= 0.0f))
+            if (__builtin_expect(!(object->airborne_action_duration <= 0.0f), 0))
                 return;
-            if (object->field_0x106e != 0) {
+            if (__builtin_expect(object->field_0x106e != 0, 0)) {
                 ATTRACTO_s *attracto = static_cast<ATTRACTO_s *>(object->field_0x788);
                 if (attracto->collected_count < attracto->capacity) {
                     --object->field_0x106e;
                     ++attracto->collected_count;
                     object->airborne_action_duration = 0.2f;
                     attracto = static_cast<ATTRACTO_s *>(object->field_0x788);
-                    if (__builtin_expect(attracto->collected_count == attracto->capacity, 1))
+                    if (__builtin_expect(attracto->collected_count == attracto->capacity, 0))
                         attracto->filled = 1;
                     else if (object->field_0x106e != 0 && object->character_context != -1)
                         return;
@@ -371,7 +371,7 @@ void Attracto_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             object->external_force.x += object->launch_origin.x * FRAMETIME;
             object->external_force.y += object->launch_origin.y * FRAMETIME;
             SHARD_s *nearest = NULL;
-            if (world->shards != NULL) {
+            if (__builtin_expect(world->shards != NULL, 1)) {
                 f32 best = 64.0f;
                 SHARD_s *shard = static_cast<SHARD_s *>(world->shards);
                 for (i32 i = 0; i < world->shard_count; ++i, ++shard) {
@@ -398,7 +398,7 @@ void Attracto_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 NuVecAdd(&target, &target, &nearest->position);
                 NUVEC delta;
                 NuVecSub(&delta, &target, &origin);
-                if (GameRayCast(&origin, &delta, 0.0f, 0x1f) == 0) {
+                if (__builtin_expect(GameRayCast(&origin, &delta, 0.0f, 0x1f) == 0, 1)) {
                     object->apiobj.movement_facing_angle = NuAtan2D(nearest->position.x - object->apiobj.pos_x,
                                                                     nearest->position.z - object->apiobj.pos_z);
                     if (ParticlesPerSecond(3.0f, FRAMETIME) > 0)

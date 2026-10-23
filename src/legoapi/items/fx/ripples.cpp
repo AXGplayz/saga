@@ -258,7 +258,7 @@ void AddRipple(ripple_set_s *set, numtx_s *matrix, float size, float growth, flo
     ripple_node_s *newest = set->newest;
     u16 active_count = set->active_count;
     ripple_node_s *node = set->free_head;
-    if (!(active_count < set->count)) {
+    if (__builtin_expect(!(active_count < set->count), 0)) {
         node = set->oldest;
         set->oldest = node->next;
         set->newest = node;
@@ -271,7 +271,7 @@ void AddRipple(ripple_set_s *set, numtx_s *matrix, float size, float growth, flo
         } else {
             next_free = NULL;
         }
-        if (newest == NULL) {
+        if (__builtin_expect(newest == NULL, 0)) {
             node->next = node;
             node->previous = node;
         } else {
@@ -287,7 +287,7 @@ void AddRipple(ripple_set_s *set, numtx_s *matrix, float size, float growth, flo
         set->newest = node;
         if (active_count == set->count)
             set->free_head = NULL;
-        if (set->oldest == NULL)
+        if (__builtin_expect(set->oldest == NULL, 0))
             set->oldest = node;
     }
     node->material = material;
@@ -355,7 +355,7 @@ void UpdateRippleSet(ripple_set_s *set) {
         if (node != NULL) {
             if (node == set->oldest)
                 set->oldest = node->next;
-            if (set->active_count != 0) {
+            if (__builtin_expect(set->active_count != 0, 1)) {
                 ripple_node_s *newest = set->newest;
                 ripple_node_s *free_head = set->free_head;
                 if (node->previous != NULL)

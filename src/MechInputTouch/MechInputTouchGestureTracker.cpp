@@ -138,7 +138,7 @@ void MechInputTouchGestureTrackingSystem::LookForSwipe(GameObject_s &object) {
         if (squared_path > 0.05f) {
             for (i32 priority = 0; priority < 10; ++priority) {
                 MechInputTouchGestureTracker *tracker = entries[priority].tracker;
-                if (tracker != NULL && tracker->OnSwipe(object, holder, previous_index)) {
+                if (__builtin_expect(tracker != NULL && tracker->OnSwipe(object, holder, previous_index), 0)) {
                     break;
                 }
             }
@@ -260,7 +260,7 @@ void MechInputTouchGestureTrackingSystem::RegisterGestureTracker(MechInputTouchG
             break;
         }
     }
-    if (insertion_index == 9) {
+    if (__builtin_expect(insertion_index == 9, 1)) {
         return;
     }
     for (GestureTrackerRegistration *entry = &entries[9]; entry != &entries[insertion_index]; --entry) {

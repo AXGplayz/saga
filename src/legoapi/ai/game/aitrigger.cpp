@@ -173,7 +173,7 @@ i32 GameObjectUsingLever(GameObject_s *object, LEVER_s *lever) {
 }
 
 void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
-    if (system == NULL || player == NULL)
+    if (__builtin_expect(system == NULL || player == NULL, 0))
         return;
     // The original accumulates route membership across all sets in this pass.
     u64 character_mask = 0;
@@ -211,7 +211,7 @@ void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
                     (player2 != NULL && obstacle->triggering_object == player2)) {
                     set->field_0x20e |= 1u << index;
                 } else if ((set->field_0x20e >> index) & 1) {
-                    if (obstacle->anim_set != NULL &&
+                    if (__builtin_expect(obstacle->anim_set != NULL, 0) &&
                         (obstacle->anim_set->state == 3 || obstacle->anim_set->state == 0 ||
                          obstacle->anim_set->state == 4))
                         set->field_0x20e &= ~(1u << index);
@@ -223,17 +223,20 @@ void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
                 if ((spinner->flags & 6) || ((spinner->flags & 8) && !ShadowMode) || spinner->field_70 == 1.0f ||
                     (spinner->state_flags & 0x20)) {
                     set->field_0x20e &= ~(1u << index);
-                } else if ((player->character_context == 0x28 && player->field_0x788 == spinner) ||
-                           (player2 != NULL && player2->character_context == 0x28 && player2->field_0x788 == spinner)) {
+                } else if (__builtin_expect((player->character_context == 0x28 && player->field_0x788 == spinner) ||
+                                                (player2 != NULL && player2->character_context == 0x28 &&
+                                                 player2->field_0x788 == spinner),
+                                            1)) {
                     set->field_0x20e |= 1u << index;
                 } else if (((set->field_0x20e >> index) & 1) && spinner->room_index == -1) {
                     set->field_0x20e &= ~(1u << index);
                 }
             } else if (gizmo->type_id == force_gizmotype_id) {
                 GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo->object);
-                if (GizForce_GameObjUsingForce(player, force) || GizForce_GameObjUsingForce(player2, force)) {
+                if (__builtin_expect(
+                        GizForce_GameObjUsingForce(player, force) || GizForce_GameObjUsingForce(player2, force), 1)) {
                     set->field_0x20e |= 1u << index;
-                } else if ((set->field_0x20e >> index) & 1) {
+                } else if (__builtin_expect((set->field_0x20e >> index) & 1 != 0, 1)) {
                     set->field_0x20e &= ~(1u << index);
                 } else if (GizForce_Complete(force)) {
                     release = true;
@@ -261,7 +264,7 @@ void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
         }
         i32 player_count = player2 != NULL ? 2 : 1;
         if ((set->field_0x20e != 0 || (set->flags & 2)) && !complete) {
-            if (has_assignments && set->field_0x20e == 0) {
+            if (__builtin_expect(has_assignments && set->field_0x20e == 0, 0)) {
                 auto set_trigger_count = set->trigger_count;
                 for (i32 index = 0; index < set_trigger_count; ++index) {
                     i32 assigned = set->trigger_indices[index];
@@ -278,22 +281,25 @@ void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
                  ++index) {
                 if (!((f0x20e >> index) & 1) && set->trigger_indices[index] == -1) {
                     GIZMO_s *gizmo = set->gizmos[index];
+                    void *gizmo_object = gizmo->object;
                     if (gizmo->type_id == lever_gizmotype_id) {
-                        if ((static_cast<LEVER_s *>(gizmo->object)->flags & 0x82) != 0x80)
+                        if (((u8) static_cast<LEVER_s *>(gizmo_object)->flags & 0x82) != 0x80)
                             continue;
                     } else if (gizmo->type_id == obstacle_gizmotype_id) {
-                        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(gizmo->object);
+                        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(gizmo_object);
                         if (!(obstacle->progress_flags & 1) || obstacle->anim_set->state == 2)
                             continue;
                     } else if (gizmo->type_id == spinner_gizmotype_id) {
-                        if (static_cast<GIZSPINNER_s *>(gizmo->object)->room_index != -1)
+                        if (static_cast<GIZSPINNER_s *>(gizmo_object)->room_index != -1)
                             continue;
-                    } else if (gizmo->type_id == force_gizmotype_id) {
-                        GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo->object);
-                        if (!(force->progress_flags & 1) || force->using_object != NULL || force->field_0x3c_bits != 0)
+                    } else if (__builtin_expect(gizmo->type_id == force_gizmotype_id, 0)) {
+                        GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo_object);
+                        if (!(force->progress_flags & 1) || force->using_object != NULL ||
+                            __builtin_expect(force->field_0x3c_bits != 0, 0))
                             continue;
                     } else if (gizmo->type_id == grapple_gizmotype_id) {
-                        if (Grapple_Occupied(static_cast<GRAPPLE_s *>(gizmo->object), NULL, NULL) != NULL)
+                        if (__builtin_expect(
+                                Grapple_Occupied(static_cast<GRAPPLE_s *>(gizmo_object), NULL, NULL) != NULL, 1))
                             continue;
                     } else {
                         continue;
@@ -354,7 +360,7 @@ void AITriggerSetSysProcess(AITRIGGERSETSYS_s *system) {
                         system->field_0x42c0[best] = index;
                     }
                 }
-                if (set->trigger_indices[index] != -1)
+                if (__builtin_expect(set->trigger_indices[index] != -1, 1))
                     ++assigned_count;
             }
         } else if (has_assignments) {

@@ -3924,7 +3924,7 @@ extern "C" nueffecttex_s *NuPostEffectGetDepthBuffer(i32 frame) {
 
 extern "C" void NuPostEffectRender(nuframebuffer_s *output) {
     nuframebuffer_s *bound = NuFramebufferGetBound();
-    if (output == NULL)
+    if (__builtin_expect(output == NULL, 1))
         output = NuFramebufferGetObject(1);
     NuFramebufferGetObject(0);
     nueffecttex_s *color = NuFramebufferGetAttachedTex(bound, 0, NULL, NULL);
@@ -4216,7 +4216,7 @@ void NuPostFilterGen::blur7x7Loopback(nueffecttex_s *source, i32 source_lod, nue
 
 void NuMainFilterGen::preprocessDofMotionBlur(nueffecttex_s *) {
     i32 selection = 1;
-    if (dof_enabled) {
+    if (__builtin_expect(dof_enabled != 0, 1)) {
         selection = dof_bias == 1 ? (motion_blur_enabled ? 4 : 3) : (motion_blur_enabled ? 2 : 0);
     }
     nushaderprogram_s *program = programs[selection];
@@ -5218,11 +5218,11 @@ bool NuDynamicLight::testShadowExtrusion(const VuVec &minimum, const VuVec &maxi
         f32 y0 = min_y * plane.y;
         f32 z0 = min_z * plane.z;
         f32 xy00 = x0 + y0;
-        if ((xy00 + z0) + plane.w > 0.0f)
+        if (__builtin_expect((xy00 + z0) + plane.w > 0.0f, 0))
             continue;
         f32 y1 = max_y * plane.y;
         f32 xy01 = x0 + y1;
-        if ((xy01 + z0) + plane.w > 0.0f)
+        if (__builtin_expect((xy01 + z0) + plane.w > 0.0f, 0))
             continue;
         f32 x1 = max_x * plane.x;
         f32 xy11 = y1 + x1;
@@ -5316,7 +5316,7 @@ void NuDynamicLight::bindShaderResources(nushaderprogram_s *program) {
     NUMTX inverse;
     NuMtxInv(&inverse, &view);
     NUVEC light;
-    if (parameter_4 == 0) {
+    if (__builtin_expect(parameter_4 == 0, 1)) {
         light.x = 0.0f;
         light.y = 0.0f;
         light.z = -1.0f;
@@ -5446,7 +5446,7 @@ void NuDynamicLight::computeWarpEffect(NuDynamicLight::RenderSet &set) {
     const NUVEC4 *source = set.corners;
     VuVec *destination = points;
     const NUVEC4 *end = source + 8;
-    while (source < end) {
+    while (__builtin_expect(source < end, 0)) {
         *destination++ = VuVec(source->x, source->y, source->z, source->w);
         ++source;
     }
@@ -7537,7 +7537,7 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f3
     i32 count = joint_count < anim->node_count ? joint_count : anim->node_count;
     const u8 *first_flags = node_flags + first_joint;
     for (const u8 *skip_flags = node_flags; skip_flags < first_flags; ++skip_flags) {
-        if (*skip_flags & 2) {
+        if (__builtin_expect(*skip_flags & 2 != 0, 1)) {
             SkipAni4V4Curve(curve_types[0], keys, scale_min);
             SkipAni4V4Curve(curve_types[1], keys, scale_min);
             SkipAni4V4Curve(curve_types[2], keys, scale_min);
@@ -7547,7 +7547,7 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f3
             SkipAni4V4Curve(curve_types[4], keys, scale_min);
             SkipAni4V4Curve(curve_types[5], keys, scale_min);
         }
-        if (*skip_flags & 8) {
+        if (__builtin_expect(*skip_flags & 8 != 0, 1)) {
             SkipAni4V4Curve(curve_types[6], keys, scale_min);
             SkipAni4V4Curve(curve_types[7], keys, scale_min);
             SkipAni4V4Curve(curve_types[8], keys, scale_min);
@@ -7627,7 +7627,7 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f3
 extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
                                            i32 first_joint) {
     if ((anim->format_flags & ANI3_FORMAT_QUATERNION_ROTATION) != 0) {
-        if ((anim->format_flags & ANI3_FORMAT_QUATERNION_STORES_W) == 0) {
+        if (__builtin_expect((anim->format_flags & ANI3_FORMAT_QUATERNION_STORES_W) == 0, 1)) {
             return ANI_SimpleAni3PlayerV4Joint_Quat3(anim, frame, buffer, joint_count, first_joint);
         }
         return ANI_SimpleAni3PlayerV4Joint_Quat3W(anim, frame, buffer, joint_count, first_joint);
@@ -7653,7 +7653,7 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint(ani3_
             key = 0.0f;
         }
         i32 whole_key;
-        if (!(last_key <= key)) {
+        if (__builtin_expect(!(last_key <= key), 1)) {
             whole_key = static_cast<i32>(key);
             fraction = key - static_cast<f32>(whole_key);
         } else {
@@ -7707,7 +7707,7 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint(ani3_
                 ++skip_scale_min;
             }
         }
-        if (flags & 8) {
+        if (__builtin_expect(flags & 8 != 0, 1)) {
             if (skip_types[6] < 16) {
                 keys += 4;
                 ++skip_scale_min;
@@ -7780,7 +7780,7 @@ __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend_Quat3(ani3
     u8 *keys = anim->keys + (whole / 4) * key_stride;
     const i32 count = joint_count < anim->node_count ? joint_count : anim->node_count;
     const u16 *curve_types = anim->curve_types;
-    if (first_joint != 0)
+    if (__builtin_expect(first_joint != 0, 1))
         root_translation = NULL;
     const u8 *first_flags = node_flags + first_joint;
     const u8 *end_flags = first_flags + count;
@@ -8062,7 +8062,7 @@ extern "C" __attribute__((optimize("O2"))) i32 ANI_SimpleAni3PlayerV4Joint_Blend
                         root->x = root->y = root->z = 0.0f;
                         root = NULL;
                     }
-                } else if (group == 1) {
+                } else if (__builtin_expect(group == 1, 0)) {
                     output[0] *= inverse_blend;
                     output[3] = output[3] * inverse_blend + blend;
                     output[1] *= inverse_blend;
@@ -8177,7 +8177,7 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 fr
     // Advance all packed stream cursors to the first requested joint.
     for (i32 joint = 0; joint < first_joint; ++joint) {
         const u8 flags = anim->node_flags[joint];
-        if ((flags & NUANIMBUFF_JOINT_TRANSLATION) != 0) {
+        if (__builtin_expect((flags & NUANIMBUFF_JOINT_TRANSLATION) != 0, 1)) {
             SkipAni4V4Curve(curve_types[0], keys, scale_min);
             SkipAni4V4Curve(curve_types[1], keys, scale_min);
             SkipAni4V4Curve(curve_types[2], keys, scale_min);
@@ -8247,7 +8247,7 @@ extern "C" i32 ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 fr
                 group_values[0] *= inverse_blend;
                 group_values[1] *= inverse_blend;
                 group_values[2] *= inverse_blend;
-                if (root != NULL) {
+                if (__builtin_expect(root != NULL, 0)) {
                     root->y = 0.0f;
                     root->x = 0.0f;
                     root->z = 0.0f;
@@ -8318,17 +8318,17 @@ extern "C" __attribute__((optimize("O2"))) void ANI_Ani3ExtractAllNodeCurves(ani
             if (key < 0.0f) {
                 key = 0.0f;
             }
-            if (__builtin_expect(last_key <= key, 0)) {
-                i32 whole_key = static_cast<i32>(last_key);
-                fraction = last_key - static_cast<float>(whole_key);
-                stride = anim->key_stride;
-                quarter = static_cast<u32>(whole_key) & 3;
-                key_offset = (whole_key / 4) * stride;
-            } else {
+            if (__builtin_expect(last_key > key, 1)) {
                 i32 whole_key = static_cast<i32>(key);
                 fraction = key - static_cast<float>(whole_key);
                 quarter = static_cast<u32>(whole_key) & 3;
                 stride = anim->key_stride;
+                key_offset = (whole_key / 4) * stride;
+            } else {
+                i32 whole_key = static_cast<i32>(last_key);
+                fraction = last_key - static_cast<float>(whole_key);
+                stride = anim->key_stride;
+                quarter = static_cast<u32>(whole_key) & 3;
                 key_offset = (whole_key / 4) * stride;
             }
         }
@@ -8703,7 +8703,7 @@ extern "C" __attribute__((optimize("O2"))) void ANI_Ani3ExtractAllNodeCurves(ani
         } else
             *scale = *parent_scale;
         if ((flags & 0x10) && parent_scale) {
-            if (parent_scale->x != 0.0f && parent_scale->y != 0.0f && parent_scale->z != 0.0f) {
+            if (__builtin_expect(parent_scale->x != 0.0f && parent_scale->y != 0.0f && parent_scale->z != 0.0f, 1)) {
                 temporary.x = 1.0f / parent_scale->x;
                 temporary.y = 1.0f / parent_scale->y;
                 temporary.z = 1.0f / parent_scale->z;
@@ -8845,7 +8845,7 @@ extern "C" i32 NuSpecialFindMultiWC(NUGSCN *scene, nuhspecial_s *dest, char (*wi
 
 extern "C" i32 NuSpecialFindMulti(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 capacity, i32 flags) {
     i32 count = 0;
-    if (scene != NULL) {
+    if (__builtin_expect(scene != NULL, 1)) {
         if (scene->display_list != NULL) {
             NUDISPLAYSPECIAL *special = static_cast<NUDISPLAYSPECIAL *>(scene->display_list->specials);
             for (i32 i = 0; i < scene->display_list->nspecials; ++special, ++i) {
@@ -10504,7 +10504,7 @@ nutexanimprog_s *NuTexAnimProgParseFile(i32 file, VARIPTR *buffer, VARIPTR, i32)
     labtabcnt = 0;
     memset(labtab, 0, sizeof(labtab));
     NUFPAR *parser = NuFParOpen(file);
-    if (parser == NULL)
+    if (__builtin_expect(parser == NULL, 0))
         return NULL;
     NuFParPushCom(parser, nutexanimcomtab);
     NuTexAnimProgInit(program);
@@ -10611,7 +10611,7 @@ extern "C" void NuTexAnimProgReadCFG(char *path, VARIPTR *buffer, VARIPTR end) {
     VARIPTR list;
     list.char_ptr = end.char_ptr - 1;
     nufpar_s *parser = NuFParCreate(path);
-    if (parser != NULL) {
+    if (__builtin_expect(parser != NULL, 1)) {
         *list.char_ptr = '\0';
         while (NuFParGetLine(parser)) {
             NuFParGetWord(parser);
@@ -10672,7 +10672,7 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
                 material->shader_desc.diffuse_map_tex_id[0] = *texture_id & 0x7fff;
                 env->instruction_index = next_instruction;
                 env->wait_remaining += env->wait_base;
-                if (env->wait_random != 0)
+                if (__builtin_expect(env->wait_random != 0, 1))
                     env->wait_remaining += NuRand(&texanim_rand) % env->wait_random;
                 if (env->wait_remaining < 0)
                     env->wait_remaining = 0;
@@ -10688,7 +10688,7 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
                 material->shader_desc.diffuse_map_tex_id[0] = *texture_id & 0x7fff;
                 env->instruction_index = next_instruction;
                 env->wait_remaining += env->wait_base;
-                if (env->wait_random != 0)
+                if (__builtin_expect(env->wait_random != 0, 0))
                     env->wait_remaining += NuRand(&texanim_rand) % env->wait_random;
                 if (env->wait_remaining < 0)
                     env->wait_remaining = 0;
@@ -10798,7 +10798,7 @@ extern "C" void NuTexAnimEnvProc(nutexanimenv_s *env) {
                 }
                 continue;
             case 16:
-                if (env->wait_remaining < 0)
+                if (__builtin_expect(env->wait_remaining < 0, 0))
                     env->wait_remaining = 0;
                 return;
             case 17:
@@ -11130,7 +11130,7 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
                 chunk = NuLegacyDwaGetChunk(animation, time.chunk);
             }
             nuanimcurveset_s *set = chunk->curve_sets[node];
-            if (set == NULL) {
+            if (__builtin_expect(set == NULL, 0)) {
                 weights_by_render[render] = NuRndrCreateBlendShapeDeformerWeightsArray(0);
                 continue;
             }
@@ -11138,7 +11138,7 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
             i32 curve_count = static_cast<i8>(set->curve_count);
             f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
             weights_by_render[render] = weights;
-            if (weights == NULL || curve_count <= 0)
+            if (__builtin_expect(weights == NULL || curve_count <= 0, 0))
                 continue;
             for (i32 curve = 0; curve < curve_count; ++curve) {
                 nuanimcurveset_s *curve_set = NuLegacyDwaGetChunk(animation, time.chunk)->curve_sets[node];
@@ -11323,7 +11323,7 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
                 i32 curve_count = count_a < count_b ? count_b : count_a;
                 f32 *weights = NuRndrCreateBlendShapeDeformerWeightsArray(curve_count);
                 weights_by_render[render] = weights;
-                if (weights == NULL) {
+                if (__builtin_expect(weights == NULL, 0)) {
                     continue;
                 }
 
@@ -11369,7 +11369,7 @@ extern "C" void NuTexAnimProcessEx(f32 frame_time, u16 mask) {
             memset(joint_overrides, 0, object->joint_count * sizeof(*joint_overrides));
             for (u8 index = 0; index < override_count; ++index) {
                 u8 override_index = overrides[index].joint_index;
-                if (override_index < object->joint_override_map_count) {
+                if (__builtin_expect(override_index < object->joint_override_map_count, 1)) {
                     u8 joint_index = object->joint_override_map[override_index];
                     if (joint_index != 0xff) {
                         joint_overrides[joint_index] = &overrides[index];
@@ -13325,7 +13325,7 @@ extern "C" {
                 if (delta < 0) {
                     value += static_cast<f32>(delta);
                     delta = -delta;
-                } else if (delta == 0) {
+                } else if (__builtin_expect(delta == 0, 0)) {
                     delta = 1;
                 }
                 i32 before = static_cast<i32>(value);
@@ -13807,10 +13807,10 @@ extern "C" {
             NUROOM &first = scene->rooms[candidates[0]];
             NUROOM &second = scene->rooms[candidates[1]];
             if (candidate_count == 2) {
-                if (!(first.priority < second.priority)) {
-                    candidates[1] = static_cast<i16>(room_index);
-                } else {
+                if (first.priority < second.priority) {
                     candidates[0] = static_cast<i16>(room_index);
+                } else {
+                    candidates[1] = static_cast<i16>(room_index);
                 }
                 candidate_count = 3;
                 continue;
@@ -14273,7 +14273,7 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
 
                 frame = instance_animation->ltime;
                 const f32 interval_end = instance_animation->tinterval + end_frame;
-                if (!(frame >= interval_end)) {
+                if (__builtin_expect(!(frame >= interval_end), 1)) {
                     if (frame > end_frame) {
                         frame = end_frame;
                     } else if (frame < 1.0f) {
@@ -14282,7 +14282,7 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                         frame = 1.0f;
                     }
                 } else {
-                    if (__builtin_expect(instance_animation->repeating != 0, 0)) {
+                    if (__builtin_expect(instance_animation->repeating != 0, 1)) {
                         const f32 repeat_length = interval_end - 1.0f;
                         const f32 repeats = NuFloor((instance_animation->ltime - 1.0f) / repeat_length);
                         const f32 live_repeat_length = instance_animation->tinterval + end_frame - 1.0f;
@@ -14320,13 +14320,13 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                         if (instance_animation->instance_ix != 0xffff) {
                             display_special = &static_cast<NUDISPLAYSPECIAL *>(
                                 display_list->specials)[instance_animation->instance_ix];
-                            if (state_value == 0) {
+                            if (state_value != 0) {
+                                display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                            } else {
                                 display_special->flags &= ~NUDISPLAYSPECIAL_FLAG_VISIBLE;
                                 animation = NULL;
-                            } else {
-                                display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
                             }
-                        } else if (state_value == 0) {
+                        } else if (__builtin_expect(state_value == 0, 0)) {
                             animation = NULL;
                         }
                     }
@@ -14864,7 +14864,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
     } else {
         f32 n = scale / 0.75f;
         tiles = static_cast<f32>(static_cast<i32>(n));
-        if (!(n <= tiles))
+        if (__builtin_expect(!(n <= tiles), 0))
             tiles += 1.0f;
     }
     yTiles = tiles;
@@ -15003,7 +15003,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
     f32 left = (-0.125f * w + x) / scale;
     f32 right = (x + w + -0.125f * w) / scale;
     xOffsetHack = 0;
-    if (right > w) {
+    if (__builtin_expect(right > w, 1)) {
         xOffsetHack = static_cast<i32>(right - w);
         left -= static_cast<f32>(xOffsetHack);
         right = w;
@@ -15421,11 +15421,13 @@ static void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 p
                 NUVEC portal_minimum;
                 NUVEC portal_maximum;
                 computePortalExtents(&portal->vertices, &portal->vertex_count, &portal_maximum, &portal_minimum);
-                if (!(frustum->minimum.x < portal_maximum.x) || frustum->minimum.y >= portal_maximum.y ||
-                    portal_minimum.x >= frustum->maximum.x || portal_minimum.y >= frustum->maximum.y) {
+                if (__builtin_expect(
+                        !(frustum->minimum.x < portal_maximum.x) || frustum->minimum.y >= portal_maximum.y ||
+                            portal_minimum.x >= frustum->maximum.x || portal_minimum.y >= frustum->maximum.y,
+                        0)) {
                     continue;
                 }
-                if (portal_minimum.x < frustum->minimum.x)
+                if (__builtin_expect(portal_minimum.x < frustum->minimum.x, 0))
                     portal_minimum.x = frustum->minimum.x;
                 if (portal_minimum.y < frustum->minimum.y)
                     portal_minimum.y = frustum->minimum.y;
@@ -16474,8 +16476,8 @@ extern "C" {
             NuVec4MtxTransformVU0(&vertices[4], &vertices[4], &clip_matrix);
             f32 width_scale = 1.0f / vertices[4].w;
             NuVec4ScaleXYZVU0(&vertices[4], &vertices[4], width_scale);
-            if (laser->length > remaining) {
-                if (remaining < 0.0f)
+            if (__builtin_expect(laser->length > remaining, 1)) {
+                if (__builtin_expect(remaining < 0.0f, 0))
                     width_scale *= laser->end_width_ratio;
                 else
                     width_scale += (laser->end_width_ratio * width_scale - width_scale) * (laser->length - remaining) /
@@ -16512,7 +16514,7 @@ extern "C" {
                 width_scale = 1.0f / vertices[5].w;
                 NuVec4ScaleXYZVU0(&vertices[5], &vertices[5], width_scale);
                 if (laser->length > remaining) {
-                    if (remaining < 0.0f)
+                    if (__builtin_expect(remaining < 0.0f, 0))
                         width_scale *= laser->end_width_ratio;
                     else
                         width_scale += (width_scale * laser->end_width_ratio - width_scale) *
@@ -16869,12 +16871,7 @@ void DisplayListLinkDynamicMtls(void) {
         nudisplaylistitem_s *mtl_item = mtl->display_list->mtl_item;
 
         {
-            if (sp->items == mtl_item) {
-                sp->items = static_cast<nudisplaylistitem_s *>(mtl_item[7].next);
-                mtl_item[7].type = kItemType_Terminator;
-                mtl_item[7].id = kItemId_Ret;
-                mtl_item[7].next = nullptr;
-            } else {
+            if (!(sp->items == mtl_item)) {
                 for (i32 j = 0; j < sp->nmtls; ++j) {
                     nudisplaylistitem_s *prev =
                         mgr->dyn_mtl_dlist.mtls[sp->mtl_first + j]->display_list->mtl_item;
@@ -16886,6 +16883,11 @@ void DisplayListLinkDynamicMtls(void) {
                         break;
                     }
                 }
+            } else {
+                sp->items = static_cast<nudisplaylistitem_s *>(mtl_item[7].next);
+                mtl_item[7].type = kItemType_Terminator;
+                mtl_item[7].id = kItemId_Ret;
+                mtl_item[7].next = nullptr;
             }
         }
 
@@ -17059,7 +17061,7 @@ void DisplayListLinkDynamicMtls(void) {
                     prev = cur;
                     cur = cur->sys_next;
                 }
-                if (prev == nullptr) {
+                if (__builtin_expect(prev == nullptr, 0)) {
                     sp->sys_next = mgr->sort_list;
                     mgr->sort_list = sp;
                 } else {
@@ -17097,7 +17099,7 @@ void DisplayListLinkDynamicMtls(void) {
             }
             for (i32 i = 0; i < mgr->dyn_mtl_dlist.nsort_pris; ++i) {
                 nusortpri_s *sp = &mgr->dyn_mtl_dlist.sort_pris[i];
-                if (sp->nmtls == 0)
+                if (__builtin_expect(sp->nmtls == 0, 0))
                     continue;
                 for (u32 k = 0; k < total; ++k) {
                     if (MtlSortKey(mgr->dyn_mtl_dlist.mtls[k]) == sp->sort_pri) {
@@ -17349,7 +17351,7 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
         if (delta == 0) {
             return scene;
         }
-        if (old_base == NULL || size == 0) {
+        if (__builtin_expect(old_base == NULL || size == 0, 0)) {
             return NULL;
         }
 
@@ -17381,7 +17383,7 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
                 target += count;
                 source += count;
                 remaining -= count;
-            } while (remaining != 0);
+            } while (__builtin_expect(remaining != 0, 0));
         }
 
         NUGSCN *moved_scene = reinterpret_cast<NUGSCN *>(reinterpret_cast<u8 *>(scene) + delta);
@@ -18167,7 +18169,7 @@ extern "C" {
             } else {
                 do {
                     DisplayListPrintItem(item, item_index, depth, state, 0);
-                    if (item->id == 1) {
+                    if (__builtin_expect(item->id == 1, 1)) {
                         item = static_cast<NUDISPLAYLISTITEM *>(item->next);
                     } else {
                         ++item;
@@ -19183,7 +19185,7 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
             item->next = scene->items + (static_cast<NUDISPLAYLISTITEM *>(source->items[i].next) - source->items);
         }
     }
-    if (source->material_animations != NULL) {
+    if (__builtin_expect(source->material_animations != NULL, 1)) {
         scene->material_animations = CloneSceneAllocate<NUMTLANIMSET>(buffer, 1);
         *scene->material_animations = *source->material_animations;
         scene->material_animations->next = global_dlist_manager.mtlanim_list;
@@ -19218,7 +19220,7 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
                     previous = current;
                     current = current->sys_next;
                 }
-                if (previous != NULL) {
+                if (__builtin_expect(previous != NULL, 1)) {
                     sort->sys_next = current;
                     previous->sys_next = sort;
                 } else {
@@ -20172,7 +20174,7 @@ void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
             f32 dz = global_camera.mtx.m32 - dl->clip_bounds[instance].center.z;
             f32 distance = dx * dx + dy * dy + dz * dz;
             if (dl->lod_ranges[lod] != 0.0f) {
-                while (dl->lod_ranges[lod] > distance)
+                while (__builtin_expect(dl->lod_ranges[lod] > distance, 1))
                     ++lod;
             }
             NUCLIPOBJECT *object = &dl->clip_objects[lod];
@@ -20735,7 +20737,7 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                     f32 angle = (i16)(0x4000 - NuASin(NuVecDot(&parameters->direction, &direction))) * 0.0054931640625f;
                     if (angle < parameters->direction_near_angle) {
                         brightness += 128.0f * parameters->direction_far_scale;
-                    } else if (!(angle > parameters->direction_far_angle)) {
+                    } else if (__builtin_expect(!(angle > parameters->direction_far_angle), 1)) {
                         f32 blend;
                         if (parameters->direction_bias == 1.0f)
                             blend = 1.0f - (angle - parameters->direction_near_angle) /
@@ -21026,7 +21028,7 @@ extern "C" void NuTimeBarSetRenderHorizontal(i32 set) {
         if (tmppeak_reset == 0)
             recent_peak = 0;
         value = static_cast<u32>(timebar->accumulators[timebar->toggle_flags[slot]][slot]);
-        if (value > recent_peak)
+        if (__builtin_expect(value > recent_peak, 1))
             recent_peak = value;
 
         if (recent_peak != 0) {
@@ -21081,7 +21083,7 @@ extern "C" void NuTimeBarSetRender(i32 set) {
             u32 gpu_time = static_cast<u32>(timebar->accumulators[buffer][1]);
             gpu_frames = timebar_unsigned_float(gpu_time) * nuapi.fps / 1000000.0f;
         }
-        if (NuTimeBar_EngineEnabled == 0 && gpu_frames <= 1.0f) {
+        if (__builtin_expect(NuTimeBar_EngineEnabled == 0 && gpu_frames <= 1.0f, 0)) {
             return;
         }
     }
@@ -21163,7 +21165,7 @@ extern "C" void NuTimeBarSetRender(i32 set) {
                                   static_cast<i32>(timebar_unsigned_float(static_cast<u32>(timebar->field_14[slot])) *
                                                    15734.0f / 1000000.0f));
                 }
-                if (timebar->slot_names[slot] != NULL) {
+                if (__builtin_expect(timebar->slot_names[slot] != NULL, 1)) {
                     const f32 column = static_cast<f32>(PS2_VREZ_W) * 0.025f;
                     const i32 text_x =
                         (static_cast<i32>(column) * (column_index * 3) + static_cast<i32>(column * 0.5f)) * 16;

@@ -882,16 +882,12 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
             body_text_id = mission->text_id;
             paragraph_count = 3;
         } else if (Arcade != 0) {
-            if (area != NULL && area->name_id != -1) {
+            if (__builtin_expect(area != NULL, 1) && area->name_id != -1) {
                 area_name = TTab[area->name_id];
             }
             body_text_id = Arcade_TextCrawlID;
             paragraph_count = Arcade_TextCrawlParagraphs;
-        } else if (episode_index == -1) {
-            if (area != NULL && area->name_id != -1) {
-                area_name = TTab[area->name_id];
-            }
-        } else {
+        } else if (episode_index != -1) {
             if (EDataList[episode_index].name_id != -1) {
                 episode_name = TTab[EDataList[episode_index].name_id];
             }
@@ -916,6 +912,10 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
                 area_name = TTab[area->name_id];
             }
             paragraph_count = 0;
+        } else {
+            if (area != NULL && area->name_id != -1) {
+                area_name = TTab[area->name_id];
+            }
         }
     }
 
@@ -966,7 +966,7 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
         y += NuQFntHeight(QFont3DZ) * 1.5f;
     }
 
-    if (episode_text != NULL) {
+    if (__builtin_expect(episode_text != NULL, 1)) {
         NuQFntSetScale(QFont3DZ, x_scale, y_scale * 2.0f);
         Text3DStringEncode(episode_text, encoded);
         NuQFntMove(QFont3DZ, -NuQFntPrintLenW(QFont3DZ, encoded) * 0.5f, y, 0.0f);
@@ -974,7 +974,7 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
         y += NuQFntHeight(QFont3DZ) * 1.5f;
     }
 
-    if (chapter_text != NULL) {
+    if (__builtin_expect(chapter_text != NULL, 1)) {
         NuQFntSetScale(QFont3DZ, x_scale, y_scale);
         Text3DStringEncode(chapter_text, encoded);
         NuQFntMove(QFont3DZ, -NuQFntPrintLenW(QFont3DZ, encoded) * 0.5f, y, 0.0f);
@@ -992,12 +992,12 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
 
     if (body_text_id != -1) {
         NuQFntSetScale(QFont3DZ, x_scale, y_scale);
-        if (paragraph_count == 0) {
+        if (__builtin_expect(paragraph_count == 0, 1)) {
             paragraph_count = area == NULL ? s_crawlPtr->paragraph_count : area->text_id_value;
         }
         for (i32 i = 0; i < paragraph_count; ++i) {
             char *paragraph = TTab[body_text_id + i];
-            if (paragraph == NULL || *paragraph == '\0') {
+            if (__builtin_expect(paragraph == NULL || *paragraph == '\0', 0)) {
                 break;
             }
             Text3DStringEncode(paragraph, encoded);

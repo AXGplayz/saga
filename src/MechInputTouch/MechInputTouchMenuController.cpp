@@ -163,7 +163,7 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
             if (x > -half_width && x < half_width) {                                                                   \
                 const f32 y = down.y - centre_y;                                                                       \
                 const f32 half_height = fabsf(0.5f * height);                                                          \
-                if (y > -half_height && y < half_height) {                                                             \
+                if (y > -half_height && __builtin_expect(y < half_height, 0)) {                                        \
                     customiser->touch_requests[index] = 1;                                                             \
                     return true;                                                                                       \
                 }                                                                                                      \
@@ -234,7 +234,7 @@ bool MechInputTouchMenuController::OnRelease(GameObject_s &, TouchHolder &holder
         if (height == 0.0f) {
             NUVEC delta = {x, y, 0.0f};
             delta.x /= GetAspectRatio();
-            if (!(NuVecMag(&delta) < width)) {
+            if (__builtin_expect(!(NuVecMag(&delta) < width), 1)) {
                 continue;
             }
         } else {

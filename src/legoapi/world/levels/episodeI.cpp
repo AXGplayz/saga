@@ -255,7 +255,7 @@ static __used__ void PodRaceSnipersUpdate(void) {
         i32 in_range = 0;
         for (i32 j = 0; j < 2; ++j) {
             GameObject_s *target = Player[j];
-            if (__builtin_expect(!(target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001), 0)) {
+            if (!(target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001)) {
                 continue;
             }
             direction.x = target->apiobj.collision_position.x - s->pos.x;
@@ -281,7 +281,7 @@ static __used__ void PodRaceSnipersUpdate(void) {
                     }
                     if (player_ix == 0)
                         target = player;
-                    if (target == NULL || type == NULL)
+                    if (__builtin_expect(target == NULL || type == NULL, 0))
                         continue;
                     CalculateInterceptVector(&s->prev, &target->apiobj.collision_position, &target->apiobj.velocity,
                                              type->field_10, &aim, NULL);
@@ -817,9 +817,9 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
         PodRace->mushroom_timer += dt;
         if (PodRace->prev_lap_display > 0.0f) {
             PodRace->lap_display = PodRace->prev_lap_display - PodRace->mushroom_timer;
-            if (PodRace->lap_display < 0.0f && FadeSys.fade == 0.0f) {
+            if (__builtin_expect(PodRace->lap_display < 0.0f && FadeSys.fade == 0.0f, 1)) {
                 PodRace->lap_display = 0.0f;
-                if (Player[0] != NULL && Player[0]->apiobj.player_controlled)
+                if (__builtin_expect(Player[0] != NULL, 1) && Player[0]->apiobj.player_controlled)
                     LoseCoins(Player[0], 1);
                 if (Player[1] != NULL && Player[1]->apiobj.player_controlled)
                     LoseCoins(Player[1], 1);
@@ -835,8 +835,10 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
         }
     }
     for (i32 i = 0; i < 0x10; i++) {
+        if (PodRace->lap_entries[i].next == NULL)
+            continue;
         racepod_s *pod = &PodRace->lap_entries[i];
-        if (pod->next == NULL || pod->spline == NULL)
+        if (pod->spline == NULL)
             continue;
         GameObject_s *object = pod->object;
         if (object == NULL || !object->apiobj.in_use || object->apiobj.field_0x287 != 0) {
@@ -850,7 +852,7 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
             if (pod->start < 1.0f) {
                 float dot =
                     direction.x * pod->matrix.m20 + direction.y * pod->matrix.m21 + direction.z * pod->matrix.m22;
-                while (length_sq < 1.0f || dot < 0.0f) {
+                while (length_sq < 1.0f || __builtin_expect(dot < 0.0f, 0)) {
                     pod->start += PODRACE_SPLINEINC;
                     if (!(pod->start <= 1.0f)) {
                         pod->start = 1.0f;
@@ -865,7 +867,7 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                 }
             }
             float length = NuFsqrt(length_sq);
-            if (pod->start >= 1.0f || length != 0.0f) {
+            if (__builtin_expect(pod->start >= 1.0f, 0) || length != 0.0f) {
                 if (pod->start < 1.0f) {
                     float ratio = PodRace->mushroom_timer / PodRace->prev_lap_display;
                     if (ratio > 1.0f)
@@ -873,16 +875,16 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
                     float speed = pod->speed;
                     if (WORLD->current_level == PODRACEB_LDATA && Lap == 1) {
                         speed /= 0.995f;
-                        if (ratio >= 0.01f)
-                            speed = speed * 1.5f - (ratio - 0.01f) * speed;
-                        else
+                        if (ratio < 0.01f)
                             speed = speed * ratio / 0.01f;
+                        else
+                            speed = speed * 1.5f - (ratio - 0.01f) * speed;
                     } else {
                         speed = 1.5f * speed - ratio * speed;
                     }
                     speed /= length;
-                    pod->previous_axis.y = direction.y * speed;
                     pod->previous_axis.x = direction.x * speed;
+                    pod->previous_axis.y = direction.y * speed;
                     pod->previous_axis.z = direction.z * speed;
                 }
                 direction.x = pod->previous_axis.x * FRAMETIME;
@@ -958,23 +960,22 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
         object = pod->object;
         if (__builtin_expect(object != NULL, 0)) {
             object->vehicle_orientation = pod->matrix;
-            object->apiobj.position = *NUMTX_GET_ROW_VEC(&pod->matrix, 3);
+            object->apiobj.position = *NUMTX_GET_ROW_VEC(&object->vehicle_orientation, 3);
             object->saved_position = object->apiobj.position;
         }
     }
-    if (__builtin_expect((PodRace->flags & 1) == 0 && ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0) ||
-                                                       (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0)),
-                         0)) {
+    if ((PodRace->flags & 1) == 0 && ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0) ||
+                                      (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0))) {
         PodRace->flags |= 1;
         char reason[0xc8];
         NuStrCpy(reason, (PodRace->flags & 2) == 0 ? "EP1_PODRACE_PODEXPLODE" : "Ep1_PodRace_OutOfTime");
         ResetLevel(world, reason, 1);
     }
     if (netclient == 0) {
-        podrace_netpacket->remaining_time = PodRace->lap_display;
         podrace_netpacket->start_countdown = PodRace->lap_countdown;
-        podrace_netpacket->available_time = PodRace->prev_lap_display;
+        podrace_netpacket->remaining_time = PodRace->lap_display;
         podrace_netpacket->lap = Lap;
+        podrace_netpacket->available_time = PodRace->prev_lap_display;
     }
 }
 
@@ -1305,7 +1306,7 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
                 else
                     model_id = type;
             }
-        } else if ((value = NuStrIStr(*params, "spline_start=")) != NULL) {
+        } else if (__builtin_expect((value = NuStrIStr(*params, "spline_start=")) != NULL, 1)) {
             start = AIParamToFloat((AISCRIPTPROCESS *)packet, value + 13);
         } else if ((value = NuStrIStr(*params, "spline_end=")) != NULL) {
             end = AIParamToFloat((AISCRIPTPROCESS *)packet, value + 11);
@@ -2119,7 +2120,7 @@ i32 Action_NewSebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *
                         distance += sock_length;
 
                     GameObject_s *lead_player;
-                    if (0.0f > goal)
+                    if (__builtin_expect(0.0f > goal, 0))
                         lead_player = distance <= 0.0f ? player2 : player;
                     else
                         lead_player = distance <= 0.0f ? player : player2;
@@ -2138,7 +2139,7 @@ i32 Action_NewSebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *
                 else if (distance < sock_length * -0.5f)
                     distance += sock_length;
                 distance -= goal;
-                if (distance > 0.0f) {
+                if (__builtin_expect(distance > 0.0f, 0)) {
                     float ratio = distance / (sebulba_fallback_dist - goal);
                     float base = 0.0f;
                     if (ratio > 1.0f)

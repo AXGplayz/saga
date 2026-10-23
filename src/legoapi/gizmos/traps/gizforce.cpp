@@ -582,11 +582,11 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                 NuVecRotateZ(&glow_offset, &glow_offset, qrand());
                 NuVecRotateY(&glow_offset, &glow_offset, qrand() & 0xffff);
                 NuVecAdd(&centre, &centre, &glow_offset);
-                if ((force->config_flags & 0x10) != 0) {
-                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[110].effect, &centre,
+                if ((force->config_flags & 0x10) == 0) {
+                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[109].effect, &centre,
                                                       static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
                 } else {
-                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[109].effect, &centre,
+                    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[110].effect, &centre,
                                                       static_cast<i32>(90.0f * radius), FRAMETIME, 0, 0, NULL);
                 }
             }
@@ -1175,7 +1175,7 @@ static void GizForces_Reset(void *world_ptr, void *data, void *progress_ptr) {
                 if (world->terrain != NULL && (object_data->flags & 1) == 0 &&
                     NuSpecialExistsFn(&object->special) != 0) {
                     object_data->platform_id = FindPlatInst(NuSpecialGetInstanceix(&object->special));
-                    if (object_data->platform_id != -1) {
+                    if (__builtin_expect(object_data->platform_id != -1, 1)) {
                         force->runtime_flags |= GIZFORCE_RUNTIME_HAS_PLATFORM;
                     }
                 }
@@ -1676,7 +1676,7 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
         return 0;
     }
     i32 super_force = 1;
-    if (__builtin_expect(SuperWeirdo(object) == 0, 0)) {
+    if (SuperWeirdo(object) == 0) {
         super_force = 0;
         if (__builtin_expect((object->apiobj.flags_low & 0x80) != 0, 1))
             super_force = Cheat_IsOn(25);
@@ -1717,8 +1717,9 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
         if ((force->config_flags & GIZFORCE_CONFIG_TARGET_ANIMATION_OBJECTS) != 0) {
             for (GAMEANIMOBJ_s *anim_object = force->anim_set->objects; anim_object != NULL;
                  anim_object = anim_object->next) {
-                if ((anim_object->flags & 1) != 0 ||
-                    (object->force_glow_previous != NULL && object->force_glow_previous != anim_object)) {
+                if (__builtin_expect((anim_object->flags & 1) != 0 || (object->force_glow_previous != NULL &&
+                                                                       object->force_glow_previous != anim_object),
+                                     1)) {
                     continue;
                 }
                 distance = NuVecDistSqr(NuSpecialGetDrawPos(&anim_object->special), &object->apiobj.collision_position,
@@ -1785,7 +1786,7 @@ i32 GizForce_FindBestForceTarget(GIZFORCESYS_s *force_sys, GameObject_s *object)
                         }
                     }
                 }
-                if (clear)
+                if (__builtin_expect(clear != 0, 0))
                     object->gizforce_los_info->words[index >> 5] |= 1u << (index & 31);
             } else {
                 los->words[index >> 5] |= 1u << (index & 31);

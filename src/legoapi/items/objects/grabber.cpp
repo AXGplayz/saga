@@ -276,7 +276,7 @@ void Grabber_Reset(WORLDINFO_s *world) {
         Grab_grabber->action_switch = NULL;
     handle = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, (char *)"pad_n");
     Grab_grabber->direction_switches[0] = handle ? (GIZOBSTACLE_s *)handle->object : NULL;
-    if (Grab_grabber->direction_switches[0] && !Grab_grabber->direction_switches[0]->anim_set)
+    if (__builtin_expect(Grab_grabber->direction_switches[0] && !Grab_grabber->direction_switches[0]->anim_set, 1))
         Grab_grabber->direction_switches[0] = NULL;
     handle = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, (char *)"pad_s");
     if (handle)
@@ -319,7 +319,7 @@ void Grabber_Reset(WORLDINFO_s *world) {
     f32 height = GameShadow(NULL, &query, 5.0f, -1);
     if (height != 2000000.0f) {
         i32 surface = ShadowInfo();
-        if ((u32)surface <= 31 && (TerSurface[surface].flags & 0x200)) {
+        if (__builtin_expect((u32)surface <= 31 && (TerSurface[surface].flags & 0x200), 1)) {
             g->shadow_height = height;
             FindAnglesZX(&ShadNorm, &g->shadow_z_angle, &g->shadow_x_angle);
             g->floor_height = (TerSurface[surface].flags & 2) ? height : 2000000.0f;
@@ -382,12 +382,11 @@ void Grabber_Update(WORLDINFO_s *world) {
     GRABBER_s *g = world->grabber;
     if (g == NULL)
         return;
-    if (g->victim != NULL &&
-        ((g->victim->apiobj.object_flags & 0x1001) != 0x1001 || g->victim->apiobj.field_0x287 != 0))
+    if (g->victim != NULL && ((g->victim->apiobj.field_0x1f8 & 0x1001) != 0x1001 || g->victim->apiobj.field_0x287 != 0))
         g->victim = NULL;
     if (g->platform_contact_timer > 0.0f)
         g->platform_contact_timer -= FRAMETIME;
-    g->target_velocity.z = g->target_velocity.y = g->target_velocity.x = 0.0f;
+    g->target_velocity.x = g->target_velocity.y = g->target_velocity.z = 0.0f;
     NUVEC next = g->grab_position, previous = g->grab_position;
     GameObject_s *control = FindGameObject(id_GRABCONTROL, 0, 0, 1, 0);
     GAMEPAD_s *pad = NULL;
@@ -407,10 +406,10 @@ void Grabber_Update(WORLDINFO_s *world) {
             } else {
                 g->target_velocity.y = pad->input_direction_x * g->speed;
                 g->target_velocity.x = 0.0f;
-                if (Grab_grabber->invert_x) {
-                    g->target_velocity.z = -(g->speed * pad->input_direction_z);
-                } else {
+                if (!(Grab_grabber->invert_x)) {
                     g->target_velocity.z = g->speed * pad->input_direction_z;
+                } else {
+                    g->target_velocity.z = -(g->speed * pad->input_direction_z);
                 }
             }
         }
@@ -524,7 +523,7 @@ void Grabber_Update(WORLDINFO_s *world) {
         case 0:
             if (__builtin_expect(pad == NULL, 0)) {
                 if ((g->flags_559 & 4) && g->action_switch && (g->action_switch->progress_flags & 2) &&
-                    GameAnimSet_IsAnimationReset(g->action_switch->anim_set))
+                    __builtin_expect(GameAnimSet_IsAnimationReset(g->action_switch->anim_set) != 0, 1))
                     g->flags_559 &= ~4;
                 if (g->flags_559 & 4)
                     break;
@@ -573,17 +572,18 @@ void Grabber_Update(WORLDINFO_s *world) {
                 break;
             g->animation_timer -= FRAMETIME;
             if (g->animation_timer <= 0) {
-                if (g->victim || g->carried_blowup) {
+                if (__builtin_expect(!(g->victim || g->carried_blowup), 1))
+                    g->state = 0;
+                else {
                     g->stuck_timer = 0;
                     g->state = 2;
-                } else
-                    g->state = 0;
+                }
                 break;
             }
             if (g->flags_559 & 2)
                 break;
             f32 trigger = AnimListFrame(g->character_model, 102, 0);
-            if (!(trigger > 0) || !(*frame >= trigger))
+            if (__builtin_expect(!(trigger > 0) || !(*frame >= trigger), 1))
                 break;
             g->flags_559 |= 2;
             NUVEC *pos = Grabber_GetGrabPos(g, NULL);
@@ -652,17 +652,17 @@ void Grabber_Update(WORLDINFO_s *world) {
                        (g->action_switch->anim_set->flags & 1))
                 break;
         opening:
-            if (g->character_model && g->character_model->model_data_b[103]) {
+            if (!(g->character_model && g->character_model->model_data_b[103])) {
+                Grabber_Drop(g, &previous);
+                if (!control)
+                    g->flags_559 |= 4;
+            } else {
                 g->state = 3;
                 g->animation_timer = AnimDuration(g->character_model->model_id, 103, 0, 0, 1);
                 g->flags_559 &= ~2;
                 if (!control)
                     g->flags_559 |= 4;
                 NewRumbleAllPlayers(0, 0, 2, 0);
-            } else {
-                Grabber_Drop(g, &previous);
-                if (!control)
-                    g->flags_559 |= 4;
             }
             PlaySfx("env_grabber_down", Grabber_GetGrabPos(g, NULL));
             break;
@@ -673,7 +673,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             g->animation_timer -= FRAMETIME;
             if (g->animation_timer <= 0) {
                 g->state = 0;
-                if (!(g->flags_559 & 2))
+                if (__builtin_expect(!(g->flags_559 & 2), 1))
                     Grabber_Drop(g, &previous);
                 break;
             }
@@ -685,7 +685,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             break;
         }
     }
-    if (g->character_model) {
+    if (__builtin_expect(g->character_model != 0, 1)) {
         g->animation.previous_animation = g->animation.animation_index;
         g->animation.requested_animation = g->state == 1 ? 102 : g->state == 2 ? 15 : g->state == 3 ? 103 : 1;
         UpdateAnimPacket(g->character_model, &g->animation, FRAMETIME * 30.0f, g->speed, FRAMETIME, 0);
@@ -693,16 +693,17 @@ void Grabber_Update(WORLDINFO_s *world) {
     if (g->victim) {
         g->victim->context_animation_timer += FRAMETIME;
         Grabber_SetVictimPos(g);
-        g->victim->apiobj.velocity.z = g->victim->apiobj.velocity.x = 0;
-        g->victim->apiobj.velocity.y = -0.1f;
-        g->victim->apiobj.field_0x27d = 0;
+        GameObject_s *v = g->victim;
+        v->apiobj.velocity.x = v->apiobj.velocity.z = 0;
+        v->apiobj.velocity.y = -0.1f;
+        v->apiobj.field_0x27d = 0;
     }
     if (g->character_id == id_GRABMACHINE) {
         bool found = false;
         i32 mask = 0;
         for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
             GameObject_s *object = &Obj[i];
-            if (__builtin_expect((object->apiobj.object_flags & 0x1001) != 0x1001, 0))
+            if (__builtin_expect((object->apiobj.field_0x1f8 & 0x1001) != 0x1001, 0))
                 continue;
             if (object->apiobj.character_data->game_character->flags_090 & 0x8000)
                 found = true;

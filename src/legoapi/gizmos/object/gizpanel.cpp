@@ -253,7 +253,7 @@ static void GizPanel_SetVisibility(GIZMO *gizmo, i32 visible) {
 static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     GIZPANELSYS_s *panel_sys = world->giz_panel_sys;
-    if (panel_sys == NULL) {
+    if (__builtin_expect(panel_sys == NULL, 0)) {
         return;
     }
 
@@ -265,26 +265,27 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
     for (i32 index = 0; index < panel_sys->count; ++index) {
         GIZPANEL &panel = panel_sys->panels[index];
 
-        if (__builtin_expect((panel.flags & GIZPANEL_FLAG_TRACK_PLAYER) != 0, 0)) {
+        if ((panel.flags & GIZPANEL_FLAG_TRACK_PLAYER) != 0) {
             const f32 maximum_distance = (panel.flags & GIZPANEL_FLAG_PLAYER_NEAR) != 0 ? 1.1f * 1.1f : 0.9f * 0.9f;
             f32 nearest_distance = 1000000000.0f;
 #define CONSIDER_PANEL_PLAYER(player_index)                                                                            \
     do {                                                                                                               \
         GameObject_s *candidate = players[player_index];                                                               \
-        if (__builtin_expect(candidate != NULL && (candidate->apiobj.flags_high & 0x10) != 0 && candidate->apiobj.field_0x287 == 0, 1)) {   \
+        if (candidate != NULL && (candidate->apiobj.flags_high & 0x10) != 0 &&                                         \
+            __builtin_expect(candidate->apiobj.field_0x287 == 0, 0)) {                                                 \
             panel_position = panel.position;                                                                           \
             if (panel.model_variant == 2) {                                                                            \
                 panel_position.y += 0.245f;                                                                            \
                 panel_position.z -= 0.19f;                                                                             \
-            } else if (panel.model_variant == 3) {                                                                     \
+            } else if (__builtin_expect(panel.model_variant == 3, 1)) {                                                \
                 panel_position.y += 0.34f;                                                                             \
                 panel_position.z -= 0.17f;                                                                             \
             }                                                                                                          \
             const f32 distance = NuVecDistSqr(&panel_position, &candidate->apiobj.collision_position, &direction);     \
-            if (__builtin_expect(distance < nearest_distance && distance < maximum_distance, 0)) {                                          \
+            if (distance < nearest_distance && distance < maximum_distance) {                                          \
                 nearest_distance = distance;                                                                           \
-                nearest_player = players[player_index];                                                                \
                 player_direction = direction;                                                                          \
+                nearest_player = players[player_index];                                                                \
             } else if (player_index == 0) {                                                                            \
                 nearest_player = NULL;                                                                                 \
                 nearest_distance = 1000000000.0f;                                                                      \
@@ -310,7 +311,7 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
         if (nearest_player == NULL) {
             panel.target_x_rotation = SeekRot(panel.target_x_rotation, 0xe000, 10.0f);
             panel.target_y_rotation = SeekRot(panel.target_y_rotation, 0, 10.0f);
-            if (__builtin_expect((panel.flags & GIZPANEL_FLAG_PLAYER_NEAR) != 0, 1)) {
+            if (__builtin_expect((panel.flags & GIZPANEL_FLAG_PLAYER_NEAR) != 0, 0)) {
                 PlaySfx(const_cast<char *>("DPanelDis"), &panel.position);
             }
             panel.flags = static_cast<GIZPANEL_FLAGS>(panel.flags & ~GIZPANEL_FLAG_PLAYER_NEAR);
@@ -328,19 +329,18 @@ static void GizPanel_Update(void *world_ptr, void *, float delta_time) {
             FindAnglesXY(&player_direction, &target_x_rotation, &target_y_rotation);
             target_y_rotation = static_cast<u16>(target_y_rotation - panel.y_rotation);
 
-            if (__builtin_expect(!(previous_y_rotation <= 0x4000), 0)) {
-                if (previous_y_rotation >= 0xc000 && target_y_rotation <= 0xbfff && target_y_rotation >= 0x4001) {
-                    target_y_rotation = 0xc000;
-                }
-            } else {
+            if (previous_y_rotation <= 0x4000) {
                 if (target_y_rotation > 0x4000) {
                     if (target_y_rotation < 0xc000) {
                         target_y_rotation = 0x4000;
                     }
                 }
+            } else if (previous_y_rotation >= 0xc000 && target_y_rotation <= 0xbfff && target_y_rotation >= 0x4001) {
+                target_y_rotation = 0xc000;
             }
             if (previous_x_rotation <= 0x4000) {
-                if (__builtin_expect(target_x_rotation > 0x4000 && target_x_rotation < 0xc000, 1)) {
+                if (__builtin_expect(target_x_rotation > 0x4000, 1) &&
+                    __builtin_expect(target_x_rotation < 0xc000, 1)) {
                     target_x_rotation = static_cast<u16>(panel.y_rotation + 0x4000);
                 }
             } else if (previous_x_rotation > 0xbfff && target_x_rotation < 0xc000 && target_x_rotation > 0x4000) {
@@ -465,7 +465,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
 
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     GIZPANELSYS_s *panel_sys;
-    if (__builtin_expect(world == NULL || (panel_sys = world->giz_panel_sys) == NULL || panel_sys->count == 0, 0)) {
+    if (__builtin_expect(world == NULL || (panel_sys = world->giz_panel_sys) == NULL, 0) || panel_sys->count == 0) {
         return;
     }
 
@@ -497,19 +497,18 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
         }
 
         PANEL_MODELS models = {-1, -1, -1, -1, -1, -1, -1, {0.0f, 0.0f, 0.0f}};
-        const bool alternate = (panel.draw_flags & GIZPANEL_DRAW_FLAG_ALT_MODEL) != 0;
         switch (panel.model_variant) {
             case 0:
-                models.base = alternate ? 0x107 : 0x106;
-                models.animated = (panel.flags & GIZPANEL_FLAG_BADDIE) != 0 ? 0x109 : 0x108;
+                models.base = (panel.draw_flags & GIZPANEL_DRAW_FLAG_ALT_MODEL) != 0 ? 0x107 : 0x106;
+                models.animated = __builtin_expect((panel.flags & GIZPANEL_FLAG_BADDIE) != 0, 1) ? 0x109 : 0x108;
                 models.animated_transition = 0x10a;
                 models.state_off = 0x10c;
                 models.state_on = 0x10b;
                 models.target = 0x55;
                 break;
             case 1:
-                models.base = alternate ? 0x107 : 0x100;
-                models.animated = (panel.flags & GIZPANEL_FLAG_BADDIE) != 0 ? 0x102 : 0x101;
+                models.base = (panel.draw_flags & GIZPANEL_DRAW_FLAG_ALT_MODEL) != 0 ? 0x107 : 0x100;
+                models.animated = __builtin_expect((panel.flags & GIZPANEL_FLAG_BADDIE) != 0, 1) ? 0x102 : 0x101;
                 models.animated_transition = 0x103;
                 models.state_off = 0x105;
                 models.state_on = 0x104;
@@ -539,7 +538,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
                 break;
         }
 
-        NUMTX base_matrix;
+        NUMTX_ALIGNED16 base_matrix;
         NuMtxSetRotationY(&base_matrix, panel.y_rotation);
         NuMtxTranslate(&base_matrix, &panel.position);
         if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0 && models.base != -1 &&
@@ -547,14 +546,19 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NuSpecialDrawAt(&world->lev_objs[models.base].special, &base_matrix);
         }
 
-        const i32 state_model = (panel.flags & GIZPANEL_FLAG_STATE) != 0 ? models.state_on : models.state_off;
-        if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0 && state_model != -1 &&
-            world->lev_objs[state_model].active != 0) {
-            NuSpecialDrawAt(&world->lev_objs[state_model].special, &base_matrix);
+        if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0) {
+            if ((panel.flags & GIZPANEL_FLAG_STATE) != 0) {
+                if (models.state_on != -1 && world->lev_objs[models.state_on].active != 0) {
+                    NuSpecialDrawAt(&world->lev_objs[models.state_on].special, &base_matrix);
+                }
+            } else {
+                if (models.state_off != -1 && world->lev_objs[models.state_off].active != 0) {
+                    NuSpecialDrawAt(&world->lev_objs[models.state_off].special, &base_matrix);
+                }
+            }
         }
 
-        if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0 && (panel.activation_time > 0.0f || editor_active != 0) &&
-            models.animated != -1) {
+        if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0 && (panel.activation_time > 0.0f || editor_active != 0)) {
             NUVEC picture_offset = {0.0f, GIZPANEL_PICY, GIZPANEL_PICZ};
             NUVEC transition_offset = {0.0f, GIZPANEL_PICY, GIZPANEL_PICZ - 0.0005f};
             NuVecRotateY(&picture_offset, &picture_offset, panel.y_rotation);
@@ -607,7 +611,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NuMtxTranslate(&base_matrix, &target_position);
             NuMtxPreScaleU(&base_matrix, panel.target_scale);
             NuSpecialDrawAtAlpha(&world->lev_objs[models.target].special, &base_matrix,
-                                 (panel.flags & 1) != 0 ? 0.0f : target_alpha);
+                                 __builtin_expect((panel.flags & 1) != 0, 1) ? 0.0f : target_alpha);
         }
 
         if ((panel.flags & GIZPANEL_FLAG_HIDE_BASE) == 0 && models.arm != -1 &&
@@ -1024,7 +1028,7 @@ i32 GizPanel_UpdateHint(HINT_s *hint) {
         }
     }
     if (storm && (hint->control_mode_ids[0] == 0x269 || hint->control_mode_ids[0] == 0x260)) {
-        if (AvailableToPlayer(0, 1, 5, 0) != 0)
+        if (__builtin_expect(AvailableToPlayer(0, 1, 5, 0) != 0, 1))
             return hint->control_mode_ids[0] == 0x260;
         return hint->control_mode_ids[0] == 0x269;
     }

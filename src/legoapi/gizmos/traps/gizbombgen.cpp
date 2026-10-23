@@ -155,7 +155,7 @@ static void GizBombGens_Update(void *world_ptr, void *system_ptr, float) {
     GameObject_s **player_bombs = BombGenerator_PlayerBomb;
     i16 *bomb_model_id = &id_DRAGBOMB;
 
-    if (system != NULL) {
+    if (__builtin_expect(system != NULL, 1)) {
         if (__builtin_expect((system->flags & GIZBOMBGENSYS_FLAG_RESET) != 0, 0)) {
             GIZBOMBGENPROGRESS *progress = static_cast<GIZBOMBGENPROGRESS *>(system->progress);
             const bool has_progress = progress != NULL;
@@ -197,8 +197,9 @@ static void GizBombGens_Update(void *world_ptr, void *system_ptr, float) {
                             player->cable = NULL;
                     }
 
-                    if (player != NULL && player->apiobj.player_controlled && player_bombs[0] != NULL &&
-                        player->cable == NULL) {
+                    if (__builtin_expect(player != NULL && player->apiobj.player_controlled &&
+                                             player_bombs[0] != NULL && player->cable == NULL,
+                                         1)) {
                         NUVEC bomb_position = {0.0f, 0.0f, -2.0f};
                         NuVecRotateY(&bomb_position, &bomb_position, player->apiobj.field_0x276);
                         NuVecAdd(&bomb_position, &bomb_position, &players[0]->apiobj.collision_position);
@@ -227,7 +228,8 @@ static void GizBombGens_Update(void *world_ptr, void *system_ptr, float) {
                     if (player != NULL && player->apiobj.player_controlled && player_bombs[1] != NULL &&
                         player->cable == NULL) {
                         GameObject_s *bomb = NULL;
-                        if (players_share_bomb && players[0]->cable != NULL && players[0]->cable->target != NULL &&
+                        if (players_share_bomb && players[0]->cable != NULL &&
+                            __builtin_expect(players[0]->cable->target != NULL, 0) &&
                             players[0]->cable->target->id == *bomb_model_id) {
                             bomb = players[0]->cable->target;
                         } else {
@@ -295,7 +297,7 @@ static void GizBombGens_Update(void *world_ptr, void *system_ptr, float) {
     player_bombs[0] = NULL;
     const i16 model_id = *bomb_model_id;
     if (players[0] != NULL && players[0]->cable != NULL && players[0]->cable->target != NULL &&
-        players[0]->cable->target->id == model_id) {
+        __builtin_expect(players[0]->cable->target->id == model_id, 1)) {
         player_bombs[0] = players[0]->cable->target;
     }
     player_bombs[1] = NULL;

@@ -2634,7 +2634,7 @@ void edpartDrawCursor() {
         line[0].position.z = edpart_cam_pos.z + vector.z;
         line[0].colour = 0xff0000ff;
         NuRndrLine3d(line, edpart_mtl, NULL);
-        if (edpart_dpad_mode == 3) {
+        if (__builtin_expect(edpart_dpad_mode == 3, 0)) {
             vector.x = 0.0f;
             vector.y = 0.25f;
             vector.z = 0.0f;
@@ -2696,9 +2696,9 @@ void edpartDrawCursor() {
             else
                 NuQFntPrintEx(system_qfont, 0x17c0, 0xa50, 0x10, "Current Type: %s",
                               part_types[edpart_create_type].name);
-            if (edpart_create_type == -1)
+            if (__builtin_expect(edpart_create_type == -1, 0))
                 NuQFntPrintEx(system_qfont, 0x17c0, 0xaf0, 0x10, "Current List: <none>");
-            else if (edpart_effect_list == 1)
+            else if (__builtin_expect(edpart_effect_list == 1, 0))
                 NuQFntPrintEx(system_qfont, 0x17c0, 0xaf0, 0x10, "Current List: Level");
             else if (edpart_effect_list == 0)
                 NuQFntPrintEx(system_qfont, 0x17c0, 0xaf0, 0x10, "Current List: General");
@@ -3052,11 +3052,11 @@ static void edpartFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     char path[256], backup[256];
     char general_directory[256], general_name[256], general_extension[256];
     char level_directory[256], level_name[256], level_extension[256];
-    if (__builtin_expect(!edbits_general_save_directory[0], 1))
-        __builtin_memcpy(general_directory, ".", 2);
-    else
+    if (edbits_general_save_directory[0])
         strcpy(general_directory, edbits_general_save_directory);
-    if (__builtin_expect(!edbits_general_save_name[0], 1))
+    else
+        __builtin_memcpy(general_directory, ".", 2);
+    if (!edbits_general_save_name[0])
         __builtin_memcpy(general_name, "part", 5);
     else
         strcpy(general_name, edbits_general_save_name);
@@ -3084,7 +3084,7 @@ static void edpartFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     sprintf(path, "%s\\%s.%s", level_directory, level_name, level_extension);
     sprintf(backup, "%s\\%s.%s.bak", level_directory, level_name, level_extension);
     i32 level_backup = 1;
-    if (!edbits_override_backups)
+    if (__builtin_expect(!edbits_override_backups, 1))
         level_backup = EdFileBackup(path, backup);
     bool level_saved = edpartSaveEffects(path, 1) != 0;
     if (general_saved && general_backup && level_saved && level_backup) {
@@ -3119,7 +3119,7 @@ static void edpartFileSaveEffectsLevel(eduimenu_s *parent, eduiitem_s *, u32) {
     edpartSavePath(path, backup, true);
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 1) != 0;
-    if (!saved) {
+    if (__builtin_expect(!saved, 1)) {
         u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
         edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
         if (edpart_message_menu != NULL) {
@@ -3154,7 +3154,7 @@ static void edpartFileSaveEffectsGeneral(eduimenu_s *parent, eduiitem_s *, u32) 
     edpartSavePath(path, backup, false);
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 0) != 0;
-    if (!saved) {
+    if (__builtin_expect(!saved, 1)) {
         u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
         edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
         if (edpart_message_menu != NULL) {
@@ -4009,7 +4009,7 @@ extern "C" {
         }
         i32 type_slot = 0;
         for (i32 i = 0; i < type_count; ++i) {
-            while (part_types[type_slot].name[0] != 0)
+            while (__builtin_expect(part_types[type_slot].name[0] != 0, 0))
                 ++type_slot;
             edpartLoadSingleType(&part_types[type_slot], version, page);
             if (part_types[type_slot].name[0] != 0) {
@@ -4312,7 +4312,7 @@ void edpartDoInput(nupad_s *pad) {
         }
     }
 
-    if (edpart_snap_enabled)
+    if (__builtin_expect(edpart_snap_enabled != 0, 1))
         edcamGetPosAngSnap(&edpart_cam_pos, &edpart_cam_ax, &edpart_cam_ay);
     else
         edcamGetPosAng(&edpart_cam_pos, &edpart_cam_ax, &edpart_cam_ay);
@@ -4906,17 +4906,17 @@ extern "C" {
             if ((part->active & 1) != 0) {
                 if ((part->flags & 2) != 0 && part->field_1bc != NULL)
                     part->field_1bc(part);
-                if ((part->active & 1) != 0) {
+                if (__builtin_expect((part->active & 1) != 0, 1)) {
                     if (part->field_1c4 != NULL)
                         part->field_1c4(part);
                     if (!(part->field_100 <= 0.0f)) {
                         part->field_100 -= time;
-                        if (part->field_100 <= 0.0f)
+                        if (__builtin_expect(part->field_100 <= 0.0f, 1))
                             KillPart(part, 0);
                     }
                 }
             }
-            if ((part->flags & 0x20000) != 0 && part->debris_key != NULL) {
+            if (__builtin_expect((part->flags & 0x20000) != 0 && part->debris_key != NULL, 1)) {
                 NuMtxSetIdentity(&emitter_orientation);
                 direction = part->velocity;
                 direction.x = -direction.x;
@@ -4925,7 +4925,8 @@ extern "C" {
                 NuMtxLookAtY(&emitter_orientation, &direction);
                 DebrisOrientationMtx(*part->debris_key, &emitter_orientation);
                 DebrisEmitterPos(*part->debris_key, part->position.x, part->position.y, part->position.z);
-                if (((part->flags & 0x200000) != 0 && (part->active & 2) != 0) || (part->flags & 0x1000) != 0)
+                if (((part->flags & 0x200000) != 0 && (part->active & 2) != 0) ||
+                    __builtin_expect((part->flags & 0x1000) != 0, 0))
                     DebrisStatusAlwaysOff(part->debris_key);
             }
             if (time != 0.0f) {
