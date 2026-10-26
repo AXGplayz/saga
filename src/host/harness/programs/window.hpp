@@ -36,6 +36,15 @@ namespace saga::host::harness {
         bool portals = true;
         u64 script_tail_ms = 8000;
         u64 timeout_ms = 0;
+        // Second controller drives player 2 on this PC.
+        bool two_player = false;
+        // Online co-op and the determinism test (see host/netplay/session.hpp).
+        // 0 = off, 1 = host, 2 = join, 3 = record, 4 = replay.
+        int netplay_mode = 0;
+        const char *netplay_address = nullptr; // join
+        const char *netplay_file = nullptr;    // record/replay
+        u16 netplay_port = 7777;
+        int netplay_delay = 0;
         WindowHooks hooks;
     };
 

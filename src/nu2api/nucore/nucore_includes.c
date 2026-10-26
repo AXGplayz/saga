@@ -14,6 +14,9 @@
 
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuapi.h"
+#ifdef HOST_BUILD
+#include "host/platform/netplay_hooks.h"
+#endif
 #include "nu2api/nu3d/nuocclusion.h"
 #include "nu2api/nu3d/nuportal.h"
 #include "nu2api/nu3d/nuwater.h"
@@ -436,7 +439,15 @@ static void DisplayListProcessLightmapped(NUDISPLAYLIST *list, NUDISPLAYLISTITEM
     extern void (*nuapi_endframe_callbackfn)(void);
 } // extern "C"
 
+#ifdef HOST_BUILD
+// Host builds can expose a second physical gamepad as input device 2 (touch is
+// device 0), so scanned devices need room for three. Player slots stay at two.
+#define MAX_GAME_PAD_COUNT 3
+#define DEFAULT_MAX_GAME_PADS 2
+#else
 #define MAX_GAME_PAD_COUNT 2
+#define DEFAULT_MAX_GAME_PADS MAX_GAME_PAD_COUNT
+#endif
 
 #define ANALOG_CENTER 0x80
 
@@ -446,7 +457,7 @@ static i32 g_directpadMapping;
 
 NUPADMAPPING g_nupadMapping[MAX_GAME_PAD_COUNT];
 i32 g_profilePlayerPad = -1;
-i32 MaxGamePads = MAX_GAME_PAD_COUNT;
+i32 MaxGamePads = DEFAULT_MAX_GAME_PADS;
 i16 PlayerLastPort[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 char UseCorrectDeadZoning;
 i32 enable_touch_controls = 1;
@@ -8379,6 +8390,13 @@ extern "C" {
         }
 
         nuapi.disable_os_menu_freeze = 0;
+#ifdef HOST_BUILD
+        if (g_host_forced_frametime > 0.0f) {
+            // Lockstep: game time must not depend on how long this frame took.
+            nuapi.frametime = (nuapi.max_fps >= 15 && nuapi.max_fps < 60) ? 1.0f / (f32)nuapi.max_fps
+                                                                           : g_host_forced_frametime;
+        }
+#endif
         return nuapi.frametime;
     }
 
@@ -8683,6 +8701,12 @@ void NuPadUpdatePads() {
     i32 has_active_pad;
     i32 unused;
     i32 unused2;
+
+#ifdef HOST_BUILD
+    if (g_host_pad_frame_hook != NULL) {
+        g_host_pad_frame_hook();
+    }
+#endif
 
     max_interface_devices = NuPad_Interface_GetMaxDevices();
     max_game_pads = NuPadGetMaxGamePads();

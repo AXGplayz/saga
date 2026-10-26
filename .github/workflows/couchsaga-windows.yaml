@@ -1,0 +1,94 @@
+---
+name: CouchSaga (online co-op) Windows build
+
+# Builds an optimized Windows player with online co-op and packages it with
+# the launcher. Runs on every branch push and on demand from the Actions tab.
+# yamllint disable-line rule:truthy
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BAZEL_VERSION: 9.2.0
+
+jobs:
+  netplay-tests:
+    name: Netplay core tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lockstep, packet loss and socket tests
+        run: |
+          g++ -std=c++17 -fno-exceptions -fno-rtti -O1 -Wall -Wextra -I src -pthread \
+            src/host/netplay/lockstep.cpp src/host/netplay/net_socket.cpp \
+            src/host/netplay/tests/lockstep_test.cpp -o lockstep_test
+          ./lockstep_test
+
+      - name: Host and guest over loopback
+        run: |
+          g++ -std=c++17 -fno-exceptions -fno-rtti -O1 -Wall -Wextra -I src -DHOST_BUILD -pthread \
+            src/host/netplay/session.cpp src/host/netplay/lockstep.cpp src/host/netplay/net_socket.cpp \
+            src/host/netplay/tests/session_loopback_test.cpp -o session_test
+          mkdir -p loop
+          ./session_test host loop 47801 1800 &
+          sleep 1
+          ./session_test join loop 47801 1800
+          wait
+          cmp loop/host_applied.txt loop/join_applied.txt
+          echo "host and guest applied identical inputs on all 1800 frames"
+
+  netplay-tests-windows:
+    name: Netplay core tests (real Windows sockets)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lockstep, packet loss and Winsock tests
+        run: |
+          g++ -std=c++17 -fno-exceptions -fno-rtti -O1 -Wall -Wextra -I src \
+            src/host/netplay/lockstep.cpp src/host/netplay/net_socket.cpp \
+            src/host/netplay/tests/lockstep_test.cpp -o lockstep_test.exe -lws2_32
+          ./lockstep_test.exe
+
+  windows:
+    name: Windows i686 release
+    runs-on: ubuntu-latest
+    needs: netplay-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: bazel-${{ github.workflow }}-couchsaga-windows
+          repository-cache: true
+          external-cache: true
+
+      - name: Verify Bazel version
+        run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
+
+      - name: Build native release
+        run: >-
+          bazel build --config=native_release --config=windows-i686
+          //src:saga_native
+
+      - name: Package CouchSaga
+        run: |
+          mkdir -p dist/CouchSaga/res
+          cp -L bazel-bin/src/saga_native.exe bazel-bin/src/*.dll dist/CouchSaga/
+          cp couchsaga/CouchSaga.ps1 "couchsaga/Start CouchSaga.bat" couchsaga/README.md dist/CouchSaga/
+          cp couchsaga/res-README.txt dist/CouchSaga/res/README.txt
+
+      - name: Upload CouchSaga
+        uses: actions/upload-artifact@v4
+        with:
+          name: CouchSaga-windows
+          path: dist/

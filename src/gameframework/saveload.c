@@ -15,6 +15,9 @@
 
 // The original unit constructs its six homogeneous vectors.
 #include "nu2api/nucore/nuvuvec.hpp"
+#ifdef HOST_BUILD
+#include "host/platform/netplay_hooks.h"
+#endif
 
 #if defined(HOST_BUILD) && defined(_WIN32)
 #include <io.h>
@@ -212,10 +215,18 @@ i32 PCSaveSlot(i32 slot, void *extradata, i32 extradataSize, u32 hash) {
 
 static i32 statuswait;
 static NUTIME savetimer;
+#ifdef HOST_BUILD
+// Lockstep play counts frames instead: a wall-clock wait would finish on a
+// different frame on each machine.
+static i32 statuswait_frames;
+#endif
 i32 saveload_slotid;
 
 void saveloadASSave(i32 slot, void *buffer, i32 size, u32 hash) {
     statuswait = 1;
+#ifdef HOST_BUILD
+    statuswait_frames = 0;
+#endif
     NuTimeGet(&savetimer);
     saveload_status = 11;
     PCSaveSlot(slot, buffer, size, hash);
@@ -227,6 +238,9 @@ void saveloadASLoad(i32 slot, void *buffer, i32 size) {
     saveload_status = 7;
     saveloadLoadSlot(slot, buffer, size);
     statuswait = 1;
+#ifdef HOST_BUILD
+    statuswait_frames = 0;
+#endif
     NuTimeGet(&savetimer);
     saveload_slotid = slot;
     saveload_autosave = saveload_slotid;
@@ -246,6 +260,18 @@ void saveloadASCallEachFrame(void) {
     if (statuswait == 0) {
         return;
     }
+
+#ifdef HOST_BUILD
+    if (g_host_lockstep_active) {
+        if (++statuswait_frames > 60) {
+            statuswait_frames = 0;
+            statuswait = 0;
+            saveload_getinfo();
+            saveload_status = 1;
+        }
+        return;
+    }
+#endif
 
     NUTIME now;
     NUTIME elapsed;

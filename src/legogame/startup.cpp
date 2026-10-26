@@ -96,6 +96,9 @@
 #include "legoapi/menus/screens/menu.h"
 #include "legoapi/menus/screens/movies.h"
 #include "nu2api/nucore/nuapi.h"
+#ifdef HOST_BUILD
+#include "host/platform/netplay_hooks.h"
+#endif
 
 // buffer globals owned by the batman TU (batman.h declares them extern "C")
 extern "C" {
@@ -735,8 +738,31 @@ i32 FreePlay_DropInToPlayerPos(GameObject_s *object) {
     return result;
 }
 
+#ifdef HOST_BUILD
+// The Android release removed drop-in/drop-out. Host two-player mode restores
+// the part co-op needs: player 2 takes over the second character for good, as
+// when a second controller pressed Start on console.
+static i32 HostTwoPlayerDropIn() {
+    PlayerProgress[1].active = 1;
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *object = Player[i];
+        if (object == NULL || object->pad_gamepad != &GamePad[1] || object->apiobj.player_controlled) {
+            continue;
+        }
+        object->apiobj.player_controlled = 1;
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 i32 PlayersDropInOut() {
     CheckForPlayersTurnedOff();
+#ifdef HOST_BUILD
+    if (g_host_two_player) {
+        return HostTwoPlayerDropIn();
+    }
+#endif
     return 0;
 }
 

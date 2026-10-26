@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -24,6 +25,7 @@
 #include "host/platform/mouse.hpp"
 #include "host/platform/runtime.hpp"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/world/area.h"
@@ -36,6 +38,10 @@
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
+#ifndef __EMSCRIPTEN__
+#include "host/netplay/session.hpp"
+#define SAGA_HAS_NETPLAY 1
+#endif
 
 #if defined(__EMSCRIPTEN__)
 // These movement fields must retain the original 32-bit layout in WASM.
@@ -659,6 +665,112 @@ namespace {
         return host_write_ppm(filename, pixels.data(), width, height);
     }
 
+    // ---- Physical controllers (SDL gamepads) ----
+    // The first controller plays alongside the keyboard as player 1; the second
+    // is player 2 (local two-player, or the determinism recorder).
+    SDL_Gamepad *host_gamepads[2] = {nullptr, nullptr};
+
+    static void host_refresh_gamepads() {
+        for (SDL_Gamepad *&pad : host_gamepads) {
+            if (pad != nullptr && !SDL_GamepadConnected(pad)) {
+                SDL_CloseGamepad(pad);
+                pad = nullptr;
+            }
+        }
+        int count = 0;
+        SDL_JoystickID *ids = SDL_GetGamepads(&count);
+        for (int i = 0; ids != nullptr && i < count; ++i) {
+            bool in_use = false;
+            for (SDL_Gamepad *pad : host_gamepads)
+                in_use = in_use || (pad != nullptr && SDL_GetGamepadID(pad) == ids[i]);
+            if (in_use)
+                continue;
+            for (SDL_Gamepad *&pad : host_gamepads) {
+                if (pad == nullptr) {
+                    pad = SDL_OpenGamepad(ids[i]);
+                    if (pad != nullptr)
+                        LOG_INFO("controller connected: %s", SDL_GetGamepadName(pad));
+                    break;
+                }
+            }
+        }
+        SDL_free(ids);
+    }
+
+    static f32 host_gamepad_axis(SDL_Gamepad *pad, SDL_GamepadAxis axis) {
+        const f32 value = static_cast<f32>(SDL_GetGamepadAxis(pad, axis)) / 32767.0f;
+        return std::fabs(value) < 0.18f ? 0.0f : value;
+    }
+
+    static void host_poll_gamepads() {
+        for (i32 port = 0; port < 2; ++port) {
+            SDL_Gamepad *pad = host_gamepads[port];
+            if (pad == nullptr) {
+                HostInputSetGamepad(port, 0, 0.0f, 0.0f);
+                continue;
+            }
+            struct Binding {
+                SDL_GamepadButton button;
+                u32 game_buttons;
+            };
+            // Xbox layout as on the console release: A jump, X action, B special, Y swap.
+            const Binding bindings[] = {
+                {SDL_GAMEPAD_BUTTON_SOUTH, GAMEPAD_JUMP},
+                {SDL_GAMEPAD_BUTTON_WEST, GAMEPAD_ACTION},
+                {SDL_GAMEPAD_BUTTON_EAST, GAMEPAD_SPECIAL},
+                {SDL_GAMEPAD_BUTTON_NORTH, GAMEPAD_TAG},
+                {SDL_GAMEPAD_BUTTON_START, GAMEPAD_START},
+                {SDL_GAMEPAD_BUTTON_BACK, GAMEPAD_SELECT},
+                {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, GAMEPAD_TOGGLELEFT},
+                {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, GAMEPAD_TOGGLERIGHT},
+                {SDL_GAMEPAD_BUTTON_RIGHT_STICK, GAMEPAD_R3},
+                {SDL_GAMEPAD_BUTTON_DPAD_UP, GAMEPAD_DUP},
+                {SDL_GAMEPAD_BUTTON_DPAD_DOWN, GAMEPAD_DDOWN},
+                {SDL_GAMEPAD_BUTTON_DPAD_LEFT, GAMEPAD_DLEFT},
+                {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, GAMEPAD_DRIGHT},
+            };
+            u32 buttons = 0;
+            for (const Binding &binding : bindings) {
+                if (SDL_GetGamepadButton(pad, binding.button))
+                    buttons |= binding.game_buttons;
+            }
+            HostInputSetGamepad(port, buttons, host_gamepad_axis(pad, SDL_GAMEPAD_AXIS_LEFTX),
+                                host_gamepad_axis(pad, SDL_GAMEPAD_AXIS_LEFTY));
+        }
+    }
+
+#ifdef SAGA_HAS_NETPLAY
+    // Shows connection progress in the title bar until the session is ready.
+    // Returns false if the user closed the window or the connection failed.
+    static bool host_wait_for_netplay() {
+        std::string last_status;
+        while (saga::netplay::phase() == saga::netplay::Phase::connecting) {
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_EVENT_QUIT) {
+                    saga::netplay::stop();
+                    return false;
+                }
+            }
+            const std::string status = saga::netplay::status_text();
+            if (status != last_status) {
+                last_status = status;
+                LOG_INFO("%s", status.c_str());
+                if (host_sdl_window != nullptr)
+                    SDL_SetWindowTitle(host_sdl_window, status.c_str());
+            }
+            SDL_Delay(30);
+        }
+        if (saga::netplay::phase() != saga::netplay::Phase::ready) {
+            const std::string message = saga::netplay::failure_text();
+            LOG_ERR("online co-op: %s", message.c_str());
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Online co-op", message.c_str(), host_sdl_window);
+            return false;
+        }
+        return true;
+    }
+#endif
+
     static void host_sdl_init(bool offscreen, bool mute, bool msaa) {
         const char *video_driver = HostPlatformVideoDriver();
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, video_driver);
@@ -672,6 +784,7 @@ namespace {
             return;
         }
         SDL_InitSubSystem(SDL_INIT_AUDIO);
+        SDL_InitSubSystem(SDL_INIT_GAMEPAD);
 
 #if defined(__linux__) && !defined(__EMSCRIPTEN__)
         // The 32-bit NVIDIA package does not provide the vendor's external EGL
@@ -772,6 +885,26 @@ i32 saga::host::harness::run_window(const WindowOptions &options) {
     }
     HostSetDocumentsPath(documents_path);
 
+#ifdef SAGA_HAS_NETPLAY
+    if (options.netplay_mode != 0) {
+        saga::netplay::Config config;
+        config.mode = static_cast<saga::netplay::Mode>(options.netplay_mode);
+        config.address = options.netplay_address != nullptr ? options.netplay_address : "";
+        config.file = options.netplay_file != nullptr ? options.netplay_file : "";
+        config.port = options.netplay_port;
+        config.delay = options.netplay_delay;
+        config.documents_path = documents_path;
+        saga::netplay::start(config);
+        if (!host_wait_for_netplay())
+            return 1;
+        // A guest boots from its copy of the host's saves.
+        HostSetDocumentsPath(saga::netplay::documents_path().c_str());
+    }
+#endif
+    if (options.two_player)
+        HostInputEnableTwoPlayer(true);
+    host_refresh_gamepads();
+
     void *buffer = malloc(0x1000000);
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
     NUDATHDR *dat = NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0);
@@ -807,6 +940,10 @@ i32 saga::host::harness::run_window(const WindowOptions &options) {
 
     host_numain_result.store(0, std::memory_order_relaxed);
     host_numain_done.store(false, std::memory_order_relaxed);
+#ifdef SAGA_HAS_NETPLAY
+    saga::netplay::begin_game();
+    u64 netplay_title_ticks = 0;
+#endif
     host_numain_thread = SDL_CreateThread(host_numain_thread_main, "numain", nullptr);
     if (host_numain_thread == nullptr) {
         LOG_ERR("failed to create NuMain thread: %s", SDL_GetError());
@@ -888,6 +1025,8 @@ i32 saga::host::harness::run_window(const WindowOptions &options) {
                 escape_held_button = 0;
             } else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
                 saga::host::add_editor_mouse_wheel(event.wheel.y);
+            } else if (event.type == SDL_EVENT_GAMEPAD_ADDED || event.type == SDL_EVENT_GAMEPAD_REMOVED) {
+                host_refresh_gamepads();
             }
             i32 input_width = host_window_width;
             i32 input_height = host_window_height;
@@ -923,6 +1062,14 @@ i32 saga::host::harness::run_window(const WindowOptions &options) {
         if (options.hooks.filter_game_input)
             keyboard_buttons = options.hooks.filter_game_input(keyboard_buttons);
         HostInputSetKeyboardHeld(0, keyboard_buttons);
+        host_poll_gamepads();
+#ifdef SAGA_HAS_NETPLAY
+        if (options.netplay_mode != 0 && SDL_GetTicks() - netplay_title_ticks >= 500) {
+            netplay_title_ticks = SDL_GetTicks();
+            const std::string title = "LEGO Star Wars: The Complete Saga - " + saga::netplay::status_text();
+            SDL_SetWindowTitle(host_sdl_window, title.c_str());
+        }
+#endif
 
         if (options.camera_free) {
             const bool *keyboard = SDL_GetKeyboardState(nullptr);
@@ -1694,6 +1841,10 @@ i32 saga::host::harness::run_window(const WindowOptions &options) {
          (options.script_action ? scripted_action_observed && scripted_action_release_observed
                                 : scripted_play_movement_observed && scripted_play_jump_observed));
     const bool capture_passed = !options.capture || (have_hash && saw_visible_frame);
+#ifdef SAGA_HAS_NETPLAY
+    if (options.netplay_mode != 0)
+        saga::netplay::stop();
+#endif
     LOG_INFO("presented %d frame_count", frame_count);
     if (requested_exit_status >= 0)
         return requested_exit_status;
@@ -1725,7 +1876,15 @@ namespace saga::host::harness {
                       << "  --no-msaa              Disable native-host 4x multisampling\n"
                       << "  --no-portals           Disable portal culling for host comparison captures\n"
                       << "  --script-tail-ms <ms>  Wait after scripted input completes (default: 8000)\n"
-                      << "  --timeout-ms <ms>      Stop after this time (default: unlimited)\n";
+                      << "  --timeout-ms <ms>      Stop after this time (default: unlimited)\n"
+                      << "\nCo-op:\n"
+                      << "  --two-player           A second controller plays player 2 on this PC\n"
+                      << "  --host                 Host online co-op; you are player 1\n"
+                      << "  --join <address>       Join a host's online co-op game (address[:port])\n"
+                      << "  --port <port>          TCP and UDP port for online co-op (default: 7777)\n"
+                      << "  --delay <frames>       Fixed input delay (default: chosen from ping)\n"
+                      << "  --record <file>        Record every input plus game-state checksums\n"
+                      << "  --replay <file>        Replay a recording and report any difference\n";
         }
 
         bool parse_milliseconds(std::string_view option, std::string_view value, u64 &destination) {
@@ -1794,6 +1953,40 @@ namespace saga::host::harness {
                 options.msaa = false;
             else if (argument == "--no-portals")
                 options.portals = false;
+            else if (argument == "--two-player")
+                options.two_player = true;
+            else if (argument == "--host")
+                options.netplay_mode = 1;
+            else if (argument == "--join" || argument == "--record" || argument == "--replay" ||
+                     argument == "--port" || argument == "--delay") {
+                if (++index == invocation.arguments.size()) {
+                    std::cerr << "Missing value for " << argument << "\n\n";
+                    print_window_usage(invocation.executable, program_name);
+                    return ParseFailure{ParseDisposition::error};
+                }
+                const std::string_view value = invocation.arguments[index];
+                if (argument == "--join") {
+                    options.netplay_mode = 2;
+                    options.netplay_address = value.data();
+                } else if (argument == "--record") {
+                    options.netplay_mode = 3;
+                    options.netplay_file = value.data();
+                } else if (argument == "--replay") {
+                    options.netplay_mode = 4;
+                    options.netplay_file = value.data();
+                } else {
+                    u64 number = 0;
+                    if (!parse_milliseconds(argument, value, number) || number == 0 ||
+                        number > (argument == "--port" ? 65535u : 30u)) {
+                        print_window_usage(invocation.executable, program_name);
+                        return ParseFailure{ParseDisposition::error};
+                    }
+                    if (argument == "--port")
+                        options.netplay_port = static_cast<u16>(number);
+                    else
+                        options.netplay_delay = static_cast<int>(number);
+                }
+            }
             else if (argument == "--script-tail-ms" || argument == "--timeout-ms") {
                 if (++index == invocation.arguments.size()) {
                     std::cerr << "Missing value for " << argument << "\n\n";

@@ -2,6 +2,7 @@ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel:saga_components.bzl", "saga_component_libraries")
@@ -76,7 +77,15 @@ _HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EX
     "host/platform/runtime.cpp",
 ]
 
-_NATIVE_PLATFORM_SRCS = ["host/platform/native_render_device.cpp"] + select({
+# Online co-op (lockstep netplay). Native only: browsers cannot open raw sockets.
+_NETPLAY_SRCS = [
+    "host/netplay/game_bridge.cpp",
+    "host/netplay/lockstep.cpp",
+    "host/netplay/net_socket.cpp",
+    "host/netplay/session.cpp",
+]
+
+_NATIVE_PLATFORM_SRCS = ["host/platform/native_render_device.cpp"] + _NETPLAY_SRCS + select({
     "//bazel/platforms:linux": [
         "host/platform/linux/render_device.cpp",
         "host/platform/linux/runtime.cpp",
@@ -345,6 +354,7 @@ cc_binary(
         ],
         "//bazel/platforms:windows": [
             "-Wl,--export-all-symbols",
+            "-lws2_32",
         ],
         "//conditions:default": [],
     }) + select({
@@ -517,4 +527,27 @@ wasm_cc_binary(
         "wasm_framebuffer_probe.wasm",
     ],
     threads = "emscripten",
+)
+
+# Netplay core tests: lockstep under packet loss, wire format, loopback sockets.
+cc_test(
+    name = "netplay_lockstep_test",
+    size = "small",
+    srcs = [
+        "host/netplay/lockstep.cpp",
+        "host/netplay/lockstep.hpp",
+        "host/netplay/net_socket.cpp",
+        "host/netplay/net_socket.hpp",
+        "host/netplay/tests/lockstep_test.cpp",
+    ],
+    includes = ["."],
+    linkopts = select({
+        "//bazel/platforms:windows": ["-lws2_32"],
+        "//conditions:default": ["-pthread"],
+    }),
+    target_compatible_with = select({
+        "//bazel/platforms:linux": [],
+        "//bazel/platforms:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
