@@ -1,6 +1,7 @@
 #include "host/netplay/net_socket.hpp"
 
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <mutex>
 

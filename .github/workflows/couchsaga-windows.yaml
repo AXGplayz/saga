@@ -46,9 +46,15 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: bash
+        shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup MinGW compiler
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
 
       - name: Lockstep, packet loss and Winsock tests
         run: |
@@ -76,9 +82,14 @@ jobs:
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
       - name: Build native release
-        run: >-
-          bazel build --config=native_release --config=windows-i686
-          //src:saga_native
+        run: |
+          set -o pipefail
+          if ! bazel build --config=native_release --config=windows-i686 //src:saga_native 2>&1 | tee build.log; then
+            # Surface compiler errors as annotations so they are visible without the full log.
+            grep -E "error:|ERROR:|undefined reference|undefined symbol" build.log | head -40 |
+              while IFS= read -r line; do echo "::error::${line}"; done
+            exit 1
+          fi
 
       - name: Package CouchSaga
         run: |
